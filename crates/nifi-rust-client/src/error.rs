@@ -17,4 +17,10 @@ pub enum NifiError {
 
     #[snafu(display("NiFi API error (status {status}): {message}"))]
     Api { status: u16, message: String },
+
+    #[snafu(display("NiFi version {detected} is not supported by this client build"))]
+    UnsupportedVersion { detected: String },
+
+    #[snafu(display("Endpoint {endpoint} is not available in NiFi {version}"))]
+    UnsupportedEndpoint { endpoint: String, version: String },
 }
