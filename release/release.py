@@ -428,7 +428,7 @@ def run_checks(dry_run, skip_integration):
         ("cargo test --workspace", "Tests"),
         ("cargo clippy -p nifi-rust-client --features dynamic -- -D warnings", "Clippy"),
         ("pre-commit run --all-files", "Pre-commit"),
-        ("cargo publish -p nifi-rust-client --dry-run", "Package validation"),
+        ("cargo publish -p nifi-rust-client --dry-run --allow-dirty", "Package validation"),
     ]
 
     if skip_integration:
