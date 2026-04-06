@@ -23,6 +23,9 @@ jobs:
 
       - uses: Swatinem/rust-cache@v2
 
+      - name: Install cargo-deny
+        run: cargo install cargo-deny --locked
+
       - uses: pre-commit/action@v3.0.1
 
       - name: Clippy (nifi-2-7-2)
