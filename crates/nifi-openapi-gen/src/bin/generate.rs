@@ -203,6 +203,13 @@ fn patch_client_cargo_features(toml_str: &str, versions: &[&str]) -> String {
         features.insert("default", toml_edit::value(arr));
     }
 
+    // dynamic feature — depends on all version features
+    let mut dynamic_arr = toml_edit::Array::new();
+    for version in versions {
+        dynamic_arr.push(version_to_feature(version).as_str());
+    }
+    features.insert("dynamic", toml_edit::value(dynamic_arr));
+
     doc.to_string()
 }
 
@@ -232,6 +239,11 @@ fn patch_tests_cargo_features(toml_str: &str, versions: &[&str]) -> String {
         arr.push(version_to_feature(latest).as_str());
         features.insert("default", toml_edit::value(arr));
     }
+
+    // dynamic feature — forwards to client crate
+    let mut dynamic_arr = toml_edit::Array::new();
+    dynamic_arr.push("nifi-rust-client/dynamic");
+    features.insert("dynamic", toml_edit::value(dynamic_arr));
 
     doc.to_string()
 }
@@ -508,5 +520,31 @@ mod tests {
         assert!(result.contains("[features]"));
         assert!(result.contains("default = [\"nifi-2-8-0\"]"));
         assert!(result.contains("nifi-2-8-0 = [\"nifi-rust-client/nifi-2-8-0\"]"));
+    }
+
+    #[test]
+    fn test_patch_client_cargo_features_includes_dynamic() {
+        let toml = "[package]\nname = \"nifi-rust-client\"\n";
+        let result = patch_client_cargo_features(toml, &["2.7.2", "2.8.0"]);
+        assert!(result.contains("dynamic = [\"nifi-2-7-2\", \"nifi-2-8-0\"]"));
+    }
+
+    #[test]
+    fn test_patch_client_cargo_features_dynamic_updates_with_new_version() {
+        let toml = "[package]\nname = \"nifi-rust-client\"\n\n[features]\ndefault = [\"nifi-2-8-0\"]\nnifi-2-7-2 = []\nnifi-2-8-0 = []\ndynamic = [\"nifi-2-7-2\", \"nifi-2-8-0\"]\n";
+        let result = patch_client_cargo_features(toml, &["2.7.2", "2.8.0", "2.9.0"]);
+        assert!(result.contains("default = [\"nifi-2-9-0\"]"));
+        assert!(result.contains("nifi-2-9-0 = []"));
+        // dynamic should include all three versions
+        assert!(result.contains("nifi-2-7-2"));
+        assert!(result.contains("nifi-2-8-0"));
+        assert!(result.contains("nifi-2-9-0"));
+    }
+
+    #[test]
+    fn test_patch_tests_cargo_features_includes_dynamic() {
+        let toml = "[package]\nname = \"nifi-integration-tests\"\n";
+        let result = patch_tests_cargo_features(toml, &["2.7.2", "2.8.0"]);
+        assert!(result.contains("dynamic = [\"nifi-rust-client/dynamic\"]"));
     }
 }
