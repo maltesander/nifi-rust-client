@@ -7,6 +7,8 @@ authors = ["Malte Sander <contact@maltesander.com>"]
 license = "Apache-2.0"
 edition = "2024"
 repository = "https://github.com/maltesander/nifi-rust-client"
+homepage = "https://github.com/maltesander/nifi-rust-client"
+documentation = "https://docs.rs/nifi-rust-client"
 
 [workspace.dependencies]
 nifi-openapi-gen = { path = "crates/nifi-openapi-gen" }
