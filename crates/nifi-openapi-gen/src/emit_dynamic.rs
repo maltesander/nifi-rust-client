@@ -113,6 +113,7 @@ fn emit_dynamic_client(out: &mut String, versions: &[(&str, &str, &str, &ApiSpec
     // Struct
     out.push_str("/// A dynamic NiFi client that detects the server version at connect time\n");
     out.push_str("/// and dispatches API calls to the correct version's generated code.\n");
+    out.push_str("#[derive(Debug)]\n");
     out.push_str("pub struct DynamicClient {\n");
     out.push_str("    client: NifiClient,\n");
     out.push_str("    version: DetectedVersion,\n");

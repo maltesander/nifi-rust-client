@@ -30,7 +30,7 @@ pub fn emit_dynamic_tests(specs: &[(&str, &str, &ApiSpec)]) -> String {
         out.push_str("        .mount(&mock).await;\n\n");
         out.push_str("    let client = NifiClientBuilder::new(&mock.uri()).unwrap()\n");
         out.push_str("        .build().unwrap();\n");
-        out.push_str("    let dynamic = nifi_rust_client::dynamic::DynamicClient::connect(client).await.unwrap();\n");
+        out.push_str("    let dynamic = nifi_rust_client::dynamic::DynamicClient::from_client(client).await.unwrap();\n");
         out.push_str(&format!(
             "    assert_eq!(dynamic.detected_version().to_string(), \"{version}\");\n"
         ));
@@ -49,7 +49,7 @@ pub fn emit_dynamic_tests(specs: &[(&str, &str, &ApiSpec)]) -> String {
     out.push_str("        .mount(&mock).await;\n\n");
     out.push_str("    let client = NifiClientBuilder::new(&mock.uri()).unwrap()\n");
     out.push_str("        .build().unwrap();\n");
-    out.push_str("    let result = nifi_rust_client::dynamic::DynamicClient::connect(client).await;\n");
+    out.push_str("    let result = nifi_rust_client::dynamic::DynamicClient::from_client(client).await;\n");
     out.push_str("    assert!(result.is_err());\n");
     out.push_str("    let err = result.unwrap_err();\n");
     out.push_str("    assert!(err.to_string().contains(\"1.15.0\"));\n");

@@ -21,7 +21,7 @@ async fn auto_detects_v2_7_2() {
         .unwrap()
         .build()
         .unwrap();
-    let dynamic = nifi_rust_client::dynamic::DynamicClient::connect(client)
+    let dynamic = nifi_rust_client::dynamic::DynamicClient::from_client(client)
         .await
         .unwrap();
     assert_eq!(dynamic.detected_version().to_string(), "2.7.2");
@@ -42,7 +42,7 @@ async fn auto_detects_v2_8_0() {
         .unwrap()
         .build()
         .unwrap();
-    let dynamic = nifi_rust_client::dynamic::DynamicClient::connect(client)
+    let dynamic = nifi_rust_client::dynamic::DynamicClient::from_client(client)
         .await
         .unwrap();
     assert_eq!(dynamic.detected_version().to_string(), "2.8.0");
@@ -63,7 +63,7 @@ async fn unknown_version_returns_error() {
         .unwrap()
         .build()
         .unwrap();
-    let result = nifi_rust_client::dynamic::DynamicClient::connect(client).await;
+    let result = nifi_rust_client::dynamic::DynamicClient::from_client(client).await;
     assert!(result.is_err());
     let err = result.unwrap_err();
     assert!(err.to_string().contains("1.15.0"));

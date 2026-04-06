@@ -44,6 +44,7 @@ struct AboutInner {
 }
 /// A dynamic NiFi client that detects the server version at connect time
 /// and dispatches API calls to the correct version's generated code.
+#[derive(Debug)]
 pub struct DynamicClient {
     client: NifiClient,
     version: DetectedVersion,
