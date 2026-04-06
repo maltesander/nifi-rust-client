@@ -4,6 +4,65 @@ Idiomatic Rust client for the Apache NiFi 2.x REST API.
 
 All 237 NiFi 2.8.0 REST API endpoints are generated from the OpenAPI spec and exposed via typed resource accessor methods.
 
+## Modes
+
+### Static mode (default)
+
+For applications built against a specific NiFi version. You get full type safety, complete IDE autocompletion, and compile-time guarantees that your code matches the NiFi API exactly.
+
+Use this when you're building a deployment pipeline, custom processor manager, or automation tool that targets a known NiFi cluster. You move in lock-step with your NiFi version — when you upgrade NiFi, you update the feature flag.
+
+```toml
+[dependencies]
+nifi-rust-client = { version = "...", features = ["nifi-2-8-0"] }
+```
+
+```rust
+let mut client = NifiClientBuilder::new("https://nifi:8443")?.build()?;
+client.login("admin", "password").await?;
+
+// Full type safety — ProcessorEntity is v2_8_0::types::ProcessorEntity
+let proc = client.processors_api().get_processor("id").await?;
+```
+
+### Dynamic mode
+
+For tools that talk to multiple NiFi versions. The client auto-detects the NiFi version at connect time and dispatches to the correct generated API module.
+
+Use this when you're building a monitoring dashboard, CLI tool, or fleet management system that needs to work across NiFi clusters running different versions.
+
+```toml
+[dependencies]
+nifi-rust-client = { version = "...", features = ["dynamic"] }
+```
+
+```rust
+let mut client = NifiClientBuilder::new("https://nifi:8443")?
+    .build_dynamic()
+    .await?;
+client.login("admin", "password").await?;
+
+// Returns common union types — fields are Option<T>
+let about = client.flow_api().get_about_info().await?;
+println!("NiFi version: {:?}", about.version);
+
+// Check what was detected
+println!("Connected to NiFi {}", client.detected_version());
+```
+
+Trade-offs: all fields are `Option<T>` since not every NiFi version populates every field. Endpoints that don't exist in the connected version return `NifiError::UnsupportedEndpoint`.
+
+### When to use which
+
+| Scenario | Mode |
+|---|---|
+| CI/CD pipeline targeting one NiFi cluster | Static |
+| Custom processor deployment tool | Static |
+| Library wrapping specific NiFi features | Static |
+| Monitoring dashboard across NiFi clusters | Dynamic |
+| CLI tool for ad-hoc NiFi administration | Dynamic |
+| Migration tool between NiFi versions | Dynamic |
+
 ## Creating a client
 
 ```rust

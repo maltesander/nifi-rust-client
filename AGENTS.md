@@ -22,6 +22,7 @@ crates/
     src/
       v2_7_2/             # Generated: api/ + types/ + mod.rs for NiFi 2.7.2
       v2_8_0/             # Generated: api/ + types/ + mod.rs for NiFi 2.8.0
+      dynamic/            # Generated: DynamicClient, common types, conversions (dynamic feature)
       lib.rs              # Generated: cfg-gated re-exports, auto-managed by generator
     tests/
       v2_7_2_generated_tests.rs  # Generated: wiremock stubs for NiFi 2.7.2
@@ -163,6 +164,8 @@ Do not use `unwrap` or `expect` in non-test code — clippy denies it.
 | After changing a module | `cargo test -p <crate> <module>` |
 | Before committing | `cargo test --workspace` then `pre-commit run --all-files` |
 | Test specific NiFi version | `cargo test -p nifi-rust-client --no-default-features --features nifi-2-8-0` |
+| Test dynamic mode | `cargo test -p nifi-rust-client --features dynamic` |
+| Clippy dynamic mode | `cargo clippy -p nifi-rust-client --features dynamic -- -D warnings` |
 
 ### Integration Tests
 
@@ -210,6 +213,25 @@ nifi-rust-client = { version = "...", default-features = false, features = ["nif
 The default feature is always the semver-latest version present in the repo. IDE autocompletion
 resolves against the default feature automatically.
 
+### Dynamic mode
+
+The `dynamic` feature compiles all supported versions and enables runtime version detection:
+
+```toml
+nifi-rust-client = { version = "...", features = ["dynamic"] }
+```
+
+The `DynamicClient` auto-detects the NiFi version via the `/flow/about` endpoint and dispatches
+API calls to the correct version's generated code. Returns common union types with all fields
+as `Option<T>`.
+
+```rust
+let mut client = NifiClientBuilder::new("https://nifi:8443")?
+    .build_dynamic().await?;
+client.login("admin", "password").await?;
+let about = client.flow_api().get_about_info().await?;
+```
+
 ### Adding or bumping a NiFi version
 
 ```bash
@@ -217,9 +239,11 @@ resolves against the default feature automatically.
 NIFI_VERSION=2.9.0 ./crates/nifi-openapi-gen/scripts/fetch-nifi-spec.sh
 
 # 2. Run generator — writes src/v2_9_0/, updates lib.rs and both Cargo.tomls
+# The generator also regenerates the dynamic module (common types, dispatch, conversions).
 NIFI_VERSION=2.9.0 cargo run -p nifi-openapi-gen
 
 # 3. Verify all versions compile
+cargo build --features dynamic
 cargo build --no-default-features --features nifi-2-9-0
 cargo build --no-default-features --features nifi-2-8-0
 cargo build --no-default-features --features nifi-2-7-2

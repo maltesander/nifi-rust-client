@@ -9,6 +9,15 @@ Internal code generator for `nifi-rust-client`. Reads an OpenAPI 3.0.1 spec and 
 
 Stale files within the active version's `api/` and `types/` dirs are deleted automatically. Other versions' directories are never touched. `cargo fmt` is run on all output.
 
+When the `dynamic` feature is present in `Cargo.toml`, the generator also writes:
+
+- `src/dynamic/types.rs` — common union types with all fields as `Option<T>`
+- `src/dynamic/api.rs` — `DynamicClient` with version-dispatching API methods
+- `src/dynamic/conversions.rs` — `From` impls converting each version's types to common types
+- `src/dynamic/mod.rs` — module re-exports
+
+These files are regenerated from scratch on every run, covering all supported versions.
+
 ## Running the generator
 
 ```bash
