@@ -19,9 +19,9 @@ pub fn emit_dynamic_tests(specs: &[(&str, &str, &ApiSpec)]) -> String {
         out.push_str("    let mock = MockServer::start().await;\n");
         out.push_str("    Mock::given(method(\"GET\"))\n");
         out.push_str("        .and(path(\"/nifi-api/flow/about\"))\n");
-        out.push_str(&format!(
-            "        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({{\n"
-        ));
+        out.push_str(
+            "        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({\n",
+        );
         out.push_str(&format!(
             "            \"about\": {{ \"title\": \"NiFi\", \"version\": \"{version}\" }}\n"
         ));
@@ -42,13 +42,17 @@ pub fn emit_dynamic_tests(specs: &[(&str, &str, &ApiSpec)]) -> String {
     out.push_str("    let mock = MockServer::start().await;\n");
     out.push_str("    Mock::given(method(\"GET\"))\n");
     out.push_str("        .and(path(\"/nifi-api/flow/about\"))\n");
-    out.push_str("        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({\n");
+    out.push_str(
+        "        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({\n",
+    );
     out.push_str("            \"about\": { \"title\": \"NiFi\", \"version\": \"1.15.0\" }\n");
     out.push_str("        })))\n");
     out.push_str("        .mount(&mock).await;\n\n");
     out.push_str("    let client = NifiClientBuilder::new(&mock.uri()).unwrap()\n");
     out.push_str("        .build().unwrap();\n");
-    out.push_str("    let result = nifi_rust_client::dynamic::DynamicClient::from_client(client).await;\n");
+    out.push_str(
+        "    let result = nifi_rust_client::dynamic::DynamicClient::from_client(client).await;\n",
+    );
     out.push_str("    assert!(result.is_err());\n");
     out.push_str("    let err = result.unwrap_err();\n");
     out.push_str("    assert!(err.to_string().contains(\"1.15.0\"));\n");
@@ -76,8 +80,7 @@ mod tests {
             }],
             all_types: vec![],
         };
-        let output =
-            emit_dynamic_tests(&[("2.7.2", "v2_7_2", &spec), ("2.8.0", "v2_8_0", &spec)]);
+        let output = emit_dynamic_tests(&[("2.7.2", "v2_7_2", &spec), ("2.8.0", "v2_8_0", &spec)]);
         assert!(output.contains("#![cfg(feature = \"dynamic\")]"));
         assert!(output.contains("auto_detects_v2_7_2"));
         assert!(output.contains("auto_detects_v2_8_0"));

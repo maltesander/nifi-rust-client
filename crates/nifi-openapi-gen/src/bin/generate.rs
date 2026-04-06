@@ -342,10 +342,8 @@ fn main() {
 
     // 4. Dynamic module generation (only when processing multiple specs)
     if parsed_specs.len() > 1 {
-        let type_specs: Vec<(&str, &nifi_openapi_gen::ApiSpec)> = parsed_specs
-            .iter()
-            .map(|(v, s)| (v.as_str(), s))
-            .collect();
+        let type_specs: Vec<(&str, &nifi_openapi_gen::ApiSpec)> =
+            parsed_specs.iter().map(|(v, s)| (v.as_str(), s)).collect();
 
         targets.push((
             client.join("src/dynamic/types.rs"),
@@ -473,7 +471,6 @@ fn main() {
     println!("Done. {} file(s) updated.", written);
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -533,9 +530,7 @@ mod tests {
         assert!(content.contains("feature = \"nifi-2-8-0\""));
         // conflict guard references dynamic
         assert!(content.contains("not(feature = \"dynamic\")"));
-        assert!(content.contains(
-            "Multiple NiFi versions require the \\\"dynamic\\\" feature"
-        ));
+        assert!(content.contains("Multiple NiFi versions require the \\\"dynamic\\\" feature"));
         // both version modules present as pub
         assert!(content.contains("pub mod v2_7_2;"));
         assert!(content.contains("pub mod v2_8_0;"));

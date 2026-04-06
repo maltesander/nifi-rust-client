@@ -1,6 +1,6 @@
 use std::collections::{BTreeMap, BTreeSet};
 
-use crate::parser::{ApiSpec, Field, FieldType, TypeDef, TypeKind};
+use crate::parser::{ApiSpec, Field, FieldType, TypeKind};
 
 /// Intermediate representation of a merged type across all API versions.
 enum MergedType {
@@ -52,7 +52,10 @@ pub fn emit_dynamic_types(specs: &[(&str, &ApiSpec)]) -> String {
                 out.push_str("#[derive(Debug, Clone, Default, Deserialize, Serialize)]\n");
                 out.push_str("#[serde(rename_all = \"camelCase\")]\n");
                 out.push_str(&format!("pub(crate) struct {name} {{\n"));
-                out.push_str(&format!("    pub {}: Option<{inner}>,\n", escape_keyword(field)));
+                out.push_str(&format!(
+                    "    pub {}: Option<{inner}>,\n",
+                    escape_keyword(field)
+                ));
                 out.push_str("}\n\n");
             }
             MergedType::StringEnum { variants } => {
@@ -111,23 +114,21 @@ fn merge_all_types(specs: &[(&str, &ApiSpec)]) -> BTreeMap<String, MergedType> {
                     }
                 }
                 TypeKind::Entity { field, inner } => {
-                    merged.entry(td.name.clone()).or_insert_with(|| {
-                        MergedType::Entity {
+                    merged
+                        .entry(td.name.clone())
+                        .or_insert_with(|| MergedType::Entity {
                             field: field.clone(),
                             inner: inner.clone(),
-                        }
-                    });
+                        });
                 }
                 TypeKind::StringEnum(variants) => {
-                    let entry = merged
-                        .entry(td.name.clone())
-                        .or_insert_with(|| MergedType::StringEnum {
-                            variants: BTreeSet::new(),
-                        });
-                    if let MergedType::StringEnum {
-                        variants: existing,
-                    } = entry
-                    {
+                    let entry =
+                        merged
+                            .entry(td.name.clone())
+                            .or_insert_with(|| MergedType::StringEnum {
+                                variants: BTreeSet::new(),
+                            });
+                    if let MergedType::StringEnum { variants: existing } = entry {
                         for v in variants {
                             existing.insert(v.clone());
                         }
@@ -169,7 +170,10 @@ fn field_type_to_rust(ty: &FieldType, struct_name: &str) -> String {
             }
         }
         FieldType::Map(inner) => {
-            format!("std::collections::HashMap<String, {}>", field_type_to_rust(inner, struct_name))
+            format!(
+                "std::collections::HashMap<String, {}>",
+                field_type_to_rust(inner, struct_name)
+            )
         }
     }
 }
@@ -275,11 +279,7 @@ mod tests {
         };
         let td_new = TypeDef {
             name: "IncludedRegistries".to_string(),
-            kind: TypeKind::StringEnum(vec![
-                "NIFI".into(),
-                "JVM".into(),
-                "VERSION_INFO".into(),
-            ]),
+            kind: TypeKind::StringEnum(vec!["NIFI".into(), "JVM".into(), "VERSION_INFO".into()]),
             fields: vec![],
             doc: None,
         };

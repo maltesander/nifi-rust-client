@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 
-use crate::parser::{ApiSpec, Endpoint, HttpMethod, QueryParam, RequestBodyKind, SubGroup, TagGroup};
+use crate::parser::{ApiSpec, Endpoint, HttpMethod, QueryParam, RequestBodyKind};
 
 /// Input tuple: `(version_str, mod_name, feature_flag, &ApiSpec)`
 /// e.g. `("2.7.2", "v2_7_2", "nifi-2-7-2", &spec)`
@@ -68,7 +68,9 @@ fn emit_version_from_str(out: &mut String, versions: &[(&str, &str, &str, &ApiSp
     out.push_str("fn version_from_str(version: &str) -> Result<DetectedVersion, NifiError> {\n");
     out.push_str("    let parts: Vec<&str> = version.split('.').collect();\n");
     out.push_str("    if parts.len() < 2 {\n");
-    out.push_str("        return Err(NifiError::UnsupportedVersion { detected: version.to_string() });\n");
+    out.push_str(
+        "        return Err(NifiError::UnsupportedVersion { detected: version.to_string() });\n",
+    );
     out.push_str("    }\n");
     out.push_str("    let major_minor = format!(\"{}.{}\", parts[0], parts[1]);\n");
     out.push_str("    match major_minor.as_str() {\n");
@@ -89,7 +91,9 @@ fn emit_version_from_str(out: &mut String, versions: &[(&str, &str, &str, &ApiSp
             version_to_variant(ver),
         ));
     }
-    out.push_str("        _ => Err(NifiError::UnsupportedVersion { detected: version.to_string() }),\n");
+    out.push_str(
+        "        _ => Err(NifiError::UnsupportedVersion { detected: version.to_string() }),\n",
+    );
     out.push_str("    }\n");
     out.push_str("}\n\n");
 }
@@ -161,7 +165,7 @@ fn emit_dynamic_client(out: &mut String, versions: &[(&str, &str, &str, &ApiSpec
     // Per-tag accessor methods
     // Collect all unique tags across versions
     let all_tags = collect_all_tags(versions);
-    for (tag, struct_name, module_name, accessor_fn) in &all_tags {
+    for (tag, struct_name, _module_name, accessor_fn) in &all_tags {
         let dynamic_struct = format!("Dynamic{struct_name}");
         out.push_str(&format!(
             "    /// Access the [{tag} API](https://nifi.apache.org/nifi-docs/rest-api.html) with dynamic dispatch.\n"
@@ -179,12 +183,19 @@ fn emit_dynamic_client(out: &mut String, versions: &[(&str, &str, &str, &ApiSpec
 }
 
 /// Collect all unique (tag, struct_name, module_name, accessor_fn) across versions.
-fn collect_all_tags(versions: &[(&str, &str, &str, &ApiSpec)]) -> Vec<(String, String, String, String)> {
+fn collect_all_tags(
+    versions: &[(&str, &str, &str, &ApiSpec)],
+) -> Vec<(String, String, String, String)> {
     let mut seen: BTreeMap<String, (String, String, String)> = BTreeMap::new();
     for (_, _, _, spec) in versions {
         for tag in &spec.tags {
-            seen.entry(tag.tag.clone())
-                .or_insert_with(|| (tag.struct_name.clone(), tag.module_name.clone(), tag.accessor_fn.clone()));
+            seen.entry(tag.tag.clone()).or_insert_with(|| {
+                (
+                    tag.struct_name.clone(),
+                    tag.module_name.clone(),
+                    tag.accessor_fn.clone(),
+                )
+            });
         }
     }
     seen.into_iter()
@@ -205,18 +216,23 @@ fn emit_dynamic_api_structs(out: &mut String, versions: &[(&str, &str, &str, &Ap
             "pub struct {dynamic_struct}<'a> {{\n    client: &'a NifiClient,\n    version: DetectedVersion,\n}}\n\n"
         ));
 
-        out.push_str(&format!(
-            "#[allow(clippy::too_many_arguments, clippy::vec_init_then_push)]\n"
-        ));
+        out.push_str("#[allow(clippy::too_many_arguments, clippy::vec_init_then_push)]\n");
         out.push_str(&format!("impl<'a> {dynamic_struct}<'a> {{\n"));
 
         // Collect all endpoints across versions for this tag, keyed by fn_name
         let all_endpoints = collect_tag_endpoints(versions, tag);
 
-        for (_fn_name, ep_by_version) in &all_endpoints {
+        for ep_by_version in all_endpoints.values() {
             // Use the first available endpoint as the representative for signature
             let representative = ep_by_version.values().next().unwrap();
-            emit_dynamic_method(out, versions, ep_by_version, representative, struct_name, module_name);
+            emit_dynamic_method(
+                out,
+                versions,
+                ep_by_version,
+                representative,
+                struct_name,
+                module_name,
+            );
         }
 
         out.push_str("}\n\n");
@@ -246,20 +262,26 @@ fn collect_tag_endpoints<'a>(
                 continue;
             }
             for ep in &tg.root_endpoints {
-                result.entry(ep.fn_name.clone())
-                    .or_default()
-                    .insert(ver, EndpointInfo { endpoint: ep, sub_struct_name: None, primary_param: None });
+                result.entry(ep.fn_name.clone()).or_default().insert(
+                    ver,
+                    EndpointInfo {
+                        endpoint: ep,
+                        sub_struct_name: None,
+                        primary_param: None,
+                    },
+                );
             }
             // Flatten sub-group endpoints
             for sg in &tg.sub_groups {
                 for ep in &sg.endpoints {
-                    result.entry(ep.fn_name.clone())
-                        .or_default()
-                        .insert(ver, EndpointInfo {
+                    result.entry(ep.fn_name.clone()).or_default().insert(
+                        ver,
+                        EndpointInfo {
                             endpoint: ep,
                             sub_struct_name: Some(&sg.struct_name),
                             primary_param: Some(&sg.primary_param),
-                        });
+                        },
+                    );
                 }
             }
         }
@@ -359,7 +381,18 @@ fn emit_dynamic_method(
     for (ver, mod_name, _feature, _spec) in versions {
         let variant = version_to_variant(ver);
         if let Some(info) = ep_by_version.get(ver) {
-            emit_version_arm(out, ver, mod_name, &variant, info, tag_struct_name, tag_module_name, &merged_query_params, all_version_count, is_void);
+            emit_version_arm(
+                out,
+                ver,
+                mod_name,
+                &variant,
+                info,
+                tag_struct_name,
+                tag_module_name,
+                &merged_query_params,
+                all_version_count,
+                is_void,
+            );
         } else {
             // Endpoint not available in this version
             out.push_str(&format!(
@@ -373,6 +406,7 @@ fn emit_dynamic_method(
     out.push_str("    }\n\n");
 }
 
+#[allow(clippy::too_many_arguments)]
 fn emit_version_arm(
     out: &mut String,
     ver: &str,
@@ -386,9 +420,7 @@ fn emit_version_arm(
     is_void: bool,
 ) {
     let ep = info.endpoint;
-    out.push_str(&format!(
-        "            DetectedVersion::{variant} => {{\n"
-    ));
+    out.push_str(&format!("            DetectedVersion::{variant} => {{\n"));
     match (info.sub_struct_name, info.primary_param) {
         (Some(sub_struct), Some(primary_param)) => {
             // Sub-group endpoint: instantiate the sub-struct with client + primary_param
@@ -420,7 +452,8 @@ fn emit_version_arm(
     // Check the merged superset to see if the param was forced to Option in the signature.
     for qp in &ep.query_params {
         // Was this param forced to Option in the method signature?
-        let forced_option = merged_query_params.iter()
+        let forced_option = merged_query_params
+            .iter()
             .find(|(mq, _)| mq.rust_name == qp.rust_name)
             .map(|(_, count)| *count < all_version_count)
             .unwrap_or(false);
@@ -499,11 +532,15 @@ fn emit_version_arm(
 /// Merge query params from all versions of an endpoint into a superset.
 /// Returns each unique param (by rust_name) along with the count of versions it appears in.
 /// Preserves insertion order: params appear in the order first seen across versions.
-fn merge_query_params(ep_by_version: &BTreeMap<&str, EndpointInfo<'_>>) -> Vec<(QueryParam, usize)> {
+fn merge_query_params(
+    ep_by_version: &BTreeMap<&str, EndpointInfo<'_>>,
+) -> Vec<(QueryParam, usize)> {
     let mut result: Vec<(QueryParam, usize)> = Vec::new();
     for info in ep_by_version.values() {
         for qp in &info.endpoint.query_params {
-            if let Some((existing, count)) = result.iter_mut().find(|(q, _)| q.rust_name == qp.rust_name) {
+            if let Some((existing, count)) =
+                result.iter_mut().find(|(q, _)| q.rust_name == qp.rust_name)
+            {
                 *count += 1;
                 // If any version marks it optional, keep it optional
                 if !qp.required {
@@ -529,17 +566,6 @@ fn dynamic_query_param_type(qp: &QueryParam) -> String {
     }
 }
 
-fn prop_name_to_rust(name: &str) -> String {
-    let mut out = String::new();
-    for (i, ch) in name.chars().enumerate() {
-        if ch.is_uppercase() && i > 0 {
-            out.push('_');
-        }
-        out.push(ch.to_ascii_lowercase());
-    }
-    out
-}
-
 fn escape_keyword(name: &str) -> String {
     match name {
         "type" | "ref" | "use" | "mod" | "fn" | "let" | "match" | "for" | "if" | "else"
@@ -561,10 +587,7 @@ fn format_source(src: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::parser::{
-        ApiSpec, Endpoint, Field, FieldType, HttpMethod, PathParam, QueryParam, QueryParamType,
-        SubGroup, TagGroup, TypeDef, TypeKind,
-    };
+    use crate::parser::{ApiSpec, Endpoint, HttpMethod, PathParam, QueryParam, TagGroup};
 
     fn minimal_spec_with_tag(
         tag: &str,
@@ -587,6 +610,7 @@ mod tests {
         }
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn make_endpoint(
         method: HttpMethod,
         path: &str,

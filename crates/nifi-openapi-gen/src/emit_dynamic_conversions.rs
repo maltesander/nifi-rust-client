@@ -58,7 +58,9 @@ fn convert_expr(expr: &str, ty: &FieldType, struct_name: &str) -> String {
         FieldType::Enum(_) => {
             // Inline string enums are emitted as String in the dynamic type;
             // use serde round-trip since per-version enums may not impl Display
-            format!("serde_json::to_value(&{expr}).ok().and_then(|v| v.as_str().map(|s| s.to_string())).unwrap_or_default()")
+            format!(
+                "serde_json::to_value(&{expr}).ok().and_then(|v| v.as_str().map(|s| s.to_string())).unwrap_or_default()"
+            )
         }
         FieldType::Opt(inner) => {
             if needs_conversion(inner) {
@@ -68,41 +70,46 @@ fn convert_expr(expr: &str, ty: &FieldType, struct_name: &str) -> String {
                     }
                     FieldType::Ref(_) => format!("{expr}.map(Into::into)"),
                     FieldType::Enum(_) => {
-                        format!("{expr}.map(|v| serde_json::to_value(&v).ok().and_then(|v| v.as_str().map(|s| s.to_string())).unwrap_or_default())")
+                        format!(
+                            "{expr}.map(|v| serde_json::to_value(&v).ok().and_then(|v| v.as_str().map(|s| s.to_string())).unwrap_or_default())"
+                        )
                     }
                     FieldType::List(item) if needs_conversion(item) => {
-                        let list_conv = convert_expr("v", &FieldType::List(item.clone()), struct_name);
+                        let list_conv =
+                            convert_expr("v", &FieldType::List(item.clone()), struct_name);
                         format!("{expr}.map(|v| {list_conv})")
                     }
                     FieldType::Map(val) if needs_conversion(val) => {
                         let val_conversion = convert_expr("v", val, struct_name);
-                        format!("{expr}.map(|m| m.into_iter().map(|(k, v)| (k, {val_conversion})).collect())")
+                        format!(
+                            "{expr}.map(|m| m.into_iter().map(|(k, v)| (k, {val_conversion})).collect())"
+                        )
                     }
                     _ => format!("{expr}.map(Into::into)"),
                 }
             } else {
-                format!("{expr}")
+                expr.to_string()
             }
         }
-        FieldType::List(inner) if needs_conversion(inner) => {
-            match inner.as_ref() {
-                FieldType::Enum(_) => {
-                    format!("{expr}.into_iter().map(|v| serde_json::to_value(&v).ok().and_then(|v| v.as_str().map(|s| s.to_string())).unwrap_or_default()).collect()")
-                }
-                FieldType::Ref(name) if name == struct_name => {
-                    format!("{expr}.into_iter().map(|v| Box::new((*v).into())).collect()")
-                }
-                _ => {
-                    let item_conversion = convert_expr("v", inner, struct_name);
-                    format!("{expr}.into_iter().map(|v| {item_conversion}).collect()")
-                }
+        FieldType::List(inner) if needs_conversion(inner) => match inner.as_ref() {
+            FieldType::Enum(_) => {
+                format!(
+                    "{expr}.into_iter().map(|v| serde_json::to_value(&v).ok().and_then(|v| v.as_str().map(|s| s.to_string())).unwrap_or_default()).collect()"
+                )
             }
-        }
+            FieldType::Ref(name) if name == struct_name => {
+                format!("{expr}.into_iter().map(|v| Box::new((*v).into())).collect()")
+            }
+            _ => {
+                let item_conversion = convert_expr("v", inner, struct_name);
+                format!("{expr}.into_iter().map(|v| {item_conversion}).collect()")
+            }
+        },
         FieldType::Map(inner) if needs_conversion(inner) => {
             let val_conversion = convert_expr("v", inner, struct_name);
             format!("{expr}.into_iter().map(|(k, v)| (k, {val_conversion})).collect()")
         }
-        _ => format!("{expr}"),
+        _ => expr.to_string(),
     }
 }
 
@@ -158,8 +165,8 @@ pub fn emit_dynamic_conversions(
                     out.push_str("        Self {\n");
                     for field_name in merged_fields {
                         let escaped = escape_keyword(field_name);
-                        let field_ty = version_fields
-                            .and_then(|f| f.get(field_name.as_str()).copied());
+                        let field_ty =
+                            version_fields.and_then(|f| f.get(field_name.as_str()).copied());
                         match field_ty {
                             Some(ty) => {
                                 let conversion = field_conversion_expr(&escaped, ty, type_name);
@@ -184,9 +191,7 @@ pub fn emit_dynamic_conversions(
                     out.push_str(
                         "        let s = serde_json::to_string(&v).expect(\"serialize enum\");\n",
                     );
-                    out.push_str(
-                        "        serde_json::from_str(&s).expect(\"deserialize enum\")\n",
-                    );
+                    out.push_str("        serde_json::from_str(&s).expect(\"deserialize enum\")\n");
                 }
             }
 
@@ -217,7 +222,10 @@ mod tests {
         let td = TypeDef {
             name: "AboutDto".to_string(),
             kind: TypeKind::Dto,
-            fields: vec![make_field("title", FieldType::Opt(Box::new(FieldType::Str)))],
+            fields: vec![make_field(
+                "title",
+                FieldType::Opt(Box::new(FieldType::Str)),
+            )],
             doc: None,
         };
         let spec = ApiSpec {
@@ -232,7 +240,9 @@ mod tests {
         );
 
         let output = emit_dynamic_conversions(&[("2.7.2", "v2_7_2", &spec)], &merged);
-        assert!(output.contains("impl From<crate::v2_7_2::types::AboutDto> for super::types::AboutDto"));
+        assert!(
+            output.contains("impl From<crate::v2_7_2::types::AboutDto> for super::types::AboutDto")
+        );
         assert!(output.contains("title: v.title"));
         assert!(output.contains("version: None"));
     }
@@ -253,7 +263,9 @@ mod tests {
         merged.insert("MyEnum".to_string(), vec![]);
 
         let output = emit_dynamic_conversions(&[("2.8.0", "v2_8_0", &spec)], &merged);
-        assert!(output.contains("impl From<crate::v2_8_0::types::MyEnum> for super::types::MyEnum"));
+        assert!(
+            output.contains("impl From<crate::v2_8_0::types::MyEnum> for super::types::MyEnum")
+        );
         assert!(output.contains("serde_json"));
     }
 
