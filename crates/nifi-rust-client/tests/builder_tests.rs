@@ -1,3 +1,4 @@
+#![cfg(not(feature = "dynamic"))]
 use std::time::Duration;
 
 use nifi_rust_client::NifiClientBuilder;

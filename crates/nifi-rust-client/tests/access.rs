@@ -1,3 +1,4 @@
+#![cfg(not(feature = "dynamic"))]
 use nifi_rust_client::{NifiClientBuilder, NifiError};
 use wiremock::matchers::{method, path};
 use wiremock::{Mock, MockServer, ResponseTemplate};

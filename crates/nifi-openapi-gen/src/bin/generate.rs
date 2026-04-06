@@ -328,7 +328,7 @@ fn main() {
         ));
 
         let test_content = format!(
-            "#![cfg(feature = \"{feature_name}\")]\n\n{}",
+            "#![cfg(all(feature = \"{feature_name}\", not(feature = \"dynamic\")))]\n\n{}",
             nifi_openapi_gen::emit_tests(spec)
         );
         targets.push((

@@ -1,3 +1,4 @@
+#![cfg(not(feature = "dynamic"))]
 #![allow(clippy::panic)]
 use nifi_rust_client::NifiClientBuilder;
 use nifi_rust_client::NifiError;
