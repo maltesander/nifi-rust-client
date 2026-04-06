@@ -339,7 +339,8 @@ def parse_conventional_commits(old_version):
             message = subject
         category = COMMIT_TYPE_MAP.get(commit_type, "Other")
         message = message[0].upper() + message[1:] if message else message
-        categories.setdefault(category, []).append(f"{message} ({short_hash})")
+        commit_link = f"[{short_hash}]({REPO_URL}/commit/{short_hash})"
+        categories.setdefault(category, []).append(f"{message} ({commit_link})")
     return categories
 
 
