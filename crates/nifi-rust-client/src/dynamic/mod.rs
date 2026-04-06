@@ -7906,7 +7906,7 @@ impl<'a> DynamicParameterProvidersApi<'a> {
             DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::parameterproviders::ParameterProvidersApplyParametersRequestsApi {
                     client: self.client,
-                    provider_id: provider_id,
+                    provider_id,
                 };
                 Ok(api
                     .delete_apply_parameters_request(request_id, disconnected_node_acknowledged)
@@ -7916,7 +7916,7 @@ impl<'a> DynamicParameterProvidersApi<'a> {
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::parameterproviders::ParameterProvidersApplyParametersRequestsApi {
                     client: self.client,
-                    provider_id: provider_id,
+                    provider_id,
                 };
                 Ok(api
                     .delete_apply_parameters_request(request_id, disconnected_node_acknowledged)
@@ -7926,7 +7926,7 @@ impl<'a> DynamicParameterProvidersApi<'a> {
             DetectedVersion::V2_8_0 => {
                 let api = crate::v2_8_0::api::parameterproviders::ParameterProvidersApplyParametersRequestsApi {
                     client: self.client,
-                    provider_id: provider_id,
+                    provider_id,
                 };
                 Ok(api
                     .delete_apply_parameters_request(request_id, disconnected_node_acknowledged)
@@ -8064,7 +8064,7 @@ impl<'a> DynamicParameterProvidersApi<'a> {
             DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::parameterproviders::ParameterProvidersApplyParametersRequestsApi {
                     client: self.client,
-                    provider_id: provider_id,
+                    provider_id,
                 };
                 Ok(api
                     .get_parameter_provider_apply_parameters_request(request_id)
@@ -8074,7 +8074,7 @@ impl<'a> DynamicParameterProvidersApi<'a> {
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::parameterproviders::ParameterProvidersApplyParametersRequestsApi {
                     client: self.client,
-                    provider_id: provider_id,
+                    provider_id,
                 };
                 Ok(api
                     .get_parameter_provider_apply_parameters_request(request_id)
@@ -8084,7 +8084,7 @@ impl<'a> DynamicParameterProvidersApi<'a> {
             DetectedVersion::V2_8_0 => {
                 let api = crate::v2_8_0::api::parameterproviders::ParameterProvidersApplyParametersRequestsApi {
                     client: self.client,
-                    provider_id: provider_id,
+                    provider_id,
                 };
                 Ok(api
                     .get_parameter_provider_apply_parameters_request(request_id)
@@ -8274,7 +8274,7 @@ impl<'a> DynamicParameterProvidersApi<'a> {
             DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::parameterproviders::ParameterProvidersApplyParametersRequestsApi {
                     client: self.client,
-                    provider_id: provider_id,
+                    provider_id,
                 };
                 Ok(api
                     .submit_apply_parameters(
@@ -8295,7 +8295,7 @@ impl<'a> DynamicParameterProvidersApi<'a> {
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::parameterproviders::ParameterProvidersApplyParametersRequestsApi {
                     client: self.client,
-                    provider_id: provider_id,
+                    provider_id,
                 };
                 Ok(api
                     .submit_apply_parameters(
@@ -8316,7 +8316,7 @@ impl<'a> DynamicParameterProvidersApi<'a> {
             DetectedVersion::V2_8_0 => {
                 let api = crate::v2_8_0::api::parameterproviders::ParameterProvidersApplyParametersRequestsApi {
                     client: self.client,
-                    provider_id: provider_id,
+                    provider_id,
                 };
                 Ok(api
                     .submit_apply_parameters(
@@ -9003,21 +9003,21 @@ impl<'a> DynamicProcessGroupsApi<'a> {
             DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::processgroups::ProcessGroupsEmptyAllConnectionsRequestsApi {
                     client: self.client,
-                    id: id,
+                    id,
                 };
                 api.create_empty_all_connections_request().await
             }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::processgroups::ProcessGroupsEmptyAllConnectionsRequestsApi {
                     client: self.client,
-                    id: id,
+                    id,
                 };
                 api.create_empty_all_connections_request().await
             }
             DetectedVersion::V2_8_0 => {
                 let api = crate::v2_8_0::api::processgroups::ProcessGroupsEmptyAllConnectionsRequestsApi {
                     client: self.client,
-                    id: id,
+                    id,
                 };
                 api.create_empty_all_connections_request().await
             }
@@ -9600,7 +9600,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
             DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::processgroups::ProcessGroupsEmptyAllConnectionsRequestsApi {
                     client: self.client,
-                    id: id,
+                    id,
                 };
                 Ok(api
                     .get_drop_all_flowfiles_request(drop_request_id)
@@ -9610,7 +9610,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::processgroups::ProcessGroupsEmptyAllConnectionsRequestsApi {
                     client: self.client,
-                    id: id,
+                    id,
                 };
                 Ok(api
                     .get_drop_all_flowfiles_request(drop_request_id)
@@ -9620,7 +9620,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
             DetectedVersion::V2_8_0 => {
                 let api = crate::v2_8_0::api::processgroups::ProcessGroupsEmptyAllConnectionsRequestsApi {
                     client: self.client,
-                    id: id,
+                    id,
                 };
                 Ok(api
                     .get_drop_all_flowfiles_request(drop_request_id)
@@ -10119,21 +10119,21 @@ impl<'a> DynamicProcessGroupsApi<'a> {
             DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::processgroups::ProcessGroupsEmptyAllConnectionsRequestsApi {
                     client: self.client,
-                    id: id,
+                    id,
                 };
                 Ok(api.remove_drop_request_1(drop_request_id).await?.into())
             }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::processgroups::ProcessGroupsEmptyAllConnectionsRequestsApi {
                     client: self.client,
-                    id: id,
+                    id,
                 };
                 Ok(api.remove_drop_request_1(drop_request_id).await?.into())
             }
             DetectedVersion::V2_8_0 => {
                 let api = crate::v2_8_0::api::processgroups::ProcessGroupsEmptyAllConnectionsRequestsApi {
                     client: self.client,
-                    id: id,
+                    id,
                 };
                 Ok(api.remove_drop_request_1(drop_request_id).await?.into())
             }

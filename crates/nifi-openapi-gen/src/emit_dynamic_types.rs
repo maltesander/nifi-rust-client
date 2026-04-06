@@ -23,6 +23,7 @@ pub fn emit_dynamic_types(specs: &[(&str, &ApiSpec)]) -> String {
     let merged = merge_all_types(specs);
 
     let mut out = String::new();
+    out.push_str("#![allow(dead_code, private_interfaces)]\n\n");
     out.push_str("use serde::{Deserialize, Serialize};\n\n");
 
     for (name, mt) in &merged {

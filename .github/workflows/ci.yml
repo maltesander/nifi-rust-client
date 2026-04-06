@@ -27,15 +27,3 @@ jobs:
         run: cargo install cargo-deny --locked
 
       - uses: pre-commit/action@v3.0.1
-
-      - name: Clippy (nifi-2-7-2)
-        run: cargo clippy -p nifi-rust-client --no-default-features --features nifi-2-7-2 -- -D warnings
-
-      - name: Test (nifi-2-7-2)
-        run: cargo test -p nifi-rust-client --no-default-features --features nifi-2-7-2
-
-      - name: Clippy (dynamic)
-        run: cargo clippy -p nifi-rust-client --features dynamic -- -D warnings
-
-      - name: Test (dynamic)
-        run: cargo test -p nifi-rust-client --features dynamic

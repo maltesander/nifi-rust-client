@@ -425,10 +425,18 @@ fn emit_version_arm(
         (Some(sub_struct), Some(primary_param)) => {
             // Sub-group endpoint: instantiate the sub-struct with client + primary_param
             // primary_param is already in rust form (e.g. "port_id", "id")
-            out.push_str(&format!(
-                "                let api = crate::{mod_name}::api::{tag_module_name}::{sub_struct} {{ client: self.client, {primary_param}: {arg} }};\n",
-                arg = escape_keyword(primary_param),
-            ));
+            let arg = escape_keyword(primary_param);
+            if arg == primary_param {
+                // Use shorthand: { client: self.client, provider_id }
+                out.push_str(&format!(
+                    "                let api = crate::{mod_name}::api::{tag_module_name}::{sub_struct} {{ client: self.client, {primary_param} }};\n",
+                ));
+            } else {
+                // Keyword escaped: { client: self.client, r#type: r#type }
+                out.push_str(&format!(
+                    "                let api = crate::{mod_name}::api::{tag_module_name}::{sub_struct} {{ client: self.client, {primary_param}: {arg} }};\n",
+                ));
+            }
         }
         _ => {
             out.push_str(&format!(

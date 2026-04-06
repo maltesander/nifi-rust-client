@@ -123,6 +123,7 @@ pub fn emit_dynamic_conversions(
     merged_type_names: &BTreeMap<String, Vec<String>>,
 ) -> String {
     let mut out = String::new();
+    out.push_str("#![allow(clippy::useless_conversion)]\n\n");
 
     for (_version, mod_name, spec) in specs {
         let type_map: BTreeMap<&str, &TypeKind> = spec
@@ -154,8 +155,16 @@ pub fn emit_dynamic_conversions(
                 "impl From<crate::{}::types::{}> for super::types::{} {{\n",
                 mod_name, type_name, type_name
             ));
+            // Use _v for Dto types with no fields in this version (avoids unused variable warning)
+            let uses_param = match kind {
+                TypeKind::Dto => field_lookup
+                    .get(type_name.as_str())
+                    .is_some_and(|f| !f.is_empty()),
+                _ => true, // Entity and StringEnum always use the parameter
+            };
+            let param_name = if uses_param { "v" } else { "_v" };
             out.push_str(&format!(
-                "    fn from(v: crate::{}::types::{}) -> Self {{\n",
+                "    fn from({param_name}: crate::{}::types::{}) -> Self {{\n",
                 mod_name, type_name
             ));
 

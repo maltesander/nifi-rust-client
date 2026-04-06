@@ -1,5 +1,7 @@
 // @generated — do not edit; run `cargo run -p nifi-openapi-gen`
 
+#![allow(dead_code, private_interfaces)]
+
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]

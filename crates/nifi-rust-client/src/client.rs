@@ -76,6 +76,7 @@ impl NifiClient {
     /// recommended pattern:
     ///
     /// ```no_run
+    /// # #[cfg(not(feature = "dynamic"))]
     /// # async fn example(client: &mut nifi_rust_client::NifiClient) -> Result<(), nifi_rust_client::NifiError> {
     /// use nifi_rust_client::NifiError;
     /// match client.flow_api().get_about_info().await {

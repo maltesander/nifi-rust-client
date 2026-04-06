@@ -33,6 +33,14 @@ repos:
         pass_filenames: false
         files: \.rs$|Cargo\.(toml|lock)
 
+      - id: cargo-test-dynamic
+        name: cargo-test-dynamic
+        language: system
+        entry: cargo test -p nifi-rust-client --features dynamic
+        stages: [pre-commit, pre-merge-commit]
+        pass_filenames: false
+        files: \.rs$|Cargo\.(toml|lock)
+
       - id: cargo-rustfmt
         name: cargo-rustfmt
         language: system
@@ -49,12 +57,18 @@ repos:
         pass_filenames: false
         files: \.rs$
 
+      - id: cargo-clippy-dynamic
+        name: cargo-clippy-dynamic
+        language: system
+        entry: cargo clippy -p nifi-rust-client --features dynamic -- -D warnings
+        stages: [pre-commit, pre-merge-commit]
+        pass_filenames: false
+        files: \.rs$
+
       - id: cargo-doc
         name: cargo-doc
         language: system
-        # --all-features is intentionally avoided: version features are mutually exclusive.
-        # Default features (latest version) are sufficient to validate docs for all public API.
-        entry: bash -c 'RUSTDOCFLAGS="-D warnings" cargo doc --no-deps'
+        entry: bash -c 'RUSTDOCFLAGS="-D warnings" cargo doc --features dynamic --no-deps'
         stages: [pre-commit, pre-merge-commit]
         pass_filenames: false
         files: \.rs$|Cargo\.(toml|lock)
@@ -70,7 +84,7 @@ repos:
       - id: openapi-gen-check
         name: openapi-gen-check
         language: system
-        entry: bash -c 'cargo run -p nifi-openapi-gen && git diff --exit-code -- crates/nifi-rust-client/src/api crates/nifi-rust-client/src/types crates/nifi-rust-client/tests/'
+        entry: bash -c 'cargo run -p nifi-openapi-gen && git diff --exit-code -- crates/nifi-rust-client/src/ crates/nifi-rust-client/tests/ crates/nifi-rust-client/Cargo.toml tests/Cargo.toml'
         stages: [pre-commit, pre-merge-commit]
         pass_filenames: false
         files: crates/nifi-openapi-gen/src/|crates/nifi-openapi-gen/specs/

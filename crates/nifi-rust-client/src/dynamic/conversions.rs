@@ -1,5 +1,7 @@
 // @generated — do not edit; run `cargo run -p nifi-openapi-gen`
 
+#![allow(clippy::useless_conversion)]
+
 impl From<crate::v2_6_0::types::AboutDto> for super::types::AboutDto {
     fn from(v: crate::v2_6_0::types::AboutDto) -> Self {
         Self {
@@ -106,7 +108,7 @@ impl From<crate::v2_6_0::types::AccessPolicySummaryEntity>
 }
 
 impl From<crate::v2_6_0::types::ActionDetailsDto> for super::types::ActionDetailsDto {
-    fn from(v: crate::v2_6_0::types::ActionDetailsDto) -> Self {
+    fn from(_v: crate::v2_6_0::types::ActionDetailsDto) -> Self {
         Self {}
     }
 }
@@ -499,7 +501,7 @@ impl From<crate::v2_6_0::types::ClusterSummaryEntity> for super::types::ClusterS
 }
 
 impl From<crate::v2_6_0::types::ComponentDetailsDto> for super::types::ComponentDetailsDto {
-    fn from(v: crate::v2_6_0::types::ComponentDetailsDto) -> Self {
+    fn from(_v: crate::v2_6_0::types::ComponentDetailsDto) -> Self {
         Self {}
     }
 }
@@ -5365,7 +5367,7 @@ impl From<crate::v2_6_0::types::StorageUsageDto> for super::types::StorageUsageD
 }
 
 impl From<crate::v2_6_0::types::StreamingOutput> for super::types::StreamingOutput {
-    fn from(v: crate::v2_6_0::types::StreamingOutput) -> Self {
+    fn from(_v: crate::v2_6_0::types::StreamingOutput) -> Self {
         Self {}
     }
 }
@@ -6486,7 +6488,7 @@ impl From<crate::v2_7_2::types::AccessPolicySummaryEntity>
 }
 
 impl From<crate::v2_7_2::types::ActionDetailsDto> for super::types::ActionDetailsDto {
-    fn from(v: crate::v2_7_2::types::ActionDetailsDto) -> Self {
+    fn from(_v: crate::v2_7_2::types::ActionDetailsDto) -> Self {
         Self {}
     }
 }
@@ -6925,7 +6927,7 @@ impl From<crate::v2_7_2::types::ClusterSummaryEntity> for super::types::ClusterS
 }
 
 impl From<crate::v2_7_2::types::ComponentDetailsDto> for super::types::ComponentDetailsDto {
-    fn from(v: crate::v2_7_2::types::ComponentDetailsDto) -> Self {
+    fn from(_v: crate::v2_7_2::types::ComponentDetailsDto) -> Self {
         Self {}
     }
 }
@@ -11896,7 +11898,7 @@ impl From<crate::v2_7_2::types::StorageUsageDto> for super::types::StorageUsageD
 }
 
 impl From<crate::v2_7_2::types::StreamingOutput> for super::types::StreamingOutput {
-    fn from(v: crate::v2_7_2::types::StreamingOutput) -> Self {
+    fn from(_v: crate::v2_7_2::types::StreamingOutput) -> Self {
         Self {}
     }
 }
@@ -13033,7 +13035,7 @@ impl From<crate::v2_8_0::types::AccessPolicySummaryEntity>
 }
 
 impl From<crate::v2_8_0::types::ActionDetailsDto> for super::types::ActionDetailsDto {
-    fn from(v: crate::v2_8_0::types::ActionDetailsDto) -> Self {
+    fn from(_v: crate::v2_8_0::types::ActionDetailsDto) -> Self {
         Self {}
     }
 }
@@ -13472,7 +13474,7 @@ impl From<crate::v2_8_0::types::ClusterSummaryEntity> for super::types::ClusterS
 }
 
 impl From<crate::v2_8_0::types::ComponentDetailsDto> for super::types::ComponentDetailsDto {
-    fn from(v: crate::v2_8_0::types::ComponentDetailsDto) -> Self {
+    fn from(_v: crate::v2_8_0::types::ComponentDetailsDto) -> Self {
         Self {}
     }
 }
@@ -18443,7 +18445,7 @@ impl From<crate::v2_8_0::types::StorageUsageDto> for super::types::StorageUsageD
 }
 
 impl From<crate::v2_8_0::types::StreamingOutput> for super::types::StreamingOutput {
-    fn from(v: crate::v2_8_0::types::StreamingOutput) -> Self {
+    fn from(_v: crate::v2_8_0::types::StreamingOutput) -> Self {
         Self {}
     }
 }
