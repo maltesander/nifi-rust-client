@@ -714,7 +714,7 @@ dependencies = [
 
 [[package]]
 name = "nifi-integration-tests"
-version = "0.1.1"
+version = "0.2.0"
 dependencies = [
  "nifi-rust-client",
  "tokio",
@@ -722,7 +722,7 @@ dependencies = [
 
 [[package]]
 name = "nifi-openapi-gen"
-version = "0.1.1"
+version = "0.2.0"
 dependencies = [
  "prettyplease",
  "semver",
@@ -733,7 +733,7 @@ dependencies = [
 
 [[package]]
 name = "nifi-rust-client"
-version = "0.1.1"
+version = "0.2.0"
 dependencies = [
  "reqwest",
  "serde",

@@ -7,6 +7,59 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-04-07
+
+### Added
+
+- Make commit hashes clickable GitHub links in changelog ([b7a5cd0](https://github.com/maltesander/nifi-rust-client/commit/b7a5cd0))
+- Add short commit hash to changelog entries ([31275b0](https://github.com/maltesander/nifi-rust-client/commit/31275b0))
+- Add release automation script ([5c37aec](https://github.com/maltesander/nifi-rust-client/commit/5c37aec))
+- Add NiFi 2.6.0 support and fix clippy/fmt warnings ([c6d5246](https://github.com/maltesander/nifi-rust-client/commit/c6d5246))
+- Add build_dynamic() to NifiClientBuilder ([7fd3a9d](https://github.com/maltesander/nifi-rust-client/commit/7fd3a9d))
+- Wire dynamic emitters into generator and generate dynamic module ([6a8feed](https://github.com/maltesander/nifi-rust-client/commit/6a8feed))
+- Add dynamic wiremock test emitter ([e1c8630](https://github.com/maltesander/nifi-rust-client/commit/e1c8630))
+- Add dynamic dispatch emitter for runtime version selection ([be16a95](https://github.com/maltesander/nifi-rust-client/commit/be16a95))
+- Add From impl emitter for dynamic type conversions ([23ac996](https://github.com/maltesander/nifi-rust-client/commit/23ac996))
+- Add common union type emitter for dynamic mode ([05da7c3](https://github.com/maltesander/nifi-rust-client/commit/05da7c3))
+- Add dynamic feature to Cargo.toml patching ([6e6025f](https://github.com/maltesander/nifi-rust-client/commit/6e6025f))
+- Update lib.rs generation for dynamic feature support ([e1a294e](https://github.com/maltesander/nifi-rust-client/commit/e1a294e))
+- Add UnsupportedVersion and UnsupportedEndpoint error variants ([601d5af](https://github.com/maltesander/nifi-rust-client/commit/601d5af))
+
+### Changed
+
+- Sort Cargo.toml features alphabetically ([cad3890](https://github.com/maltesander/nifi-rust-client/commit/cad3890))
+
+### Fixed
+
+- Add --allow-dirty to cargo publish dry-run ([1300c54](https://github.com/maltesander/nifi-rust-client/commit/1300c54))
+- Add blank lines around headings in changelog output ([5e65a7f](https://github.com/maltesander/nifi-rust-client/commit/5e65a7f))
+- Revert rust-cache to v2 (v3 does not exist yet) ([c7f9240](https://github.com/maltesander/nifi-rust-client/commit/c7f9240))
+- Bump actions to Node.js 22 compatible versions ([2c81d49](https://github.com/maltesander/nifi-rust-client/commit/2c81d49))
+- Handle None stdout when capture=False in run() ([f24f42d](https://github.com/maltesander/nifi-rust-client/commit/f24f42d))
+- Consolidate pre-commit hooks, fix clippy warnings in generated code ([fde3307](https://github.com/maltesander/nifi-rust-client/commit/fde3307))
+- Handle differing query params across versions in dynamic dispatch ([a9b0e69](https://github.com/maltesander/nifi-rust-client/commit/a9b0e69))
+- Add @generated header to generated test files ([394e067](https://github.com/maltesander/nifi-rust-client/commit/394e067))
+- Ensure all generated .rs files have @generated header ([a12252b](https://github.com/maltesander/nifi-rust-client/commit/a12252b))
+- Gate per-version tests with not(dynamic), fix DynamicClient Debug/from_client ([0b9acca](https://github.com/maltesander/nifi-rust-client/commit/0b9acca))
+- Gate per-version tests with not(feature = "dynamic") ([46c3306](https://github.com/maltesander/nifi-rust-client/commit/46c3306))
+
+### Documentation
+
+- Add supported NiFi versions section to root README ([f3f18cd](https://github.com/maltesander/nifi-rust-client/commit/f3f18cd))
+- Update root README for static and dynamic modes ([5bb8d01](https://github.com/maltesander/nifi-rust-client/commit/5bb8d01))
+- Set docs.rs to build with dynamic feature for full API docs ([81d3447](https://github.com/maltesander/nifi-rust-client/commit/81d3447))
+- Document static vs dynamic modes, update AGENTS.md ([6c06a97](https://github.com/maltesander/nifi-rust-client/commit/6c06a97))
+
+### Tests
+
+- Add query param dispatch tests for version-differing endpoints ([593a60a](https://github.com/maltesander/nifi-rust-client/commit/593a60a))
+- Add integration tests for dynamic client ([bfbfcbc](https://github.com/maltesander/nifi-rust-client/commit/bfbfcbc))
+- Add wiremock tests for dynamic client API dispatch ([9a02a83](https://github.com/maltesander/nifi-rust-client/commit/9a02a83))
+
+### Other
+
+- Add dynamic feature testing to CI and release workflows ([67f19fb](https://github.com/maltesander/nifi-rust-client/commit/67f19fb))
+
 ## [0.1.1] - 2026-04-06
 
 ### Fixed
@@ -35,6 +88,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Structured error handling** — `NifiError` via `snafu` with distinct variants for HTTP, auth, serialization, and network errors.
 - **Tracing** — all HTTP requests emit a `tracing::debug!` event with method and path before sending.
 
-[Unreleased]: https://github.com/maltesander/nifi-rust-client/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/maltesander/nifi-rust-client/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/maltesander/nifi-rust-client/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/maltesander/nifi-rust-client/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/maltesander/nifi-rust-client/releases/tag/v0.1.0
