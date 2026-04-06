@@ -10,8 +10,7 @@ homepage.workspace = true
 documentation.workspace = true
 
 [package.metadata.docs.rs]
-no-default-features = true
-features = ["nifi-2-8-0"]
+features = ["dynamic"]
 
 [dependencies]
 reqwest.workspace = true
