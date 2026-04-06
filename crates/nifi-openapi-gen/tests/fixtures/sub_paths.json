@@ -1,0 +1,86 @@
+{
+  "openapi": "3.0.1",
+  "paths": {
+    "/services/{id}": {
+      "get": {
+        "operationId": "getService",
+        "summary": "Gets a service",
+        "tags": ["Services"],
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ServiceEntity" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/services/{id}/config/analysis": {
+      "post": {
+        "operationId": "analyzeConfig",
+        "summary": "Analyzes configuration",
+        "tags": ["Services"],
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ServiceEntity" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/services/{id}/config/verification-requests/{requestId}": {
+      "get": {
+        "operationId": "getVerification",
+        "summary": "Gets a verification request",
+        "tags": ["Services"],
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string" } },
+          { "in": "path", "name": "requestId", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ServiceEntity" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/services/{id}/run-status": {
+      "put": {
+        "operationId": "updateRunStatus",
+        "summary": "Updates run status",
+        "tags": ["Services"],
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": { "200": {} }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ServiceDto": {
+        "type": "object",
+        "properties": { "name": { "type": "string" } }
+      },
+      "ServiceEntity": {
+        "type": "object",
+        "properties": { "service": { "$ref": "#/components/schemas/ServiceDto" } }
+      }
+    }
+  }
+}

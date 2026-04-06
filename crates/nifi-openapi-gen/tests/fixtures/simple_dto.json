@@ -1,0 +1,19 @@
+{
+  "openapi": "3.0.1",
+  "paths": {},
+  "components": {
+    "schemas": {
+      "AboutDTO": {
+        "type": "object",
+        "properties": {
+          "title": { "type": "string", "description": "The title" },
+          "version": { "type": "string" },
+          "count": { "type": "integer", "format": "int32" },
+          "size": { "type": "integer", "format": "int64" },
+          "ratio": { "type": "number", "format": "double" },
+          "active": { "type": "boolean" }
+        }
+      }
+    }
+  }
+}

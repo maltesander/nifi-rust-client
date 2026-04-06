@@ -1,0 +1,96 @@
+{
+  "openapi": "3.0.1",
+  "paths": {
+    "/flow/search-results": {
+      "get": {
+        "operationId": "searchFlow",
+        "tags": ["Flow"],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SearchResultsEntity" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/flow/cluster/search-results": {
+      "get": {
+        "operationId": "searchCluster",
+        "tags": ["Flow"],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ClusterSearchResultsEntity" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/flow/history": {
+      "get": {
+        "operationId": "queryHistory",
+        "tags": ["Flow"],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "offset",
+            "required": true,
+            "schema": { "type": "integer", "format": "int32" }
+          },
+          {
+            "in": "query",
+            "name": "count",
+            "required": true,
+            "schema": { "type": "integer", "format": "int32" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HistoryEntity" }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "SearchResultsEntity": {
+        "type": "object",
+        "properties": {}
+      },
+      "ClusterSearchResultsEntity": {
+        "type": "object",
+        "properties": {}
+      },
+      "HistoryEntity": {
+        "type": "object",
+        "properties": {}
+      }
+    }
+  }
+}

@@ -1,0 +1,670 @@
+use serde_json::Value;
+use std::collections::HashMap;
+
+pub struct ApiSpec {
+    pub tags: Vec<TagGroup>,
+    /// Flat map of ALL schema definitions by name (for $ref resolution).
+    pub all_types: Vec<TypeDef>,
+}
+
+pub struct TagGroup {
+    pub tag: String,
+    pub struct_name: String, // e.g. "FlowApi"
+    pub module_name: String, // e.g. "flow"  — used for file/module names
+    pub accessor_fn: String, // e.g. "flow_api" — used for NifiClient method name
+    pub types: Vec<TypeDef>, // types used by this tag's endpoints
+    pub root_endpoints: Vec<Endpoint>,
+    pub sub_groups: Vec<SubGroup>,
+}
+
+#[derive(Debug, Clone)]
+pub struct SubGroup {
+    pub name: String,                      // path segment after {id}, e.g. "config"
+    pub struct_name: String,               // e.g. "ControllerServicesConfigApi"
+    pub accessor_fn: String,               // e.g. "config"
+    pub primary_param: String,             // the param name baked into the sub-struct, e.g. "id"
+    pub primary_param_doc: Option<String>, // description for that param, e.g. "The process group id."
+    pub endpoints: Vec<Endpoint>,
+}
+
+#[derive(Debug, Clone)]
+pub enum TypeKind {
+    Dto,
+    Entity { field: String, inner: String }, // field name + inner DTO name
+    StringEnum(Vec<String>), // wire-value strings, e.g. ["KEEP_EXISTING", "REPLACE"]
+}
+
+#[derive(Debug, Clone)]
+pub struct TypeDef {
+    pub name: String,
+    pub kind: TypeKind,
+    pub fields: Vec<Field>,
+    pub doc: Option<String>,
+}
+
+#[derive(Debug, Clone)]
+pub struct Field {
+    pub rust_name: String,
+    pub serde_name: String,
+    pub ty: FieldType,
+    pub doc: Option<String>,
+}
+
+#[derive(Debug, Clone)]
+pub enum FieldType {
+    Str,
+    Bool,
+    I32,
+    I64,
+    F64,
+    Opt(Box<FieldType>),
+    List(Box<FieldType>),
+    /// Inline string enum — emitter generates a named type `{StructName}{PropName}`
+    Enum(Vec<String>),
+    /// Reference to another named type
+    Ref(String),
+    /// Map with string keys and typed values (`additionalProperties`)
+    Map(Box<FieldType>),
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum HttpMethod {
+    Get,
+    Post,
+    Put,
+    Delete,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum QueryParamType {
+    Str,
+    Bool,
+    I32,
+    I64,
+    F64,
+    Enum(Vec<String>), // wire-value strings
+}
+
+#[derive(Debug, Clone)]
+pub struct QueryParam {
+    /// Original name from the spec (used as the URL query key), e.g. "propertyName"
+    pub name: String,
+    /// snake_case Rust identifier, e.g. "property_name"
+    pub rust_name: String,
+    pub ty: QueryParamType,
+    pub required: bool,
+    /// Human-readable description from the spec, if any.
+    pub doc: Option<String>,
+    /// Some("ParameterContextHandlingStrategy") if this param is an enum type.
+    pub enum_type_name: Option<String>,
+}
+
+#[derive(Debug, Clone)]
+pub struct PathParam {
+    /// snake_case Rust identifier (and path placeholder name).
+    pub name: String,
+    /// Human-readable description from the spec, if any.
+    pub doc: Option<String>,
+}
+
+/// Describes what kind of request body an endpoint expects.
+#[derive(Debug, Clone, PartialEq)]
+pub enum RequestBodyKind {
+    /// `application/json` with a `$ref` schema — body type is in `request_type`.
+    Json,
+    /// `application/octet-stream` — raw bytes, no schema reference.
+    OctetStream,
+    /// `application/x-www-form-urlencoded` — not auto-generated; use manual implementations.
+    FormEncoded,
+}
+
+#[derive(Debug, Clone)]
+pub struct Endpoint {
+    pub method: HttpMethod,
+    pub path: String,
+    pub fn_name: String,
+    /// Short summary from the spec (`summary` field).
+    pub doc: Option<String>,
+    /// Long-form description from the spec (`description` field), if present.
+    pub description: Option<String>,
+    pub path_params: Vec<PathParam>,
+    pub request_type: Option<String>,
+    pub body_kind: Option<RequestBodyKind>,
+    /// Human-readable description of the request body, if any.
+    pub body_doc: Option<String>,
+    pub response_type: Option<String>,
+    /// If response_type is an Entity, the inner DTO name.
+    pub response_inner: Option<String>,
+    /// If response_type is an Entity, the field name to unwrap.
+    pub response_field: Option<String>,
+    pub query_params: Vec<QueryParam>,
+}
+
+pub fn load(path: &str) -> ApiSpec {
+    let text =
+        std::fs::read_to_string(path).unwrap_or_else(|e| panic!("cannot read spec at {path}: {e}"));
+    let spec: Value =
+        serde_json::from_str(&text).unwrap_or_else(|e| panic!("invalid JSON in {path}: {e}"));
+    let schemas = spec["components"]["schemas"]
+        .as_object()
+        .unwrap_or_else(|| panic!("missing components.schemas"));
+    let all_types = parse_all_types(schemas);
+    let tags = parse_tags(&spec, schemas, &all_types);
+    let mut all_types = all_types;
+
+    // Collect StringEnum TypeDefs from query params across all tags
+    for tag in &tags {
+        let all_eps = tag
+            .root_endpoints
+            .iter()
+            .chain(tag.sub_groups.iter().flat_map(|sg| sg.endpoints.iter()));
+        for ep in all_eps {
+            for qp in &ep.query_params {
+                if let (Some(type_name), QueryParamType::Enum(variants)) =
+                    (&qp.enum_type_name, &qp.ty)
+                {
+                    // Avoid duplicates (same enum may appear on multiple endpoints)
+                    if !all_types.iter().any(|t| &t.name == type_name) {
+                        all_types.push(TypeDef {
+                            name: type_name.clone(),
+                            kind: TypeKind::StringEnum(variants.clone()),
+                            fields: vec![],
+                            doc: None,
+                        });
+                    }
+                }
+            }
+        }
+    }
+
+    ApiSpec { tags, all_types }
+}
+
+fn parse_all_types(schemas: &serde_json::Map<String, Value>) -> Vec<TypeDef> {
+    schemas
+        .iter()
+        .filter_map(|(name, schema)| parse_type_def(name, schema, schemas))
+        .collect()
+}
+
+fn parse_type_def(
+    name: &str,
+    schema: &Value,
+    all_schemas: &serde_json::Map<String, Value>,
+) -> Option<TypeDef> {
+    let rust_name = spec_name_to_rust(name);
+    let props = match schema.get("properties").and_then(|p| p.as_object()) {
+        Some(p) => p,
+        None => {
+            // Skip non-object schemas (string enums, arrays, etc. at top level)
+            if schema
+                .get("type")
+                .and_then(|t| t.as_str())
+                .is_some_and(|t| t != "object")
+            {
+                return None;
+            }
+            // Generate empty struct for object schemas without properties
+            return Some(TypeDef {
+                name: rust_name,
+                kind: TypeKind::Dto,
+                fields: vec![],
+                doc: schema
+                    .get("description")
+                    .and_then(|d| d.as_str())
+                    .map(String::from),
+            });
+        }
+    };
+    let required: Vec<String> = schema
+        .get("required")
+        .and_then(|r| r.as_array())
+        .map(|arr| {
+            arr.iter()
+                .filter_map(|v| v.as_str().map(String::from))
+                .collect()
+        })
+        .unwrap_or_default();
+
+    // Entity detection: single property that is a $ref
+    if props.len() == 1 {
+        let (prop_name, prop_val) = props.iter().next().unwrap();
+        if let Some(ref_name) = extract_ref(prop_val) {
+            let inner = spec_name_to_rust(&ref_name);
+            let field = prop_name_to_rust(prop_name);
+            return Some(TypeDef {
+                name: rust_name,
+                kind: TypeKind::Entity { field, inner },
+                fields: vec![],
+                doc: schema
+                    .get("description")
+                    .and_then(|d| d.as_str())
+                    .map(String::from),
+            });
+        }
+    }
+
+    let fields = props
+        .iter()
+        .map(|(prop_name, prop_val)| {
+            let is_required = required.contains(prop_name);
+            let base_ty = parse_field_type(prop_val, all_schemas);
+            let ty = if is_required {
+                base_ty
+            } else {
+                FieldType::Opt(Box::new(base_ty))
+            };
+            Field {
+                rust_name: prop_name_to_rust(prop_name),
+                serde_name: prop_name.clone(),
+                ty,
+                doc: prop_val
+                    .get("description")
+                    .and_then(|d| d.as_str())
+                    .map(String::from),
+            }
+        })
+        .collect();
+
+    Some(TypeDef {
+        name: rust_name,
+        kind: TypeKind::Dto,
+        fields,
+        doc: schema
+            .get("description")
+            .and_then(|d| d.as_str())
+            .map(String::from),
+    })
+}
+
+fn parse_field_type(prop: &Value, _all: &serde_json::Map<String, Value>) -> FieldType {
+    if let Some(ref_name) = extract_ref(prop) {
+        return FieldType::Ref(spec_name_to_rust(&ref_name));
+    }
+    match prop.get("type").and_then(|t| t.as_str()) {
+        Some("string") => {
+            if let Some(variants) = prop.get("enum").and_then(|e| e.as_array()) {
+                let vs: Vec<String> = variants
+                    .iter()
+                    .filter_map(|v| v.as_str().map(String::from))
+                    .collect();
+                return FieldType::Enum(vs);
+            }
+            FieldType::Str
+        }
+        Some("boolean") => FieldType::Bool,
+        Some("integer") => match prop.get("format").and_then(|f| f.as_str()) {
+            Some("int64") => FieldType::I64,
+            _ => FieldType::I32,
+        },
+        Some("number") => FieldType::F64,
+        Some("array") => {
+            let items = &prop["items"];
+            let inner = parse_field_type(items, _all);
+            FieldType::List(Box::new(inner))
+        }
+        Some("object") => {
+            if let Some(additional) = prop.get("additionalProperties") {
+                let value_ty = parse_field_type(additional, _all);
+                // Wrap in Option: map values can be null in real NiFi responses
+                // even when the spec says type: string (e.g. unset processor properties).
+                FieldType::Map(Box::new(FieldType::Opt(Box::new(value_ty))))
+            } else {
+                // object without additionalProperties — treat as opaque JSON value
+                FieldType::Ref("serde_json::Value".to_string())
+            }
+        }
+        _ => FieldType::Str, // fallback for unknown
+    }
+}
+
+fn extract_ref(val: &Value) -> Option<String> {
+    val.get("$ref")
+        .and_then(|r| r.as_str())
+        .map(|r| r.trim_start_matches("#/components/schemas/").to_string())
+}
+
+/// Convert spec schema name to Rust PascalCase DTO name.
+/// "AboutDTO" → "AboutDto", "ProcessGroupEntity" → "ProcessGroupEntity"
+fn spec_name_to_rust(name: &str) -> String {
+    if let Some(stripped) = name.strip_suffix("DTO") {
+        format!("{stripped}Dto")
+    } else {
+        name.to_string()
+    }
+}
+
+/// Convert camelCase property name to snake_case.
+fn prop_name_to_rust(name: &str) -> String {
+    let mut out = String::new();
+    for (i, ch) in name.chars().enumerate() {
+        if ch.is_uppercase() && i > 0 {
+            out.push('_');
+        }
+        out.push(ch.to_ascii_lowercase());
+    }
+    out
+}
+
+/// Returns the first non-param path segment after the first `{param}`, or None.
+/// "/controller-services/{id}/config/analysis"   → Some("config")
+/// "/controller-services/{id}"                   → None
+/// "/flow/about"                                  → None
+/// "/flow/{group}/{artifact}/definitions/cs"      → Some("definitions")
+/// "/policies/{action}/{resource}"                → None (both segments are params)
+fn sub_group_segment(path: &str) -> Option<&str> {
+    let mut after_param = false;
+    for seg in path.split('/').filter(|s| !s.is_empty()) {
+        if after_param && !seg.starts_with('{') {
+            return Some(seg);
+        }
+        if seg.starts_with('{') && seg.ends_with('}') {
+            after_param = true;
+        }
+    }
+    None
+}
+
+/// "run-status" → "RunStatus", "config" → "Config"
+fn segment_to_pascal(seg: &str) -> String {
+    seg.split('-')
+        .map(|part| {
+            let mut c = part.chars();
+            match c.next() {
+                None => String::new(),
+                Some(f) => f.to_uppercase().collect::<String>() + c.as_str(),
+            }
+        })
+        .collect()
+}
+
+/// Returns the first `{param}` name in a path, snake_case-normalized.
+/// "/controller-services/{id}/config" → Some("id")
+fn first_path_param(path: &str) -> Option<String> {
+    path.split('/')
+        .find(|s| s.starts_with('{') && s.ends_with('}'))
+        .map(|s| prop_name_to_rust(&s[1..s.len() - 1].replace('-', "_")))
+}
+
+/// Capitalise the first character of a camelCase param name to produce PascalCase.
+/// "parameterContextHandlingStrategy" → "ParameterContextHandlingStrategy"
+fn pascal_case_param(s: &str) -> String {
+    let mut c = s.chars();
+    match c.next() {
+        None => String::new(),
+        Some(f) => f.to_uppercase().collect::<String>() + c.as_str(),
+    }
+}
+
+fn parse_tags(
+    spec: &Value,
+    _schemas: &serde_json::Map<String, Value>,
+    all_types: &[TypeDef],
+) -> Vec<TagGroup> {
+    let paths = match spec["paths"].as_object() {
+        Some(p) => p,
+        None => return vec![],
+    };
+
+    let mut tag_map: HashMap<String, Vec<Endpoint>> = HashMap::new();
+
+    for (raw_path, methods) in paths {
+        let methods = match methods.as_object() {
+            Some(m) => m,
+            None => continue,
+        };
+        for (http_method, op) in methods {
+            let method = match http_method.as_str() {
+                "get" => HttpMethod::Get,
+                "post" => HttpMethod::Post,
+                "put" => HttpMethod::Put,
+                "delete" => HttpMethod::Delete,
+                _ => continue,
+            };
+            let tags = op["tags"]
+                .as_array()
+                .map(|a| {
+                    a.iter()
+                        .filter_map(|v| v.as_str().map(String::from))
+                        .collect::<Vec<_>>()
+                })
+                .unwrap_or_default();
+            let tag = tags.into_iter().next().unwrap_or_else(|| "Other".into());
+
+            let operation_id = op["operationId"].as_str().unwrap_or("unknown");
+            let fn_name = operation_id_to_fn_name(operation_id);
+            let doc = op.get("summary").and_then(|s| s.as_str()).map(String::from);
+            let description = op
+                .get("description")
+                .and_then(|d| d.as_str())
+                .map(String::from);
+
+            let path_params: Vec<PathParam> = op["parameters"]
+                .as_array()
+                .unwrap_or(&vec![])
+                .iter()
+                .filter(|p| p.get("in").and_then(|i| i.as_str()) == Some("path"))
+                .filter_map(|p| {
+                    let raw = p.get("name").and_then(|n| n.as_str())?;
+                    Some(PathParam {
+                        name: prop_name_to_rust(&raw.replace('-', "_")),
+                        doc: p
+                            .get("description")
+                            .and_then(|d| d.as_str())
+                            .map(String::from),
+                    })
+                })
+                .collect();
+
+            let query_params: Vec<QueryParam> = op["parameters"]
+                .as_array()
+                .unwrap_or(&vec![])
+                .iter()
+                .filter(|p| p.get("in").and_then(|i| i.as_str()) == Some("query"))
+                .filter_map(|p| {
+                    let name = p.get("name").and_then(|n| n.as_str())?;
+                    let rust_name = prop_name_to_rust(&name.replace('-', "_"));
+                    let required = p.get("required").and_then(|r| r.as_bool()).unwrap_or(false);
+                    // Schema may be at p["schema"] (OpenAPI 3) or p itself (OpenAPI 2)
+                    let schema = p.get("schema").unwrap_or(p);
+
+                    // Detect enum variants before resolving the scalar type
+                    let enum_variants: Option<Vec<String>> =
+                        schema.get("enum").and_then(|e| e.as_array()).map(|arr| {
+                            arr.iter()
+                                .filter_map(|v| v.as_str().map(String::from))
+                                .collect()
+                        });
+
+                    let (ty, enum_type_name) = if let Some(variants) = enum_variants {
+                        let type_name = pascal_case_param(name);
+                        (QueryParamType::Enum(variants), Some(type_name))
+                    } else {
+                        let scalar = match schema.get("type").and_then(|t| t.as_str()) {
+                            Some("boolean") => QueryParamType::Bool,
+                            Some("integer") => {
+                                match schema.get("format").and_then(|f| f.as_str()) {
+                                    Some("int64") => QueryParamType::I64,
+                                    _ => QueryParamType::I32,
+                                }
+                            }
+                            Some("number") => QueryParamType::F64,
+                            _ => QueryParamType::Str,
+                        };
+                        (scalar, None)
+                    };
+
+                    Some(QueryParam {
+                        name: name.to_string(),
+                        rust_name,
+                        ty,
+                        required,
+                        doc: p
+                            .get("description")
+                            .and_then(|d| d.as_str())
+                            .map(String::from),
+                        enum_type_name,
+                    })
+                })
+                .collect();
+
+            let request_body = op.get("requestBody");
+            let request_type = request_body
+                .and_then(|rb| rb["content"]["application/json"]["schema"]["$ref"].as_str())
+                .map(|r| r.trim_start_matches("#/components/schemas/").to_string())
+                .map(|n| spec_name_to_rust(&n));
+            let body_doc = request_body
+                .and_then(|rb| rb.get("description"))
+                .and_then(|d| d.as_str())
+                .map(String::from);
+            let body_kind = request_body.and_then(|rb| {
+                let content = rb.get("content")?;
+                if content.get("application/json").is_some() {
+                    Some(RequestBodyKind::Json)
+                } else if content.get("application/octet-stream").is_some() {
+                    Some(RequestBodyKind::OctetStream)
+                } else if content.get("application/x-www-form-urlencoded").is_some() {
+                    Some(RequestBodyKind::FormEncoded)
+                } else {
+                    None
+                }
+            });
+
+            let responses = op.get("responses");
+            let response_schema_ref = responses
+                .and_then(|r| {
+                    r.get("200")
+                        .or_else(|| r.get("201"))
+                        .or_else(|| r.get("default"))
+                })
+                .and_then(|r| r["content"]["application/json"]["schema"]["$ref"].as_str())
+                .map(|r| r.trim_start_matches("#/components/schemas/").to_string());
+
+            let (response_type, response_inner, response_field) = match response_schema_ref {
+                None => (None, None, None),
+                Some(ref_name) => {
+                    let rust_name = spec_name_to_rust(&ref_name);
+                    let entity_info =
+                        all_types
+                            .iter()
+                            .find(|t| t.name == rust_name)
+                            .and_then(|t| {
+                                if let TypeKind::Entity { field, inner } = &t.kind {
+                                    Some((field.clone(), inner.clone()))
+                                } else {
+                                    None
+                                }
+                            });
+                    match entity_info {
+                        Some((field, inner)) => (Some(rust_name), Some(inner), Some(field)),
+                        None => (Some(rust_name), None, None),
+                    }
+                }
+            };
+
+            let endpoint = Endpoint {
+                method,
+                path: raw_path.clone(),
+                fn_name,
+                doc,
+                description,
+                path_params,
+                request_type,
+                body_kind,
+                body_doc,
+                response_type,
+                response_inner,
+                response_field,
+                query_params,
+            };
+            tag_map.entry(tag).or_default().push(endpoint);
+        }
+    }
+
+    let mut groups: Vec<TagGroup> = tag_map
+        .into_iter()
+        .map(|(tag, all_endpoints)| {
+            let struct_name = format!("{}Api", tag.replace(' ', ""));
+            let module_name = tag.to_lowercase().replace(' ', "_");
+            let accessor_fn = tag_to_accessor(&tag);
+            let parent_base = struct_name
+                .strip_suffix("Api")
+                .unwrap_or(&struct_name)
+                .to_string();
+
+            // Split endpoints: root vs. sub-group.
+            // BTreeMap preserves deterministic ordering by accessor_fn.
+            // Tuple: (raw_seg, primary_param, endpoints)
+            let mut root_endpoints: Vec<Endpoint> = vec![];
+            let mut sub_map: std::collections::BTreeMap<String, (String, String, Vec<Endpoint>)> =
+                std::collections::BTreeMap::new();
+
+            for ep in all_endpoints {
+                match sub_group_segment(&ep.path) {
+                    None => root_endpoints.push(ep),
+                    Some(raw_seg) => {
+                        let accessor = raw_seg.replace('-', "_");
+                        // Primary param is the first path param in this specific path,
+                        // computed per sub-group to avoid mismatches in tags with
+                        // multiple param names (e.g. {id} vs {group}).
+                        let pp = first_path_param(&ep.path).unwrap_or_else(|| "id".to_string());
+                        sub_map
+                            .entry(accessor)
+                            .or_insert_with(|| (raw_seg.to_string(), pp, vec![]))
+                            .2
+                            .push(ep);
+                    }
+                }
+            }
+
+            let sub_groups = sub_map
+                .into_iter()
+                .map(|(accessor_fn, (raw_seg, primary_param, endpoints))| {
+                    let pascal = segment_to_pascal(&raw_seg);
+                    // Pull the description of the primary path param from any endpoint in the group.
+                    let primary_param_doc = endpoints.iter().find_map(|ep| {
+                        ep.path_params
+                            .iter()
+                            .find(|p| p.name == primary_param)
+                            .and_then(|p| p.doc.clone())
+                    });
+                    SubGroup {
+                        name: accessor_fn.clone(),
+                        struct_name: format!("{parent_base}{pascal}Api"),
+                        accessor_fn,
+                        primary_param: primary_param.clone(),
+                        primary_param_doc,
+                        endpoints,
+                    }
+                })
+                .collect();
+
+            TagGroup {
+                tag,
+                struct_name,
+                module_name,
+                accessor_fn,
+                types: vec![],
+                root_endpoints,
+                sub_groups,
+            }
+        })
+        .collect();
+    groups.sort_by(|a, b| a.tag.cmp(&b.tag));
+    groups
+}
+
+fn operation_id_to_fn_name(id: &str) -> String {
+    let mut out = String::new();
+    for (i, ch) in id.chars().enumerate() {
+        if ch.is_uppercase() && i > 0 {
+            out.push('_');
+        }
+        out.push(ch.to_ascii_lowercase());
+    }
+    out
+}
+
+fn tag_to_accessor(tag: &str) -> String {
+    format!("{}_api", tag.to_lowercase().replace(' ', "_"))
+}

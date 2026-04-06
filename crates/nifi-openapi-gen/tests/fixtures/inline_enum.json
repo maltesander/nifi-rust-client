@@ -1,0 +1,18 @@
+{
+  "openapi": "3.0.1",
+  "paths": {},
+  "components": {
+    "schemas": {
+      "PolicyDTO": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": ["read", "write"],
+            "description": "The action"
+          }
+        }
+      }
+    }
+  }
+}

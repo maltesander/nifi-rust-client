@@ -1,0 +1,17 @@
+mod emit_api;
+mod emit_tests;
+mod emit_types;
+pub mod parser;
+
+pub use emit_api::emit_api;
+pub use emit_tests::emit_tests;
+pub use emit_types::emit_types;
+pub use parser::{
+    ApiSpec, Endpoint, Field, FieldType, HttpMethod, QueryParam, QueryParamType, SubGroup,
+    TagGroup, TypeDef, TypeKind, load,
+};
+
+/// Absolute path to the nifi-openapi-gen crate directory.
+/// Use this in build.rs to locate spec files:
+/// `format!("{}/specs/nifi-api.json", nifi_openapi_gen::SPECS_DIR)`
+pub const SPECS_DIR: &str = env!("CARGO_MANIFEST_DIR");

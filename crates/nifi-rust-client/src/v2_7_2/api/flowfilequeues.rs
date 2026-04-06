@@ -1,0 +1,221 @@
+use crate::NifiClient;
+use crate::NifiError;
+pub struct FlowFileQueuesApi<'a> {
+    pub(crate) client: &'a NifiClient,
+}
+#[allow(
+    private_interfaces,
+    clippy::too_many_arguments,
+    clippy::vec_init_then_push
+)]
+impl<'a> FlowFileQueuesApi<'a> {
+    /// Scope operations to the `drop_requests` sub-resource of a specific process group.
+    ///
+    /// - `id`: The connection id.
+    pub fn drop_requests<'b>(&'b self, id: &'b str) -> FlowFileQueuesDropRequestsApi<'b> {
+        FlowFileQueuesDropRequestsApi {
+            client: self.client,
+            id,
+        }
+    }
+    /// Scope operations to the `flowfiles` sub-resource of a specific process group.
+    ///
+    /// - `id`: The connection id.
+    pub fn flowfiles<'b>(&'b self, id: &'b str) -> FlowFileQueuesFlowfilesApi<'b> {
+        FlowFileQueuesFlowfilesApi {
+            client: self.client,
+            id,
+        }
+    }
+    /// Scope operations to the `listing_requests` sub-resource of a specific process group.
+    ///
+    /// - `id`: The connection id.
+    pub fn listing_requests<'b>(&'b self, id: &'b str) -> FlowFileQueuesListingRequestsApi<'b> {
+        FlowFileQueuesListingRequestsApi {
+            client: self.client,
+            id,
+        }
+    }
+}
+pub struct FlowFileQueuesDropRequestsApi<'a> {
+    pub(crate) client: &'a NifiClient,
+    pub(crate) id: &'a str,
+}
+#[allow(
+    private_interfaces,
+    clippy::too_many_arguments,
+    clippy::vec_init_then_push
+)]
+impl<'a> FlowFileQueuesDropRequestsApi<'a> {
+    /// Creates a request to drop the contents of the queue in this connection.
+    ///
+    /// Calls `POST /nifi-api/flowfile-queues/{id}/drop-requests`.
+    pub async fn create_drop_request(&self) -> Result<(), NifiError> {
+        let id = self.id;
+        self.client
+            .post_void_no_body(&format!("/flowfile-queues/{id}/drop-requests"))
+            .await
+    }
+    /// Cancels and/or removes a request to drop the contents of this connection.
+    ///
+    /// Calls `DELETE /nifi-api/flowfile-queues/{id}/drop-requests/{drop-request-id}`.
+    ///
+    /// # Parameters
+    /// - `drop_request_id`: The drop request id.
+    pub async fn remove_drop_request(
+        &self,
+        drop_request_id: &str,
+    ) -> Result<crate::types::DropRequestDto, NifiError> {
+        let id = self.id;
+        let e: crate::types::DropRequestEntity = self
+            .client
+            .delete_returning(&format!(
+                "/flowfile-queues/{id}/drop-requests/{drop_request_id}"
+            ))
+            .await?;
+        Ok(e.drop_request)
+    }
+    /// Gets the current status of a drop request for the specified connection.
+    ///
+    /// Calls `GET /nifi-api/flowfile-queues/{id}/drop-requests/{drop-request-id}`.
+    ///
+    /// # Parameters
+    /// - `drop_request_id`: The drop request id.
+    pub async fn get_drop_request(
+        &self,
+        drop_request_id: &str,
+    ) -> Result<crate::types::DropRequestDto, NifiError> {
+        let id = self.id;
+        let e: crate::types::DropRequestEntity = self
+            .client
+            .get(&format!(
+                "/flowfile-queues/{id}/drop-requests/{drop_request_id}"
+            ))
+            .await?;
+        Ok(e.drop_request)
+    }
+}
+pub struct FlowFileQueuesFlowfilesApi<'a> {
+    pub(crate) client: &'a NifiClient,
+    pub(crate) id: &'a str,
+}
+#[allow(
+    private_interfaces,
+    clippy::too_many_arguments,
+    clippy::vec_init_then_push
+)]
+impl<'a> FlowFileQueuesFlowfilesApi<'a> {
+    /// Gets a FlowFile from a Connection.
+    ///
+    /// Calls `GET /nifi-api/flowfile-queues/{id}/flowfiles/{flowfile-uuid}`.
+    ///
+    /// # Parameters
+    /// - `flowfile_uuid`: The flowfile uuid.
+    /// - `cluster_node_id`: The id of the node where the content exists if clustered.
+    pub async fn get_flow_file(
+        &self,
+        flowfile_uuid: &str,
+        cluster_node_id: Option<&str>,
+    ) -> Result<crate::types::FlowFileDto, NifiError> {
+        let id = self.id;
+        let mut query: Vec<(&str, String)> = vec![];
+        if let Some(v) = cluster_node_id {
+            query.push(("clusterNodeId", v.to_string()));
+        }
+        let e: crate::types::FlowFileEntity = self
+            .client
+            .get_with_query(
+                &format!("/flowfile-queues/{id}/flowfiles/{flowfile_uuid}"),
+                &query,
+            )
+            .await?;
+        Ok(e.flow_file)
+    }
+    /// Gets the content for a FlowFile in a Connection.
+    ///
+    /// Calls `GET /nifi-api/flowfile-queues/{id}/flowfiles/{flowfile-uuid}/content`.
+    ///
+    /// # Parameters
+    /// - `flowfile_uuid`: The flowfile uuid.
+    /// - `client_id`: If the client id is not specified, new one will be generated. This value (whether specified or generated) is included in the response.
+    /// - `cluster_node_id`: The id of the node where the content exists if clustered.
+    pub async fn download_flow_file_content(
+        &self,
+        flowfile_uuid: &str,
+        client_id: Option<&str>,
+        cluster_node_id: Option<&str>,
+    ) -> Result<(), NifiError> {
+        let id = self.id;
+        let mut query: Vec<(&str, String)> = vec![];
+        if let Some(v) = client_id {
+            query.push(("clientId", v.to_string()));
+        }
+        if let Some(v) = cluster_node_id {
+            query.push(("clusterNodeId", v.to_string()));
+        }
+        self.client
+            .get_void_with_query(
+                &format!("/flowfile-queues/{id}/flowfiles/{flowfile_uuid}/content"),
+                &query,
+            )
+            .await
+    }
+}
+pub struct FlowFileQueuesListingRequestsApi<'a> {
+    pub(crate) client: &'a NifiClient,
+    pub(crate) id: &'a str,
+}
+#[allow(
+    private_interfaces,
+    clippy::too_many_arguments,
+    clippy::vec_init_then_push
+)]
+impl<'a> FlowFileQueuesListingRequestsApi<'a> {
+    /// Lists the contents of the queue in this connection.
+    ///
+    /// Calls `POST /nifi-api/flowfile-queues/{id}/listing-requests`.
+    pub async fn create_flow_file_listing(&self) -> Result<(), NifiError> {
+        let id = self.id;
+        self.client
+            .post_void_no_body(&format!("/flowfile-queues/{id}/listing-requests"))
+            .await
+    }
+    /// Cancels and/or removes a request to list the contents of this connection.
+    ///
+    /// Calls `DELETE /nifi-api/flowfile-queues/{id}/listing-requests/{listing-request-id}`.
+    ///
+    /// # Parameters
+    /// - `listing_request_id`: The listing request id.
+    pub async fn delete_listing_request(
+        &self,
+        listing_request_id: &str,
+    ) -> Result<crate::types::ListingRequestDto, NifiError> {
+        let id = self.id;
+        let e: crate::types::ListingRequestEntity = self
+            .client
+            .delete_returning(&format!(
+                "/flowfile-queues/{id}/listing-requests/{listing_request_id}"
+            ))
+            .await?;
+        Ok(e.listing_request)
+    }
+    /// Gets the current status of a listing request for the specified connection.
+    ///
+    /// Calls `GET /nifi-api/flowfile-queues/{id}/listing-requests/{listing-request-id}`.
+    ///
+    /// # Parameters
+    /// - `listing_request_id`: The listing request id.
+    pub async fn get_listing_request(
+        &self,
+        listing_request_id: &str,
+    ) -> Result<crate::types::ListingRequestDto, NifiError> {
+        let id = self.id;
+        let e: crate::types::ListingRequestEntity = self
+            .client
+            .get(&format!(
+                "/flowfile-queues/{id}/listing-requests/{listing_request_id}"
+            ))
+            .await?;
+        Ok(e.listing_request)
+    }
+}

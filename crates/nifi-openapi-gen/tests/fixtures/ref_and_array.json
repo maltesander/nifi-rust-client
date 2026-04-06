@@ -1,0 +1,28 @@
+{
+  "openapi": "3.0.1",
+  "paths": {},
+  "components": {
+    "schemas": {
+      "ItemDTO": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" }
+        }
+      },
+      "ContainerDTO": {
+        "type": "object",
+        "properties": {
+          "item": { "$ref": "#/components/schemas/ItemDTO" },
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/ItemDTO" }
+          },
+          "tags": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        }
+      }
+    }
+  }
+}

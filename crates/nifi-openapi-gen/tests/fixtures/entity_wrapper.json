@@ -1,0 +1,20 @@
+{
+  "openapi": "3.0.1",
+  "paths": {},
+  "components": {
+    "schemas": {
+      "AboutDTO": {
+        "type": "object",
+        "properties": {
+          "title": { "type": "string" }
+        }
+      },
+      "AboutEntity": {
+        "type": "object",
+        "properties": {
+          "about": { "$ref": "#/components/schemas/AboutDTO" }
+        }
+      }
+    }
+  }
+}

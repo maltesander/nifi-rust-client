@@ -1,0 +1,61 @@
+{
+  "openapi": "3.0.1",
+  "paths": {
+    "/flow/about": {
+      "get": {
+        "operationId": "getAboutInfo",
+        "summary": "Retrieves details about this NiFi",
+        "tags": ["Flow"],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AboutEntity" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/processors/{id}": {
+      "delete": {
+        "operationId": "deleteProcessor",
+        "summary": "Deletes a processor",
+        "tags": ["Processors"],
+        "parameters": [
+          { "in": "path", "name": "id", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ProcessorEntity" }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AboutDTO": {
+        "type": "object",
+        "properties": { "title": { "type": "string" } }
+      },
+      "AboutEntity": {
+        "type": "object",
+        "properties": { "about": { "$ref": "#/components/schemas/AboutDTO" } }
+      },
+      "ProcessorDTO": {
+        "type": "object",
+        "properties": { "name": { "type": "string" } }
+      },
+      "ProcessorEntity": {
+        "type": "object",
+        "properties": { "component": { "$ref": "#/components/schemas/ProcessorDTO" } }
+      }
+    }
+  }
+}
