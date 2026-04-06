@@ -140,4 +140,31 @@ impl NifiClientBuilder {
         let http = builder.build().context(HttpSnafu)?;
         Ok(NifiClient::from_parts(self.base_url, http))
     }
+
+    /// Build a [`DynamicClient`](crate::dynamic::DynamicClient) that auto-detects the NiFi version.
+    ///
+    /// Connects to the NiFi instance, calls the about endpoint to detect
+    /// the API version, and returns a client that dispatches to the correct
+    /// generated API module at runtime.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// # async fn example() -> Result<(), nifi_rust_client::NifiError> {
+    /// use nifi_rust_client::NifiClientBuilder;
+    ///
+    /// let mut client = NifiClientBuilder::new("https://nifi.example.com:8443")?
+    ///     .danger_accept_invalid_certs(true)
+    ///     .build_dynamic()
+    ///     .await?;
+    ///
+    /// client.login("admin", "password").await?;
+    /// # Ok(())
+    /// # }
+    /// ```
+    #[cfg(feature = "dynamic")]
+    pub async fn build_dynamic(self) -> Result<crate::dynamic::DynamicClient, NifiError> {
+        let client = self.build()?;
+        crate::dynamic::DynamicClient::from_client(client).await
+    }
 }
