@@ -1,0 +1,20 @@
+[package]
+name = "nifi-integration-tests"
+version = "0.1.0"
+description = "Integration tests for nifi-rust-client against a real NiFi instance"
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+publish = false
+
+[dev-dependencies]
+nifi-rust-client = { workspace = true, default-features = false }
+tokio = { workspace = true, features = ["rt", "rt-multi-thread", "macros"] }
+
+[lints]
+workspace = true
+
+[features]
+nifi-2-8-0 = ["nifi-rust-client/nifi-2-8-0"]
+default = ["nifi-2-8-0"]
+nifi-2-7-2 = ["nifi-rust-client/nifi-2-7-2"]
