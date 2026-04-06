@@ -1,6 +1,6 @@
 [package]
 name = "nifi-integration-tests"
-version = "0.1.0"
+version.workspace = true
 description = "Integration tests for nifi-rust-client against a real NiFi instance"
 edition.workspace = true
 license.workspace = true

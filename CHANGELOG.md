@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-04-06
+
+### Fixed
+
+- **docs.rs build** — use explicit feature instead of `all-features` to avoid mutually exclusive version conflict.
+- **CI workflows** — replace duplicated cargo steps with `pre-commit/action` for consistent checks.
+- **rustfmt warnings** — remove nightly-only options from `rustfmt.toml`, keep `style_edition = "2024"`.
+- **pre-commit openapi-gen-check** — fix hook naming and `git diff` path separator.
+
 ## [0.1.0] - 2026-04-06
 
 ### Added
@@ -24,5 +33,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Structured error handling** — `NifiError` via `snafu` with distinct variants for HTTP, auth, serialization, and network errors.
 - **Tracing** — all HTTP requests emit a `tracing::debug!` event with method and path before sending.
 
-[Unreleased]: https://github.com/maltesander/nifi-rust-client/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/maltesander/nifi-rust-client/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/maltesander/nifi-rust-client/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/maltesander/nifi-rust-client/releases/tag/v0.1.0
