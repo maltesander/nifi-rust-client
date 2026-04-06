@@ -33,6 +33,12 @@ jobs:
       - name: Test (nifi-2-7-2)
         run: cargo test -p nifi-rust-client --no-default-features --features nifi-2-7-2
 
+      - name: Clippy (dynamic)
+        run: cargo clippy -p nifi-rust-client --features dynamic -- -D warnings
+
+      - name: Test (dynamic)
+        run: cargo test -p nifi-rust-client --features dynamic
+
   publish:
     name: Publish to crates.io
     runs-on: ubuntu-latest
