@@ -318,22 +318,28 @@ REPO_URL = "https://github.com/maltesander/nifi-rust-client"
 
 def parse_conventional_commits(old_version):
     """Parse git log since old_version tag and group commits by category."""
-    log = run(f"git log v{old_version}..HEAD --format=%s")
+    log = run(f"git log v{old_version}..HEAD --format='%h %s'")
     categories = {}
     for line in log.splitlines():
         line = line.strip()
         if not line:
             continue
-        match = re.match(r'^(\w+)(?:\([^)]*\))?:\s*(.+)$', line)
+        # Split short hash from subject
+        parts = line.split(" ", 1)
+        if len(parts) < 2:
+            continue
+        short_hash = parts[0]
+        subject = parts[1]
+        match = re.match(r'^(\w+)(?:\([^)]*\))?:\s*(.+)$', subject)
         if match:
             commit_type = match.group(1)
             message = match.group(2)
         else:
             commit_type = ""
-            message = line
+            message = subject
         category = COMMIT_TYPE_MAP.get(commit_type, "Other")
         message = message[0].upper() + message[1:] if message else message
-        categories.setdefault(category, []).append(message)
+        categories.setdefault(category, []).append(f"{message} ({short_hash})")
     return categories
 
 
