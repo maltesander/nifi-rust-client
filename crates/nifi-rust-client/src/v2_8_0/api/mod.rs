@@ -1,3 +1,5 @@
+// @generated — do not edit; run `cargo run -p nifi-openapi-gen`
+
 pub mod access;
 pub mod authentication;
 pub mod connections;

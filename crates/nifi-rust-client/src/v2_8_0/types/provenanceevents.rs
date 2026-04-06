@@ -1,3 +1,5 @@
+// @generated — do not edit; run `cargo run -p nifi-openapi-gen`
+
 #[allow(unused_imports)]
 use super::*;
 #[allow(unused_imports)]

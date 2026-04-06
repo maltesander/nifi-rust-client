@@ -26,9 +26,6 @@ pub fn emit_api_with_prefix(spec: &ApiSpec, types_prefix: &str) -> Vec<(String, 
 
 fn emit_mod(spec: &ApiSpec) -> String {
     let mut out = String::new();
-    out.push_str(
-        "// @generated — do not edit by hand; run `cargo run -p nifi-openapi-gen` to regenerate\n\n",
-    );
     for tag in &spec.tags {
         out.push_str(&format!("pub mod {};\n", tag.module_name));
     }
@@ -49,9 +46,6 @@ fn emit_mod(spec: &ApiSpec) -> String {
 
 fn emit_tag(tag: &TagGroup) -> String {
     let mut out = String::new();
-    out.push_str(
-        "// @generated — do not edit by hand; run `cargo run -p nifi-openapi-gen` to regenerate\n\n",
-    );
     out.push_str("use crate::NifiClient;\nuse crate::NifiError;\n\n");
     out.push_str(&format!(
         "pub struct {}<'a> {{\n    pub(crate) client: &'a NifiClient,\n}}\n\n",

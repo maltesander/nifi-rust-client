@@ -17,7 +17,10 @@ async fn dynamic_client_on(
         .mount(mock)
         .await;
 
-    let client = NifiClientBuilder::new(&mock.uri()).unwrap().build().unwrap();
+    let client = NifiClientBuilder::new(&mock.uri())
+        .unwrap()
+        .build()
+        .unwrap();
     nifi_rust_client::dynamic::DynamicClient::from_client(client)
         .await
         .unwrap()
@@ -43,7 +46,10 @@ async fn dynamic_about_returns_fields() {
         .mount(&mock)
         .await;
 
-    let client = NifiClientBuilder::new(&mock.uri()).unwrap().build().unwrap();
+    let client = NifiClientBuilder::new(&mock.uri())
+        .unwrap()
+        .build()
+        .unwrap();
     let dynamic = nifi_rust_client::dynamic::DynamicClient::from_client(client)
         .await
         .unwrap();
@@ -111,7 +117,10 @@ async fn dynamic_patch_version_detection() {
         .mount(&mock)
         .await;
 
-    let client = NifiClientBuilder::new(&mock.uri()).unwrap().build().unwrap();
+    let client = NifiClientBuilder::new(&mock.uri())
+        .unwrap()
+        .build()
+        .unwrap();
     let dynamic = nifi_rust_client::dynamic::DynamicClient::from_client(client)
         .await
         .unwrap();

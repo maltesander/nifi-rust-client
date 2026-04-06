@@ -8,7 +8,6 @@ use crate::parser::{ApiSpec, Endpoint, HttpMethod, QueryParam, RequestBodyKind, 
 /// Returns the content for `dynamic/mod.rs`.
 pub fn emit_dynamic(versions: &[(&str, &str, &str, &ApiSpec)]) -> String {
     let mut out = String::new();
-    out.push_str("// @generated — do not edit by hand; run `cargo run -p nifi-openapi-gen` to regenerate\n\n");
 
     // Module declarations
     out.push_str("pub mod types;\n");

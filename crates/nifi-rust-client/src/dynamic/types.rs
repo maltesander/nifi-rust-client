@@ -1,4 +1,4 @@
-// @generated
+// @generated — do not edit; run `cargo run -p nifi-openapi-gen`
 
 use serde::{Deserialize, Serialize};
 

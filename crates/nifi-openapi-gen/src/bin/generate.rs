@@ -390,7 +390,24 @@ fn main() {
         ));
     }
 
-    // 5. Write changed files
+    // 5. Ensure every .rs file has the @generated header
+    const GENERATED_HEADER: &str =
+        "// @generated — do not edit; run `cargo run -p nifi-openapi-gen`\n\n";
+    let targets: Vec<(PathBuf, String)> = targets
+        .into_iter()
+        .map(|(p, content)| {
+            if p.extension().and_then(|e| e.to_str()) == Some("rs")
+                && !content.starts_with("// @generated")
+                && !content.starts_with("#![cfg")
+            {
+                (p, format!("{GENERATED_HEADER}{content}"))
+            } else {
+                (p, content)
+            }
+        })
+        .collect();
+
+    // 6. Write changed files
     let written_paths: HashSet<PathBuf> = targets.iter().map(|(p, _)| p.clone()).collect();
     let mut written = 0usize;
     for (path, content) in &targets {

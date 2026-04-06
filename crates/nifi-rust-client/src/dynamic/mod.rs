@@ -1,3 +1,5 @@
+// @generated — do not edit; run `cargo run -p nifi-openapi-gen`
+
 mod conversions;
 pub mod types;
 use crate::{NifiClient, NifiError};

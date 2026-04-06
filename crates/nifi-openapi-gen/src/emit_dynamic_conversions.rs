@@ -115,9 +115,7 @@ pub fn emit_dynamic_conversions(
     specs: &[(&str, &str, &ApiSpec)],
     merged_type_names: &BTreeMap<String, Vec<String>>,
 ) -> String {
-    let mut out = String::from(
-        "// @generated — do not edit; run `cargo run -p nifi-openapi-gen`\n\n",
-    );
+    let mut out = String::new();
 
     for (_version, mod_name, spec) in specs {
         let type_map: BTreeMap<&str, &TypeKind> = spec

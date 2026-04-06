@@ -1,3 +1,5 @@
+// @generated — do not edit; run `cargo run -p nifi-openapi-gen`
+
 use crate::NifiClient;
 use crate::NifiError;
 pub struct FlowApi<'a> {

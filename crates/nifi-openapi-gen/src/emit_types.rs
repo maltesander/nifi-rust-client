@@ -48,9 +48,6 @@ pub fn emit_types(spec: &ApiSpec) -> Vec<(String, String)> {
 
     // mod.rs — declares modules and re-exports all for backward compat
     let mut mod_out = String::new();
-    mod_out.push_str(
-        "// @generated — do not edit by hand; run `cargo run -p nifi-openapi-gen` to regenerate\n\n",
-    );
     mod_out.push_str("pub mod common;\n");
     for tag_name in &tag_names {
         mod_out.push_str(&format!("pub mod {tag_name};\n"));
@@ -93,9 +90,6 @@ fn types_referenced_by_tag(tag: &TagGroup) -> HashSet<String> {
 
 fn emit_type_file(types: &[&TypeDef]) -> String {
     let mut out = String::new();
-    out.push_str(
-        "// @generated — do not edit by hand; run `cargo run -p nifi-openapi-gen` to regenerate\n\n",
-    );
     out.push_str("#[allow(unused_imports)]\n");
     out.push_str("use serde::{Deserialize, Serialize};\n");
     // Import sibling modules' types so cross-file $ref fields compile.
