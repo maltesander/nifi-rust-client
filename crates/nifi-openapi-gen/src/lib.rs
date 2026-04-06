@@ -1,10 +1,12 @@
 mod emit_api;
+mod emit_dynamic_conversions;
 mod emit_dynamic_types;
 mod emit_tests;
 mod emit_types;
 pub mod parser;
 
 pub use emit_api::emit_api;
+pub use emit_dynamic_conversions::emit_dynamic_conversions;
 pub use emit_dynamic_types::{collect_merged_field_names, emit_dynamic_types};
 pub use emit_tests::emit_tests;
 pub use emit_types::emit_types;
