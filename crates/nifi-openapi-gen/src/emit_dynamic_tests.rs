@@ -7,7 +7,6 @@ use crate::parser::ApiSpec;
 pub fn emit_dynamic_tests(specs: &[(&str, &str, &ApiSpec)]) -> String {
     let mut out = String::new();
     out.push_str("#![cfg(feature = \"dynamic\")]\n\n");
-    out.push_str("// @generated — do not edit; run `cargo run -p nifi-openapi-gen`\n\n");
     out.push_str("use wiremock::{MockServer, Mock, ResponseTemplate};\n");
     out.push_str("use wiremock::matchers::{method, path};\n");
     out.push_str("use nifi_rust_client::NifiClientBuilder;\n\n");

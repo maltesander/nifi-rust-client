@@ -2,9 +2,6 @@ use crate::parser::{ApiSpec, Endpoint, HttpMethod, QueryParam, SubGroup, TagGrou
 
 pub fn emit_tests(spec: &ApiSpec) -> String {
     let mut out = String::new();
-    out.push_str(
-        "// @generated — do not edit by hand; run `cargo run -p nifi-openapi-gen` to regenerate\n\n",
-    );
     out.push_str("use nifi_rust_client::NifiClientBuilder;\n");
     out.push_str("use wiremock::{MockServer, Mock, ResponseTemplate};\n");
     out.push_str("use wiremock::matchers::{header, method, path, query_param};\n\n");

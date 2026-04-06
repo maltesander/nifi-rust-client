@@ -1,5 +1,7 @@
 #![cfg(all(feature = "nifi-2-7-2", not(feature = "dynamic")))]
 
+// @generated — do not edit; run `cargo run -p nifi-openapi-gen`
+
 use nifi_rust_client::NifiClientBuilder;
 use wiremock::matchers::{header, method, path, query_param};
 use wiremock::{Mock, MockServer, ResponseTemplate};

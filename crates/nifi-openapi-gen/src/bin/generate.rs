@@ -396,13 +396,21 @@ fn main() {
     let targets: Vec<(PathBuf, String)> = targets
         .into_iter()
         .map(|(p, content)| {
-            if p.extension().and_then(|e| e.to_str()) == Some("rs")
-                && !content.starts_with("// @generated")
-                && !content.starts_with("#![cfg")
+            if p.extension().and_then(|e| e.to_str()) != Some("rs")
+                || content.contains("@generated")
             {
-                (p, format!("{GENERATED_HEADER}{content}"))
-            } else {
+                // Not an .rs file or already has the header
                 (p, content)
+            } else if content.starts_with("#![cfg") {
+                // Test files: insert header after the #![cfg(...)] line
+                if let Some(pos) = content.find('\n') {
+                    let (cfg_line, rest) = content.split_at(pos + 1);
+                    (p, format!("{cfg_line}\n{GENERATED_HEADER}{rest}"))
+                } else {
+                    (p, format!("{content}\n\n{GENERATED_HEADER}"))
+                }
+            } else {
+                (p, format!("{GENERATED_HEADER}{content}"))
             }
         })
         .collect();
