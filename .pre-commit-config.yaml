@@ -1,0 +1,76 @@
+---
+default_language_version:
+  node: system
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: cef0300fd0fc4d2a87a85fa2093c6b283ea36f4b # 5.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: detect-aws-credentials
+        args: ["--allow-missing-credentials"]
+      - id: detect-private-key
+
+  - repo: https://github.com/igorshubovych/markdownlint-cli
+    rev: 192ad822316c3a22fb3d3cc8aa6eafa0b8488360 # 0.45.0
+    hooks:
+      - id: markdownlint
+
+  - repo: https://github.com/koalaman/shellcheck-precommit
+    rev: 2491238703a5d3415bb2b7ff11388bf775372f29 # 0.10.0
+    hooks:
+      - id: shellcheck
+        args: ["--severity=info"]
+
+  - repo: local
+    hooks:
+      - id: cargo-test
+        name: cargo-test
+        language: system
+        entry: cargo test --workspace
+        stages: [pre-commit, pre-merge-commit]
+        pass_filenames: false
+        files: \.rs$|Cargo\.(toml|lock)
+
+      - id: cargo-rustfmt
+        name: cargo-rustfmt
+        language: system
+        entry: cargo fmt --all -- --check
+        stages: [pre-commit, pre-merge-commit]
+        pass_filenames: false
+        files: \.rs$
+
+      - id: cargo-clippy
+        name: cargo-clippy
+        language: system
+        entry: cargo clippy --all-targets -- -D warnings
+        stages: [pre-commit, pre-merge-commit]
+        pass_filenames: false
+        files: \.rs$
+
+      - id: cargo-doc
+        name: cargo-doc
+        language: system
+        # --all-features is intentionally avoided: version features are mutually exclusive.
+        # Default features (latest version) are sufficient to validate docs for all public API.
+        entry: bash -c 'RUSTDOCFLAGS="-D warnings" cargo doc --no-deps'
+        stages: [pre-commit, pre-merge-commit]
+        pass_filenames: false
+        files: \.rs$|Cargo\.(toml|lock)
+
+      - id: cargo-deny
+        name: cargo-deny
+        language: system
+        entry: cargo deny check
+        stages: [pre-commit, pre-merge-commit]
+        pass_filenames: false
+        files: Cargo\.(toml|lock)|deny\.toml
+
+      - id: codegen-check
+        name: codegen-check
+        language: system
+        entry: bash -c 'cargo run -p nifi-codegen && git diff --exit-code crates/nifi-rust-client/src/api crates/nifi-rust-client/src/types crates/nifi-rust-client/tests/generated_tests.rs'
+        stages: [pre-commit, pre-merge-commit]
+        pass_filenames: false
+        files: crates/nifi-codegen/src/|crates/nifi-codegen/specs/
