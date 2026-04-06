@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **CI workflows** — replace duplicated cargo steps with `pre-commit/action` for consistent checks.
 - **rustfmt warnings** — remove nightly-only options from `rustfmt.toml`, keep `style_edition = "2024"`.
 - **pre-commit openapi-gen-check** — fix hook naming and `git diff` path separator.
+- **CI cargo-deny** — install `cargo-deny` in CI before running pre-commit.
+- **EOF newlines** — fix missing trailing newlines in `CLAUDE.md` and `nifi-api.json`.
 
 ## [0.1.0] - 2026-04-06
 
