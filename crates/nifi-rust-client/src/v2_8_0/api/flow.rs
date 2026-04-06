@@ -12,8 +12,8 @@ impl<'a> FlowApi<'a> {
     /// Retrieves details about this NiFi to put in the About dialog
     ///
     /// Calls `GET /nifi-api/flow/about`.
-    pub async fn get_about_info(&self) -> Result<crate::types::AboutDto, NifiError> {
-        let e: crate::types::AboutEntity = self.client.get("/flow/about").await?;
+    pub async fn get_about_info(&self) -> Result<crate::v2_8_0::types::AboutDto, NifiError> {
+        let e: crate::v2_8_0::types::AboutEntity = self.client.get("/flow/about").await?;
         Ok(e.about)
     }
     /// Retrieves the additional details for the specified component type.
@@ -33,7 +33,7 @@ impl<'a> FlowApi<'a> {
         artifact: &str,
         version: &str,
         r#type: &str,
-    ) -> Result<crate::types::AdditionalDetailsEntity, NifiError> {
+    ) -> Result<crate::v2_8_0::types::AdditionalDetailsEntity, NifiError> {
         self.client
             .get(&format!(
                 "/flow/additional-details/{group}/{artifact}/{version}/{type}"
@@ -43,8 +43,8 @@ impl<'a> FlowApi<'a> {
     /// Retrieves the banners for this NiFi
     ///
     /// Calls `GET /nifi-api/flow/banners`.
-    pub async fn get_banners(&self) -> Result<crate::types::BannerDto, NifiError> {
-        let e: crate::types::BannerEntity = self.client.get("/flow/banners").await?;
+    pub async fn get_banners(&self) -> Result<crate::v2_8_0::types::BannerDto, NifiError> {
+        let e: crate::v2_8_0::types::BannerEntity = self.client.get("/flow/banners").await?;
         Ok(e.banners)
     }
     /// Gets current bulletins
@@ -66,7 +66,7 @@ impl<'a> FlowApi<'a> {
         source_id: Option<&str>,
         group_id: Option<&str>,
         limit: Option<&str>,
-    ) -> Result<crate::types::BulletinBoardDto, NifiError> {
+    ) -> Result<crate::v2_8_0::types::BulletinBoardDto, NifiError> {
         let mut query: Vec<(&str, String)> = vec![];
         if let Some(v) = after {
             query.push(("after", v.to_string()));
@@ -86,7 +86,7 @@ impl<'a> FlowApi<'a> {
         if let Some(v) = limit {
             query.push(("limit", v.to_string()));
         }
-        let e: crate::types::BulletinBoardEntity = self
+        let e: crate::v2_8_0::types::BulletinBoardEntity = self
             .client
             .get_with_query("/flow/bulletin-board", &query)
             .await?;
@@ -109,7 +109,7 @@ impl<'a> FlowApi<'a> {
     pub async fn search_cluster(
         &self,
         q: &str,
-    ) -> Result<crate::types::ClusterSearchResultsEntity, NifiError> {
+    ) -> Result<crate::v2_8_0::types::ClusterSearchResultsEntity, NifiError> {
         let mut query: Vec<(&str, String)> = vec![];
         query.push(("q", q.to_string()));
         self.client
@@ -119,16 +119,21 @@ impl<'a> FlowApi<'a> {
     /// The cluster summary for this NiFi
     ///
     /// Calls `GET /nifi-api/flow/cluster/summary`.
-    pub async fn get_cluster_summary(&self) -> Result<crate::types::ClusterSummaryDto, NifiError> {
-        let e: crate::types::ClusterSummaryEntity =
+    pub async fn get_cluster_summary(
+        &self,
+    ) -> Result<crate::v2_8_0::types::ClusterSummaryDto, NifiError> {
+        let e: crate::v2_8_0::types::ClusterSummaryEntity =
             self.client.get("/flow/cluster/summary").await?;
         Ok(e.cluster_summary)
     }
     /// Retrieves the configuration for this NiFi flow
     ///
     /// Calls `GET /nifi-api/flow/config`.
-    pub async fn get_flow_config(&self) -> Result<crate::types::FlowConfigurationDto, NifiError> {
-        let e: crate::types::FlowConfigurationEntity = self.client.get("/flow/config").await?;
+    pub async fn get_flow_config(
+        &self,
+    ) -> Result<crate::v2_8_0::types::FlowConfigurationDto, NifiError> {
+        let e: crate::v2_8_0::types::FlowConfigurationEntity =
+            self.client.get("/flow/config").await?;
         Ok(e.flow_configuration)
     }
     /// Retrieves the registered content viewers
@@ -136,7 +141,7 @@ impl<'a> FlowApi<'a> {
     /// Calls `GET /nifi-api/flow/content-viewers`.
     pub async fn get_content_viewers(
         &self,
-    ) -> Result<crate::types::ContentViewerEntity, NifiError> {
+    ) -> Result<crate::v2_8_0::types::ContentViewerEntity, NifiError> {
         self.client.get("/flow/content-viewers").await
     }
     /// Retrieves the Controller Service Definition for the specified component type.
@@ -156,7 +161,7 @@ impl<'a> FlowApi<'a> {
         artifact: &str,
         version: &str,
         r#type: &str,
-    ) -> Result<crate::types::ControllerServiceDefinition, NifiError> {
+    ) -> Result<crate::v2_8_0::types::ControllerServiceDefinition, NifiError> {
         self.client
             .get(&format!(
                 "/flow/controller-service-definition/{group}/{artifact}/{version}/{type}"
@@ -186,7 +191,7 @@ impl<'a> FlowApi<'a> {
         bundle_group_filter: Option<&str>,
         bundle_artifact_filter: Option<&str>,
         type_filter: Option<&str>,
-    ) -> Result<crate::types::ControllerServiceTypesEntity, NifiError> {
+    ) -> Result<crate::v2_8_0::types::ControllerServiceTypesEntity, NifiError> {
         let mut query: Vec<(&str, String)> = vec![];
         if let Some(v) = service_type {
             query.push(("serviceType", v.to_string()));
@@ -218,7 +223,7 @@ impl<'a> FlowApi<'a> {
     /// Calls `GET /nifi-api/flow/controller/bulletins`.
     pub async fn get_bulletins(
         &self,
-    ) -> Result<crate::types::ControllerBulletinsEntity, NifiError> {
+    ) -> Result<crate::v2_8_0::types::ControllerBulletinsEntity, NifiError> {
         self.client.get("/flow/controller/bulletins").await
     }
     /// Gets controller services for reporting tasks
@@ -233,7 +238,7 @@ impl<'a> FlowApi<'a> {
         &self,
         ui_only: Option<bool>,
         include_referencing_components: Option<bool>,
-    ) -> Result<crate::types::ControllerServicesEntity, NifiError> {
+    ) -> Result<crate::v2_8_0::types::ControllerServicesEntity, NifiError> {
         let mut query: Vec<(&str, String)> = vec![];
         if let Some(v) = ui_only {
             query.push(("uiOnly", v.to_string()));
@@ -248,7 +253,9 @@ impl<'a> FlowApi<'a> {
     /// Retrieves the user identity of the user making the request
     ///
     /// Calls `GET /nifi-api/flow/current-user`.
-    pub async fn get_current_user(&self) -> Result<crate::types::CurrentUserEntity, NifiError> {
+    pub async fn get_current_user(
+        &self,
+    ) -> Result<crate::v2_8_0::types::CurrentUserEntity, NifiError> {
         self.client.get("/flow/current-user").await
     }
     /// Retrieves the Flow Analysis Rule Definition for the specified component type.
@@ -268,7 +275,7 @@ impl<'a> FlowApi<'a> {
         artifact: &str,
         version: &str,
         r#type: &str,
-    ) -> Result<crate::types::FlowAnalysisRuleDefinition, NifiError> {
+    ) -> Result<crate::v2_8_0::types::FlowAnalysisRuleDefinition, NifiError> {
         self.client
             .get(&format!(
                 "/flow/flow-analysis-rule-definition/{group}/{artifact}/{version}/{type}"
@@ -290,7 +297,7 @@ impl<'a> FlowApi<'a> {
         bundle_group_filter: Option<&str>,
         bundle_artifact_filter: Option<&str>,
         r#type: Option<&str>,
-    ) -> Result<crate::types::FlowAnalysisRuleTypesEntity, NifiError> {
+    ) -> Result<crate::v2_8_0::types::FlowAnalysisRuleTypesEntity, NifiError> {
         let mut query: Vec<(&str, String)> = vec![];
         if let Some(v) = bundle_group_filter {
             query.push(("bundleGroupFilter", v.to_string()));
@@ -310,7 +317,7 @@ impl<'a> FlowApi<'a> {
     /// Calls `GET /nifi-api/flow/flow-analysis/results`.
     pub async fn get_all_flow_analysis_results(
         &self,
-    ) -> Result<crate::types::FlowAnalysisResultEntity, NifiError> {
+    ) -> Result<crate::v2_8_0::types::FlowAnalysisResultEntity, NifiError> {
         self.client.get("/flow/flow-analysis/results").await
     }
     /// Returns flow analysis results produced by the analysis of a given process group
@@ -322,7 +329,7 @@ impl<'a> FlowApi<'a> {
     pub async fn get_flow_analysis_results(
         &self,
         process_group_id: &str,
-    ) -> Result<crate::types::FlowAnalysisResultEntity, NifiError> {
+    ) -> Result<crate::v2_8_0::types::FlowAnalysisResultEntity, NifiError> {
         self.client
             .get(&format!("/flow/flow-analysis/results/{process_group_id}"))
             .await
@@ -344,7 +351,7 @@ impl<'a> FlowApi<'a> {
         artifact: &str,
         version: &str,
         r#type: &str,
-    ) -> Result<crate::types::FlowRegistryClientDefinition, NifiError> {
+    ) -> Result<crate::v2_8_0::types::FlowRegistryClientDefinition, NifiError> {
         self.client
             .get(&format!(
                 "/flow/flow-registry-client-definition/{group}/{artifact}/{version}/{type}"
@@ -376,7 +383,7 @@ impl<'a> FlowApi<'a> {
         end_date: Option<&str>,
         user_identity: Option<&str>,
         source_id: Option<&str>,
-    ) -> Result<crate::types::HistoryDto, NifiError> {
+    ) -> Result<crate::v2_8_0::types::HistoryDto, NifiError> {
         let mut query: Vec<(&str, String)> = vec![];
         query.push(("offset", offset.to_string()));
         query.push(("count", count.to_string()));
@@ -398,7 +405,7 @@ impl<'a> FlowApi<'a> {
         if let Some(v) = source_id {
             query.push(("sourceId", v.to_string()));
         }
-        let e: crate::types::HistoryEntity =
+        let e: crate::v2_8_0::types::HistoryEntity =
             self.client.get_with_query("/flow/history", &query).await?;
         Ok(e.history)
     }
@@ -413,8 +420,8 @@ impl<'a> FlowApi<'a> {
     pub async fn get_component_history(
         &self,
         component_id: &str,
-    ) -> Result<crate::types::ComponentHistoryDto, NifiError> {
-        let e: crate::types::ComponentHistoryEntity = self
+    ) -> Result<crate::v2_8_0::types::ComponentHistoryDto, NifiError> {
+        let e: crate::v2_8_0::types::ComponentHistoryEntity = self
             .client
             .get(&format!("/flow/history/components/{component_id}"))
             .await?;
@@ -428,13 +435,18 @@ impl<'a> FlowApi<'a> {
     ///
     /// # Parameters
     /// - `id`: The action id.
-    pub async fn get_action(&self, id: &str) -> Result<crate::types::ActionEntity, NifiError> {
+    pub async fn get_action(
+        &self,
+        id: &str,
+    ) -> Result<crate::v2_8_0::types::ActionEntity, NifiError> {
         self.client.get(&format!("/flow/history/{id}")).await
     }
     /// Gets all listen ports configured on this NiFi that the current user has access to
     ///
     /// Calls `GET /nifi-api/flow/listen-ports`.
-    pub async fn get_listen_ports(&self) -> Result<crate::types::ListenPortsEntity, NifiError> {
+    pub async fn get_listen_ports(
+        &self,
+    ) -> Result<crate::v2_8_0::types::ListenPortsEntity, NifiError> {
         self.client.get("/flow/listen-ports").await
     }
     /// Gets all metrics for the flow from a particular node
@@ -451,11 +463,11 @@ impl<'a> FlowApi<'a> {
     pub async fn get_flow_metrics(
         &self,
         producer: &str,
-        included_registries: Option<crate::types::IncludedRegistries>,
+        included_registries: Option<crate::v2_8_0::types::IncludedRegistries>,
         sample_name: Option<&str>,
         sample_label_value: Option<&str>,
         root_field_name: Option<&str>,
-        flow_metrics_reporting_strategy: Option<crate::types::FlowMetricsReportingStrategy>,
+        flow_metrics_reporting_strategy: Option<crate::v2_8_0::types::FlowMetricsReportingStrategy>,
     ) -> Result<(), NifiError> {
         let mut query: Vec<(&str, String)> = vec![];
         if let Some(v) = included_registries {
@@ -482,7 +494,7 @@ impl<'a> FlowApi<'a> {
     /// Calls `GET /nifi-api/flow/parameter-contexts`.
     pub async fn get_parameter_contexts(
         &self,
-    ) -> Result<crate::types::ParameterContextsEntity, NifiError> {
+    ) -> Result<crate::v2_8_0::types::ParameterContextsEntity, NifiError> {
         self.client.get("/flow/parameter-contexts").await
     }
     /// Retrieves the Parameter Provider Definition for the specified component type.
@@ -502,7 +514,7 @@ impl<'a> FlowApi<'a> {
         artifact: &str,
         version: &str,
         r#type: &str,
-    ) -> Result<crate::types::ParameterProviderDefinition, NifiError> {
+    ) -> Result<crate::v2_8_0::types::ParameterProviderDefinition, NifiError> {
         self.client
             .get(&format!(
                 "/flow/parameter-provider-definition/{group}/{artifact}/{version}/{type}"
@@ -524,7 +536,7 @@ impl<'a> FlowApi<'a> {
         bundle_group_filter: Option<&str>,
         bundle_artifact_filter: Option<&str>,
         r#type: Option<&str>,
-    ) -> Result<crate::types::ParameterProviderTypesEntity, NifiError> {
+    ) -> Result<crate::v2_8_0::types::ParameterProviderTypesEntity, NifiError> {
         let mut query: Vec<(&str, String)> = vec![];
         if let Some(v) = bundle_group_filter {
             query.push(("bundleGroupFilter", v.to_string()));
@@ -544,7 +556,7 @@ impl<'a> FlowApi<'a> {
     /// Calls `GET /nifi-api/flow/parameter-providers`.
     pub async fn get_parameter_providers(
         &self,
-    ) -> Result<crate::types::ParameterProvidersEntity, NifiError> {
+    ) -> Result<crate::v2_8_0::types::ParameterProvidersEntity, NifiError> {
         self.client.get("/flow/parameter-providers").await
     }
     /// Retrieves the types of prioritizers that this NiFi supports
@@ -554,7 +566,7 @@ impl<'a> FlowApi<'a> {
     /// Calls `GET /nifi-api/flow/prioritizers`.
     pub async fn get_prioritizers(
         &self,
-    ) -> Result<crate::types::PrioritizerTypesEntity, NifiError> {
+    ) -> Result<crate::v2_8_0::types::PrioritizerTypesEntity, NifiError> {
         self.client.get("/flow/prioritizers").await
     }
     /// Gets a process group
@@ -569,7 +581,7 @@ impl<'a> FlowApi<'a> {
         &self,
         id: &str,
         ui_only: Option<bool>,
-    ) -> Result<crate::types::ProcessGroupFlowEntity, NifiError> {
+    ) -> Result<crate::v2_8_0::types::ProcessGroupFlowEntity, NifiError> {
         let mut query: Vec<(&str, String)> = vec![];
         if let Some(v) = ui_only {
             query.push(("uiOnly", v.to_string()));
@@ -588,8 +600,8 @@ impl<'a> FlowApi<'a> {
     pub async fn schedule_components(
         &self,
         id: &str,
-        body: &crate::types::ScheduleComponentsEntity,
-    ) -> Result<crate::types::ScheduleComponentsEntity, NifiError> {
+        body: &crate::v2_8_0::types::ScheduleComponentsEntity,
+    ) -> Result<crate::v2_8_0::types::ScheduleComponentsEntity, NifiError> {
         self.client
             .put(&format!("/flow/process-groups/{id}"), body)
             .await
@@ -611,7 +623,7 @@ impl<'a> FlowApi<'a> {
         artifact: &str,
         version: &str,
         r#type: &str,
-    ) -> Result<crate::types::ProcessorDefinition, NifiError> {
+    ) -> Result<crate::v2_8_0::types::ProcessorDefinition, NifiError> {
         self.client
             .get(&format!(
                 "/flow/processor-definition/{group}/{artifact}/{version}/{type}"
@@ -633,7 +645,7 @@ impl<'a> FlowApi<'a> {
         bundle_group_filter: Option<&str>,
         bundle_artifact_filter: Option<&str>,
         r#type: Option<&str>,
-    ) -> Result<crate::types::ProcessorTypesEntity, NifiError> {
+    ) -> Result<crate::v2_8_0::types::ProcessorTypesEntity, NifiError> {
         let mut query: Vec<(&str, String)> = vec![];
         if let Some(v) = bundle_group_filter {
             query.push(("bundleGroupFilter", v.to_string()));
@@ -653,7 +665,7 @@ impl<'a> FlowApi<'a> {
     /// Calls `GET /nifi-api/flow/registries`.
     pub async fn get_registry_clients(
         &self,
-    ) -> Result<crate::types::FlowRegistryClientsEntity, NifiError> {
+    ) -> Result<crate::v2_8_0::types::FlowRegistryClientsEntity, NifiError> {
         self.client.get("/flow/registries").await
     }
     /// Retrieves the Reporting Task Definition for the specified component type.
@@ -673,7 +685,7 @@ impl<'a> FlowApi<'a> {
         artifact: &str,
         version: &str,
         r#type: &str,
-    ) -> Result<crate::types::ReportingTaskDefinition, NifiError> {
+    ) -> Result<crate::v2_8_0::types::ReportingTaskDefinition, NifiError> {
         self.client
             .get(&format!(
                 "/flow/reporting-task-definition/{group}/{artifact}/{version}/{type}"
@@ -695,7 +707,7 @@ impl<'a> FlowApi<'a> {
         bundle_group_filter: Option<&str>,
         bundle_artifact_filter: Option<&str>,
         r#type: Option<&str>,
-    ) -> Result<crate::types::ReportingTaskTypesEntity, NifiError> {
+    ) -> Result<crate::v2_8_0::types::ReportingTaskTypesEntity, NifiError> {
         let mut query: Vec<(&str, String)> = vec![];
         if let Some(v) = bundle_group_filter {
             query.push(("bundleGroupFilter", v.to_string()));
@@ -715,7 +727,7 @@ impl<'a> FlowApi<'a> {
     /// Calls `GET /nifi-api/flow/reporting-tasks`.
     pub async fn get_reporting_tasks(
         &self,
-    ) -> Result<crate::types::ReportingTasksEntity, NifiError> {
+    ) -> Result<crate::v2_8_0::types::ReportingTasksEntity, NifiError> {
         self.client.get("/flow/reporting-tasks").await
     }
     /// Download a snapshot of the given reporting tasks and any controller services they use
@@ -745,7 +757,7 @@ impl<'a> FlowApi<'a> {
     pub async fn get_reporting_task_snapshot(
         &self,
         reporting_task_id: Option<&str>,
-    ) -> Result<crate::types::VersionedReportingTaskSnapshot, NifiError> {
+    ) -> Result<crate::v2_8_0::types::VersionedReportingTaskSnapshot, NifiError> {
         let mut query: Vec<(&str, String)> = vec![];
         if let Some(v) = reporting_task_id {
             query.push(("reportingTaskId", v.to_string()));
@@ -759,8 +771,10 @@ impl<'a> FlowApi<'a> {
     /// Note: This endpoint is subject to change as NiFi and it's REST API evolve.
     ///
     /// Calls `GET /nifi-api/flow/runtime-manifest`.
-    pub async fn get_runtime_manifest(&self) -> Result<crate::types::RuntimeManifest, NifiError> {
-        let e: crate::types::RuntimeManifestEntity =
+    pub async fn get_runtime_manifest(
+        &self,
+    ) -> Result<crate::v2_8_0::types::RuntimeManifest, NifiError> {
+        let e: crate::v2_8_0::types::RuntimeManifestEntity =
             self.client.get("/flow/runtime-manifest").await?;
         Ok(e.runtime_manifest)
     }
@@ -773,7 +787,7 @@ impl<'a> FlowApi<'a> {
         &self,
         q: Option<&str>,
         a: Option<&str>,
-    ) -> Result<crate::types::SearchResultsDto, NifiError> {
+    ) -> Result<crate::v2_8_0::types::SearchResultsDto, NifiError> {
         let mut query: Vec<(&str, String)> = vec![];
         if let Some(v) = q {
             query.push(("q", v.to_string()));
@@ -781,7 +795,7 @@ impl<'a> FlowApi<'a> {
         if let Some(v) = a {
             query.push(("a", v.to_string()));
         }
-        let e: crate::types::SearchResultsEntity = self
+        let e: crate::v2_8_0::types::SearchResultsEntity = self
             .client
             .get_with_query("/flow/search-results", &query)
             .await?;
@@ -792,8 +806,9 @@ impl<'a> FlowApi<'a> {
     /// Calls `GET /nifi-api/flow/status`.
     pub async fn get_controller_status(
         &self,
-    ) -> Result<crate::types::ControllerStatusDto, NifiError> {
-        let e: crate::types::ControllerStatusEntity = self.client.get("/flow/status").await?;
+    ) -> Result<crate::v2_8_0::types::ControllerStatusDto, NifiError> {
+        let e: crate::v2_8_0::types::ControllerStatusEntity =
+            self.client.get("/flow/status").await?;
         Ok(e.controller_status)
     }
     /// Scope operations to the `branches` sub-resource of a specific process group.
@@ -875,7 +890,7 @@ impl<'a> FlowBranchesApi<'a> {
     /// Calls `GET /nifi-api/flow/registries/{id}/branches`.
     pub async fn get_branches(
         &self,
-    ) -> Result<crate::types::FlowRegistryBranchesEntity, NifiError> {
+    ) -> Result<crate::v2_8_0::types::FlowRegistryBranchesEntity, NifiError> {
         let id = self.id;
         self.client
             .get(&format!("/flow/registries/{id}/branches"))
@@ -910,7 +925,7 @@ impl<'a> FlowBranchesApi<'a> {
         version_b: &str,
         offset: Option<i32>,
         limit: Option<i32>,
-    ) -> Result<crate::types::FlowComparisonEntity, NifiError> {
+    ) -> Result<crate::v2_8_0::types::FlowComparisonEntity, NifiError> {
         let mut query: Vec<(&str, String)> = vec![];
         if let Some(v) = offset {
             query.push(("offset", v.to_string()));
@@ -941,7 +956,9 @@ impl<'a> FlowBreadcrumbsApi<'a> {
     /// Gets the breadcrumbs for a process group
     ///
     /// Calls `GET /nifi-api/flow/process-groups/{id}/breadcrumbs`.
-    pub async fn get_breadcrumbs(&self) -> Result<crate::types::FlowBreadcrumbEntity, NifiError> {
+    pub async fn get_breadcrumbs(
+        &self,
+    ) -> Result<crate::v2_8_0::types::FlowBreadcrumbEntity, NifiError> {
         let id = self.id;
         self.client
             .get(&format!("/flow/process-groups/{id}/breadcrumbs"))
@@ -967,7 +984,7 @@ impl<'a> FlowBucketsApi<'a> {
     pub async fn get_buckets(
         &self,
         branch: Option<&str>,
-    ) -> Result<crate::types::FlowRegistryBucketsEntity, NifiError> {
+    ) -> Result<crate::v2_8_0::types::FlowRegistryBucketsEntity, NifiError> {
         let id = self.id;
         let mut query: Vec<(&str, String)> = vec![];
         if let Some(v) = branch {
@@ -990,7 +1007,7 @@ impl<'a> FlowBucketsApi<'a> {
         registry_id: &str,
         bucket_id: &str,
         branch: Option<&str>,
-    ) -> Result<crate::types::VersionedFlowsEntity, NifiError> {
+    ) -> Result<crate::v2_8_0::types::VersionedFlowsEntity, NifiError> {
         let mut query: Vec<(&str, String)> = vec![];
         if let Some(v) = branch {
             query.push(("branch", v.to_string()));
@@ -1017,12 +1034,12 @@ impl<'a> FlowBucketsApi<'a> {
         bucket_id: &str,
         flow_id: &str,
         branch: Option<&str>,
-    ) -> Result<crate::types::VersionedFlowDto, NifiError> {
+    ) -> Result<crate::v2_8_0::types::VersionedFlowDto, NifiError> {
         let mut query: Vec<(&str, String)> = vec![];
         if let Some(v) = branch {
             query.push(("branch", v.to_string()));
         }
-        let e: crate::types::VersionedFlowEntity = self
+        let e: crate::v2_8_0::types::VersionedFlowEntity = self
             .client
             .get_with_query(
                 &format!(
@@ -1048,7 +1065,7 @@ impl<'a> FlowBucketsApi<'a> {
         bucket_id: &str,
         flow_id: &str,
         branch: Option<&str>,
-    ) -> Result<crate::types::VersionedFlowSnapshotMetadataSetEntity, NifiError> {
+    ) -> Result<crate::v2_8_0::types::VersionedFlowSnapshotMetadataSetEntity, NifiError> {
         let mut query: Vec<(&str, String)> = vec![];
         if let Some(v) = branch {
             query.push(("branch", v.to_string()));
@@ -1081,8 +1098,8 @@ impl<'a> FlowBulletinsApi<'a> {
     /// - `body`: The request to clear bulletins. If the components in the request are not specified, all authorized components will be considered.
     pub async fn clear_bulletins_1(
         &self,
-        body: &crate::types::ClearBulletinsForGroupRequestEntity,
-    ) -> Result<crate::types::ClearBulletinsForGroupResultsEntity, NifiError> {
+        body: &crate::v2_8_0::types::ClearBulletinsForGroupRequestEntity,
+    ) -> Result<crate::v2_8_0::types::ClearBulletinsForGroupResultsEntity, NifiError> {
         let id = self.id;
         self.client
             .post(
@@ -1118,7 +1135,7 @@ impl<'a> FlowControllerServicesApi<'a> {
         include_descendant_groups: Option<bool>,
         include_referencing_components: Option<bool>,
         ui_only: Option<bool>,
-    ) -> Result<crate::types::ControllerServicesEntity, NifiError> {
+    ) -> Result<crate::v2_8_0::types::ControllerServicesEntity, NifiError> {
         let id = self.id;
         let mut query: Vec<(&str, String)> = vec![];
         if let Some(v) = include_ancestor_groups {
@@ -1148,8 +1165,8 @@ impl<'a> FlowControllerServicesApi<'a> {
     /// - `body`: The request to schedule or unschedule. If the comopnents in the request are not specified, all authorized components will be considered.
     pub async fn activate_controller_services(
         &self,
-        body: &crate::types::ActivateControllerServicesEntity,
-    ) -> Result<crate::types::ActivateControllerServicesEntity, NifiError> {
+        body: &crate::v2_8_0::types::ActivateControllerServicesEntity,
+    ) -> Result<crate::v2_8_0::types::ActivateControllerServicesEntity, NifiError> {
         let id = self.id;
         self.client
             .put(
@@ -1180,7 +1197,7 @@ impl<'a> FlowStatisticsApi<'a> {
         &self,
         nodewise: Option<bool>,
         cluster_node_id: Option<&str>,
-    ) -> Result<crate::types::ConnectionStatisticsEntity, NifiError> {
+    ) -> Result<crate::v2_8_0::types::ConnectionStatisticsEntity, NifiError> {
         let id = self.id;
         let mut query: Vec<(&str, String)> = vec![];
         if let Some(v) = nodewise {
@@ -1215,7 +1232,7 @@ impl<'a> FlowStatusApi<'a> {
         &self,
         nodewise: Option<bool>,
         cluster_node_id: Option<&str>,
-    ) -> Result<crate::types::ConnectionStatusEntity, NifiError> {
+    ) -> Result<crate::v2_8_0::types::ConnectionStatusEntity, NifiError> {
         let id = self.id;
         let mut query: Vec<(&str, String)> = vec![];
         if let Some(v) = nodewise {
@@ -1233,7 +1250,7 @@ impl<'a> FlowStatusApi<'a> {
     /// Calls `GET /nifi-api/flow/connections/{id}/status/history`.
     pub async fn get_connection_status_history(
         &self,
-    ) -> Result<crate::types::StatusHistoryEntity, NifiError> {
+    ) -> Result<crate::v2_8_0::types::StatusHistoryEntity, NifiError> {
         let id = self.id;
         self.client
             .get(&format!("/flow/connections/{id}/status/history"))
@@ -1250,7 +1267,7 @@ impl<'a> FlowStatusApi<'a> {
         &self,
         nodewise: Option<bool>,
         cluster_node_id: Option<&str>,
-    ) -> Result<crate::types::PortStatusEntity, NifiError> {
+    ) -> Result<crate::v2_8_0::types::PortStatusEntity, NifiError> {
         let id = self.id;
         let mut query: Vec<(&str, String)> = vec![];
         if let Some(v) = nodewise {
@@ -1274,7 +1291,7 @@ impl<'a> FlowStatusApi<'a> {
         &self,
         nodewise: Option<bool>,
         cluster_node_id: Option<&str>,
-    ) -> Result<crate::types::PortStatusEntity, NifiError> {
+    ) -> Result<crate::v2_8_0::types::PortStatusEntity, NifiError> {
         let id = self.id;
         let mut query: Vec<(&str, String)> = vec![];
         if let Some(v) = nodewise {
@@ -1302,7 +1319,7 @@ impl<'a> FlowStatusApi<'a> {
         recursive: Option<bool>,
         nodewise: Option<bool>,
         cluster_node_id: Option<&str>,
-    ) -> Result<crate::types::ProcessGroupStatusEntity, NifiError> {
+    ) -> Result<crate::v2_8_0::types::ProcessGroupStatusEntity, NifiError> {
         let id = self.id;
         let mut query: Vec<(&str, String)> = vec![];
         if let Some(v) = recursive {
@@ -1323,7 +1340,7 @@ impl<'a> FlowStatusApi<'a> {
     /// Calls `GET /nifi-api/flow/process-groups/{id}/status/history`.
     pub async fn get_process_group_status_history(
         &self,
-    ) -> Result<crate::types::StatusHistoryEntity, NifiError> {
+    ) -> Result<crate::v2_8_0::types::StatusHistoryEntity, NifiError> {
         let id = self.id;
         self.client
             .get(&format!("/flow/process-groups/{id}/status/history"))
@@ -1340,7 +1357,7 @@ impl<'a> FlowStatusApi<'a> {
         &self,
         nodewise: Option<bool>,
         cluster_node_id: Option<&str>,
-    ) -> Result<crate::types::ProcessorStatusEntity, NifiError> {
+    ) -> Result<crate::v2_8_0::types::ProcessorStatusEntity, NifiError> {
         let id = self.id;
         let mut query: Vec<(&str, String)> = vec![];
         if let Some(v) = nodewise {
@@ -1358,7 +1375,7 @@ impl<'a> FlowStatusApi<'a> {
     /// Calls `GET /nifi-api/flow/processors/{id}/status/history`.
     pub async fn get_processor_status_history(
         &self,
-    ) -> Result<crate::types::StatusHistoryEntity, NifiError> {
+    ) -> Result<crate::v2_8_0::types::StatusHistoryEntity, NifiError> {
         let id = self.id;
         self.client
             .get(&format!("/flow/processors/{id}/status/history"))
@@ -1375,7 +1392,7 @@ impl<'a> FlowStatusApi<'a> {
         &self,
         nodewise: Option<bool>,
         cluster_node_id: Option<&str>,
-    ) -> Result<crate::types::RemoteProcessGroupStatusEntity, NifiError> {
+    ) -> Result<crate::v2_8_0::types::RemoteProcessGroupStatusEntity, NifiError> {
         let id = self.id;
         let mut query: Vec<(&str, String)> = vec![];
         if let Some(v) = nodewise {
@@ -1393,7 +1410,7 @@ impl<'a> FlowStatusApi<'a> {
     /// Calls `GET /nifi-api/flow/remote-process-groups/{id}/status/history`.
     pub async fn get_remote_process_group_status_history(
         &self,
-    ) -> Result<crate::types::StatusHistoryEntity, NifiError> {
+    ) -> Result<crate::v2_8_0::types::StatusHistoryEntity, NifiError> {
         let id = self.id;
         self.client
             .get(&format!("/flow/remote-process-groups/{id}/status/history"))

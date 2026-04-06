@@ -40,7 +40,7 @@ impl<'a> DataTransferTransactionsApi<'a> {
         &self,
         transaction_id: &str,
         response_code: i32,
-    ) -> Result<crate::types::TransactionResultEntity, NifiError> {
+    ) -> Result<crate::v2_8_0::types::TransactionResultEntity, NifiError> {
         let port_id = self.port_id;
         let mut query: Vec<(&str, String)> = vec![];
         query.push(("responseCode", response_code.to_string()));
@@ -57,7 +57,7 @@ impl<'a> DataTransferTransactionsApi<'a> {
     pub async fn extend_input_port_transaction_t_t_l(
         &self,
         transaction_id: &str,
-    ) -> Result<crate::types::TransactionResultEntity, NifiError> {
+    ) -> Result<crate::v2_8_0::types::TransactionResultEntity, NifiError> {
         let port_id = self.port_id;
         self.client
             .put_no_body(&format!(
@@ -98,7 +98,7 @@ impl<'a> DataTransferTransactionsApi<'a> {
         transaction_id: &str,
         response_code: i32,
         checksum: &str,
-    ) -> Result<crate::types::TransactionResultEntity, NifiError> {
+    ) -> Result<crate::v2_8_0::types::TransactionResultEntity, NifiError> {
         let port_id = self.port_id;
         let mut query: Vec<(&str, String)> = vec![];
         query.push(("responseCode", response_code.to_string()));
@@ -116,7 +116,7 @@ impl<'a> DataTransferTransactionsApi<'a> {
     pub async fn extend_output_port_transaction_t_t_l(
         &self,
         transaction_id: &str,
-    ) -> Result<crate::types::TransactionResultEntity, NifiError> {
+    ) -> Result<crate::v2_8_0::types::TransactionResultEntity, NifiError> {
         let port_id = self.port_id;
         self.client
             .put_no_body(&format!(
@@ -144,7 +144,7 @@ impl<'a> DataTransferTransactionsApi<'a> {
     pub async fn create_port_transaction(
         &self,
         port_type: &str,
-    ) -> Result<crate::types::TransactionResultEntity, NifiError> {
+    ) -> Result<crate::v2_8_0::types::TransactionResultEntity, NifiError> {
         let port_id = self.port_id;
         self.client
             .post_no_body(&format!(

@@ -22,7 +22,7 @@ impl<'a> ProcessGroupsApi<'a> {
         &self,
         id: &str,
         disconnected_node_acknowledged: Option<bool>,
-    ) -> Result<crate::types::ProcessGroupReplaceRequestEntity, NifiError> {
+    ) -> Result<crate::v2_7_2::types::ProcessGroupReplaceRequestEntity, NifiError> {
         let mut query: Vec<(&str, String)> = vec![];
         if let Some(v) = disconnected_node_acknowledged {
             query.push(("disconnectedNodeAcknowledged", v.to_string()));
@@ -42,7 +42,7 @@ impl<'a> ProcessGroupsApi<'a> {
     pub async fn get_replace_process_group_request(
         &self,
         id: &str,
-    ) -> Result<crate::types::ProcessGroupReplaceRequestEntity, NifiError> {
+    ) -> Result<crate::v2_7_2::types::ProcessGroupReplaceRequestEntity, NifiError> {
         self.client
             .get(&format!("/process-groups/replace-requests/{id}"))
             .await
@@ -62,7 +62,7 @@ impl<'a> ProcessGroupsApi<'a> {
         version: Option<&str>,
         client_id: Option<&str>,
         disconnected_node_acknowledged: Option<bool>,
-    ) -> Result<crate::types::ProcessGroupEntity, NifiError> {
+    ) -> Result<crate::v2_7_2::types::ProcessGroupEntity, NifiError> {
         let mut query: Vec<(&str, String)> = vec![];
         if let Some(v) = version {
             query.push(("version", v.to_string()));
@@ -86,7 +86,7 @@ impl<'a> ProcessGroupsApi<'a> {
     pub async fn get_process_group(
         &self,
         id: &str,
-    ) -> Result<crate::types::ProcessGroupEntity, NifiError> {
+    ) -> Result<crate::v2_7_2::types::ProcessGroupEntity, NifiError> {
         self.client.get(&format!("/process-groups/{id}")).await
     }
     /// Updates a process group
@@ -99,8 +99,8 @@ impl<'a> ProcessGroupsApi<'a> {
     pub async fn update_process_group(
         &self,
         id: &str,
-        body: &crate::types::ProcessGroupEntity,
-    ) -> Result<crate::types::ProcessGroupEntity, NifiError> {
+        body: &crate::v2_7_2::types::ProcessGroupEntity,
+    ) -> Result<crate::v2_7_2::types::ProcessGroupEntity, NifiError> {
         self.client
             .put(&format!("/process-groups/{id}"), body)
             .await
@@ -284,7 +284,9 @@ impl<'a> ProcessGroupsConnectionsApi<'a> {
     /// Gets all connections
     ///
     /// Calls `GET /nifi-api/process-groups/{id}/connections`.
-    pub async fn get_connections(&self) -> Result<crate::types::ConnectionsEntity, NifiError> {
+    pub async fn get_connections(
+        &self,
+    ) -> Result<crate::v2_7_2::types::ConnectionsEntity, NifiError> {
         let id = self.id;
         self.client
             .get(&format!("/process-groups/{id}/connections"))
@@ -298,8 +300,8 @@ impl<'a> ProcessGroupsConnectionsApi<'a> {
     /// - `body`: The connection configuration details.
     pub async fn create_connection(
         &self,
-        body: &crate::types::ConnectionEntity,
-    ) -> Result<crate::types::ConnectionEntity, NifiError> {
+        body: &crate::v2_7_2::types::ConnectionEntity,
+    ) -> Result<crate::v2_7_2::types::ConnectionEntity, NifiError> {
         let id = self.id;
         self.client
             .post(&format!("/process-groups/{id}/connections"), body)
@@ -324,8 +326,8 @@ impl<'a> ProcessGroupsControllerServicesApi<'a> {
     /// - `body`: The controller service configuration details.
     pub async fn create_controller_service_1(
         &self,
-        body: &crate::types::ControllerServiceEntity,
-    ) -> Result<crate::types::ControllerServiceEntity, NifiError> {
+        body: &crate::v2_7_2::types::ControllerServiceEntity,
+    ) -> Result<crate::v2_7_2::types::ControllerServiceEntity, NifiError> {
         let id = self.id;
         self.client
             .post(&format!("/process-groups/{id}/controller-services"), body)
@@ -350,8 +352,8 @@ impl<'a> ProcessGroupsCopyApi<'a> {
     /// - `body`: The request including the components to be copied from the specified Process Group.
     pub async fn copy(
         &self,
-        body: &crate::types::CopyRequestEntity,
-    ) -> Result<crate::types::CopyResponseEntity, NifiError> {
+        body: &crate::v2_7_2::types::CopyRequestEntity,
+    ) -> Result<crate::v2_7_2::types::CopyResponseEntity, NifiError> {
         let id = self.id;
         self.client
             .post(&format!("/process-groups/{id}/copy"), body)
@@ -418,9 +420,9 @@ impl<'a> ProcessGroupsEmptyAllConnectionsRequestsApi<'a> {
     pub async fn remove_drop_request_1(
         &self,
         drop_request_id: &str,
-    ) -> Result<crate::types::DropRequestDto, NifiError> {
+    ) -> Result<crate::v2_7_2::types::DropRequestDto, NifiError> {
         let id = self.id;
-        let e: crate::types::DropRequestEntity = self
+        let e: crate::v2_7_2::types::DropRequestEntity = self
             .client
             .delete_returning(&format!(
                 "/process-groups/{id}/empty-all-connections-requests/{drop_request_id}"
@@ -437,9 +439,9 @@ impl<'a> ProcessGroupsEmptyAllConnectionsRequestsApi<'a> {
     pub async fn get_drop_all_flowfiles_request(
         &self,
         drop_request_id: &str,
-    ) -> Result<crate::types::DropRequestDto, NifiError> {
+    ) -> Result<crate::v2_7_2::types::DropRequestDto, NifiError> {
         let id = self.id;
-        let e: crate::types::DropRequestEntity = self
+        let e: crate::v2_7_2::types::DropRequestEntity = self
             .client
             .get(&format!(
                 "/process-groups/{id}/empty-all-connections-requests/{drop_request_id}"
@@ -468,8 +470,8 @@ impl<'a> ProcessGroupsFlowContentsApi<'a> {
     /// - `body`: The process group replace request entity.
     pub async fn replace_process_group(
         &self,
-        body: &crate::types::ProcessGroupImportEntity,
-    ) -> Result<crate::types::ProcessGroupImportEntity, NifiError> {
+        body: &crate::v2_7_2::types::ProcessGroupImportEntity,
+    ) -> Result<crate::v2_7_2::types::ProcessGroupImportEntity, NifiError> {
         let id = self.id;
         self.client
             .put(&format!("/process-groups/{id}/flow-contents"), body)
@@ -489,7 +491,7 @@ impl<'a> ProcessGroupsFunnelsApi<'a> {
     /// Gets all funnels
     ///
     /// Calls `GET /nifi-api/process-groups/{id}/funnels`.
-    pub async fn get_funnels(&self) -> Result<crate::types::FunnelsEntity, NifiError> {
+    pub async fn get_funnels(&self) -> Result<crate::v2_7_2::types::FunnelsEntity, NifiError> {
         let id = self.id;
         self.client
             .get(&format!("/process-groups/{id}/funnels"))
@@ -503,8 +505,8 @@ impl<'a> ProcessGroupsFunnelsApi<'a> {
     /// - `body`: The funnel configuration details.
     pub async fn create_funnel(
         &self,
-        body: &crate::types::FunnelEntity,
-    ) -> Result<crate::types::FunnelEntity, NifiError> {
+        body: &crate::v2_7_2::types::FunnelEntity,
+    ) -> Result<crate::v2_7_2::types::FunnelEntity, NifiError> {
         let id = self.id;
         self.client
             .post(&format!("/process-groups/{id}/funnels"), body)
@@ -524,7 +526,9 @@ impl<'a> ProcessGroupsInputPortsApi<'a> {
     /// Gets all input ports
     ///
     /// Calls `GET /nifi-api/process-groups/{id}/input-ports`.
-    pub async fn get_input_ports(&self) -> Result<crate::types::InputPortsEntity, NifiError> {
+    pub async fn get_input_ports(
+        &self,
+    ) -> Result<crate::v2_7_2::types::InputPortsEntity, NifiError> {
         let id = self.id;
         self.client
             .get(&format!("/process-groups/{id}/input-ports"))
@@ -538,8 +542,8 @@ impl<'a> ProcessGroupsInputPortsApi<'a> {
     /// - `body`: The input port configuration details.
     pub async fn create_input_port(
         &self,
-        body: &crate::types::PortEntity,
-    ) -> Result<crate::types::PortEntity, NifiError> {
+        body: &crate::v2_7_2::types::PortEntity,
+    ) -> Result<crate::v2_7_2::types::PortEntity, NifiError> {
         let id = self.id;
         self.client
             .post(&format!("/process-groups/{id}/input-ports"), body)
@@ -559,7 +563,7 @@ impl<'a> ProcessGroupsLabelsApi<'a> {
     /// Gets all labels
     ///
     /// Calls `GET /nifi-api/process-groups/{id}/labels`.
-    pub async fn get_labels(&self) -> Result<crate::types::LabelsEntity, NifiError> {
+    pub async fn get_labels(&self) -> Result<crate::v2_7_2::types::LabelsEntity, NifiError> {
         let id = self.id;
         self.client
             .get(&format!("/process-groups/{id}/labels"))
@@ -573,8 +577,8 @@ impl<'a> ProcessGroupsLabelsApi<'a> {
     /// - `body`: The label configuration details.
     pub async fn create_label(
         &self,
-        body: &crate::types::LabelEntity,
-    ) -> Result<crate::types::LabelEntity, NifiError> {
+        body: &crate::v2_7_2::types::LabelEntity,
+    ) -> Result<crate::v2_7_2::types::LabelEntity, NifiError> {
         let id = self.id;
         self.client
             .post(&format!("/process-groups/{id}/labels"), body)
@@ -596,7 +600,7 @@ impl<'a> ProcessGroupsLocalModificationsApi<'a> {
     /// Calls `GET /nifi-api/process-groups/{id}/local-modifications`.
     pub async fn get_local_modifications(
         &self,
-    ) -> Result<crate::types::FlowComparisonEntity, NifiError> {
+    ) -> Result<crate::v2_7_2::types::FlowComparisonEntity, NifiError> {
         let id = self.id;
         self.client
             .get(&format!("/process-groups/{id}/local-modifications"))
@@ -616,7 +620,9 @@ impl<'a> ProcessGroupsOutputPortsApi<'a> {
     /// Gets all output ports
     ///
     /// Calls `GET /nifi-api/process-groups/{id}/output-ports`.
-    pub async fn get_output_ports(&self) -> Result<crate::types::OutputPortsEntity, NifiError> {
+    pub async fn get_output_ports(
+        &self,
+    ) -> Result<crate::v2_7_2::types::OutputPortsEntity, NifiError> {
         let id = self.id;
         self.client
             .get(&format!("/process-groups/{id}/output-ports"))
@@ -630,8 +636,8 @@ impl<'a> ProcessGroupsOutputPortsApi<'a> {
     /// - `body`: The output port configuration.
     pub async fn create_output_port(
         &self,
-        body: &crate::types::PortEntity,
-    ) -> Result<crate::types::PortEntity, NifiError> {
+        body: &crate::v2_7_2::types::PortEntity,
+    ) -> Result<crate::v2_7_2::types::PortEntity, NifiError> {
         let id = self.id;
         self.client
             .post(&format!("/process-groups/{id}/output-ports"), body)
@@ -656,8 +662,8 @@ impl<'a> ProcessGroupsPasteApi<'a> {
     /// - `body`: The request including the components to be pasted into the specified Process Group.
     pub async fn paste(
         &self,
-        body: &crate::types::PasteRequestEntity,
-    ) -> Result<crate::types::PasteResponseEntity, NifiError> {
+        body: &crate::v2_7_2::types::PasteRequestEntity,
+    ) -> Result<crate::v2_7_2::types::PasteResponseEntity, NifiError> {
         let id = self.id;
         self.client
             .put(&format!("/process-groups/{id}/paste"), body)
@@ -677,7 +683,9 @@ impl<'a> ProcessGroupsProcessGroupsApi<'a> {
     /// Gets all process groups
     ///
     /// Calls `GET /nifi-api/process-groups/{id}/process-groups`.
-    pub async fn get_process_groups(&self) -> Result<crate::types::ProcessGroupsEntity, NifiError> {
+    pub async fn get_process_groups(
+        &self,
+    ) -> Result<crate::v2_7_2::types::ProcessGroupsEntity, NifiError> {
         let id = self.id;
         self.client
             .get(&format!("/process-groups/{id}/process-groups"))
@@ -692,9 +700,11 @@ impl<'a> ProcessGroupsProcessGroupsApi<'a> {
     /// - `body`: The process group configuration details.
     pub async fn create_process_group(
         &self,
-        parameter_context_handling_strategy: Option<crate::types::ParameterContextHandlingStrategy>,
-        body: &crate::types::ProcessGroupEntity,
-    ) -> Result<crate::types::ProcessGroupEntity, NifiError> {
+        parameter_context_handling_strategy: Option<
+            crate::v2_7_2::types::ParameterContextHandlingStrategy,
+        >,
+        body: &crate::v2_7_2::types::ProcessGroupEntity,
+    ) -> Result<crate::v2_7_2::types::ProcessGroupEntity, NifiError> {
         let id = self.id;
         let mut query: Vec<(&str, String)> = vec![];
         if let Some(v) = parameter_context_handling_strategy {
@@ -713,8 +723,8 @@ impl<'a> ProcessGroupsProcessGroupsApi<'a> {
     /// Calls `POST /nifi-api/process-groups/{id}/process-groups/import`.
     pub async fn import_process_group(
         &self,
-        body: &crate::types::ProcessGroupUploadEntity,
-    ) -> Result<crate::types::ProcessGroupEntity, NifiError> {
+        body: &crate::v2_7_2::types::ProcessGroupUploadEntity,
+    ) -> Result<crate::v2_7_2::types::ProcessGroupEntity, NifiError> {
         let id = self.id;
         self.client
             .post(&format!("/process-groups/{id}/process-groups/import"), body)
@@ -725,7 +735,7 @@ impl<'a> ProcessGroupsProcessGroupsApi<'a> {
     /// Calls `POST /nifi-api/process-groups/{id}/process-groups/upload`.
     pub async fn upload_process_group(
         &self,
-    ) -> Result<crate::types::ProcessGroupEntity, NifiError> {
+    ) -> Result<crate::v2_7_2::types::ProcessGroupEntity, NifiError> {
         let id = self.id;
         self.client
             .post_no_body(&format!("/process-groups/{id}/process-groups/upload"))
@@ -751,7 +761,7 @@ impl<'a> ProcessGroupsProcessorsApi<'a> {
     pub async fn get_processors(
         &self,
         include_descendant_groups: Option<bool>,
-    ) -> Result<crate::types::ProcessorsEntity, NifiError> {
+    ) -> Result<crate::v2_7_2::types::ProcessorsEntity, NifiError> {
         let id = self.id;
         let mut query: Vec<(&str, String)> = vec![];
         if let Some(v) = include_descendant_groups {
@@ -769,8 +779,8 @@ impl<'a> ProcessGroupsProcessorsApi<'a> {
     /// - `body`: The processor configuration details.
     pub async fn create_processor(
         &self,
-        body: &crate::types::ProcessorEntity,
-    ) -> Result<crate::types::ProcessorEntity, NifiError> {
+        body: &crate::v2_7_2::types::ProcessorEntity,
+    ) -> Result<crate::v2_7_2::types::ProcessorEntity, NifiError> {
         let id = self.id;
         self.client
             .post(&format!("/process-groups/{id}/processors"), body)
@@ -792,7 +802,7 @@ impl<'a> ProcessGroupsRemoteProcessGroupsApi<'a> {
     /// Calls `GET /nifi-api/process-groups/{id}/remote-process-groups`.
     pub async fn get_remote_process_groups(
         &self,
-    ) -> Result<crate::types::RemoteProcessGroupsEntity, NifiError> {
+    ) -> Result<crate::v2_7_2::types::RemoteProcessGroupsEntity, NifiError> {
         let id = self.id;
         self.client
             .get(&format!("/process-groups/{id}/remote-process-groups"))
@@ -806,8 +816,8 @@ impl<'a> ProcessGroupsRemoteProcessGroupsApi<'a> {
     /// - `body`: The remote process group configuration details.
     pub async fn create_remote_process_group(
         &self,
-        body: &crate::types::RemoteProcessGroupEntity,
-    ) -> Result<crate::types::RemoteProcessGroupEntity, NifiError> {
+        body: &crate::v2_7_2::types::RemoteProcessGroupEntity,
+    ) -> Result<crate::v2_7_2::types::RemoteProcessGroupEntity, NifiError> {
         let id = self.id;
         self.client
             .post(&format!("/process-groups/{id}/remote-process-groups"), body)
@@ -834,8 +844,8 @@ impl<'a> ProcessGroupsReplaceRequestsApi<'a> {
     /// - `body`: The process group replace request entity
     pub async fn initiate_replace_process_group(
         &self,
-        body: &crate::types::ProcessGroupImportEntity,
-    ) -> Result<crate::types::ProcessGroupReplaceRequestEntity, NifiError> {
+        body: &crate::v2_7_2::types::ProcessGroupImportEntity,
+    ) -> Result<crate::v2_7_2::types::ProcessGroupReplaceRequestEntity, NifiError> {
         let id = self.id;
         self.client
             .post(&format!("/process-groups/{id}/replace-requests"), body)
@@ -860,10 +870,10 @@ impl<'a> ProcessGroupsSnippetInstanceApi<'a> {
     /// - `body`: The copy snippet request.
     pub async fn copy_snippet(
         &self,
-        body: &crate::types::CopySnippetRequestEntity,
-    ) -> Result<crate::types::FlowDto, NifiError> {
+        body: &crate::v2_7_2::types::CopySnippetRequestEntity,
+    ) -> Result<crate::v2_7_2::types::FlowDto, NifiError> {
         let id = self.id;
-        let e: crate::types::FlowEntity = self
+        let e: crate::v2_7_2::types::FlowEntity = self
             .client
             .post(&format!("/process-groups/{id}/snippet-instance"), body)
             .await?;

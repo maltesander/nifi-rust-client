@@ -17,8 +17,8 @@ impl<'a> ControllerApi<'a> {
     /// - `body`: The reporting task configuration details.
     pub async fn create_bulletin(
         &self,
-        body: &crate::types::BulletinEntity,
-    ) -> Result<crate::types::BulletinEntity, NifiError> {
+        body: &crate::v2_7_2::types::BulletinEntity,
+    ) -> Result<crate::v2_7_2::types::BulletinEntity, NifiError> {
         self.client.post("/controller/bulletin", body).await
     }
     /// Gets the contents of the cluster
@@ -26,8 +26,8 @@ impl<'a> ControllerApi<'a> {
     /// Returns the contents of the cluster including all nodes and their status.
     ///
     /// Calls `GET /nifi-api/controller/cluster`.
-    pub async fn get_cluster(&self) -> Result<crate::types::ClusterDto, NifiError> {
-        let e: crate::types::ClusterEntity = self.client.get("/controller/cluster").await?;
+    pub async fn get_cluster(&self) -> Result<crate::v2_7_2::types::ClusterDto, NifiError> {
+        let e: crate::v2_7_2::types::ClusterEntity = self.client.get("/controller/cluster").await?;
         Ok(e.cluster)
     }
     /// Removes a node from the cluster
@@ -36,8 +36,8 @@ impl<'a> ControllerApi<'a> {
     ///
     /// # Parameters
     /// - `id`: The node id.
-    pub async fn delete_node(&self, id: &str) -> Result<crate::types::NodeDto, NifiError> {
-        let e: crate::types::NodeEntity = self
+    pub async fn delete_node(&self, id: &str) -> Result<crate::v2_7_2::types::NodeDto, NifiError> {
+        let e: crate::v2_7_2::types::NodeEntity = self
             .client
             .delete_returning(&format!("/controller/cluster/nodes/{id}"))
             .await?;
@@ -49,8 +49,8 @@ impl<'a> ControllerApi<'a> {
     ///
     /// # Parameters
     /// - `id`: The node id.
-    pub async fn get_node(&self, id: &str) -> Result<crate::types::NodeDto, NifiError> {
-        let e: crate::types::NodeEntity = self
+    pub async fn get_node(&self, id: &str) -> Result<crate::v2_7_2::types::NodeDto, NifiError> {
+        let e: crate::v2_7_2::types::NodeEntity = self
             .client
             .get(&format!("/controller/cluster/nodes/{id}"))
             .await?;
@@ -66,9 +66,9 @@ impl<'a> ControllerApi<'a> {
     pub async fn update_node(
         &self,
         id: &str,
-        body: &crate::types::NodeEntity,
-    ) -> Result<crate::types::NodeDto, NifiError> {
-        let e: crate::types::NodeEntity = self
+        body: &crate::v2_7_2::types::NodeEntity,
+    ) -> Result<crate::v2_7_2::types::NodeDto, NifiError> {
+        let e: crate::v2_7_2::types::NodeEntity = self
             .client
             .put(&format!("/controller/cluster/nodes/{id}"), body)
             .await?;
@@ -79,7 +79,7 @@ impl<'a> ControllerApi<'a> {
     /// Calls `GET /nifi-api/controller/config`.
     pub async fn get_controller_config(
         &self,
-    ) -> Result<crate::types::ControllerConfigurationEntity, NifiError> {
+    ) -> Result<crate::v2_7_2::types::ControllerConfigurationEntity, NifiError> {
         self.client.get("/controller/config").await
     }
     /// Retrieves the configuration for this NiFi
@@ -90,8 +90,8 @@ impl<'a> ControllerApi<'a> {
     /// - `body`: The controller configuration.
     pub async fn update_controller_config(
         &self,
-        body: &crate::types::ControllerConfigurationEntity,
-    ) -> Result<crate::types::ControllerConfigurationEntity, NifiError> {
+        body: &crate::v2_7_2::types::ControllerConfigurationEntity,
+    ) -> Result<crate::v2_7_2::types::ControllerConfigurationEntity, NifiError> {
         self.client.put("/controller/config", body).await
     }
     /// Creates a new controller service
@@ -102,8 +102,8 @@ impl<'a> ControllerApi<'a> {
     /// - `body`: The controller service configuration details.
     pub async fn create_controller_service(
         &self,
-        body: &crate::types::ControllerServiceEntity,
-    ) -> Result<crate::types::ControllerServiceEntity, NifiError> {
+        body: &crate::v2_7_2::types::ControllerServiceEntity,
+    ) -> Result<crate::v2_7_2::types::ControllerServiceEntity, NifiError> {
         self.client
             .post("/controller/controller-services", body)
             .await
@@ -113,7 +113,7 @@ impl<'a> ControllerApi<'a> {
     /// Calls `GET /nifi-api/controller/flow-analysis-rules`.
     pub async fn get_flow_analysis_rules(
         &self,
-    ) -> Result<crate::types::FlowAnalysisRulesEntity, NifiError> {
+    ) -> Result<crate::v2_7_2::types::FlowAnalysisRulesEntity, NifiError> {
         self.client.get("/controller/flow-analysis-rules").await
     }
     /// Creates a new flow analysis rule
@@ -124,8 +124,8 @@ impl<'a> ControllerApi<'a> {
     /// - `body`: The flow analysis rule configuration details.
     pub async fn create_flow_analysis_rule(
         &self,
-        body: &crate::types::FlowAnalysisRuleEntity,
-    ) -> Result<crate::types::FlowAnalysisRuleEntity, NifiError> {
+        body: &crate::v2_7_2::types::FlowAnalysisRuleEntity,
+    ) -> Result<crate::v2_7_2::types::FlowAnalysisRuleEntity, NifiError> {
         self.client
             .post("/controller/flow-analysis-rules", body)
             .await
@@ -145,7 +145,7 @@ impl<'a> ControllerApi<'a> {
         version: Option<&str>,
         client_id: Option<&str>,
         disconnected_node_acknowledged: Option<bool>,
-    ) -> Result<crate::types::FlowAnalysisRuleEntity, NifiError> {
+    ) -> Result<crate::v2_7_2::types::FlowAnalysisRuleEntity, NifiError> {
         let mut query: Vec<(&str, String)> = vec![];
         if let Some(v) = version {
             query.push(("version", v.to_string()));
@@ -169,7 +169,7 @@ impl<'a> ControllerApi<'a> {
     pub async fn get_flow_analysis_rule(
         &self,
         id: &str,
-    ) -> Result<crate::types::FlowAnalysisRuleEntity, NifiError> {
+    ) -> Result<crate::v2_7_2::types::FlowAnalysisRuleEntity, NifiError> {
         self.client
             .get(&format!("/controller/flow-analysis-rules/{id}"))
             .await
@@ -184,8 +184,8 @@ impl<'a> ControllerApi<'a> {
     pub async fn update_flow_analysis_rule(
         &self,
         id: &str,
-        body: &crate::types::FlowAnalysisRuleEntity,
-    ) -> Result<crate::types::FlowAnalysisRuleEntity, NifiError> {
+        body: &crate::v2_7_2::types::FlowAnalysisRuleEntity,
+    ) -> Result<crate::v2_7_2::types::FlowAnalysisRuleEntity, NifiError> {
         self.client
             .put(&format!("/controller/flow-analysis-rules/{id}"), body)
             .await
@@ -199,10 +199,10 @@ impl<'a> ControllerApi<'a> {
     pub async fn delete_history(
         &self,
         end_date: &str,
-    ) -> Result<crate::types::HistoryDto, NifiError> {
+    ) -> Result<crate::v2_7_2::types::HistoryDto, NifiError> {
         let mut query: Vec<(&str, String)> = vec![];
         query.push(("endDate", end_date.to_string()));
-        let e: crate::types::HistoryEntity = self
+        let e: crate::v2_7_2::types::HistoryEntity = self
             .client
             .delete_returning_with_query("/controller/history", &query)
             .await?;
@@ -211,7 +211,9 @@ impl<'a> ControllerApi<'a> {
     /// Retrieves summary information for installed NARs
     ///
     /// Calls `GET /nifi-api/controller/nar-manager/nars`.
-    pub async fn get_nar_summaries(&self) -> Result<crate::types::NarSummariesEntity, NifiError> {
+    pub async fn get_nar_summaries(
+        &self,
+    ) -> Result<crate::v2_7_2::types::NarSummariesEntity, NifiError> {
         self.client.get("/controller/nar-manager/nars").await
     }
     /// Uploads a NAR and requests for it to be installed
@@ -221,8 +223,8 @@ impl<'a> ControllerApi<'a> {
         &self,
         filename: Option<&str>,
         data: Vec<u8>,
-    ) -> Result<crate::types::NarSummaryDto, NifiError> {
-        let e: crate::types::NarSummaryEntity = self
+    ) -> Result<crate::v2_7_2::types::NarSummaryDto, NifiError> {
+        let e: crate::v2_7_2::types::NarSummaryEntity = self
             .client
             .post_octet_stream("/controller/nar-manager/nars/content", filename, data)
             .await?;
@@ -239,7 +241,7 @@ impl<'a> ControllerApi<'a> {
         id: &str,
         disconnected_node_acknowledged: Option<bool>,
         force: Option<bool>,
-    ) -> Result<crate::types::NarSummaryDto, NifiError> {
+    ) -> Result<crate::v2_7_2::types::NarSummaryDto, NifiError> {
         let mut query: Vec<(&str, String)> = vec![];
         if let Some(v) = disconnected_node_acknowledged {
             query.push(("disconnectedNodeAcknowledged", v.to_string()));
@@ -247,7 +249,7 @@ impl<'a> ControllerApi<'a> {
         if let Some(v) = force {
             query.push(("force", v.to_string()));
         }
-        let e: crate::types::NarSummaryEntity = self
+        let e: crate::v2_7_2::types::NarSummaryEntity = self
             .client
             .delete_returning_with_query(&format!("/controller/nar-manager/nars/{id}"), &query)
             .await?;
@@ -262,7 +264,7 @@ impl<'a> ControllerApi<'a> {
     pub async fn get_nar_summary(
         &self,
         id: &str,
-    ) -> Result<crate::types::NarDetailsEntity, NifiError> {
+    ) -> Result<crate::v2_7_2::types::NarDetailsEntity, NifiError> {
         self.client
             .get(&format!("/controller/nar-manager/nars/{id}"))
             .await
@@ -275,8 +277,8 @@ impl<'a> ControllerApi<'a> {
     /// - `body`: The parameter provider configuration details.
     pub async fn create_parameter_provider(
         &self,
-        body: &crate::types::ParameterProviderEntity,
-    ) -> Result<crate::types::ParameterProviderEntity, NifiError> {
+        body: &crate::v2_7_2::types::ParameterProviderEntity,
+    ) -> Result<crate::v2_7_2::types::ParameterProviderEntity, NifiError> {
         self.client
             .post("/controller/parameter-providers", body)
             .await
@@ -286,7 +288,7 @@ impl<'a> ControllerApi<'a> {
     /// Calls `GET /nifi-api/controller/registry-clients`.
     pub async fn get_flow_registry_clients(
         &self,
-    ) -> Result<crate::types::FlowRegistryClientsEntity, NifiError> {
+    ) -> Result<crate::v2_7_2::types::FlowRegistryClientsEntity, NifiError> {
         self.client.get("/controller/registry-clients").await
     }
     /// Creates a new flow registry client
@@ -297,8 +299,8 @@ impl<'a> ControllerApi<'a> {
     /// - `body`: The flow registry client configuration details.
     pub async fn create_flow_registry_client(
         &self,
-        body: &crate::types::FlowRegistryClientEntity,
-    ) -> Result<crate::types::FlowRegistryClientEntity, NifiError> {
+        body: &crate::v2_7_2::types::FlowRegistryClientEntity,
+    ) -> Result<crate::v2_7_2::types::FlowRegistryClientEntity, NifiError> {
         self.client.post("/controller/registry-clients", body).await
     }
     /// Deletes a flow registry client
@@ -316,7 +318,7 @@ impl<'a> ControllerApi<'a> {
         version: Option<&str>,
         client_id: Option<&str>,
         disconnected_node_acknowledged: Option<bool>,
-    ) -> Result<crate::types::FlowRegistryClientEntity, NifiError> {
+    ) -> Result<crate::v2_7_2::types::FlowRegistryClientEntity, NifiError> {
         let mut query: Vec<(&str, String)> = vec![];
         if let Some(v) = version {
             query.push(("version", v.to_string()));
@@ -340,7 +342,7 @@ impl<'a> ControllerApi<'a> {
     pub async fn get_flow_registry_client(
         &self,
         id: &str,
-    ) -> Result<crate::types::FlowRegistryClientEntity, NifiError> {
+    ) -> Result<crate::v2_7_2::types::FlowRegistryClientEntity, NifiError> {
         self.client
             .get(&format!("/controller/registry-clients/{id}"))
             .await
@@ -355,8 +357,8 @@ impl<'a> ControllerApi<'a> {
     pub async fn update_flow_registry_client(
         &self,
         id: &str,
-        body: &crate::types::FlowRegistryClientEntity,
-    ) -> Result<crate::types::FlowRegistryClientEntity, NifiError> {
+        body: &crate::v2_7_2::types::FlowRegistryClientEntity,
+    ) -> Result<crate::v2_7_2::types::FlowRegistryClientEntity, NifiError> {
         self.client
             .put(&format!("/controller/registry-clients/{id}"), body)
             .await
@@ -368,7 +370,7 @@ impl<'a> ControllerApi<'a> {
     /// Calls `GET /nifi-api/controller/registry-types`.
     pub async fn get_registry_client_types(
         &self,
-    ) -> Result<crate::types::FlowRegistryClientTypesEntity, NifiError> {
+    ) -> Result<crate::v2_7_2::types::FlowRegistryClientTypesEntity, NifiError> {
         self.client.get("/controller/registry-types").await
     }
     /// Creates a new reporting task
@@ -379,8 +381,8 @@ impl<'a> ControllerApi<'a> {
     /// - `body`: The reporting task configuration details.
     pub async fn create_reporting_task(
         &self,
-        body: &crate::types::ReportingTaskEntity,
-    ) -> Result<crate::types::ReportingTaskEntity, NifiError> {
+        body: &crate::v2_7_2::types::ReportingTaskEntity,
+    ) -> Result<crate::v2_7_2::types::ReportingTaskEntity, NifiError> {
         self.client.post("/controller/reporting-tasks", body).await
     }
     /// Imports a reporting task snapshot
@@ -391,8 +393,8 @@ impl<'a> ControllerApi<'a> {
     /// - `body`: The import request containing the reporting task snapshot to import.
     pub async fn import_reporting_task_snapshot(
         &self,
-        body: &crate::types::VersionedReportingTaskImportRequestEntity,
-    ) -> Result<crate::types::VersionedReportingTaskImportResponseEntity, NifiError> {
+        body: &crate::v2_7_2::types::VersionedReportingTaskImportRequestEntity,
+    ) -> Result<crate::v2_7_2::types::VersionedReportingTaskImportResponseEntity, NifiError> {
         self.client
             .post("/controller/reporting-tasks/import", body)
             .await
@@ -404,8 +406,8 @@ impl<'a> ControllerApi<'a> {
     /// Calls `GET /nifi-api/controller/status/history`.
     pub async fn get_node_status_history(
         &self,
-    ) -> Result<crate::types::ComponentHistoryDto, NifiError> {
-        let e: crate::types::ComponentHistoryEntity =
+    ) -> Result<crate::v2_7_2::types::ComponentHistoryDto, NifiError> {
+        let e: crate::v2_7_2::types::ComponentHistoryEntity =
             self.client.get("/controller/status/history").await?;
         Ok(e.component_history)
     }
@@ -491,8 +493,8 @@ impl<'a> ControllerBulletinsApi<'a> {
     /// - `body`: The request to clear bulletins.
     pub async fn clear_flow_analysis_rule_bulletins(
         &self,
-        body: &crate::types::ClearBulletinsRequestEntity,
-    ) -> Result<crate::types::ClearBulletinsResultEntity, NifiError> {
+        body: &crate::v2_7_2::types::ClearBulletinsRequestEntity,
+    ) -> Result<crate::v2_7_2::types::ClearBulletinsResultEntity, NifiError> {
         let id = self.id;
         self.client
             .post(
@@ -509,8 +511,8 @@ impl<'a> ControllerBulletinsApi<'a> {
     /// - `body`: The request to clear bulletins.
     pub async fn clear_parameter_provider_bulletins(
         &self,
-        body: &crate::types::ClearBulletinsRequestEntity,
-    ) -> Result<crate::types::ClearBulletinsResultEntity, NifiError> {
+        body: &crate::v2_7_2::types::ClearBulletinsRequestEntity,
+    ) -> Result<crate::v2_7_2::types::ClearBulletinsResultEntity, NifiError> {
         let id = self.id;
         self.client
             .post(
@@ -527,8 +529,8 @@ impl<'a> ControllerBulletinsApi<'a> {
     /// - `body`: The request to clear bulletins.
     pub async fn clear_registry_client_bulletins(
         &self,
-        body: &crate::types::ClearBulletinsRequestEntity,
-    ) -> Result<crate::types::ClearBulletinsResultEntity, NifiError> {
+        body: &crate::v2_7_2::types::ClearBulletinsRequestEntity,
+    ) -> Result<crate::v2_7_2::types::ClearBulletinsResultEntity, NifiError> {
         let id = self.id;
         self.client
             .post(
@@ -556,10 +558,10 @@ impl<'a> ControllerConfigApi<'a> {
     /// - `body`: The configuration analysis request.
     pub async fn analyze_flow_analysis_rule_configuration(
         &self,
-        body: &crate::types::ConfigurationAnalysisEntity,
-    ) -> Result<crate::types::ConfigurationAnalysisDto, NifiError> {
+        body: &crate::v2_7_2::types::ConfigurationAnalysisEntity,
+    ) -> Result<crate::v2_7_2::types::ConfigurationAnalysisDto, NifiError> {
         let id = self.id;
-        let e: crate::types::ConfigurationAnalysisEntity = self
+        let e: crate::v2_7_2::types::ConfigurationAnalysisEntity = self
             .client
             .post(
                 &format!("/controller/flow-analysis-rules/{id}/config/analysis"),
@@ -578,10 +580,10 @@ impl<'a> ControllerConfigApi<'a> {
     /// - `body`: The flow analysis rules configuration verification request.
     pub async fn submit_flow_analysis_rule_config_verification_request(
         &self,
-        body: &crate::types::VerifyConfigRequestEntity,
-    ) -> Result<crate::types::VerifyConfigRequestDto, NifiError> {
+        body: &crate::v2_7_2::types::VerifyConfigRequestEntity,
+    ) -> Result<crate::v2_7_2::types::VerifyConfigRequestDto, NifiError> {
         let id = self.id;
-        let e: crate::types::VerifyConfigRequestEntity = self
+        let e: crate::v2_7_2::types::VerifyConfigRequestEntity = self
             .client
             .post(
                 &format!("/controller/flow-analysis-rules/{id}/config/verification-requests"),
@@ -601,9 +603,9 @@ impl<'a> ControllerConfigApi<'a> {
     pub async fn delete_flow_analysis_rule_verification_request(
         &self,
         request_id: &str,
-    ) -> Result<crate::types::VerifyConfigRequestDto, NifiError> {
+    ) -> Result<crate::v2_7_2::types::VerifyConfigRequestDto, NifiError> {
         let id = self.id;
-        let e: crate::types::VerifyConfigRequestEntity = self
+        let e: crate::v2_7_2::types::VerifyConfigRequestEntity = self
             .client
             .delete_returning(&format!(
                 "/controller/flow-analysis-rules/{id}/config/verification-requests/{request_id}"
@@ -622,9 +624,9 @@ impl<'a> ControllerConfigApi<'a> {
     pub async fn get_flow_analysis_rule_verification_request(
         &self,
         request_id: &str,
-    ) -> Result<crate::types::VerifyConfigRequestDto, NifiError> {
+    ) -> Result<crate::v2_7_2::types::VerifyConfigRequestDto, NifiError> {
         let id = self.id;
-        let e: crate::types::VerifyConfigRequestEntity = self
+        let e: crate::v2_7_2::types::VerifyConfigRequestEntity = self
             .client
             .get(&format!(
                 "/controller/flow-analysis-rules/{id}/config/verification-requests/{request_id}"
@@ -640,10 +642,10 @@ impl<'a> ControllerConfigApi<'a> {
     /// - `body`: The configuration analysis request.
     pub async fn analyze_flow_registry_client_configuration(
         &self,
-        body: &crate::types::ConfigurationAnalysisEntity,
-    ) -> Result<crate::types::ConfigurationAnalysisDto, NifiError> {
+        body: &crate::v2_7_2::types::ConfigurationAnalysisEntity,
+    ) -> Result<crate::v2_7_2::types::ConfigurationAnalysisDto, NifiError> {
         let id = self.id;
-        let e: crate::types::ConfigurationAnalysisEntity = self
+        let e: crate::v2_7_2::types::ConfigurationAnalysisEntity = self
             .client
             .post(
                 &format!("/controller/registry-clients/{id}/config/analysis"),
@@ -662,10 +664,10 @@ impl<'a> ControllerConfigApi<'a> {
     /// - `body`: The registry client configuration verification request.
     pub async fn submit_registry_client_config_verification_request(
         &self,
-        body: &crate::types::VerifyConfigRequestEntity,
-    ) -> Result<crate::types::VerifyConfigRequestDto, NifiError> {
+        body: &crate::v2_7_2::types::VerifyConfigRequestEntity,
+    ) -> Result<crate::v2_7_2::types::VerifyConfigRequestDto, NifiError> {
         let id = self.id;
-        let e: crate::types::VerifyConfigRequestEntity = self
+        let e: crate::v2_7_2::types::VerifyConfigRequestEntity = self
             .client
             .post(
                 &format!("/controller/registry-clients/{id}/config/verification-requests"),
@@ -685,9 +687,9 @@ impl<'a> ControllerConfigApi<'a> {
     pub async fn delete_registry_client_verification_request(
         &self,
         request_id: &str,
-    ) -> Result<crate::types::VerifyConfigRequestDto, NifiError> {
+    ) -> Result<crate::v2_7_2::types::VerifyConfigRequestDto, NifiError> {
         let id = self.id;
-        let e: crate::types::VerifyConfigRequestEntity = self
+        let e: crate::v2_7_2::types::VerifyConfigRequestEntity = self
             .client
             .delete_returning(&format!(
                 "/controller/registry-clients/{id}/config/verification-requests/{request_id}"
@@ -706,9 +708,9 @@ impl<'a> ControllerConfigApi<'a> {
     pub async fn get_registry_client_verification_request(
         &self,
         request_id: &str,
-    ) -> Result<crate::types::VerifyConfigRequestDto, NifiError> {
+    ) -> Result<crate::v2_7_2::types::VerifyConfigRequestDto, NifiError> {
         let id = self.id;
-        let e: crate::types::VerifyConfigRequestEntity = self
+        let e: crate::v2_7_2::types::VerifyConfigRequestEntity = self
             .client
             .get(&format!(
                 "/controller/registry-clients/{id}/config/verification-requests/{request_id}"
@@ -758,14 +760,14 @@ impl<'a> ControllerDescriptorsApi<'a> {
         &self,
         property_name: &str,
         sensitive: Option<bool>,
-    ) -> Result<crate::types::PropertyDescriptorDto, NifiError> {
+    ) -> Result<crate::v2_7_2::types::PropertyDescriptorDto, NifiError> {
         let id = self.id;
         let mut query: Vec<(&str, String)> = vec![];
         query.push(("propertyName", property_name.to_string()));
         if let Some(v) = sensitive {
             query.push(("sensitive", v.to_string()));
         }
-        let e: crate::types::PropertyDescriptorEntity = self
+        let e: crate::v2_7_2::types::PropertyDescriptorEntity = self
             .client
             .get_with_query(
                 &format!("/controller/flow-analysis-rules/{id}/descriptors"),
@@ -785,14 +787,14 @@ impl<'a> ControllerDescriptorsApi<'a> {
         &self,
         property_name: &str,
         sensitive: Option<bool>,
-    ) -> Result<crate::types::PropertyDescriptorDto, NifiError> {
+    ) -> Result<crate::v2_7_2::types::PropertyDescriptorDto, NifiError> {
         let id = self.id;
         let mut query: Vec<(&str, String)> = vec![];
         query.push(("propertyName", property_name.to_string()));
         if let Some(v) = sensitive {
             query.push(("sensitive", v.to_string()));
         }
-        let e: crate::types::PropertyDescriptorEntity = self
+        let e: crate::v2_7_2::types::PropertyDescriptorEntity = self
             .client
             .get_with_query(
                 &format!("/controller/registry-clients/{id}/descriptors"),
@@ -815,7 +817,9 @@ impl<'a> ControllerDetailsApi<'a> {
     /// Retrieves the component types available from the installed NARs
     ///
     /// Calls `GET /nifi-api/controller/nar-manager/nars/{id}/details`.
-    pub async fn get_nar_details(&self) -> Result<crate::types::NarDetailsEntity, NifiError> {
+    pub async fn get_nar_details(
+        &self,
+    ) -> Result<crate::v2_7_2::types::NarDetailsEntity, NifiError> {
         let id = self.id;
         self.client
             .get(&format!("/controller/nar-manager/nars/{id}/details"))
@@ -840,8 +844,8 @@ impl<'a> ControllerRunStatusApi<'a> {
     /// - `body`: The flow analysis rule run status.
     pub async fn update_run_status(
         &self,
-        body: &crate::types::FlowAnalysisRuleRunStatusEntity,
-    ) -> Result<crate::types::FlowAnalysisRuleEntity, NifiError> {
+        body: &crate::v2_7_2::types::FlowAnalysisRuleRunStatusEntity,
+    ) -> Result<crate::v2_7_2::types::FlowAnalysisRuleEntity, NifiError> {
         let id = self.id;
         self.client
             .put(
@@ -866,9 +870,9 @@ impl<'a> ControllerStateApi<'a> {
     /// Calls `GET /nifi-api/controller/flow-analysis-rules/{id}/state`.
     pub async fn get_flow_analysis_rule_state(
         &self,
-    ) -> Result<crate::types::ComponentStateDto, NifiError> {
+    ) -> Result<crate::v2_7_2::types::ComponentStateDto, NifiError> {
         let id = self.id;
-        let e: crate::types::ComponentStateEntity = self
+        let e: crate::v2_7_2::types::ComponentStateEntity = self
             .client
             .get(&format!("/controller/flow-analysis-rules/{id}/state"))
             .await?;
@@ -882,10 +886,10 @@ impl<'a> ControllerStateApi<'a> {
     /// - `body`: Optional component state to perform a selective key removal. If omitted, clears all state.
     pub async fn clear_state(
         &self,
-        body: &crate::types::ComponentStateEntity,
-    ) -> Result<crate::types::ComponentStateDto, NifiError> {
+        body: &crate::v2_7_2::types::ComponentStateEntity,
+    ) -> Result<crate::v2_7_2::types::ComponentStateDto, NifiError> {
         let id = self.id;
-        let e: crate::types::ComponentStateEntity = self
+        let e: crate::v2_7_2::types::ComponentStateEntity = self
             .client
             .post(
                 &format!("/controller/flow-analysis-rules/{id}/state/clear-requests"),

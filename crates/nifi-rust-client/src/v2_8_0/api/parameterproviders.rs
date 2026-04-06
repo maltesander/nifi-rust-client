@@ -24,7 +24,7 @@ impl<'a> ParameterProvidersApi<'a> {
         version: Option<&str>,
         client_id: Option<&str>,
         disconnected_node_acknowledged: Option<bool>,
-    ) -> Result<crate::types::ParameterProviderEntity, NifiError> {
+    ) -> Result<crate::v2_8_0::types::ParameterProviderEntity, NifiError> {
         let mut query: Vec<(&str, String)> = vec![];
         if let Some(v) = version {
             query.push(("version", v.to_string()));
@@ -48,7 +48,7 @@ impl<'a> ParameterProvidersApi<'a> {
     pub async fn get_parameter_provider(
         &self,
         id: &str,
-    ) -> Result<crate::types::ParameterProviderEntity, NifiError> {
+    ) -> Result<crate::v2_8_0::types::ParameterProviderEntity, NifiError> {
         self.client.get(&format!("/parameter-providers/{id}")).await
     }
     /// Updates a parameter provider
@@ -61,8 +61,8 @@ impl<'a> ParameterProvidersApi<'a> {
     pub async fn update_parameter_provider(
         &self,
         id: &str,
-        body: &crate::types::ParameterProviderEntity,
-    ) -> Result<crate::types::ParameterProviderEntity, NifiError> {
+        body: &crate::v2_8_0::types::ParameterProviderEntity,
+    ) -> Result<crate::v2_8_0::types::ParameterProviderEntity, NifiError> {
         self.client
             .put(&format!("/parameter-providers/{id}"), body)
             .await
@@ -154,10 +154,10 @@ impl<'a> ParameterProvidersApplyParametersRequestsApi<'a> {
     /// - `body`: The apply parameters request.
     pub async fn submit_apply_parameters(
         &self,
-        body: &crate::types::ParameterProviderParameterApplicationEntity,
-    ) -> Result<crate::types::ParameterProviderApplyParametersRequestDto, NifiError> {
+        body: &crate::v2_8_0::types::ParameterProviderParameterApplicationEntity,
+    ) -> Result<crate::v2_8_0::types::ParameterProviderApplyParametersRequestDto, NifiError> {
         let provider_id = self.provider_id;
-        let e: crate::types::ParameterProviderApplyParametersRequestEntity = self
+        let e: crate::v2_8_0::types::ParameterProviderApplyParametersRequestEntity = self
             .client
             .post(
                 &format!("/parameter-providers/{provider_id}/apply-parameters-requests"),
@@ -179,13 +179,13 @@ impl<'a> ParameterProvidersApplyParametersRequestsApi<'a> {
         &self,
         request_id: &str,
         disconnected_node_acknowledged: Option<bool>,
-    ) -> Result<crate::types::ParameterProviderApplyParametersRequestDto, NifiError> {
+    ) -> Result<crate::v2_8_0::types::ParameterProviderApplyParametersRequestDto, NifiError> {
         let provider_id = self.provider_id;
         let mut query: Vec<(&str, String)> = vec![];
         if let Some(v) = disconnected_node_acknowledged {
             query.push(("disconnectedNodeAcknowledged", v.to_string()));
         }
-        let e: crate::types::ParameterProviderApplyParametersRequestEntity = self
+        let e: crate::v2_8_0::types::ParameterProviderApplyParametersRequestEntity = self
             .client
             .delete_returning_with_query(
                 &format!(
@@ -207,9 +207,9 @@ impl<'a> ParameterProvidersApplyParametersRequestsApi<'a> {
     pub async fn get_parameter_provider_apply_parameters_request(
         &self,
         request_id: &str,
-    ) -> Result<crate::types::ParameterProviderApplyParametersRequestDto, NifiError> {
+    ) -> Result<crate::v2_8_0::types::ParameterProviderApplyParametersRequestDto, NifiError> {
         let provider_id = self.provider_id;
-        let e: crate::types::ParameterProviderApplyParametersRequestEntity = self
+        let e: crate::v2_8_0::types::ParameterProviderApplyParametersRequestEntity = self
             .client
             .get(&format!(
                 "/parameter-providers/{provider_id}/apply-parameters-requests/{request_id}"
@@ -236,8 +236,8 @@ impl<'a> ParameterProvidersBulletinsApi<'a> {
     /// - `body`: The clear bulletin request specifying the timestamp from which to clear bulletins.
     pub async fn clear_bulletins_4(
         &self,
-        body: &crate::types::ClearBulletinsRequestEntity,
-    ) -> Result<crate::types::ClearBulletinsResultEntity, NifiError> {
+        body: &crate::v2_8_0::types::ClearBulletinsRequestEntity,
+    ) -> Result<crate::v2_8_0::types::ClearBulletinsResultEntity, NifiError> {
         let id = self.id;
         self.client
             .post(
@@ -265,10 +265,10 @@ impl<'a> ParameterProvidersConfigApi<'a> {
     /// - `body`: The configuration analysis request.
     pub async fn analyze_configuration_1(
         &self,
-        body: &crate::types::ConfigurationAnalysisEntity,
-    ) -> Result<crate::types::ConfigurationAnalysisDto, NifiError> {
+        body: &crate::v2_8_0::types::ConfigurationAnalysisEntity,
+    ) -> Result<crate::v2_8_0::types::ConfigurationAnalysisDto, NifiError> {
         let id = self.id;
-        let e: crate::types::ConfigurationAnalysisEntity = self
+        let e: crate::v2_8_0::types::ConfigurationAnalysisEntity = self
             .client
             .post(&format!("/parameter-providers/{id}/config/analysis"), body)
             .await?;
@@ -284,10 +284,10 @@ impl<'a> ParameterProvidersConfigApi<'a> {
     /// - `body`: The parameter provider configuration verification request.
     pub async fn submit_config_verification_request_1(
         &self,
-        body: &crate::types::VerifyConfigRequestEntity,
-    ) -> Result<crate::types::VerifyConfigRequestDto, NifiError> {
+        body: &crate::v2_8_0::types::VerifyConfigRequestEntity,
+    ) -> Result<crate::v2_8_0::types::VerifyConfigRequestDto, NifiError> {
         let id = self.id;
-        let e: crate::types::VerifyConfigRequestEntity = self
+        let e: crate::v2_8_0::types::VerifyConfigRequestEntity = self
             .client
             .post(
                 &format!("/parameter-providers/{id}/config/verification-requests"),
@@ -307,9 +307,9 @@ impl<'a> ParameterProvidersConfigApi<'a> {
     pub async fn delete_verification_request_1(
         &self,
         request_id: &str,
-    ) -> Result<crate::types::VerifyConfigRequestDto, NifiError> {
+    ) -> Result<crate::v2_8_0::types::VerifyConfigRequestDto, NifiError> {
         let id = self.id;
-        let e: crate::types::VerifyConfigRequestEntity = self
+        let e: crate::v2_8_0::types::VerifyConfigRequestEntity = self
             .client
             .delete_returning(&format!(
                 "/parameter-providers/{id}/config/verification-requests/{request_id}"
@@ -328,9 +328,9 @@ impl<'a> ParameterProvidersConfigApi<'a> {
     pub async fn get_verification_request_1(
         &self,
         request_id: &str,
-    ) -> Result<crate::types::VerifyConfigRequestDto, NifiError> {
+    ) -> Result<crate::v2_8_0::types::VerifyConfigRequestDto, NifiError> {
         let id = self.id;
-        let e: crate::types::VerifyConfigRequestEntity = self
+        let e: crate::v2_8_0::types::VerifyConfigRequestEntity = self
             .client
             .get(&format!(
                 "/parameter-providers/{id}/config/verification-requests/{request_id}"
@@ -358,11 +358,11 @@ impl<'a> ParameterProvidersDescriptorsApi<'a> {
     pub async fn get_property_descriptor_2(
         &self,
         property_name: &str,
-    ) -> Result<crate::types::PropertyDescriptorDto, NifiError> {
+    ) -> Result<crate::v2_8_0::types::PropertyDescriptorDto, NifiError> {
         let id = self.id;
         let mut query: Vec<(&str, String)> = vec![];
         query.push(("propertyName", property_name.to_string()));
-        let e: crate::types::PropertyDescriptorEntity = self
+        let e: crate::v2_8_0::types::PropertyDescriptorEntity = self
             .client
             .get_with_query(&format!("/parameter-providers/{id}/descriptors"), &query)
             .await?;
@@ -387,8 +387,8 @@ impl<'a> ParameterProvidersParametersApi<'a> {
     /// - `body`: The parameter fetch request.
     pub async fn fetch_parameters(
         &self,
-        body: &crate::types::ParameterProviderParameterFetchEntity,
-    ) -> Result<crate::types::ParameterProviderEntity, NifiError> {
+        body: &crate::v2_8_0::types::ParameterProviderParameterFetchEntity,
+    ) -> Result<crate::v2_8_0::types::ParameterProviderEntity, NifiError> {
         let id = self.id;
         self.client
             .post(
@@ -413,7 +413,7 @@ impl<'a> ParameterProvidersReferencesApi<'a> {
     /// Calls `GET /nifi-api/parameter-providers/{id}/references`.
     pub async fn get_parameter_provider_references(
         &self,
-    ) -> Result<crate::types::ParameterProviderReferencingComponentsEntity, NifiError> {
+    ) -> Result<crate::v2_8_0::types::ParameterProviderReferencingComponentsEntity, NifiError> {
         let id = self.id;
         self.client
             .get(&format!("/parameter-providers/{id}/references"))
@@ -433,9 +433,9 @@ impl<'a> ParameterProvidersStateApi<'a> {
     /// Gets the state for a parameter provider
     ///
     /// Calls `GET /nifi-api/parameter-providers/{id}/state`.
-    pub async fn get_state_1(&self) -> Result<crate::types::ComponentStateDto, NifiError> {
+    pub async fn get_state_1(&self) -> Result<crate::v2_8_0::types::ComponentStateDto, NifiError> {
         let id = self.id;
-        let e: crate::types::ComponentStateEntity = self
+        let e: crate::v2_8_0::types::ComponentStateEntity = self
             .client
             .get(&format!("/parameter-providers/{id}/state"))
             .await?;
@@ -449,10 +449,10 @@ impl<'a> ParameterProvidersStateApi<'a> {
     /// - `body`: Optional component state to perform a selective key removal. If omitted, clears all state.
     pub async fn clear_state_2(
         &self,
-        body: &crate::types::ComponentStateEntity,
-    ) -> Result<crate::types::ComponentStateDto, NifiError> {
+        body: &crate::v2_8_0::types::ComponentStateEntity,
+    ) -> Result<crate::v2_8_0::types::ComponentStateDto, NifiError> {
         let id = self.id;
-        let e: crate::types::ComponentStateEntity = self
+        let e: crate::v2_8_0::types::ComponentStateEntity = self
             .client
             .post(
                 &format!("/parameter-providers/{id}/state/clear-requests"),

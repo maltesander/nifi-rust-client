@@ -14,8 +14,8 @@ impl<'a> AuthenticationApi<'a> {
     /// Calls `GET /nifi-api/authentication/configuration`.
     pub async fn get_authentication_configuration(
         &self,
-    ) -> Result<crate::types::AuthenticationConfigurationDto, NifiError> {
-        let e: crate::types::AuthenticationConfigurationEntity =
+    ) -> Result<crate::v2_7_2::types::AuthenticationConfigurationDto, NifiError> {
+        let e: crate::v2_7_2::types::AuthenticationConfigurationEntity =
             self.client.get("/authentication/configuration").await?;
         Ok(e.authentication_configuration)
     }

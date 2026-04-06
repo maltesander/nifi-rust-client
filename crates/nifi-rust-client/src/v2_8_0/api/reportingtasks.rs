@@ -24,7 +24,7 @@ impl<'a> ReportingTasksApi<'a> {
         version: Option<&str>,
         client_id: Option<&str>,
         disconnected_node_acknowledged: Option<bool>,
-    ) -> Result<crate::types::ReportingTaskEntity, NifiError> {
+    ) -> Result<crate::v2_8_0::types::ReportingTaskEntity, NifiError> {
         let mut query: Vec<(&str, String)> = vec![];
         if let Some(v) = version {
             query.push(("version", v.to_string()));
@@ -48,7 +48,7 @@ impl<'a> ReportingTasksApi<'a> {
     pub async fn get_reporting_task(
         &self,
         id: &str,
-    ) -> Result<crate::types::ReportingTaskEntity, NifiError> {
+    ) -> Result<crate::v2_8_0::types::ReportingTaskEntity, NifiError> {
         self.client.get(&format!("/reporting-tasks/{id}")).await
     }
     /// Updates a reporting task
@@ -61,8 +61,8 @@ impl<'a> ReportingTasksApi<'a> {
     pub async fn update_reporting_task(
         &self,
         id: &str,
-        body: &crate::types::ReportingTaskEntity,
-    ) -> Result<crate::types::ReportingTaskEntity, NifiError> {
+        body: &crate::v2_8_0::types::ReportingTaskEntity,
+    ) -> Result<crate::v2_8_0::types::ReportingTaskEntity, NifiError> {
         self.client
             .put(&format!("/reporting-tasks/{id}"), body)
             .await
@@ -131,8 +131,8 @@ impl<'a> ReportingTasksBulletinsApi<'a> {
     /// - `body`: The clear bulletin request specifying the timestamp from which to clear bulletins.
     pub async fn clear_bulletins_7(
         &self,
-        body: &crate::types::ClearBulletinsRequestEntity,
-    ) -> Result<crate::types::ClearBulletinsResultEntity, NifiError> {
+        body: &crate::v2_8_0::types::ClearBulletinsRequestEntity,
+    ) -> Result<crate::v2_8_0::types::ClearBulletinsResultEntity, NifiError> {
         let id = self.id;
         self.client
             .post(
@@ -160,10 +160,10 @@ impl<'a> ReportingTasksConfigApi<'a> {
     /// - `body`: The configuration analysis request.
     pub async fn analyze_configuration_3(
         &self,
-        body: &crate::types::ConfigurationAnalysisEntity,
-    ) -> Result<crate::types::ConfigurationAnalysisDto, NifiError> {
+        body: &crate::v2_8_0::types::ConfigurationAnalysisEntity,
+    ) -> Result<crate::v2_8_0::types::ConfigurationAnalysisDto, NifiError> {
         let id = self.id;
-        let e: crate::types::ConfigurationAnalysisEntity = self
+        let e: crate::v2_8_0::types::ConfigurationAnalysisEntity = self
             .client
             .post(&format!("/reporting-tasks/{id}/config/analysis"), body)
             .await?;
@@ -179,10 +179,10 @@ impl<'a> ReportingTasksConfigApi<'a> {
     /// - `body`: The reporting task configuration verification request.
     pub async fn submit_config_verification_request_2(
         &self,
-        body: &crate::types::VerifyConfigRequestEntity,
-    ) -> Result<crate::types::VerifyConfigRequestDto, NifiError> {
+        body: &crate::v2_8_0::types::VerifyConfigRequestEntity,
+    ) -> Result<crate::v2_8_0::types::VerifyConfigRequestDto, NifiError> {
         let id = self.id;
-        let e: crate::types::VerifyConfigRequestEntity = self
+        let e: crate::v2_8_0::types::VerifyConfigRequestEntity = self
             .client
             .post(
                 &format!("/reporting-tasks/{id}/config/verification-requests"),
@@ -202,9 +202,9 @@ impl<'a> ReportingTasksConfigApi<'a> {
     pub async fn delete_verification_request_3(
         &self,
         request_id: &str,
-    ) -> Result<crate::types::VerifyConfigRequestDto, NifiError> {
+    ) -> Result<crate::v2_8_0::types::VerifyConfigRequestDto, NifiError> {
         let id = self.id;
-        let e: crate::types::VerifyConfigRequestEntity = self
+        let e: crate::v2_8_0::types::VerifyConfigRequestEntity = self
             .client
             .delete_returning(&format!(
                 "/reporting-tasks/{id}/config/verification-requests/{request_id}"
@@ -223,9 +223,9 @@ impl<'a> ReportingTasksConfigApi<'a> {
     pub async fn get_verification_request_3(
         &self,
         request_id: &str,
-    ) -> Result<crate::types::VerifyConfigRequestDto, NifiError> {
+    ) -> Result<crate::v2_8_0::types::VerifyConfigRequestDto, NifiError> {
         let id = self.id;
-        let e: crate::types::VerifyConfigRequestEntity = self
+        let e: crate::v2_8_0::types::VerifyConfigRequestEntity = self
             .client
             .get(&format!(
                 "/reporting-tasks/{id}/config/verification-requests/{request_id}"
@@ -255,14 +255,14 @@ impl<'a> ReportingTasksDescriptorsApi<'a> {
         &self,
         property_name: &str,
         sensitive: Option<bool>,
-    ) -> Result<crate::types::PropertyDescriptorDto, NifiError> {
+    ) -> Result<crate::v2_8_0::types::PropertyDescriptorDto, NifiError> {
         let id = self.id;
         let mut query: Vec<(&str, String)> = vec![];
         query.push(("propertyName", property_name.to_string()));
         if let Some(v) = sensitive {
             query.push(("sensitive", v.to_string()));
         }
-        let e: crate::types::PropertyDescriptorEntity = self
+        let e: crate::v2_8_0::types::PropertyDescriptorEntity = self
             .client
             .get_with_query(&format!("/reporting-tasks/{id}/descriptors"), &query)
             .await?;
@@ -287,8 +287,8 @@ impl<'a> ReportingTasksRunStatusApi<'a> {
     /// - `body`: The reporting task run status.
     pub async fn update_run_status_5(
         &self,
-        body: &crate::types::ReportingTaskRunStatusEntity,
-    ) -> Result<crate::types::ReportingTaskEntity, NifiError> {
+        body: &crate::v2_8_0::types::ReportingTaskRunStatusEntity,
+    ) -> Result<crate::v2_8_0::types::ReportingTaskEntity, NifiError> {
         let id = self.id;
         self.client
             .put(&format!("/reporting-tasks/{id}/run-status"), body)
@@ -308,9 +308,9 @@ impl<'a> ReportingTasksStateApi<'a> {
     /// Gets the state for a reporting task
     ///
     /// Calls `GET /nifi-api/reporting-tasks/{id}/state`.
-    pub async fn get_state_4(&self) -> Result<crate::types::ComponentStateDto, NifiError> {
+    pub async fn get_state_4(&self) -> Result<crate::v2_8_0::types::ComponentStateDto, NifiError> {
         let id = self.id;
-        let e: crate::types::ComponentStateEntity = self
+        let e: crate::v2_8_0::types::ComponentStateEntity = self
             .client
             .get(&format!("/reporting-tasks/{id}/state"))
             .await?;
@@ -324,10 +324,10 @@ impl<'a> ReportingTasksStateApi<'a> {
     /// - `body`: Optional component state to perform a selective key removal. If omitted, clears all state.
     pub async fn clear_state_4(
         &self,
-        body: &crate::types::ComponentStateEntity,
-    ) -> Result<crate::types::ComponentStateDto, NifiError> {
+        body: &crate::v2_8_0::types::ComponentStateEntity,
+    ) -> Result<crate::v2_8_0::types::ComponentStateDto, NifiError> {
         let id = self.id;
-        let e: crate::types::ComponentStateEntity = self
+        let e: crate::v2_8_0::types::ComponentStateEntity = self
             .client
             .post(&format!("/reporting-tasks/{id}/state/clear-requests"), body)
             .await?;

@@ -1,6 +1,110 @@
 use std::collections::BTreeMap;
 
-use crate::parser::{ApiSpec, TypeKind};
+use crate::parser::{ApiSpec, FieldType, TypeKind};
+
+fn escape_keyword(name: &str) -> String {
+    match name {
+        "type" | "ref" | "use" | "mod" | "fn" | "let" | "match" | "for" | "if" | "else"
+        | "return" | "struct" | "enum" | "impl" | "trait" | "pub" | "super" | "self" | "crate"
+        | "where" | "true" | "false" | "in" | "loop" | "while" | "break" | "continue" | "mut"
+        | "move" | "async" | "await" | "dyn" | "box" | "const" | "static" | "extern" | "unsafe"
+        | "as" => format!("r#{name}"),
+        _ => name.to_string(),
+    }
+}
+
+/// Determine if a field type needs `.into()` conversion (i.e., contains a Ref or Enum).
+fn needs_conversion(ty: &FieldType) -> bool {
+    match ty {
+        FieldType::Ref(_) | FieldType::Enum(_) => true,
+        FieldType::Opt(inner) | FieldType::List(inner) | FieldType::Map(inner) => {
+            needs_conversion(inner)
+        }
+        _ => false,
+    }
+}
+
+/// Generate the conversion expression for a field from a per-version type to the dynamic type.
+/// All dynamic fields are `Option<T>`, so non-Optional per-version fields get wrapped in `Some(...)`.
+fn field_conversion_expr(escaped_name: &str, ty: &FieldType, struct_name: &str) -> String {
+    match ty {
+        FieldType::Opt(_) => {
+            // Already optional — convert the inner value
+            if !needs_conversion(ty) {
+                format!("v.{escaped_name}")
+            } else {
+                convert_expr(&format!("v.{escaped_name}"), ty, struct_name)
+            }
+        }
+        _ => {
+            // Non-optional in the per-version type → wrap in Some for the dynamic type
+            if !needs_conversion(ty) {
+                format!("Some(v.{escaped_name})")
+            } else {
+                let converted = convert_expr(&format!("v.{escaped_name}"), ty, struct_name);
+                format!("Some({converted})")
+            }
+        }
+    }
+}
+
+fn convert_expr(expr: &str, ty: &FieldType, struct_name: &str) -> String {
+    match ty {
+        FieldType::Ref(name) if name == struct_name => {
+            // Self-referential field — wrapped in Box in the dynamic type
+            format!("{expr}.map(|v| Box::new((*v).into()))")
+        }
+        FieldType::Ref(_) => format!("{expr}.into()"),
+        FieldType::Enum(_) => {
+            // Inline string enums are emitted as String in the dynamic type;
+            // use serde round-trip since per-version enums may not impl Display
+            format!("serde_json::to_value(&{expr}).ok().and_then(|v| v.as_str().map(|s| s.to_string())).unwrap_or_default()")
+        }
+        FieldType::Opt(inner) => {
+            if needs_conversion(inner) {
+                match inner.as_ref() {
+                    FieldType::Ref(name) if name == struct_name => {
+                        format!("{expr}.map(|v| Box::new((*v).into()))")
+                    }
+                    FieldType::Ref(_) => format!("{expr}.map(Into::into)"),
+                    FieldType::Enum(_) => {
+                        format!("{expr}.map(|v| serde_json::to_value(&v).ok().and_then(|v| v.as_str().map(|s| s.to_string())).unwrap_or_default())")
+                    }
+                    FieldType::List(item) if needs_conversion(item) => {
+                        let list_conv = convert_expr("v", &FieldType::List(item.clone()), struct_name);
+                        format!("{expr}.map(|v| {list_conv})")
+                    }
+                    FieldType::Map(val) if needs_conversion(val) => {
+                        let val_conversion = convert_expr("v", val, struct_name);
+                        format!("{expr}.map(|m| m.into_iter().map(|(k, v)| (k, {val_conversion})).collect())")
+                    }
+                    _ => format!("{expr}.map(Into::into)"),
+                }
+            } else {
+                format!("{expr}")
+            }
+        }
+        FieldType::List(inner) if needs_conversion(inner) => {
+            match inner.as_ref() {
+                FieldType::Enum(_) => {
+                    format!("{expr}.into_iter().map(|v| serde_json::to_value(&v).ok().and_then(|v| v.as_str().map(|s| s.to_string())).unwrap_or_default()).collect()")
+                }
+                FieldType::Ref(name) if name == struct_name => {
+                    format!("{expr}.into_iter().map(|v| Box::new((*v).into())).collect()")
+                }
+                _ => {
+                    let item_conversion = convert_expr("v", inner, struct_name);
+                    format!("{expr}.into_iter().map(|v| {item_conversion}).collect()")
+                }
+            }
+        }
+        FieldType::Map(inner) if needs_conversion(inner) => {
+            let val_conversion = convert_expr("v", inner, struct_name);
+            format!("{expr}.into_iter().map(|(k, v)| (k, {val_conversion})).collect()")
+        }
+        _ => format!("{expr}"),
+    }
+}
 
 /// Generates From impls converting each version's types into the common dynamic types.
 /// Returns the content for `dynamic/conversions.rs`.
@@ -22,15 +126,15 @@ pub fn emit_dynamic_conversions(
             .map(|td| (td.name.as_str(), &td.kind))
             .collect();
 
-        // Build a lookup from field rust_name to its presence for this version's types
-        let field_lookup: BTreeMap<&str, BTreeMap<&str, bool>> = spec
+        // Build a lookup from (type_name, field_rust_name) -> &FieldType
+        let field_lookup: BTreeMap<&str, BTreeMap<&str, &FieldType>> = spec
             .all_types
             .iter()
             .map(|td| {
-                let fields: BTreeMap<&str, bool> = td
+                let fields: BTreeMap<&str, &FieldType> = td
                     .fields
                     .iter()
-                    .map(|f| (f.rust_name.as_str(), true))
+                    .map(|f| (f.rust_name.as_str(), &f.ty))
                     .collect();
                 (td.name.as_str(), fields)
             })
@@ -55,20 +159,27 @@ pub fn emit_dynamic_conversions(
                     let version_fields = field_lookup.get(type_name.as_str());
                     out.push_str("        Self {\n");
                     for field_name in merged_fields {
-                        let present = version_fields
-                            .map(|f| f.contains_key(field_name.as_str()))
-                            .unwrap_or(false);
-                        if present {
-                            out.push_str(&format!("            {}: v.{},\n", field_name, field_name));
-                        } else {
-                            out.push_str(&format!("            {}: None,\n", field_name));
+                        let escaped = escape_keyword(field_name);
+                        let field_ty = version_fields
+                            .and_then(|f| f.get(field_name.as_str()).copied());
+                        match field_ty {
+                            Some(ty) => {
+                                let conversion = field_conversion_expr(&escaped, ty, type_name);
+                                out.push_str(&format!("            {escaped}: {conversion},\n"));
+                            }
+                            None => {
+                                // Field not present in this version
+                                out.push_str(&format!("            {escaped}: None,\n"));
+                            }
                         }
                     }
                     out.push_str("        }\n");
                 }
                 TypeKind::Entity { field, inner: _ } => {
+                    let escaped_field = escape_keyword(field);
+                    // Per-version entity has non-Optional inner field; dynamic has Option
                     out.push_str(&format!(
-                        "        Self {{ {field}: v.{field}.into() }}\n"
+                        "        Self {{ {escaped_field}: Some(v.{escaped_field}.into()) }}\n"
                     ));
                 }
                 TypeKind::StringEnum(_) => {

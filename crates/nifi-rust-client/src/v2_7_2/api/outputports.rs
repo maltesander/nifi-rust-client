@@ -24,7 +24,7 @@ impl<'a> OutputPortsApi<'a> {
         version: Option<&str>,
         client_id: Option<&str>,
         disconnected_node_acknowledged: Option<bool>,
-    ) -> Result<crate::types::PortEntity, NifiError> {
+    ) -> Result<crate::v2_7_2::types::PortEntity, NifiError> {
         let mut query: Vec<(&str, String)> = vec![];
         if let Some(v) = version {
             query.push(("version", v.to_string()));
@@ -45,7 +45,10 @@ impl<'a> OutputPortsApi<'a> {
     ///
     /// # Parameters
     /// - `id`: The output port id.
-    pub async fn get_output_port(&self, id: &str) -> Result<crate::types::PortEntity, NifiError> {
+    pub async fn get_output_port(
+        &self,
+        id: &str,
+    ) -> Result<crate::v2_7_2::types::PortEntity, NifiError> {
         self.client.get(&format!("/output-ports/{id}")).await
     }
     /// Updates an output port
@@ -58,8 +61,8 @@ impl<'a> OutputPortsApi<'a> {
     pub async fn update_output_port(
         &self,
         id: &str,
-        body: &crate::types::PortEntity,
-    ) -> Result<crate::types::PortEntity, NifiError> {
+        body: &crate::v2_7_2::types::PortEntity,
+    ) -> Result<crate::v2_7_2::types::PortEntity, NifiError> {
         self.client.put(&format!("/output-ports/{id}"), body).await
     }
     /// Scope operations to the `bulletins` sub-resource of a specific process group.
@@ -99,8 +102,8 @@ impl<'a> OutputPortsBulletinsApi<'a> {
     /// - `body`: The request to clear bulletins.
     pub async fn clear_bulletins_3(
         &self,
-        body: &crate::types::ClearBulletinsRequestEntity,
-    ) -> Result<crate::types::ClearBulletinsResultEntity, NifiError> {
+        body: &crate::v2_7_2::types::ClearBulletinsRequestEntity,
+    ) -> Result<crate::v2_7_2::types::ClearBulletinsResultEntity, NifiError> {
         let id = self.id;
         self.client
             .post(
@@ -128,8 +131,8 @@ impl<'a> OutputPortsRunStatusApi<'a> {
     /// - `body`: The port run status.
     pub async fn update_run_status_3(
         &self,
-        body: &crate::types::PortRunStatusEntity,
-    ) -> Result<crate::types::ProcessorEntity, NifiError> {
+        body: &crate::v2_7_2::types::PortRunStatusEntity,
+    ) -> Result<crate::v2_7_2::types::ProcessorEntity, NifiError> {
         let id = self.id;
         self.client
             .put(&format!("/output-ports/{id}/run-status"), body)

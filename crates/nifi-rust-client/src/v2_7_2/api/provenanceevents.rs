@@ -17,8 +17,8 @@ impl<'a> ProvenanceEventsApi<'a> {
     /// - `body`: The replay request.
     pub async fn submit_replay_latest_event(
         &self,
-        body: &crate::types::ReplayLastEventRequestEntity,
-    ) -> Result<crate::types::ReplayLastEventResponseEntity, NifiError> {
+        body: &crate::v2_7_2::types::ReplayLastEventRequestEntity,
+    ) -> Result<crate::v2_7_2::types::ReplayLastEventResponseEntity, NifiError> {
         self.client
             .post("/provenance-events/latest/replays", body)
             .await
@@ -34,12 +34,12 @@ impl<'a> ProvenanceEventsApi<'a> {
         &self,
         component_id: &str,
         limit: Option<i32>,
-    ) -> Result<crate::types::LatestProvenanceEventsDto, NifiError> {
+    ) -> Result<crate::v2_7_2::types::LatestProvenanceEventsDto, NifiError> {
         let mut query: Vec<(&str, String)> = vec![];
         if let Some(v) = limit {
             query.push(("limit", v.to_string()));
         }
-        let e: crate::types::LatestProvenanceEventsEntity = self
+        let e: crate::v2_7_2::types::LatestProvenanceEventsEntity = self
             .client
             .get_with_query(&format!("/provenance-events/latest/{component_id}"), &query)
             .await?;
@@ -53,9 +53,9 @@ impl<'a> ProvenanceEventsApi<'a> {
     /// - `body`: The replay request.
     pub async fn submit_replay(
         &self,
-        body: &crate::types::SubmitReplayRequestEntity,
-    ) -> Result<crate::types::ProvenanceEventDto, NifiError> {
-        let e: crate::types::ProvenanceEventEntity =
+        body: &crate::v2_7_2::types::SubmitReplayRequestEntity,
+    ) -> Result<crate::v2_7_2::types::ProvenanceEventDto, NifiError> {
+        let e: crate::v2_7_2::types::ProvenanceEventEntity =
             self.client.post("/provenance-events/replays", body).await?;
         Ok(e.provenance_event)
     }
@@ -70,12 +70,12 @@ impl<'a> ProvenanceEventsApi<'a> {
         &self,
         id: &str,
         cluster_node_id: Option<&str>,
-    ) -> Result<crate::types::ProvenanceEventDto, NifiError> {
+    ) -> Result<crate::v2_7_2::types::ProvenanceEventDto, NifiError> {
         let mut query: Vec<(&str, String)> = vec![];
         if let Some(v) = cluster_node_id {
             query.push(("clusterNodeId", v.to_string()));
         }
-        let e: crate::types::ProvenanceEventEntity = self
+        let e: crate::v2_7_2::types::ProvenanceEventEntity = self
             .client
             .get_with_query(&format!("/provenance-events/{id}"), &query)
             .await?;

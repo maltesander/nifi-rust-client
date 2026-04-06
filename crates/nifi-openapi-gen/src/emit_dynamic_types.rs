@@ -33,7 +33,7 @@ pub fn emit_dynamic_types(specs: &[(&str, &ApiSpec)]) -> String {
                 out.push_str("#[serde(rename_all = \"camelCase\")]\n");
                 out.push_str(&format!("pub struct {name} {{\n"));
                 for field in fields.values() {
-                    let rust_ty = field_type_to_rust(&field.ty);
+                    let rust_ty = field_type_to_rust(&field.ty, name);
                     let wrapped = wrap_in_option(&field.ty, &rust_ty);
                     // Use serde rename if it differs from rust_name
                     if field.serde_name != field.rust_name {
@@ -44,7 +44,7 @@ pub fn emit_dynamic_types(specs: &[(&str, &ApiSpec)]) -> String {
                     }
                     out.push_str(&format!(
                         "    pub {}: {wrapped},\n",
-                        field.rust_name
+                        escape_keyword(&field.rust_name)
                     ));
                 }
                 out.push_str("}\n\n");
@@ -53,7 +53,7 @@ pub fn emit_dynamic_types(specs: &[(&str, &ApiSpec)]) -> String {
                 out.push_str("#[derive(Debug, Clone, Default, Deserialize, Serialize)]\n");
                 out.push_str("#[serde(rename_all = \"camelCase\")]\n");
                 out.push_str(&format!("pub(crate) struct {name} {{\n"));
-                out.push_str(&format!("    pub {field}: Option<{inner}>,\n"));
+                out.push_str(&format!("    pub {}: Option<{inner}>,\n", escape_keyword(field)));
                 out.push_str("}\n\n");
             }
             MergedType::StringEnum { variants } => {
@@ -72,14 +72,20 @@ pub fn emit_dynamic_types(specs: &[(&str, &ApiSpec)]) -> String {
     out
 }
 
-/// Returns a map of type_name -> sorted field names (rust_name) for all merged Dto types.
-/// Used by the conversions emitter to know which fields exist in the union type.
+/// Returns a map of type_name -> sorted field names (rust_name) for all merged types.
+/// Dto types get their field names; Entity and StringEnum types get empty field lists
+/// (their conversions are handled differently but they still need From impls).
 pub fn collect_merged_field_names(specs: &[(&str, &ApiSpec)]) -> BTreeMap<String, Vec<String>> {
     let merged = merge_all_types(specs);
     let mut result = BTreeMap::new();
     for (name, mt) in merged {
-        if let MergedType::Dto { fields } = mt {
-            result.insert(name, fields.keys().cloned().collect());
+        match mt {
+            MergedType::Dto { fields } => {
+                result.insert(name, fields.keys().cloned().collect());
+            }
+            MergedType::Entity { .. } | MergedType::StringEnum { .. } => {
+                result.insert(name, vec![]);
+            }
         }
     }
     result
@@ -135,19 +141,36 @@ fn merge_all_types(specs: &[(&str, &ApiSpec)]) -> BTreeMap<String, MergedType> {
     merged
 }
 
-fn field_type_to_rust(ty: &FieldType) -> String {
+fn escape_keyword(name: &str) -> String {
+    match name {
+        "type" | "ref" | "use" | "mod" | "fn" | "let" | "match" | "for" | "if" | "else"
+        | "return" | "struct" | "enum" | "impl" | "trait" | "pub" | "super" | "self" | "crate"
+        | "where" | "true" | "false" | "in" | "loop" | "while" | "break" | "continue" | "mut"
+        | "move" | "async" | "await" | "dyn" | "box" | "const" | "static" | "extern" | "unsafe"
+        | "as" => format!("r#{name}"),
+        _ => name.to_string(),
+    }
+}
+
+fn field_type_to_rust(ty: &FieldType, struct_name: &str) -> String {
     match ty {
         FieldType::Str => "String".to_string(),
         FieldType::Bool => "bool".to_string(),
         FieldType::I32 => "i32".to_string(),
         FieldType::I64 => "i64".to_string(),
         FieldType::F64 => "f64".to_string(),
-        FieldType::Opt(inner) => format!("Option<{}>", field_type_to_rust(inner)),
-        FieldType::List(inner) => format!("Vec<{}>", field_type_to_rust(inner)),
+        FieldType::Opt(inner) => format!("Option<{}>", field_type_to_rust(inner, struct_name)),
+        FieldType::List(inner) => format!("Vec<{}>", field_type_to_rust(inner, struct_name)),
         FieldType::Enum(_) => "String".to_string(),
-        FieldType::Ref(name) => name.clone(),
+        FieldType::Ref(name) => {
+            if name == struct_name {
+                format!("Box<{name}>")
+            } else {
+                name.clone()
+            }
+        }
         FieldType::Map(inner) => {
-            format!("std::collections::HashMap<String, {}>", field_type_to_rust(inner))
+            format!("std::collections::HashMap<String, {}>", field_type_to_rust(inner, struct_name))
         }
     }
 }

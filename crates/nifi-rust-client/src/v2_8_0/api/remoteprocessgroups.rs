@@ -24,7 +24,7 @@ impl<'a> RemoteProcessGroupsApi<'a> {
         version: Option<&str>,
         client_id: Option<&str>,
         disconnected_node_acknowledged: Option<bool>,
-    ) -> Result<crate::types::RemoteProcessGroupEntity, NifiError> {
+    ) -> Result<crate::v2_8_0::types::RemoteProcessGroupEntity, NifiError> {
         let mut query: Vec<(&str, String)> = vec![];
         if let Some(v) = version {
             query.push(("version", v.to_string()));
@@ -48,7 +48,7 @@ impl<'a> RemoteProcessGroupsApi<'a> {
     pub async fn get_remote_process_group(
         &self,
         id: &str,
-    ) -> Result<crate::types::RemoteProcessGroupEntity, NifiError> {
+    ) -> Result<crate::v2_8_0::types::RemoteProcessGroupEntity, NifiError> {
         self.client
             .get(&format!("/remote-process-groups/{id}"))
             .await
@@ -63,8 +63,8 @@ impl<'a> RemoteProcessGroupsApi<'a> {
     pub async fn update_remote_process_group(
         &self,
         id: &str,
-        body: &crate::types::RemoteProcessGroupEntity,
-    ) -> Result<crate::types::RemoteProcessGroupEntity, NifiError> {
+        body: &crate::v2_8_0::types::RemoteProcessGroupEntity,
+    ) -> Result<crate::v2_8_0::types::RemoteProcessGroupEntity, NifiError> {
         self.client
             .put(&format!("/remote-process-groups/{id}"), body)
             .await
@@ -133,8 +133,8 @@ impl<'a> RemoteProcessGroupsBulletinsApi<'a> {
     /// - `body`: The clear bulletin request.
     pub async fn clear_bulletins_6(
         &self,
-        body: &crate::types::ClearBulletinsRequestEntity,
-    ) -> Result<crate::types::ClearBulletinsResultEntity, NifiError> {
+        body: &crate::v2_8_0::types::ClearBulletinsRequestEntity,
+    ) -> Result<crate::v2_8_0::types::ClearBulletinsResultEntity, NifiError> {
         let id = self.id;
         self.client
             .post(
@@ -166,8 +166,8 @@ impl<'a> RemoteProcessGroupsInputPortsApi<'a> {
     pub async fn update_remote_process_group_input_port(
         &self,
         port_id: &str,
-        body: &crate::types::RemoteProcessGroupPortEntity,
-    ) -> Result<crate::types::RemoteProcessGroupPortEntity, NifiError> {
+        body: &crate::v2_8_0::types::RemoteProcessGroupPortEntity,
+    ) -> Result<crate::v2_8_0::types::RemoteProcessGroupPortEntity, NifiError> {
         let id = self.id;
         self.client
             .put(
@@ -188,8 +188,8 @@ impl<'a> RemoteProcessGroupsInputPortsApi<'a> {
     pub async fn update_remote_process_group_input_port_run_status(
         &self,
         port_id: &str,
-        body: &crate::types::RemotePortRunStatusEntity,
-    ) -> Result<crate::types::RemoteProcessGroupPortEntity, NifiError> {
+        body: &crate::v2_8_0::types::RemotePortRunStatusEntity,
+    ) -> Result<crate::v2_8_0::types::RemoteProcessGroupPortEntity, NifiError> {
         let id = self.id;
         self.client
             .put(
@@ -221,8 +221,8 @@ impl<'a> RemoteProcessGroupsOutputPortsApi<'a> {
     pub async fn update_remote_process_group_output_port(
         &self,
         port_id: &str,
-        body: &crate::types::RemoteProcessGroupPortEntity,
-    ) -> Result<crate::types::RemoteProcessGroupPortEntity, NifiError> {
+        body: &crate::v2_8_0::types::RemoteProcessGroupPortEntity,
+    ) -> Result<crate::v2_8_0::types::RemoteProcessGroupPortEntity, NifiError> {
         let id = self.id;
         self.client
             .put(
@@ -243,8 +243,8 @@ impl<'a> RemoteProcessGroupsOutputPortsApi<'a> {
     pub async fn update_remote_process_group_output_port_run_status(
         &self,
         port_id: &str,
-        body: &crate::types::RemotePortRunStatusEntity,
-    ) -> Result<crate::types::RemoteProcessGroupPortEntity, NifiError> {
+        body: &crate::v2_8_0::types::RemotePortRunStatusEntity,
+    ) -> Result<crate::v2_8_0::types::RemoteProcessGroupPortEntity, NifiError> {
         let id = self.id;
         self.client
             .put(
@@ -272,8 +272,8 @@ impl<'a> RemoteProcessGroupsRunStatusApi<'a> {
     /// - `body`: The remote process groups run status.
     pub async fn update_remote_process_group_run_statuses(
         &self,
-        body: &crate::types::RemotePortRunStatusEntity,
-    ) -> Result<crate::types::RemoteProcessGroupEntity, NifiError> {
+        body: &crate::v2_8_0::types::RemotePortRunStatusEntity,
+    ) -> Result<crate::v2_8_0::types::RemoteProcessGroupEntity, NifiError> {
         let id = self.id;
         self.client
             .put(
@@ -290,8 +290,8 @@ impl<'a> RemoteProcessGroupsRunStatusApi<'a> {
     /// - `body`: The remote process group run status.
     pub async fn update_remote_process_group_run_status(
         &self,
-        body: &crate::types::RemotePortRunStatusEntity,
-    ) -> Result<crate::types::RemoteProcessGroupEntity, NifiError> {
+        body: &crate::v2_8_0::types::RemotePortRunStatusEntity,
+    ) -> Result<crate::v2_8_0::types::RemoteProcessGroupEntity, NifiError> {
         let id = self.id;
         self.client
             .put(&format!("/remote-process-groups/{id}/run-status"), body)
@@ -311,9 +311,9 @@ impl<'a> RemoteProcessGroupsStateApi<'a> {
     /// Gets the state for a RemoteProcessGroup
     ///
     /// Calls `GET /nifi-api/remote-process-groups/{id}/state`.
-    pub async fn get_state_3(&self) -> Result<crate::types::ComponentStateDto, NifiError> {
+    pub async fn get_state_3(&self) -> Result<crate::v2_8_0::types::ComponentStateDto, NifiError> {
         let id = self.id;
-        let e: crate::types::ComponentStateEntity = self
+        let e: crate::v2_8_0::types::ComponentStateEntity = self
             .client
             .get(&format!("/remote-process-groups/{id}/state"))
             .await?;

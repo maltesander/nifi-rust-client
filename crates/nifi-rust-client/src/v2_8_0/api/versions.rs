@@ -19,7 +19,7 @@ impl<'a> VersionsApi<'a> {
     /// - `body`: The versioned flow details.
     pub async fn create_version_control_request(
         &self,
-        body: &crate::types::CreateActiveRequestEntity,
+        body: &crate::v2_8_0::types::CreateActiveRequestEntity,
     ) -> Result<(), NifiError> {
         self.client
             .post_void("/versions/active-requests", body)
@@ -59,8 +59,8 @@ impl<'a> VersionsApi<'a> {
     pub async fn update_version_control_request(
         &self,
         id: &str,
-        body: &crate::types::VersionControlComponentMappingEntity,
-    ) -> Result<crate::types::VersionControlInformationEntity, NifiError> {
+        body: &crate::v2_8_0::types::VersionControlComponentMappingEntity,
+    ) -> Result<crate::v2_8_0::types::VersionControlInformationEntity, NifiError> {
         self.client
             .put(&format!("/versions/active-requests/{id}"), body)
             .await
@@ -82,7 +82,7 @@ impl<'a> VersionsApi<'a> {
         version: Option<&str>,
         client_id: Option<&str>,
         disconnected_node_acknowledged: Option<bool>,
-    ) -> Result<crate::types::VersionControlInformationEntity, NifiError> {
+    ) -> Result<crate::v2_8_0::types::VersionControlInformationEntity, NifiError> {
         let mut query: Vec<(&str, String)> = vec![];
         if let Some(v) = version {
             query.push(("version", v.to_string()));
@@ -108,7 +108,7 @@ impl<'a> VersionsApi<'a> {
     pub async fn get_version_information(
         &self,
         id: &str,
-    ) -> Result<crate::types::VersionControlInformationEntity, NifiError> {
+    ) -> Result<crate::v2_8_0::types::VersionControlInformationEntity, NifiError> {
         self.client
             .get(&format!("/versions/process-groups/{id}"))
             .await
@@ -125,8 +125,8 @@ impl<'a> VersionsApi<'a> {
     pub async fn save_to_flow_registry(
         &self,
         id: &str,
-        body: &crate::types::StartVersionControlRequestEntity,
-    ) -> Result<crate::types::VersionControlInformationEntity, NifiError> {
+        body: &crate::v2_8_0::types::StartVersionControlRequestEntity,
+    ) -> Result<crate::v2_8_0::types::VersionControlInformationEntity, NifiError> {
         self.client
             .post(&format!("/versions/process-groups/{id}"), body)
             .await
@@ -143,8 +143,8 @@ impl<'a> VersionsApi<'a> {
     pub async fn update_flow_version(
         &self,
         id: &str,
-        body: &crate::types::VersionedFlowSnapshotEntity,
-    ) -> Result<crate::types::VersionControlInformationEntity, NifiError> {
+        body: &crate::v2_8_0::types::VersionedFlowSnapshotEntity,
+    ) -> Result<crate::v2_8_0::types::VersionControlInformationEntity, NifiError> {
         self.client
             .put(&format!("/versions/process-groups/{id}"), body)
             .await
@@ -161,8 +161,8 @@ impl<'a> VersionsApi<'a> {
     pub async fn initiate_revert_flow_version(
         &self,
         id: &str,
-        body: &crate::types::VersionControlInformationEntity,
-    ) -> Result<crate::types::VersionedFlowUpdateRequestEntity, NifiError> {
+        body: &crate::v2_8_0::types::VersionControlInformationEntity,
+    ) -> Result<crate::v2_8_0::types::VersionedFlowUpdateRequestEntity, NifiError> {
         self.client
             .post(
                 &format!("/versions/revert-requests/process-groups/{id}"),
@@ -183,7 +183,7 @@ impl<'a> VersionsApi<'a> {
         &self,
         id: &str,
         disconnected_node_acknowledged: Option<bool>,
-    ) -> Result<crate::types::VersionedFlowUpdateRequestEntity, NifiError> {
+    ) -> Result<crate::v2_8_0::types::VersionedFlowUpdateRequestEntity, NifiError> {
         let mut query: Vec<(&str, String)> = vec![];
         if let Some(v) = disconnected_node_acknowledged {
             query.push(("disconnectedNodeAcknowledged", v.to_string()));
@@ -203,7 +203,7 @@ impl<'a> VersionsApi<'a> {
     pub async fn get_revert_request(
         &self,
         id: &str,
-    ) -> Result<crate::types::VersionedFlowUpdateRequestEntity, NifiError> {
+    ) -> Result<crate::v2_8_0::types::VersionedFlowUpdateRequestEntity, NifiError> {
         self.client
             .get(&format!("/versions/revert-requests/{id}"))
             .await
@@ -220,8 +220,8 @@ impl<'a> VersionsApi<'a> {
     pub async fn initiate_version_control_update(
         &self,
         id: &str,
-        body: &crate::types::VersionControlInformationEntity,
-    ) -> Result<crate::types::VersionedFlowUpdateRequestEntity, NifiError> {
+        body: &crate::v2_8_0::types::VersionControlInformationEntity,
+    ) -> Result<crate::v2_8_0::types::VersionedFlowUpdateRequestEntity, NifiError> {
         self.client
             .post(
                 &format!("/versions/update-requests/process-groups/{id}"),
@@ -242,7 +242,7 @@ impl<'a> VersionsApi<'a> {
         &self,
         id: &str,
         disconnected_node_acknowledged: Option<bool>,
-    ) -> Result<crate::types::VersionedFlowUpdateRequestEntity, NifiError> {
+    ) -> Result<crate::v2_8_0::types::VersionedFlowUpdateRequestEntity, NifiError> {
         let mut query: Vec<(&str, String)> = vec![];
         if let Some(v) = disconnected_node_acknowledged {
             query.push(("disconnectedNodeAcknowledged", v.to_string()));
@@ -262,7 +262,7 @@ impl<'a> VersionsApi<'a> {
     pub async fn get_update_request(
         &self,
         id: &str,
-    ) -> Result<crate::types::VersionedFlowUpdateRequestEntity, NifiError> {
+    ) -> Result<crate::v2_8_0::types::VersionedFlowUpdateRequestEntity, NifiError> {
         self.client
             .get(&format!("/versions/update-requests/{id}"))
             .await

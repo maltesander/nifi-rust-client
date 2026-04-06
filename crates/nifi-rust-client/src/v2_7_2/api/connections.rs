@@ -24,7 +24,7 @@ impl<'a> ConnectionsApi<'a> {
         version: Option<&str>,
         client_id: Option<&str>,
         disconnected_node_acknowledged: Option<bool>,
-    ) -> Result<crate::types::ConnectionEntity, NifiError> {
+    ) -> Result<crate::v2_7_2::types::ConnectionEntity, NifiError> {
         let mut query: Vec<(&str, String)> = vec![];
         if let Some(v) = version {
             query.push(("version", v.to_string()));
@@ -48,7 +48,7 @@ impl<'a> ConnectionsApi<'a> {
     pub async fn get_connection(
         &self,
         id: &str,
-    ) -> Result<crate::types::ConnectionEntity, NifiError> {
+    ) -> Result<crate::v2_7_2::types::ConnectionEntity, NifiError> {
         self.client.get(&format!("/connections/{id}")).await
     }
     /// Updates a connection
@@ -61,8 +61,8 @@ impl<'a> ConnectionsApi<'a> {
     pub async fn update_connection(
         &self,
         id: &str,
-        body: &crate::types::ConnectionEntity,
-    ) -> Result<crate::types::ConnectionEntity, NifiError> {
+        body: &crate::v2_7_2::types::ConnectionEntity,
+    ) -> Result<crate::v2_7_2::types::ConnectionEntity, NifiError> {
         self.client.put(&format!("/connections/{id}"), body).await
     }
 }

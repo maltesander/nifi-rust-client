@@ -12,14 +12,16 @@ impl<'a> SiteToSiteApi<'a> {
     /// Returns the details about this NiFi necessary to communicate via site to site
     ///
     /// Calls `GET /nifi-api/site-to-site`.
-    pub async fn get_site_to_site_details(&self) -> Result<crate::types::ControllerDto, NifiError> {
-        let e: crate::types::ControllerEntity = self.client.get("/site-to-site").await?;
+    pub async fn get_site_to_site_details(
+        &self,
+    ) -> Result<crate::v2_7_2::types::ControllerDto, NifiError> {
+        let e: crate::v2_7_2::types::ControllerEntity = self.client.get("/site-to-site").await?;
         Ok(e.controller)
     }
     /// Returns the available Peers and its status of this NiFi
     ///
     /// Calls `GET /nifi-api/site-to-site/peers`.
-    pub async fn get_peers(&self) -> Result<crate::types::PeersEntity, NifiError> {
+    pub async fn get_peers(&self) -> Result<crate::v2_7_2::types::PeersEntity, NifiError> {
         self.client.get("/site-to-site/peers").await
     }
 }

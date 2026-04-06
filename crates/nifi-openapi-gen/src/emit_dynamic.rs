@@ -120,11 +120,9 @@ fn emit_dynamic_client(out: &mut String, versions: &[(&str, &str, &str, &ApiSpec
 
     out.push_str("impl DynamicClient {\n");
 
-    // connect()
-    out.push_str("    /// Connect to a NiFi instance, detect its version via GET /flow/about,\n");
-    out.push_str("    /// and return a DynamicClient configured for that version.\n");
-    out.push_str("    pub async fn connect(base_url: &str) -> Result<Self, NifiError> {\n");
-    out.push_str("        let client = NifiClient::connect(base_url).await?;\n");
+    // from_client()
+    out.push_str("    /// Wrap an existing `NifiClient` and detect the NiFi server version via GET /flow/about.\n");
+    out.push_str("    pub async fn from_client(client: NifiClient) -> Result<Self, NifiError> {\n");
     out.push_str("        let resp: AboutResponse = client.get(\"/flow/about\").await?;\n");
     out.push_str("        let version = version_from_str(&resp.about.version)?;\n");
     out.push_str("        Ok(Self { client, version })\n");
@@ -150,13 +148,13 @@ fn emit_dynamic_client(out: &mut String, versions: &[(&str, &str, &str, &ApiSpec
 
     // login()
     out.push_str("    /// Authenticate with the NiFi instance.\n");
-    out.push_str("    pub async fn login(&self, username: &str, password: &str) -> Result<(), NifiError> {\n");
+    out.push_str("    pub async fn login(&mut self, username: &str, password: &str) -> Result<(), NifiError> {\n");
     out.push_str("        self.client.login(username, password).await\n");
     out.push_str("    }\n\n");
 
     // logout()
     out.push_str("    /// Log out from the NiFi instance.\n");
-    out.push_str("    pub async fn logout(&self) -> Result<(), NifiError> {\n");
+    out.push_str("    pub async fn logout(&mut self) -> Result<(), NifiError> {\n");
     out.push_str("        self.client.logout().await\n");
     out.push_str("    }\n\n");
 
@@ -197,7 +195,7 @@ fn collect_all_tags(versions: &[(&str, &str, &str, &ApiSpec)]) -> Vec<(String, S
 fn emit_dynamic_api_structs(out: &mut String, versions: &[(&str, &str, &str, &ApiSpec)]) {
     let all_tags = collect_all_tags(versions);
 
-    for (tag, struct_name, _module_name, _accessor_fn) in &all_tags {
+    for (tag, struct_name, module_name, _accessor_fn) in &all_tags {
         let dynamic_struct = format!("Dynamic{struct_name}");
 
         out.push_str(&format!(
@@ -215,23 +213,32 @@ fn emit_dynamic_api_structs(out: &mut String, versions: &[(&str, &str, &str, &Ap
         // Collect all endpoints across versions for this tag, keyed by fn_name
         let all_endpoints = collect_tag_endpoints(versions, tag);
 
-        for (fn_name, ep_by_version) in &all_endpoints {
+        for (_fn_name, ep_by_version) in &all_endpoints {
             // Use the first available endpoint as the representative for signature
             let representative = ep_by_version.values().next().unwrap();
-            emit_dynamic_method(out, versions, ep_by_version, representative, &struct_name);
+            emit_dynamic_method(out, versions, ep_by_version, representative, struct_name, module_name);
         }
 
         out.push_str("}\n\n");
     }
 }
 
+/// Info about an endpoint in the context of a specific version.
+struct EndpointInfo<'a> {
+    endpoint: &'a Endpoint,
+    /// None for root endpoints, Some(struct_name) for sub-group endpoints.
+    sub_struct_name: Option<&'a str>,
+    /// The field name for the primary param in the sub-struct (e.g. "id", "port_id").
+    primary_param: Option<&'a str>,
+}
+
 /// For a given tag, collect all endpoints (including sub-group endpoints flattened) across versions.
-/// Returns BTreeMap<fn_name, BTreeMap<version_str, (Endpoint, Option<primary_param>)>>
+/// Returns BTreeMap<fn_name, BTreeMap<version_str, EndpointInfo>>
 fn collect_tag_endpoints<'a>(
     versions: &[(&'a str, &'a str, &'a str, &'a ApiSpec)],
     tag: &str,
-) -> BTreeMap<String, BTreeMap<&'a str, (&'a Endpoint, Option<&'a str>)>> {
-    let mut result: BTreeMap<String, BTreeMap<&'a str, (&'a Endpoint, Option<&'a str>)>> = BTreeMap::new();
+) -> BTreeMap<String, BTreeMap<&'a str, EndpointInfo<'a>>> {
+    let mut result: BTreeMap<String, BTreeMap<&'a str, EndpointInfo<'a>>> = BTreeMap::new();
 
     for (ver, _mod_name, _feature, spec) in versions {
         for tg in &spec.tags {
@@ -241,14 +248,18 @@ fn collect_tag_endpoints<'a>(
             for ep in &tg.root_endpoints {
                 result.entry(ep.fn_name.clone())
                     .or_default()
-                    .insert(ver, (ep, None));
+                    .insert(ver, EndpointInfo { endpoint: ep, sub_struct_name: None, primary_param: None });
             }
             // Flatten sub-group endpoints
             for sg in &tg.sub_groups {
                 for ep in &sg.endpoints {
                     result.entry(ep.fn_name.clone())
                         .or_default()
-                        .insert(ver, (ep, Some(sg.primary_param.as_str())));
+                        .insert(ver, EndpointInfo {
+                            endpoint: ep,
+                            sub_struct_name: Some(&sg.struct_name),
+                            primary_param: Some(&sg.primary_param),
+                        });
                 }
             }
         }
@@ -260,11 +271,12 @@ fn collect_tag_endpoints<'a>(
 fn emit_dynamic_method(
     out: &mut String,
     versions: &[(&str, &str, &str, &ApiSpec)],
-    ep_by_version: &BTreeMap<&str, (&Endpoint, Option<&str>)>,
-    representative: &(&Endpoint, Option<&str>),
-    struct_name: &str,
+    ep_by_version: &BTreeMap<&str, EndpointInfo<'_>>,
+    representative: &EndpointInfo<'_>,
+    tag_struct_name: &str,
+    tag_module_name: &str,
 ) {
-    let (ep, _primary_param) = representative;
+    let ep = representative.endpoint;
 
     // Skip form-encoded endpoints
     if ep.body_kind == Some(RequestBodyKind::FormEncoded) {
@@ -273,20 +285,31 @@ fn emit_dynamic_method(
 
     // Determine return type
     let return_ty = match &ep.response_inner {
-        Some(inner) => format!("super::types::{inner}"),
+        Some(inner) => format!("types::{inner}"),
         None => match &ep.response_type {
-            Some(ty) => format!("super::types::{ty}"),
+            Some(ty) => format!("types::{ty}"),
             None => "()".into(),
         },
     };
     let return_result = format!("Result<{return_ty}, NifiError>");
     let is_void = ep.response_type.is_none() && ep.response_inner.is_none();
 
-    // Build path param args — include ALL path params (sub-group primary_param is included)
-    let path_param_args: String = ep
-        .path_params
+    // Build path param args.
+    // For sub-group endpoints, ensure the primary param is included even if the
+    // representative endpoint's path_params doesn't list it (e.g. some sub-group
+    // endpoints use a different param name structure).
+    let mut path_param_names: Vec<String> = Vec::new();
+    if let Some(primary) = representative.primary_param {
+        path_param_names.push(primary.to_string());
+    }
+    for p in &ep.path_params {
+        if !path_param_names.contains(&p.name) {
+            path_param_names.push(p.name.clone());
+        }
+    }
+    let path_param_args: String = path_param_names
         .iter()
-        .map(|p| format!(", {}: &str", escape_keyword(&p.name)))
+        .map(|name| format!(", {}: &str", escape_keyword(name)))
         .collect();
 
     // Query params — use Option<&str> for ALL, including enum types
@@ -331,8 +354,8 @@ fn emit_dynamic_method(
 
     for (ver, mod_name, _feature, _spec) in versions {
         let variant = version_to_variant(ver);
-        if let Some((_ep_v, _primary)) = ep_by_version.get(ver) {
-            emit_version_arm(out, ver, mod_name, &variant, struct_name, ep, is_void);
+        if let Some(info) = ep_by_version.get(ver) {
+            emit_version_arm(out, ver, mod_name, &variant, info, tag_struct_name, tag_module_name, ep, is_void);
         } else {
             // Endpoint not available in this version
             out.push_str(&format!(
@@ -351,20 +374,40 @@ fn emit_version_arm(
     ver: &str,
     mod_name: &str,
     variant: &str,
-    struct_name: &str,
+    info: &EndpointInfo<'_>,
+    tag_struct_name: &str,
+    tag_module_name: &str,
     ep: &Endpoint,
     is_void: bool,
 ) {
     out.push_str(&format!(
         "            DetectedVersion::{variant} => {{\n"
     ));
-    out.push_str(&format!(
-        "                let api = crate::{mod_name}::api::{struct_name} {{ client: self.client }};\n"
-    ));
+    match (info.sub_struct_name, info.primary_param) {
+        (Some(sub_struct), Some(primary_param)) => {
+            // Sub-group endpoint: instantiate the sub-struct with client + primary_param
+            // primary_param is already in rust form (e.g. "port_id", "id")
+            out.push_str(&format!(
+                "                let api = crate::{mod_name}::api::{tag_module_name}::{sub_struct} {{ client: self.client, {primary_param}: {arg} }};\n",
+                arg = escape_keyword(primary_param),
+            ));
+        }
+        _ => {
+            out.push_str(&format!(
+                "                let api = crate::{mod_name}::api::{tag_module_name}::{tag_struct_name} {{ client: self.client }};\n"
+            ));
+        }
+    }
 
     // Build the call arguments
     let mut call_args = Vec::new();
+    // For sub-group endpoints, skip the primary param if it's in the endpoint's path params
+    // (it's baked into the sub-struct via self.{primary_param})
+    let primary_to_skip = info.primary_param;
     for p in &ep.path_params {
+        if primary_to_skip.is_some_and(|pp| pp == p.name) {
+            continue;
+        }
         call_args.push(escape_keyword(&p.name));
     }
     // Query params — need conversion for enum types
@@ -434,6 +477,17 @@ fn dynamic_query_param_type(qp: &QueryParam) -> String {
         crate::parser::QueryParamType::F64 => "f64".to_string(),
         crate::parser::QueryParamType::Enum(_) => "&str".to_string(),
     }
+}
+
+fn prop_name_to_rust(name: &str) -> String {
+    let mut out = String::new();
+    for (i, ch) in name.chars().enumerate() {
+        if ch.is_uppercase() && i > 0 {
+            out.push('_');
+        }
+        out.push(ch.to_ascii_lowercase());
+    }
+    out
 }
 
 fn escape_keyword(name: &str) -> String {

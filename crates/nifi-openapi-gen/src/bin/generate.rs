@@ -248,6 +248,28 @@ fn patch_tests_cargo_features(toml_str: &str, versions: &[&str]) -> String {
     doc.to_string()
 }
 
+/// Discover all version directories under specs/, sorted by semver.
+fn discover_spec_versions(specs_dir: &Path) -> Vec<String> {
+    let mut versions: Vec<String> = std::fs::read_dir(specs_dir)
+        .unwrap_or_else(|_| {
+            panic!(
+                "Cannot read specs dir {}.\nRun: ./crates/nifi-openapi-gen/scripts/fetch-nifi-spec.sh",
+                specs_dir.display()
+            )
+        })
+        .flatten()
+        .filter(|e| e.file_type().map(|ft| ft.is_dir()).unwrap_or(false))
+        .filter_map(|e| {
+            let name = e.file_name();
+            let s = name.to_str()?.to_string();
+            semver::Version::parse(&s).ok()?;
+            Some(s)
+        })
+        .collect();
+    sort_versions_semver(&mut versions);
+    versions
+}
+
 fn main() {
     let codegen_dir = Path::new(env!("CARGO_MANIFEST_DIR"));
     let workspace_root = codegen_dir
@@ -255,53 +277,121 @@ fn main() {
         .expect("crates/")
         .parent()
         .expect("workspace root");
-
-    let spec_path = find_spec_path(&codegen_dir.join("specs"));
     let client = workspace_root.join("crates/nifi-rust-client");
+    let specs_dir = codegen_dir.join("specs");
 
-    let spec = nifi_openapi_gen::load(spec_path.to_str().expect("UTF-8 path"));
+    // 1. Determine which specs to process
+    let spec_versions = if let Ok(version) = std::env::var("NIFI_VERSION") {
+        vec![version]
+    } else if let Ok(path) = std::env::var("NIFI_API_SPEC") {
+        let p = PathBuf::from(&path);
+        let version = p
+            .parent()
+            .and_then(|p| p.file_name())
+            .and_then(|n| n.to_str())
+            .expect("version directory name from NIFI_API_SPEC path")
+            .to_string();
+        vec![version]
+    } else {
+        discover_spec_versions(&specs_dir)
+    };
 
-    let version_str = spec_path
-        .parent()
-        .and_then(|p| p.file_name())
-        .and_then(|n| n.to_str())
-        .expect("version directory name from spec path");
-    let mod_name = version_to_mod_name(version_str);
-    let feature_name = version_to_feature(version_str);
-    let versioned_src = client.join("src").join(&mod_name);
+    // 2. Parse all specs
+    let mut parsed_specs: Vec<(String, nifi_openapi_gen::ApiSpec)> = vec![];
+    for version in &spec_versions {
+        let spec_path = specs_dir.join(version).join("nifi-api.json");
+        if !spec_path.exists() {
+            panic!("Spec not found: {}", spec_path.display());
+        }
+        let spec = nifi_openapi_gen::load(spec_path.to_str().expect("UTF-8 path"));
+        parsed_specs.push((version.clone(), spec));
+    }
 
     let mut targets: Vec<(PathBuf, String)> = vec![];
 
-    // Types: one file per tag + common.rs + mod.rs
-    for (filename, content) in nifi_openapi_gen::emit_types(&spec) {
-        targets.push((versioned_src.join("types").join(&filename), content));
+    // 3. Per-version generation
+    for (version_str, spec) in &parsed_specs {
+        let mod_name = version_to_mod_name(version_str);
+        let feature_name = version_to_feature(version_str);
+        let versioned_src = client.join("src").join(&mod_name);
+
+        for (filename, content) in nifi_openapi_gen::emit_types(spec) {
+            targets.push((versioned_src.join("types").join(&filename), content));
+        }
+        let types_prefix = format!("crate::{mod_name}");
+        for (filename, content) in nifi_openapi_gen::emit_api_with_prefix(spec, &types_prefix) {
+            targets.push((versioned_src.join("api").join(&filename), content));
+        }
+        targets.push((
+            versioned_src.join("mod.rs"),
+            "pub mod api;\npub mod types;\n".to_string(),
+        ));
+
+        let test_content = format!(
+            "#![cfg(feature = \"{feature_name}\")]\n\n{}",
+            nifi_openapi_gen::emit_tests(spec)
+        );
+        targets.push((
+            client.join(format!(
+                "tests/v{}_generated_tests.rs",
+                version_str.replace('.', "_")
+            )),
+            test_content,
+        ));
     }
 
-    // API: mod.rs + one file per tag
-    for (filename, content) in nifi_openapi_gen::emit_api(&spec) {
-        targets.push((versioned_src.join("api").join(&filename), content));
+    // 4. Dynamic module generation (only when processing multiple specs)
+    if parsed_specs.len() > 1 {
+        let type_specs: Vec<(&str, &nifi_openapi_gen::ApiSpec)> = parsed_specs
+            .iter()
+            .map(|(v, s)| (v.as_str(), s))
+            .collect();
+
+        targets.push((
+            client.join("src/dynamic/types.rs"),
+            nifi_openapi_gen::emit_dynamic_types(&type_specs),
+        ));
+
+        let merged_field_names = nifi_openapi_gen::collect_merged_field_names(&type_specs);
+
+        let mod_names: Vec<String> = parsed_specs
+            .iter()
+            .map(|(v, _)| version_to_mod_name(v))
+            .collect();
+        let conv_specs: Vec<(&str, &str, &nifi_openapi_gen::ApiSpec)> = parsed_specs
+            .iter()
+            .zip(mod_names.iter())
+            .map(|((v, s), m)| (v.as_str(), m.as_str(), s))
+            .collect();
+
+        targets.push((
+            client.join("src/dynamic/conversions.rs"),
+            nifi_openapi_gen::emit_dynamic_conversions(&conv_specs, &merged_field_names),
+        ));
+
+        let feature_names: Vec<String> = parsed_specs
+            .iter()
+            .map(|(v, _)| version_to_feature(v))
+            .collect();
+        let dispatch_specs: Vec<(&str, &str, &str, &nifi_openapi_gen::ApiSpec)> = parsed_specs
+            .iter()
+            .zip(mod_names.iter().zip(feature_names.iter()))
+            .map(|((v, s), (m, f))| (v.as_str(), m.as_str(), f.as_str(), s))
+            .collect();
+
+        targets.push((
+            client.join("src/dynamic/mod.rs"),
+            nifi_openapi_gen::emit_dynamic(&dispatch_specs),
+        ));
+
+        targets.push((
+            client.join("tests/dynamic_tests.rs"),
+            nifi_openapi_gen::emit_dynamic_tests(&conv_specs),
+        ));
     }
 
-    // Version module entry point
-    targets.push((
-        versioned_src.join("mod.rs"),
-        "pub mod api;\npub mod types;\n".to_string(),
-    ));
-
-    // Wiremock test stubs
-    let test_content = format!(
-        "#![cfg(feature = \"{feature_name}\")]\n\n{}",
-        nifi_openapi_gen::emit_tests(&spec)
-    );
-    targets.push((
-        client.join(format!(
-            "tests/v{}_generated_tests.rs",
-            version_str.replace('.', "_")
-        )),
-        test_content,
-    ));
-
-    // Write files that have changed.
+    // 5. Write changed files
+    let written_paths: HashSet<PathBuf> = targets.iter().map(|(p, _)| p.clone()).collect();
     let mut written = 0usize;
     for (path, content) in &targets {
         let on_disk = std::fs::read_to_string(path).unwrap_or_default();
@@ -315,17 +405,20 @@ fn main() {
         }
     }
 
-    // Delete stale .rs files in versioned types/ and api/ not produced by this run.
-    let written_paths: HashSet<PathBuf> = targets.iter().map(|(p, _)| p.clone()).collect();
-    for dir in [versioned_src.join("types"), versioned_src.join("api")] {
-        if let Ok(entries) = std::fs::read_dir(&dir) {
-            for entry in entries.flatten() {
-                let path = entry.path();
-                if path.extension().and_then(|e| e.to_str()) == Some("rs")
-                    && !written_paths.contains(&path)
-                {
-                    std::fs::remove_file(&path).expect("remove stale file");
-                    println!("  removed stale {}", path.display());
+    // 6. Delete stale .rs files in per-version dirs
+    for (version_str, _) in &parsed_specs {
+        let mod_name = version_to_mod_name(version_str);
+        let versioned_src = client.join("src").join(&mod_name);
+        for dir in [versioned_src.join("types"), versioned_src.join("api")] {
+            if let Ok(entries) = std::fs::read_dir(&dir) {
+                for entry in entries.flatten() {
+                    let path = entry.path();
+                    if path.extension().and_then(|e| e.to_str()) == Some("rs")
+                        && !written_paths.contains(&path)
+                    {
+                        std::fs::remove_file(&path).expect("remove stale file");
+                        println!("  removed stale {}", path.display());
+                    }
                 }
             }
         }
@@ -334,13 +427,13 @@ fn main() {
     // One-time migration: remove old flat layout if present
     migrate_flat_layout(&client);
 
-    // Update lib.rs and both Cargo.toml [features] sections
+    // 7. Update lib.rs and both Cargo.toml [features] sections
     let tests_crate = workspace_root.join("tests");
     update_lib_rs(&client.join("src"));
     update_cargo_features_client(&client);
     update_cargo_features_tests(&client.join("src"), &tests_crate);
 
-    // Run cargo fmt so files are in canonical form.
+    // 8. Run cargo fmt so files are in canonical form.
     let status = std::process::Command::new("cargo")
         .args(["fmt", "-p", "nifi-rust-client"])
         .current_dir(workspace_root)
@@ -355,54 +448,6 @@ fn main() {
     println!("Done. {} file(s) updated.", written);
 }
 
-/// Locate the OpenAPI spec file. Resolution order:
-///   1. `NIFI_API_SPEC` env var — full path to a spec file
-///   2. `NIFI_VERSION` env var — version string → `specs/{version}/nifi-api.json`
-///   3. Auto-detect — scan `specs/` for subdirectories; use the only one, or the
-///      lexicographically latest if multiple (logs a warning)
-fn find_spec_path(specs_dir: &Path) -> PathBuf {
-    if let Ok(path) = std::env::var("NIFI_API_SPEC") {
-        return PathBuf::from(path);
-    }
-    if let Ok(version) = std::env::var("NIFI_VERSION") {
-        return specs_dir.join(&version).join("nifi-api.json");
-    }
-    let mut version_dirs: Vec<PathBuf> = std::fs::read_dir(specs_dir)
-        .unwrap_or_else(|_| {
-            panic!(
-                "Cannot read specs dir {}.\nRun: ./crates/nifi-openapi-gen/scripts/fetch-nifi-spec.sh",
-                specs_dir.display()
-            )
-        })
-        .flatten()
-        .filter(|e| e.file_type().map(|ft| ft.is_dir()).unwrap_or(false))
-        .map(|e| e.path())
-        .collect();
-    version_dirs.sort_by(|a, b| {
-        let parse = |p: &PathBuf| {
-            let s = p.file_name().unwrap().to_str().unwrap();
-            Version::parse(s).unwrap_or_else(|_| Version::new(0, 0, 0))
-        };
-        parse(a).cmp(&parse(b))
-    });
-    match version_dirs.len() {
-        0 => panic!(
-            "No version directories found in {}.\nRun: ./crates/nifi-openapi-gen/scripts/fetch-nifi-spec.sh",
-            specs_dir.display()
-        ),
-        1 => version_dirs.remove(0).join("nifi-api.json"),
-        _ => {
-            let names: Vec<_> = version_dirs
-                .iter()
-                .map(|p| p.file_name().unwrap().to_str().unwrap())
-                .collect();
-            eprintln!(
-                "Multiple NiFi specs found: {names:?} — using latest. Set NIFI_VERSION to override."
-            );
-            version_dirs.last().unwrap().join("nifi-api.json")
-        }
-    }
-}
 
 #[cfg(test)]
 mod tests {

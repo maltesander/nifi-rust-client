@@ -24,7 +24,7 @@ impl<'a> FunnelsApi<'a> {
         version: Option<&str>,
         client_id: Option<&str>,
         disconnected_node_acknowledged: Option<bool>,
-    ) -> Result<crate::types::FunnelEntity, NifiError> {
+    ) -> Result<crate::v2_8_0::types::FunnelEntity, NifiError> {
         let mut query: Vec<(&str, String)> = vec![];
         if let Some(v) = version {
             query.push(("version", v.to_string()));
@@ -45,7 +45,10 @@ impl<'a> FunnelsApi<'a> {
     ///
     /// # Parameters
     /// - `id`: The funnel id.
-    pub async fn get_funnel(&self, id: &str) -> Result<crate::types::FunnelEntity, NifiError> {
+    pub async fn get_funnel(
+        &self,
+        id: &str,
+    ) -> Result<crate::v2_8_0::types::FunnelEntity, NifiError> {
         self.client.get(&format!("/funnels/{id}")).await
     }
     /// Updates a funnel
@@ -58,8 +61,8 @@ impl<'a> FunnelsApi<'a> {
     pub async fn update_funnel(
         &self,
         id: &str,
-        body: &crate::types::FunnelEntity,
-    ) -> Result<crate::types::FunnelEntity, NifiError> {
+        body: &crate::v2_8_0::types::FunnelEntity,
+    ) -> Result<crate::v2_8_0::types::FunnelEntity, NifiError> {
         self.client.put(&format!("/funnels/{id}"), body).await
     }
 }

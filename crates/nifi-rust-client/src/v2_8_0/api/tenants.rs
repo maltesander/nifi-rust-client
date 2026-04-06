@@ -17,7 +17,10 @@ impl<'a> TenantsApi<'a> {
     ///
     /// # Parameters
     /// - `q`: Identity to search for.
-    pub async fn search_tenants(&self, q: &str) -> Result<crate::types::TenantsEntity, NifiError> {
+    pub async fn search_tenants(
+        &self,
+        q: &str,
+    ) -> Result<crate::v2_8_0::types::TenantsEntity, NifiError> {
         let mut query: Vec<(&str, String)> = vec![];
         query.push(("q", q.to_string()));
         self.client
@@ -29,7 +32,9 @@ impl<'a> TenantsApi<'a> {
     /// Note: This endpoint is subject to change as NiFi and it's REST API evolve.
     ///
     /// Calls `GET /nifi-api/tenants/user-groups`.
-    pub async fn get_user_groups(&self) -> Result<crate::types::UserGroupsEntity, NifiError> {
+    pub async fn get_user_groups(
+        &self,
+    ) -> Result<crate::v2_8_0::types::UserGroupsEntity, NifiError> {
         self.client.get("/tenants/user-groups").await
     }
     /// Creates a user group
@@ -42,8 +47,8 @@ impl<'a> TenantsApi<'a> {
     /// - `body`: The user group configuration details.
     pub async fn create_user_group(
         &self,
-        body: &crate::types::UserGroupEntity,
-    ) -> Result<crate::types::UserGroupEntity, NifiError> {
+        body: &crate::v2_8_0::types::UserGroupEntity,
+    ) -> Result<crate::v2_8_0::types::UserGroupEntity, NifiError> {
         self.client.post("/tenants/user-groups", body).await
     }
     /// Deletes a user group
@@ -63,7 +68,7 @@ impl<'a> TenantsApi<'a> {
         version: Option<&str>,
         client_id: Option<&str>,
         disconnected_node_acknowledged: Option<bool>,
-    ) -> Result<crate::types::UserGroupEntity, NifiError> {
+    ) -> Result<crate::v2_8_0::types::UserGroupEntity, NifiError> {
         let mut query: Vec<(&str, String)> = vec![];
         if let Some(v) = version {
             query.push(("version", v.to_string()));
@@ -89,7 +94,7 @@ impl<'a> TenantsApi<'a> {
     pub async fn get_user_group(
         &self,
         id: &str,
-    ) -> Result<crate::types::UserGroupEntity, NifiError> {
+    ) -> Result<crate::v2_8_0::types::UserGroupEntity, NifiError> {
         self.client.get(&format!("/tenants/user-groups/{id}")).await
     }
     /// Updates a user group
@@ -104,8 +109,8 @@ impl<'a> TenantsApi<'a> {
     pub async fn update_user_group(
         &self,
         id: &str,
-        body: &crate::types::UserGroupEntity,
-    ) -> Result<crate::types::UserGroupEntity, NifiError> {
+        body: &crate::v2_8_0::types::UserGroupEntity,
+    ) -> Result<crate::v2_8_0::types::UserGroupEntity, NifiError> {
         self.client
             .put(&format!("/tenants/user-groups/{id}"), body)
             .await
@@ -115,7 +120,7 @@ impl<'a> TenantsApi<'a> {
     /// Note: This endpoint is subject to change as NiFi and it's REST API evolve.
     ///
     /// Calls `GET /nifi-api/tenants/users`.
-    pub async fn get_users(&self) -> Result<crate::types::UsersEntity, NifiError> {
+    pub async fn get_users(&self) -> Result<crate::v2_8_0::types::UsersEntity, NifiError> {
         self.client.get("/tenants/users").await
     }
     /// Creates a user
@@ -128,8 +133,8 @@ impl<'a> TenantsApi<'a> {
     /// - `body`: The user configuration details.
     pub async fn create_user(
         &self,
-        body: &crate::types::UserEntity,
-    ) -> Result<crate::types::UserEntity, NifiError> {
+        body: &crate::v2_8_0::types::UserEntity,
+    ) -> Result<crate::v2_8_0::types::UserEntity, NifiError> {
         self.client.post("/tenants/users", body).await
     }
     /// Deletes a user
@@ -149,7 +154,7 @@ impl<'a> TenantsApi<'a> {
         version: Option<&str>,
         client_id: Option<&str>,
         disconnected_node_acknowledged: Option<bool>,
-    ) -> Result<crate::types::UserEntity, NifiError> {
+    ) -> Result<crate::v2_8_0::types::UserEntity, NifiError> {
         let mut query: Vec<(&str, String)> = vec![];
         if let Some(v) = version {
             query.push(("version", v.to_string()));
@@ -172,7 +177,7 @@ impl<'a> TenantsApi<'a> {
     ///
     /// # Parameters
     /// - `id`: The user id.
-    pub async fn get_user(&self, id: &str) -> Result<crate::types::UserEntity, NifiError> {
+    pub async fn get_user(&self, id: &str) -> Result<crate::v2_8_0::types::UserEntity, NifiError> {
         self.client.get(&format!("/tenants/users/{id}")).await
     }
     /// Updates a user
@@ -187,8 +192,8 @@ impl<'a> TenantsApi<'a> {
     pub async fn update_user(
         &self,
         id: &str,
-        body: &crate::types::UserEntity,
-    ) -> Result<crate::types::UserEntity, NifiError> {
+        body: &crate::v2_8_0::types::UserEntity,
+    ) -> Result<crate::v2_8_0::types::UserEntity, NifiError> {
         self.client.put(&format!("/tenants/users/{id}"), body).await
     }
 }

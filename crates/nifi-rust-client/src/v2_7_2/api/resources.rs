@@ -12,7 +12,7 @@ impl<'a> ResourcesApi<'a> {
     /// Gets the available resources that support access/authorization policies
     ///
     /// Calls `GET /nifi-api/resources`.
-    pub async fn get_resources(&self) -> Result<crate::types::ResourcesEntity, NifiError> {
+    pub async fn get_resources(&self) -> Result<crate::v2_7_2::types::ResourcesEntity, NifiError> {
         self.client.get("/resources").await
     }
 }

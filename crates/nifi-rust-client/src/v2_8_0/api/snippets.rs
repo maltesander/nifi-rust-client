@@ -17,8 +17,8 @@ impl<'a> SnippetsApi<'a> {
     /// - `body`: The snippet configuration details.
     pub async fn create_snippet(
         &self,
-        body: &crate::types::SnippetEntity,
-    ) -> Result<crate::types::SnippetEntity, NifiError> {
+        body: &crate::v2_8_0::types::SnippetEntity,
+    ) -> Result<crate::v2_8_0::types::SnippetEntity, NifiError> {
         self.client.post("/snippets", body).await
     }
     /// Deletes the components in a snippet and discards the snippet
@@ -32,7 +32,7 @@ impl<'a> SnippetsApi<'a> {
         &self,
         id: &str,
         disconnected_node_acknowledged: Option<bool>,
-    ) -> Result<crate::types::SnippetEntity, NifiError> {
+    ) -> Result<crate::v2_8_0::types::SnippetEntity, NifiError> {
         let mut query: Vec<(&str, String)> = vec![];
         if let Some(v) = disconnected_node_acknowledged {
             query.push(("disconnectedNodeAcknowledged", v.to_string()));
@@ -51,8 +51,8 @@ impl<'a> SnippetsApi<'a> {
     pub async fn update_snippet(
         &self,
         id: &str,
-        body: &crate::types::SnippetEntity,
-    ) -> Result<crate::types::SnippetEntity, NifiError> {
+        body: &crate::v2_8_0::types::SnippetEntity,
+    ) -> Result<crate::v2_8_0::types::SnippetEntity, NifiError> {
         self.client.put(&format!("/snippets/{id}"), body).await
     }
 }

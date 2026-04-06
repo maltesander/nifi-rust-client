@@ -26,6 +26,7 @@ pub mod snippets;
 pub mod systemdiagnostics;
 pub mod tenants;
 pub mod versions;
+#[cfg(not(feature = "dynamic"))]
 impl crate::NifiClient {
     /// Access the [Access API](https://nifi.apache.org/nifi-docs/rest-api.html).
     pub fn access_api(&self) -> access::AccessApi<'_> {

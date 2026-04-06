@@ -20,9 +20,9 @@ impl<'a> SystemDiagnosticsApi<'a> {
     pub async fn get_system_diagnostics(
         &self,
         nodewise: Option<bool>,
-        diagnostic_level: Option<crate::types::DiagnosticLevel>,
+        diagnostic_level: Option<crate::v2_7_2::types::DiagnosticLevel>,
         cluster_node_id: Option<&str>,
-    ) -> Result<crate::types::SystemDiagnosticsDto, NifiError> {
+    ) -> Result<crate::v2_7_2::types::SystemDiagnosticsDto, NifiError> {
         let mut query: Vec<(&str, String)> = vec![];
         if let Some(v) = nodewise {
             query.push(("nodewise", v.to_string()));
@@ -33,7 +33,7 @@ impl<'a> SystemDiagnosticsApi<'a> {
         if let Some(v) = cluster_node_id {
             query.push(("clusterNodeId", v.to_string()));
         }
-        let e: crate::types::SystemDiagnosticsEntity = self
+        let e: crate::v2_7_2::types::SystemDiagnosticsEntity = self
             .client
             .get_with_query("/system-diagnostics", &query)
             .await?;
@@ -50,7 +50,7 @@ impl<'a> SystemDiagnosticsApi<'a> {
     pub async fn get_jmx_metrics(
         &self,
         bean_name_filter: Option<&str>,
-    ) -> Result<crate::types::JmxMetricsResultsEntity, NifiError> {
+    ) -> Result<crate::v2_7_2::types::JmxMetricsResultsEntity, NifiError> {
         let mut query: Vec<(&str, String)> = vec![];
         if let Some(v) = bean_name_filter {
             query.push(("beanNameFilter", v.to_string()));

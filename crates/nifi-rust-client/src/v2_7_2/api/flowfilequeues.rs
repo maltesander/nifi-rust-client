@@ -65,9 +65,9 @@ impl<'a> FlowFileQueuesDropRequestsApi<'a> {
     pub async fn remove_drop_request(
         &self,
         drop_request_id: &str,
-    ) -> Result<crate::types::DropRequestDto, NifiError> {
+    ) -> Result<crate::v2_7_2::types::DropRequestDto, NifiError> {
         let id = self.id;
-        let e: crate::types::DropRequestEntity = self
+        let e: crate::v2_7_2::types::DropRequestEntity = self
             .client
             .delete_returning(&format!(
                 "/flowfile-queues/{id}/drop-requests/{drop_request_id}"
@@ -84,9 +84,9 @@ impl<'a> FlowFileQueuesDropRequestsApi<'a> {
     pub async fn get_drop_request(
         &self,
         drop_request_id: &str,
-    ) -> Result<crate::types::DropRequestDto, NifiError> {
+    ) -> Result<crate::v2_7_2::types::DropRequestDto, NifiError> {
         let id = self.id;
-        let e: crate::types::DropRequestEntity = self
+        let e: crate::v2_7_2::types::DropRequestEntity = self
             .client
             .get(&format!(
                 "/flowfile-queues/{id}/drop-requests/{drop_request_id}"
@@ -116,13 +116,13 @@ impl<'a> FlowFileQueuesFlowfilesApi<'a> {
         &self,
         flowfile_uuid: &str,
         cluster_node_id: Option<&str>,
-    ) -> Result<crate::types::FlowFileDto, NifiError> {
+    ) -> Result<crate::v2_7_2::types::FlowFileDto, NifiError> {
         let id = self.id;
         let mut query: Vec<(&str, String)> = vec![];
         if let Some(v) = cluster_node_id {
             query.push(("clusterNodeId", v.to_string()));
         }
-        let e: crate::types::FlowFileEntity = self
+        let e: crate::v2_7_2::types::FlowFileEntity = self
             .client
             .get_with_query(
                 &format!("/flowfile-queues/{id}/flowfiles/{flowfile_uuid}"),
@@ -189,9 +189,9 @@ impl<'a> FlowFileQueuesListingRequestsApi<'a> {
     pub async fn delete_listing_request(
         &self,
         listing_request_id: &str,
-    ) -> Result<crate::types::ListingRequestDto, NifiError> {
+    ) -> Result<crate::v2_7_2::types::ListingRequestDto, NifiError> {
         let id = self.id;
-        let e: crate::types::ListingRequestEntity = self
+        let e: crate::v2_7_2::types::ListingRequestEntity = self
             .client
             .delete_returning(&format!(
                 "/flowfile-queues/{id}/listing-requests/{listing_request_id}"
@@ -208,9 +208,9 @@ impl<'a> FlowFileQueuesListingRequestsApi<'a> {
     pub async fn get_listing_request(
         &self,
         listing_request_id: &str,
-    ) -> Result<crate::types::ListingRequestDto, NifiError> {
+    ) -> Result<crate::v2_7_2::types::ListingRequestDto, NifiError> {
         let id = self.id;
-        let e: crate::types::ListingRequestEntity = self
+        let e: crate::v2_7_2::types::ListingRequestEntity = self
             .client
             .get(&format!(
                 "/flowfile-queues/{id}/listing-requests/{listing_request_id}"

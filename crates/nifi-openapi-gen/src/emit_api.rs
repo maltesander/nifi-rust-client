@@ -5,10 +5,21 @@ use crate::parser::{ApiSpec, Endpoint, HttpMethod, QueryParam, SubGroup, TagGrou
 /// - `"mod.rs"` — module declarations + `impl NifiClient` accessors
 /// - `"<tag>.rs"` — one file per API tag with its resource struct and methods
 pub fn emit_api(spec: &ApiSpec) -> Vec<(String, String)> {
+    emit_api_with_prefix(spec, "crate")
+}
+
+/// Like `emit_api`, but uses `types_prefix::types::X` instead of `crate::types::X`.
+/// This allows per-version API code to reference its own types module directly
+/// (needed when multiple version modules are active simultaneously in dynamic mode).
+pub fn emit_api_with_prefix(spec: &ApiSpec, types_prefix: &str) -> Vec<(String, String)> {
     let mut files = vec![];
     files.push(("mod.rs".to_string(), emit_mod(spec)));
     for tag in &spec.tags {
-        files.push((format!("{}.rs", tag.module_name), emit_tag(tag)));
+        let mut content = emit_tag(tag);
+        if types_prefix != "crate" {
+            content = content.replace("crate::types::", &format!("{types_prefix}::types::"));
+        }
+        files.push((format!("{}.rs", tag.module_name), content));
     }
     files
 }
@@ -21,7 +32,7 @@ fn emit_mod(spec: &ApiSpec) -> String {
     for tag in &spec.tags {
         out.push_str(&format!("pub mod {};\n", tag.module_name));
     }
-    out.push_str("\nimpl crate::NifiClient {\n");
+    out.push_str("\n#[cfg(not(feature = \"dynamic\"))]\nimpl crate::NifiClient {\n");
     for tag in &spec.tags {
         out.push_str(&format!(
             "    /// Access the [{tag} API](https://nifi.apache.org/nifi-docs/rest-api.html).\n",

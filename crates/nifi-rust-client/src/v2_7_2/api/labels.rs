@@ -24,7 +24,7 @@ impl<'a> LabelsApi<'a> {
         version: Option<&str>,
         client_id: Option<&str>,
         disconnected_node_acknowledged: Option<bool>,
-    ) -> Result<crate::types::LabelEntity, NifiError> {
+    ) -> Result<crate::v2_7_2::types::LabelEntity, NifiError> {
         let mut query: Vec<(&str, String)> = vec![];
         if let Some(v) = version {
             query.push(("version", v.to_string()));
@@ -45,7 +45,10 @@ impl<'a> LabelsApi<'a> {
     ///
     /// # Parameters
     /// - `id`: The label id.
-    pub async fn get_label(&self, id: &str) -> Result<crate::types::LabelEntity, NifiError> {
+    pub async fn get_label(
+        &self,
+        id: &str,
+    ) -> Result<crate::v2_7_2::types::LabelEntity, NifiError> {
         self.client.get(&format!("/labels/{id}")).await
     }
     /// Updates a label
@@ -58,8 +61,8 @@ impl<'a> LabelsApi<'a> {
     pub async fn update_label(
         &self,
         id: &str,
-        body: &crate::types::LabelEntity,
-    ) -> Result<crate::types::LabelEntity, NifiError> {
+        body: &crate::v2_7_2::types::LabelEntity,
+    ) -> Result<crate::v2_7_2::types::LabelEntity, NifiError> {
         self.client.put(&format!("/labels/{id}"), body).await
     }
 }

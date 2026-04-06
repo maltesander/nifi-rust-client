@@ -19,9 +19,10 @@ impl<'a> ProvenanceApi<'a> {
     /// - `body`: The provenance query details.
     pub async fn submit_provenance_request(
         &self,
-        body: &crate::types::ProvenanceEntity,
-    ) -> Result<crate::types::ProvenanceDto, NifiError> {
-        let e: crate::types::ProvenanceEntity = self.client.post("/provenance", body).await?;
+        body: &crate::v2_7_2::types::ProvenanceEntity,
+    ) -> Result<crate::v2_7_2::types::ProvenanceDto, NifiError> {
+        let e: crate::v2_7_2::types::ProvenanceEntity =
+            self.client.post("/provenance", body).await?;
         Ok(e.provenance)
     }
     /// Submits a lineage query
@@ -34,9 +35,10 @@ impl<'a> ProvenanceApi<'a> {
     /// - `body`: The lineage query details.
     pub async fn submit_lineage_request(
         &self,
-        body: &crate::types::LineageEntity,
-    ) -> Result<crate::types::LineageDto, NifiError> {
-        let e: crate::types::LineageEntity = self.client.post("/provenance/lineage", body).await?;
+        body: &crate::v2_7_2::types::LineageEntity,
+    ) -> Result<crate::v2_7_2::types::LineageDto, NifiError> {
+        let e: crate::v2_7_2::types::LineageEntity =
+            self.client.post("/provenance/lineage", body).await?;
         Ok(e.lineage)
     }
     /// Deletes a lineage query
@@ -50,12 +52,12 @@ impl<'a> ProvenanceApi<'a> {
         &self,
         id: &str,
         cluster_node_id: Option<&str>,
-    ) -> Result<crate::types::LineageDto, NifiError> {
+    ) -> Result<crate::v2_7_2::types::LineageDto, NifiError> {
         let mut query: Vec<(&str, String)> = vec![];
         if let Some(v) = cluster_node_id {
             query.push(("clusterNodeId", v.to_string()));
         }
-        let e: crate::types::LineageEntity = self
+        let e: crate::v2_7_2::types::LineageEntity = self
             .client
             .delete_returning_with_query(&format!("/provenance/lineage/{id}"), &query)
             .await?;
@@ -72,12 +74,12 @@ impl<'a> ProvenanceApi<'a> {
         &self,
         id: &str,
         cluster_node_id: Option<&str>,
-    ) -> Result<crate::types::LineageDto, NifiError> {
+    ) -> Result<crate::v2_7_2::types::LineageDto, NifiError> {
         let mut query: Vec<(&str, String)> = vec![];
         if let Some(v) = cluster_node_id {
             query.push(("clusterNodeId", v.to_string()));
         }
-        let e: crate::types::LineageEntity = self
+        let e: crate::v2_7_2::types::LineageEntity = self
             .client
             .get_with_query(&format!("/provenance/lineage/{id}"), &query)
             .await?;
@@ -88,8 +90,8 @@ impl<'a> ProvenanceApi<'a> {
     /// Calls `GET /nifi-api/provenance/search-options`.
     pub async fn get_search_options(
         &self,
-    ) -> Result<crate::types::ProvenanceOptionsDto, NifiError> {
-        let e: crate::types::ProvenanceOptionsEntity =
+    ) -> Result<crate::v2_7_2::types::ProvenanceOptionsDto, NifiError> {
+        let e: crate::v2_7_2::types::ProvenanceOptionsEntity =
             self.client.get("/provenance/search-options").await?;
         Ok(e.provenance_options)
     }
@@ -104,12 +106,12 @@ impl<'a> ProvenanceApi<'a> {
         &self,
         id: &str,
         cluster_node_id: Option<&str>,
-    ) -> Result<crate::types::ProvenanceDto, NifiError> {
+    ) -> Result<crate::v2_7_2::types::ProvenanceDto, NifiError> {
         let mut query: Vec<(&str, String)> = vec![];
         if let Some(v) = cluster_node_id {
             query.push(("clusterNodeId", v.to_string()));
         }
-        let e: crate::types::ProvenanceEntity = self
+        let e: crate::v2_7_2::types::ProvenanceEntity = self
             .client
             .delete_returning_with_query(&format!("/provenance/{id}"), &query)
             .await?;
@@ -130,7 +132,7 @@ impl<'a> ProvenanceApi<'a> {
         cluster_node_id: Option<&str>,
         summarize: Option<bool>,
         incremental_results: Option<bool>,
-    ) -> Result<crate::types::ProvenanceDto, NifiError> {
+    ) -> Result<crate::v2_7_2::types::ProvenanceDto, NifiError> {
         let mut query: Vec<(&str, String)> = vec![];
         if let Some(v) = cluster_node_id {
             query.push(("clusterNodeId", v.to_string()));
@@ -141,7 +143,7 @@ impl<'a> ProvenanceApi<'a> {
         if let Some(v) = incremental_results {
             query.push(("incrementalResults", v.to_string()));
         }
-        let e: crate::types::ProvenanceEntity = self
+        let e: crate::v2_7_2::types::ProvenanceEntity = self
             .client
             .get_with_query(&format!("/provenance/{id}"), &query)
             .await?;

@@ -17,8 +17,8 @@ impl<'a> ParameterContextsApi<'a> {
     /// - `body`: The Parameter Context.
     pub async fn create_parameter_context(
         &self,
-        body: &crate::types::ParameterContextEntity,
-    ) -> Result<crate::types::ParameterContextEntity, NifiError> {
+        body: &crate::v2_7_2::types::ParameterContextEntity,
+    ) -> Result<crate::v2_7_2::types::ParameterContextEntity, NifiError> {
         self.client.post("/parameter-contexts", body).await
     }
     /// Deletes the Parameter Context with the given ID
@@ -38,7 +38,7 @@ impl<'a> ParameterContextsApi<'a> {
         version: Option<&str>,
         client_id: Option<&str>,
         disconnected_node_acknowledged: Option<bool>,
-    ) -> Result<crate::types::ParameterContextEntity, NifiError> {
+    ) -> Result<crate::v2_7_2::types::ParameterContextEntity, NifiError> {
         let mut query: Vec<(&str, String)> = vec![];
         if let Some(v) = version {
             query.push(("version", v.to_string()));
@@ -66,7 +66,7 @@ impl<'a> ParameterContextsApi<'a> {
         &self,
         id: &str,
         include_inherited_parameters: Option<bool>,
-    ) -> Result<crate::types::ParameterContextEntity, NifiError> {
+    ) -> Result<crate::v2_7_2::types::ParameterContextEntity, NifiError> {
         let mut query: Vec<(&str, String)> = vec![];
         if let Some(v) = include_inherited_parameters {
             query.push(("includeInheritedParameters", v.to_string()));
@@ -86,8 +86,8 @@ impl<'a> ParameterContextsApi<'a> {
     pub async fn update_parameter_context(
         &self,
         id: &str,
-        body: &crate::types::ParameterContextEntity,
-    ) -> Result<crate::types::ParameterContextEntity, NifiError> {
+        body: &crate::v2_7_2::types::ParameterContextEntity,
+    ) -> Result<crate::v2_7_2::types::ParameterContextEntity, NifiError> {
         self.client
             .put(&format!("/parameter-contexts/{id}"), body)
             .await
@@ -141,7 +141,7 @@ impl<'a> ParameterContextsAssetsApi<'a> {
     /// Lists the assets that belong to the Parameter Context with the given ID.
     ///
     /// Calls `GET /nifi-api/parameter-contexts/{contextId}/assets`.
-    pub async fn get_assets(&self) -> Result<crate::types::AssetsEntity, NifiError> {
+    pub async fn get_assets(&self) -> Result<crate::v2_7_2::types::AssetsEntity, NifiError> {
         let context_id = self.context_id;
         self.client
             .get(&format!("/parameter-contexts/{context_id}/assets"))
@@ -156,9 +156,9 @@ impl<'a> ParameterContextsAssetsApi<'a> {
         &self,
         filename: Option<&str>,
         data: Vec<u8>,
-    ) -> Result<crate::types::AssetDto, NifiError> {
+    ) -> Result<crate::v2_7_2::types::AssetDto, NifiError> {
         let context_id = self.context_id;
-        let e: crate::types::AssetEntity = self
+        let e: crate::v2_7_2::types::AssetEntity = self
             .client
             .post_octet_stream(
                 &format!("/parameter-contexts/{context_id}/assets"),
@@ -180,13 +180,13 @@ impl<'a> ParameterContextsAssetsApi<'a> {
         &self,
         asset_id: &str,
         disconnected_node_acknowledged: Option<bool>,
-    ) -> Result<crate::types::AssetDto, NifiError> {
+    ) -> Result<crate::v2_7_2::types::AssetDto, NifiError> {
         let context_id = self.context_id;
         let mut query: Vec<(&str, String)> = vec![];
         if let Some(v) = disconnected_node_acknowledged {
             query.push(("disconnectedNodeAcknowledged", v.to_string()));
         }
-        let e: crate::types::AssetEntity = self
+        let e: crate::v2_7_2::types::AssetEntity = self
             .client
             .delete_returning_with_query(
                 &format!("/parameter-contexts/{context_id}/assets/{asset_id}"),
@@ -230,8 +230,8 @@ impl<'a> ParameterContextsUpdateRequestsApi<'a> {
     /// - `body`: The updated version of the parameter context.
     pub async fn submit_parameter_context_update(
         &self,
-        body: &crate::types::ParameterContextEntity,
-    ) -> Result<crate::types::ParameterContextUpdateRequestEntity, NifiError> {
+        body: &crate::v2_7_2::types::ParameterContextEntity,
+    ) -> Result<crate::v2_7_2::types::ParameterContextUpdateRequestEntity, NifiError> {
         let context_id = self.context_id;
         self.client
             .post(
@@ -253,7 +253,7 @@ impl<'a> ParameterContextsUpdateRequestsApi<'a> {
         &self,
         request_id: &str,
         disconnected_node_acknowledged: Option<bool>,
-    ) -> Result<crate::types::ParameterContextUpdateRequestEntity, NifiError> {
+    ) -> Result<crate::v2_7_2::types::ParameterContextUpdateRequestEntity, NifiError> {
         let context_id = self.context_id;
         let mut query: Vec<(&str, String)> = vec![];
         if let Some(v) = disconnected_node_acknowledged {
@@ -277,7 +277,7 @@ impl<'a> ParameterContextsUpdateRequestsApi<'a> {
     pub async fn get_parameter_context_update(
         &self,
         request_id: &str,
-    ) -> Result<crate::types::ParameterContextUpdateRequestEntity, NifiError> {
+    ) -> Result<crate::v2_7_2::types::ParameterContextUpdateRequestEntity, NifiError> {
         let context_id = self.context_id;
         self.client
             .get(&format!(
@@ -306,8 +306,8 @@ impl<'a> ParameterContextsValidationRequestsApi<'a> {
     /// - `body`: The validation request
     pub async fn submit_validation_request(
         &self,
-        body: &crate::types::ParameterContextValidationRequestEntity,
-    ) -> Result<crate::types::ParameterContextValidationRequestEntity, NifiError> {
+        body: &crate::v2_7_2::types::ParameterContextValidationRequestEntity,
+    ) -> Result<crate::v2_7_2::types::ParameterContextValidationRequestEntity, NifiError> {
         let context_id = self.context_id;
         self.client
             .post(
@@ -329,7 +329,7 @@ impl<'a> ParameterContextsValidationRequestsApi<'a> {
         &self,
         id: &str,
         disconnected_node_acknowledged: Option<bool>,
-    ) -> Result<crate::types::ParameterContextValidationRequestEntity, NifiError> {
+    ) -> Result<crate::v2_7_2::types::ParameterContextValidationRequestEntity, NifiError> {
         let context_id = self.context_id;
         let mut query: Vec<(&str, String)> = vec![];
         if let Some(v) = disconnected_node_acknowledged {
@@ -353,7 +353,7 @@ impl<'a> ParameterContextsValidationRequestsApi<'a> {
     pub async fn get_validation_request(
         &self,
         id: &str,
-    ) -> Result<crate::types::ParameterContextValidationRequestEntity, NifiError> {
+    ) -> Result<crate::v2_7_2::types::ParameterContextValidationRequestEntity, NifiError> {
         let context_id = self.context_id;
         self.client
             .get(&format!(

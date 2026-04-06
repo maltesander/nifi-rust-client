@@ -7,7 +7,7 @@ mod emit_tests;
 mod emit_types;
 pub mod parser;
 
-pub use emit_api::emit_api;
+pub use emit_api::{emit_api, emit_api_with_prefix};
 pub use emit_dynamic::emit_dynamic;
 pub use emit_dynamic_conversions::emit_dynamic_conversions;
 pub use emit_dynamic_tests::emit_dynamic_tests;

@@ -17,8 +17,8 @@ impl<'a> PoliciesApi<'a> {
     /// - `body`: The access policy configuration details.
     pub async fn create_access_policy(
         &self,
-        body: &crate::types::AccessPolicyEntity,
-    ) -> Result<crate::types::AccessPolicyEntity, NifiError> {
+        body: &crate::v2_7_2::types::AccessPolicyEntity,
+    ) -> Result<crate::v2_7_2::types::AccessPolicyEntity, NifiError> {
         self.client.post("/policies", body).await
     }
     /// Gets an access policy for the specified action and resource
@@ -34,7 +34,7 @@ impl<'a> PoliciesApi<'a> {
         &self,
         action: &str,
         resource: &str,
-    ) -> Result<crate::types::AccessPolicyEntity, NifiError> {
+    ) -> Result<crate::v2_7_2::types::AccessPolicyEntity, NifiError> {
         self.client
             .get(&format!("/policies/{action}/{resource}"))
             .await
@@ -54,7 +54,7 @@ impl<'a> PoliciesApi<'a> {
         version: Option<&str>,
         client_id: Option<&str>,
         disconnected_node_acknowledged: Option<bool>,
-    ) -> Result<crate::types::AccessPolicyEntity, NifiError> {
+    ) -> Result<crate::v2_7_2::types::AccessPolicyEntity, NifiError> {
         let mut query: Vec<(&str, String)> = vec![];
         if let Some(v) = version {
             query.push(("version", v.to_string()));
@@ -78,7 +78,7 @@ impl<'a> PoliciesApi<'a> {
     pub async fn get_access_policy(
         &self,
         id: &str,
-    ) -> Result<crate::types::AccessPolicyEntity, NifiError> {
+    ) -> Result<crate::v2_7_2::types::AccessPolicyEntity, NifiError> {
         self.client.get(&format!("/policies/{id}")).await
     }
     /// Updates a access policy
@@ -91,8 +91,8 @@ impl<'a> PoliciesApi<'a> {
     pub async fn update_access_policy(
         &self,
         id: &str,
-        body: &crate::types::AccessPolicyEntity,
-    ) -> Result<crate::types::AccessPolicyEntity, NifiError> {
+        body: &crate::v2_7_2::types::AccessPolicyEntity,
+    ) -> Result<crate::v2_7_2::types::AccessPolicyEntity, NifiError> {
         self.client.put(&format!("/policies/{id}"), body).await
     }
 }
