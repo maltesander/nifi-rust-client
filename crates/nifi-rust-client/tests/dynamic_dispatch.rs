@@ -156,10 +156,10 @@ async fn dynamic_flow_metrics_v2_6_0_skips_extra_param() {
         .flow_api()
         .get_flow_metrics(
             "prometheus",
-            Some("JVM"),   // includedRegistries
-            None,           // sampleName
-            None,           // sampleLabelValue
-            None,           // rootFieldName
+            Some("JVM"),                // includedRegistries
+            None,                       // sampleName
+            None,                       // sampleLabelValue
+            None,                       // rootFieldName
             Some("ALL_PROCESS_GROUPS"), // flowMetricsReportingStrategy — should be IGNORED for 2.6.0
         )
         .await
@@ -177,7 +177,10 @@ async fn dynamic_flow_metrics_v2_8_0_passes_all_params() {
     Mock::given(method("GET"))
         .and(path("/nifi-api/flow/metrics/prometheus"))
         .and(query_param("includedRegistries", "JVM"))
-        .and(query_param("flowMetricsReportingStrategy", "ALL_PROCESS_GROUPS"))
+        .and(query_param(
+            "flowMetricsReportingStrategy",
+            "ALL_PROCESS_GROUPS",
+        ))
         .respond_with(ResponseTemplate::new(200))
         .expect(1)
         .mount(&mock)
@@ -207,7 +210,10 @@ async fn dynamic_flow_metrics_v2_7_2_passes_all_params() {
         .and(path("/nifi-api/flow/metrics/prometheus"))
         .and(query_param("includedRegistries", "NIFI"))
         .and(query_param("sampleName", "my_sample"))
-        .and(query_param("flowMetricsReportingStrategy", "ALL_COMPONENTS"))
+        .and(query_param(
+            "flowMetricsReportingStrategy",
+            "ALL_COMPONENTS",
+        ))
         .respond_with(ResponseTemplate::new(200))
         .expect(1)
         .mount(&mock)

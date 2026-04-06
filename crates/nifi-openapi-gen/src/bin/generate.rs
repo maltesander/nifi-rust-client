@@ -210,6 +210,7 @@ fn patch_client_cargo_features(toml_str: &str, versions: &[&str]) -> String {
     }
     features.insert("dynamic", toml_edit::value(dynamic_arr));
 
+    features.sort_values();
     doc.to_string()
 }
 
@@ -245,6 +246,7 @@ fn patch_tests_cargo_features(toml_str: &str, versions: &[&str]) -> String {
     dynamic_arr.push("nifi-rust-client/dynamic");
     features.insert("dynamic", toml_edit::value(dynamic_arr));
 
+    features.sort_values();
     doc.to_string()
 }
 
