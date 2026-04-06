@@ -353,7 +353,9 @@ def update_changelog(old_version, new_version, dry_run):
     lines = [f"## [{new_version}] - {today}"]
     for category in CATEGORY_ORDER:
         if category in categories:
-            lines.append(f"\n### {category}")
+            lines.append("")
+            lines.append(f"### {category}")
+            lines.append("")
             for msg in categories[category]:
                 lines.append(f"- {msg}")
     section = "\n".join(lines)
@@ -371,7 +373,9 @@ def update_changelog(old_version, new_version, dry_run):
     unreleased_marker = "## [Unreleased]\n"
     if unreleased_marker in content:
         insert_pos = content.index(unreleased_marker) + len(unreleased_marker)
-        content = content[:insert_pos] + "\n" + section + "\n\n" + content[insert_pos:]
+        # Strip any blank lines between [Unreleased] and the next section
+        rest = content[insert_pos:].lstrip("\n")
+        content = content[:insert_pos] + "\n" + section + "\n\n" + rest
     else:
         print("      WARNING: '## [Unreleased]' marker not found in CHANGELOG.md; prepending section")
         content = section + "\n\n" + content
