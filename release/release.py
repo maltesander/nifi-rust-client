@@ -61,7 +61,7 @@ def run(cmd, capture=True, check=True):
         if result.stderr:
             print(result.stderr, file=sys.stderr)
         sys.exit(1)
-    return result.stdout.strip()
+    return result.stdout.strip() if result.stdout else ""
 
 
 # ---------------------------------------------------------------------------
