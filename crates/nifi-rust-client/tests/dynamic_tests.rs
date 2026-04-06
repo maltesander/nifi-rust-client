@@ -7,6 +7,27 @@ use wiremock::matchers::{method, path};
 use wiremock::{Mock, MockServer, ResponseTemplate};
 
 #[tokio::test]
+async fn auto_detects_v2_6_0() {
+    let mock = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/nifi-api/flow/about"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+            "about": { "title": "NiFi", "version": "2.6.0" }
+        })))
+        .mount(&mock)
+        .await;
+
+    let client = NifiClientBuilder::new(&mock.uri())
+        .unwrap()
+        .build()
+        .unwrap();
+    let dynamic = nifi_rust_client::dynamic::DynamicClient::from_client(client)
+        .await
+        .unwrap();
+    assert_eq!(dynamic.detected_version().to_string(), "2.6.0");
+}
+
+#[tokio::test]
 async fn auto_detects_v2_7_2() {
     let mock = MockServer::start().await;
     Mock::given(method("GET"))

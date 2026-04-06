@@ -6,12 +6,14 @@ use crate::{NifiClient, NifiError};
 /// Represents a detected NiFi server version.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum DetectedVersion {
+    V2_6_0,
     V2_7_2,
     V2_8_0,
 }
 impl std::fmt::Display for DetectedVersion {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
+            DetectedVersion::V2_6_0 => write!(f, "2.6.0"),
             DetectedVersion::V2_7_2 => write!(f, "2.7.2"),
             DetectedVersion::V2_8_0 => write!(f, "2.8.0"),
         }
@@ -27,6 +29,7 @@ fn version_from_str(version: &str) -> Result<DetectedVersion, NifiError> {
     }
     let major_minor = format!("{}.{}", parts[0], parts[1]);
     match major_minor.as_str() {
+        "2.6" => Ok(DetectedVersion::V2_6_0),
         "2.7" => Ok(DetectedVersion::V2_7_2),
         "2.8" => Ok(DetectedVersion::V2_8_0),
         _ => Err(NifiError::UnsupportedVersion {
@@ -285,6 +288,12 @@ impl<'a> DynamicAccessApi<'a> {
     /// Performs a logout for other providers that have been issued a JWT.
     pub async fn log_out(&self) -> Result<(), NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::access::AccessApi {
+                    client: self.client,
+                };
+                api.log_out().await
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::access::AccessApi {
                     client: self.client,
@@ -302,6 +311,12 @@ impl<'a> DynamicAccessApi<'a> {
     /// Completes the logout sequence by removing the cached Logout Request and Cookie if they existed and redirects to /nifi/login.
     pub async fn log_out_complete(&self) -> Result<(), NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::access::AccessApi {
+                    client: self.client,
+                };
+                api.log_out_complete().await
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::access::AccessApi {
                     client: self.client,
@@ -329,6 +344,12 @@ impl<'a> DynamicAuthenticationApi<'a> {
         &self,
     ) -> Result<types::AuthenticationConfigurationDto, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::authentication::AuthenticationApi {
+                    client: self.client,
+                };
+                Ok(api.get_authentication_configuration().await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::authentication::AuthenticationApi {
                     client: self.client,
@@ -360,6 +381,15 @@ impl<'a> DynamicConnectionsApi<'a> {
         disconnected_node_acknowledged: Option<bool>,
     ) -> Result<types::ConnectionEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::connections::ConnectionsApi {
+                    client: self.client,
+                };
+                Ok(api
+                    .delete_connection(id, version, client_id, disconnected_node_acknowledged)
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::connections::ConnectionsApi {
                     client: self.client,
@@ -383,6 +413,12 @@ impl<'a> DynamicConnectionsApi<'a> {
     /// Gets a connection
     pub async fn get_connection(&self, id: &str) -> Result<types::ConnectionEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::connections::ConnectionsApi {
+                    client: self.client,
+                };
+                Ok(api.get_connection(id).await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::connections::ConnectionsApi {
                     client: self.client,
@@ -404,6 +440,24 @@ impl<'a> DynamicConnectionsApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::ConnectionEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::connections::ConnectionsApi {
+                    client: self.client,
+                };
+                Ok(api
+                    .update_connection(
+                        id,
+                        &serde_json::from_value::<crate::v2_6_0::types::ConnectionEntity>(
+                            body.clone(),
+                        )
+                        .map_err(|e| NifiError::UnsupportedEndpoint {
+                            endpoint: format!("{} (body deserialize: {})", "update_connection", e),
+                            version: "2.6.0".to_string(),
+                        })?,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::connections::ConnectionsApi {
                     client: self.client,
@@ -457,6 +511,29 @@ impl<'a> DynamicControllerApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::ConfigurationAnalysisDto, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::controller::ControllerConfigApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(
+                    api
+                        .analyze_flow_analysis_rule_configuration(
+                            &serde_json::from_value::<
+                                crate::v2_6_0::types::ConfigurationAnalysisEntity,
+                            >(body.clone())
+                            .map_err(|e| NifiError::UnsupportedEndpoint {
+                                endpoint: format!(
+                                    "{} (body deserialize: {})",
+                                    "analyze_flow_analysis_rule_configuration", e
+                                ),
+                                version: "2.6.0".to_string(),
+                            })?,
+                        )
+                        .await?
+                        .into(),
+                )
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::controller::ControllerConfigApi {
                     client: self.client,
@@ -512,6 +589,10 @@ impl<'a> DynamicControllerApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::ConfigurationAnalysisDto, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => Err(NifiError::UnsupportedEndpoint {
+                endpoint: "analyze_flow_registry_client_configuration".to_string(),
+                version: "2.6.0".to_string(),
+            }),
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::controller::ControllerConfigApi {
                     client: self.client,
@@ -567,6 +648,10 @@ impl<'a> DynamicControllerApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::ClearBulletinsResultEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => Err(NifiError::UnsupportedEndpoint {
+                endpoint: "clear_flow_analysis_rule_bulletins".to_string(),
+                version: "2.6.0".to_string(),
+            }),
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::controller::ControllerBulletinsApi {
                     client: self.client,
@@ -622,6 +707,10 @@ impl<'a> DynamicControllerApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::ClearBulletinsResultEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => Err(NifiError::UnsupportedEndpoint {
+                endpoint: "clear_parameter_provider_bulletins".to_string(),
+                version: "2.6.0".to_string(),
+            }),
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::controller::ControllerBulletinsApi {
                     client: self.client,
@@ -677,6 +766,10 @@ impl<'a> DynamicControllerApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::ClearBulletinsResultEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => Err(NifiError::UnsupportedEndpoint {
+                endpoint: "clear_registry_client_bulletins".to_string(),
+                version: "2.6.0".to_string(),
+            }),
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::controller::ControllerBulletinsApi {
                     client: self.client,
@@ -732,6 +825,24 @@ impl<'a> DynamicControllerApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::ComponentStateDto, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::controller::ControllerStateApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(api
+                    .clear_state(
+                        &serde_json::from_value::<crate::v2_6_0::types::ComponentStateEntity>(
+                            body.clone(),
+                        )
+                        .map_err(|e| NifiError::UnsupportedEndpoint {
+                            endpoint: format!("{} (body deserialize: {})", "clear_state", e),
+                            version: "2.6.0".to_string(),
+                        })?,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::controller::ControllerStateApi {
                     client: self.client,
@@ -776,6 +887,23 @@ impl<'a> DynamicControllerApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::BulletinEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::controller::ControllerApi {
+                    client: self.client,
+                };
+                Ok(api
+                    .create_bulletin(
+                        &serde_json::from_value::<crate::v2_6_0::types::BulletinEntity>(
+                            body.clone(),
+                        )
+                        .map_err(|e| NifiError::UnsupportedEndpoint {
+                            endpoint: format!("{} (body deserialize: {})", "create_bulletin", e),
+                            version: "2.6.0".to_string(),
+                        })?,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::controller::ControllerApi {
                     client: self.client,
@@ -818,6 +946,26 @@ impl<'a> DynamicControllerApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::ControllerServiceEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::controller::ControllerApi {
+                    client: self.client,
+                };
+                Ok(api
+                    .create_controller_service(
+                        &serde_json::from_value::<crate::v2_6_0::types::ControllerServiceEntity>(
+                            body.clone(),
+                        )
+                        .map_err(|e| NifiError::UnsupportedEndpoint {
+                            endpoint: format!(
+                                "{} (body deserialize: {})",
+                                "create_controller_service", e
+                            ),
+                            version: "2.6.0".to_string(),
+                        })?,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::controller::ControllerApi {
                     client: self.client,
@@ -866,6 +1014,26 @@ impl<'a> DynamicControllerApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::FlowAnalysisRuleEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::controller::ControllerApi {
+                    client: self.client,
+                };
+                Ok(api
+                    .create_flow_analysis_rule(
+                        &serde_json::from_value::<crate::v2_6_0::types::FlowAnalysisRuleEntity>(
+                            body.clone(),
+                        )
+                        .map_err(|e| NifiError::UnsupportedEndpoint {
+                            endpoint: format!(
+                                "{} (body deserialize: {})",
+                                "create_flow_analysis_rule", e
+                            ),
+                            version: "2.6.0".to_string(),
+                        })?,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::controller::ControllerApi {
                     client: self.client,
@@ -914,6 +1082,26 @@ impl<'a> DynamicControllerApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::FlowRegistryClientEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::controller::ControllerApi {
+                    client: self.client,
+                };
+                Ok(api
+                    .create_flow_registry_client(
+                        &serde_json::from_value::<crate::v2_6_0::types::FlowRegistryClientEntity>(
+                            body.clone(),
+                        )
+                        .map_err(|e| NifiError::UnsupportedEndpoint {
+                            endpoint: format!(
+                                "{} (body deserialize: {})",
+                                "create_flow_registry_client", e
+                            ),
+                            version: "2.6.0".to_string(),
+                        })?,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::controller::ControllerApi {
                     client: self.client,
@@ -962,6 +1150,26 @@ impl<'a> DynamicControllerApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::ParameterProviderEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::controller::ControllerApi {
+                    client: self.client,
+                };
+                Ok(api
+                    .create_parameter_provider(
+                        &serde_json::from_value::<crate::v2_6_0::types::ParameterProviderEntity>(
+                            body.clone(),
+                        )
+                        .map_err(|e| NifiError::UnsupportedEndpoint {
+                            endpoint: format!(
+                                "{} (body deserialize: {})",
+                                "create_parameter_provider", e
+                            ),
+                            version: "2.6.0".to_string(),
+                        })?,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::controller::ControllerApi {
                     client: self.client,
@@ -1010,6 +1218,26 @@ impl<'a> DynamicControllerApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::ReportingTaskEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::controller::ControllerApi {
+                    client: self.client,
+                };
+                Ok(api
+                    .create_reporting_task(
+                        &serde_json::from_value::<crate::v2_6_0::types::ReportingTaskEntity>(
+                            body.clone(),
+                        )
+                        .map_err(|e| NifiError::UnsupportedEndpoint {
+                            endpoint: format!(
+                                "{} (body deserialize: {})",
+                                "create_reporting_task", e
+                            ),
+                            version: "2.6.0".to_string(),
+                        })?,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::controller::ControllerApi {
                     client: self.client,
@@ -1059,6 +1287,16 @@ impl<'a> DynamicControllerApi<'a> {
         request_id: &str,
     ) -> Result<types::VerifyConfigRequestDto, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::controller::ControllerConfigApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(api
+                    .delete_flow_analysis_rule_verification_request(request_id)
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::controller::ControllerConfigApi {
                     client: self.client,
@@ -1090,6 +1328,20 @@ impl<'a> DynamicControllerApi<'a> {
         disconnected_node_acknowledged: Option<bool>,
     ) -> Result<types::FlowRegistryClientEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::controller::ControllerApi {
+                    client: self.client,
+                };
+                Ok(api
+                    .delete_flow_registry_client(
+                        id,
+                        version,
+                        client_id,
+                        disconnected_node_acknowledged,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::controller::ControllerApi {
                     client: self.client,
@@ -1123,6 +1375,12 @@ impl<'a> DynamicControllerApi<'a> {
     /// Purges history
     pub async fn delete_history(&self, end_date: &str) -> Result<types::HistoryDto, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::controller::ControllerApi {
+                    client: self.client,
+                };
+                Ok(api.delete_history(end_date).await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::controller::ControllerApi {
                     client: self.client,
@@ -1145,6 +1403,15 @@ impl<'a> DynamicControllerApi<'a> {
         force: Option<bool>,
     ) -> Result<types::NarSummaryDto, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::controller::ControllerApi {
+                    client: self.client,
+                };
+                Ok(api
+                    .delete_nar(id, disconnected_node_acknowledged, force)
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::controller::ControllerApi {
                     client: self.client,
@@ -1168,6 +1435,12 @@ impl<'a> DynamicControllerApi<'a> {
     /// Removes a node from the cluster
     pub async fn delete_node(&self, id: &str) -> Result<types::NodeDto, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::controller::ControllerApi {
+                    client: self.client,
+                };
+                Ok(api.delete_node(id).await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::controller::ControllerApi {
                     client: self.client,
@@ -1189,6 +1462,10 @@ impl<'a> DynamicControllerApi<'a> {
         request_id: &str,
     ) -> Result<types::VerifyConfigRequestDto, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => Err(NifiError::UnsupportedEndpoint {
+                endpoint: "delete_registry_client_verification_request".to_string(),
+                version: "2.6.0".to_string(),
+            }),
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::controller::ControllerConfigApi {
                     client: self.client,
@@ -1214,6 +1491,13 @@ impl<'a> DynamicControllerApi<'a> {
     /// Retrieves the content of the NAR with the given id
     pub async fn download_nar(&self, id: &str) -> Result<(), NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::controller::ControllerContentApi {
+                    client: self.client,
+                    id,
+                };
+                api.download_nar().await
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::controller::ControllerContentApi {
                     client: self.client,
@@ -1233,6 +1517,12 @@ impl<'a> DynamicControllerApi<'a> {
     /// Gets the contents of the cluster
     pub async fn get_cluster(&self) -> Result<types::ClusterDto, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::controller::ControllerApi {
+                    client: self.client,
+                };
+                Ok(api.get_cluster().await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::controller::ControllerApi {
                     client: self.client,
@@ -1252,6 +1542,12 @@ impl<'a> DynamicControllerApi<'a> {
         &self,
     ) -> Result<types::ControllerConfigurationEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::controller::ControllerApi {
+                    client: self.client,
+                };
+                Ok(api.get_controller_config().await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::controller::ControllerApi {
                     client: self.client,
@@ -1272,6 +1568,12 @@ impl<'a> DynamicControllerApi<'a> {
         id: &str,
     ) -> Result<types::FlowAnalysisRuleEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::controller::ControllerApi {
+                    client: self.client,
+                };
+                Ok(api.get_flow_analysis_rule(id).await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::controller::ControllerApi {
                     client: self.client,
@@ -1294,6 +1596,16 @@ impl<'a> DynamicControllerApi<'a> {
         sensitive: Option<bool>,
     ) -> Result<types::PropertyDescriptorDto, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::controller::ControllerDescriptorsApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(api
+                    .get_flow_analysis_rule_property_descriptor(property_name, sensitive)
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::controller::ControllerDescriptorsApi {
                     client: self.client,
@@ -1322,6 +1634,13 @@ impl<'a> DynamicControllerApi<'a> {
         id: &str,
     ) -> Result<types::ComponentStateDto, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::controller::ControllerStateApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(api.get_flow_analysis_rule_state().await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::controller::ControllerStateApi {
                     client: self.client,
@@ -1345,6 +1664,16 @@ impl<'a> DynamicControllerApi<'a> {
         request_id: &str,
     ) -> Result<types::VerifyConfigRequestDto, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::controller::ControllerConfigApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(api
+                    .get_flow_analysis_rule_verification_request(request_id)
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::controller::ControllerConfigApi {
                     client: self.client,
@@ -1372,6 +1701,12 @@ impl<'a> DynamicControllerApi<'a> {
         &self,
     ) -> Result<types::FlowAnalysisRulesEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::controller::ControllerApi {
+                    client: self.client,
+                };
+                Ok(api.get_flow_analysis_rules().await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::controller::ControllerApi {
                     client: self.client,
@@ -1392,6 +1727,12 @@ impl<'a> DynamicControllerApi<'a> {
         id: &str,
     ) -> Result<types::FlowRegistryClientEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::controller::ControllerApi {
+                    client: self.client,
+                };
+                Ok(api.get_flow_registry_client(id).await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::controller::ControllerApi {
                     client: self.client,
@@ -1411,6 +1752,12 @@ impl<'a> DynamicControllerApi<'a> {
         &self,
     ) -> Result<types::FlowRegistryClientsEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::controller::ControllerApi {
+                    client: self.client,
+                };
+                Ok(api.get_flow_registry_clients().await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::controller::ControllerApi {
                     client: self.client,
@@ -1428,6 +1775,13 @@ impl<'a> DynamicControllerApi<'a> {
     /// Retrieves the component types available from the installed NARs
     pub async fn get_nar_details(&self, id: &str) -> Result<types::NarDetailsEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::controller::ControllerDetailsApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(api.get_nar_details().await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::controller::ControllerDetailsApi {
                     client: self.client,
@@ -1447,6 +1801,12 @@ impl<'a> DynamicControllerApi<'a> {
     /// Retrieves summary information for installed NARs
     pub async fn get_nar_summaries(&self) -> Result<types::NarSummariesEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::controller::ControllerApi {
+                    client: self.client,
+                };
+                Ok(api.get_nar_summaries().await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::controller::ControllerApi {
                     client: self.client,
@@ -1464,6 +1824,12 @@ impl<'a> DynamicControllerApi<'a> {
     /// Retrieves the summary information for the NAR with the given identifier
     pub async fn get_nar_summary(&self, id: &str) -> Result<types::NarDetailsEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::controller::ControllerApi {
+                    client: self.client,
+                };
+                Ok(api.get_nar_summary(id).await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::controller::ControllerApi {
                     client: self.client,
@@ -1481,6 +1847,12 @@ impl<'a> DynamicControllerApi<'a> {
     /// Gets a node in the cluster
     pub async fn get_node(&self, id: &str) -> Result<types::NodeDto, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::controller::ControllerApi {
+                    client: self.client,
+                };
+                Ok(api.get_node(id).await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::controller::ControllerApi {
                     client: self.client,
@@ -1498,6 +1870,12 @@ impl<'a> DynamicControllerApi<'a> {
     /// Gets status history for the node
     pub async fn get_node_status_history(&self) -> Result<types::ComponentHistoryDto, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::controller::ControllerApi {
+                    client: self.client,
+                };
+                Ok(api.get_node_status_history().await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::controller::ControllerApi {
                     client: self.client,
@@ -1520,6 +1898,16 @@ impl<'a> DynamicControllerApi<'a> {
         sensitive: Option<bool>,
     ) -> Result<types::PropertyDescriptorDto, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::controller::ControllerDescriptorsApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(api
+                    .get_property_descriptor(property_name, sensitive)
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::controller::ControllerDescriptorsApi {
                     client: self.client,
@@ -1547,6 +1935,12 @@ impl<'a> DynamicControllerApi<'a> {
         &self,
     ) -> Result<types::FlowRegistryClientTypesEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::controller::ControllerApi {
+                    client: self.client,
+                };
+                Ok(api.get_registry_client_types().await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::controller::ControllerApi {
                     client: self.client,
@@ -1568,6 +1962,10 @@ impl<'a> DynamicControllerApi<'a> {
         request_id: &str,
     ) -> Result<types::VerifyConfigRequestDto, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => Err(NifiError::UnsupportedEndpoint {
+                endpoint: "get_registry_client_verification_request".to_string(),
+                version: "2.6.0".to_string(),
+            }),
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::controller::ControllerConfigApi {
                     client: self.client,
@@ -1596,6 +1994,26 @@ impl<'a> DynamicControllerApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::VersionedReportingTaskImportResponseEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::controller::ControllerApi {
+                    client: self.client,
+                };
+                Ok(api
+                    .import_reporting_task_snapshot(
+                        &serde_json::from_value::<
+                            crate::v2_6_0::types::VersionedReportingTaskImportRequestEntity,
+                        >(body.clone())
+                        .map_err(|e| NifiError::UnsupportedEndpoint {
+                            endpoint: format!(
+                                "{} (body deserialize: {})",
+                                "import_reporting_task_snapshot", e
+                            ),
+                            version: "2.6.0".to_string(),
+                        })?,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::controller::ControllerApi {
                     client: self.client,
@@ -1647,6 +2065,20 @@ impl<'a> DynamicControllerApi<'a> {
         disconnected_node_acknowledged: Option<bool>,
     ) -> Result<types::FlowAnalysisRuleEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::controller::ControllerApi {
+                    client: self.client,
+                };
+                Ok(api
+                    .remove_flow_analysis_rule(
+                        id,
+                        version,
+                        client_id,
+                        disconnected_node_acknowledged,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::controller::ControllerApi {
                     client: self.client,
@@ -1684,6 +2116,27 @@ impl<'a> DynamicControllerApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::VerifyConfigRequestDto, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::controller::ControllerConfigApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(api
+                    .submit_flow_analysis_rule_config_verification_request(
+                        &serde_json::from_value::<crate::v2_6_0::types::VerifyConfigRequestEntity>(
+                            body.clone(),
+                        )
+                        .map_err(|e| NifiError::UnsupportedEndpoint {
+                            endpoint: format!(
+                                "{} (body deserialize: {})",
+                                "submit_flow_analysis_rule_config_verification_request", e
+                            ),
+                            version: "2.6.0".to_string(),
+                        })?,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::controller::ControllerConfigApi {
                     client: self.client,
@@ -1735,6 +2188,10 @@ impl<'a> DynamicControllerApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::VerifyConfigRequestDto, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => Err(NifiError::UnsupportedEndpoint {
+                endpoint: "submit_registry_client_config_verification_request".to_string(),
+                version: "2.6.0".to_string(),
+            }),
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::controller::ControllerConfigApi {
                     client: self.client,
@@ -1785,6 +2242,26 @@ impl<'a> DynamicControllerApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::ControllerConfigurationEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::controller::ControllerApi {
+                    client: self.client,
+                };
+                Ok(api
+                    .update_controller_config(
+                        &serde_json::from_value::<
+                            crate::v2_6_0::types::ControllerConfigurationEntity,
+                        >(body.clone())
+                        .map_err(|e| NifiError::UnsupportedEndpoint {
+                            endpoint: format!(
+                                "{} (body deserialize: {})",
+                                "update_controller_config", e
+                            ),
+                            version: "2.6.0".to_string(),
+                        })?,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::controller::ControllerApi {
                     client: self.client,
@@ -1834,6 +2311,27 @@ impl<'a> DynamicControllerApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::FlowAnalysisRuleEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::controller::ControllerApi {
+                    client: self.client,
+                };
+                Ok(api
+                    .update_flow_analysis_rule(
+                        id,
+                        &serde_json::from_value::<crate::v2_6_0::types::FlowAnalysisRuleEntity>(
+                            body.clone(),
+                        )
+                        .map_err(|e| NifiError::UnsupportedEndpoint {
+                            endpoint: format!(
+                                "{} (body deserialize: {})",
+                                "update_flow_analysis_rule", e
+                            ),
+                            version: "2.6.0".to_string(),
+                        })?,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::controller::ControllerApi {
                     client: self.client,
@@ -1885,6 +2383,27 @@ impl<'a> DynamicControllerApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::FlowRegistryClientEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::controller::ControllerApi {
+                    client: self.client,
+                };
+                Ok(api
+                    .update_flow_registry_client(
+                        id,
+                        &serde_json::from_value::<crate::v2_6_0::types::FlowRegistryClientEntity>(
+                            body.clone(),
+                        )
+                        .map_err(|e| NifiError::UnsupportedEndpoint {
+                            endpoint: format!(
+                                "{} (body deserialize: {})",
+                                "update_flow_registry_client", e
+                            ),
+                            version: "2.6.0".to_string(),
+                        })?,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::controller::ControllerApi {
                     client: self.client,
@@ -1936,6 +2455,22 @@ impl<'a> DynamicControllerApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::NodeDto, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::controller::ControllerApi {
+                    client: self.client,
+                };
+                Ok(api
+                    .update_node(
+                        id,
+                        &serde_json::from_value::<crate::v2_6_0::types::NodeEntity>(body.clone())
+                            .map_err(|e| NifiError::UnsupportedEndpoint {
+                            endpoint: format!("{} (body deserialize: {})", "update_node", e),
+                            version: "2.6.0".to_string(),
+                        })?,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::controller::ControllerApi {
                     client: self.client,
@@ -1977,6 +2512,24 @@ impl<'a> DynamicControllerApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::FlowAnalysisRuleEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::controller::ControllerRunStatusApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(api
+                    .update_run_status(
+                        &serde_json::from_value::<
+                            crate::v2_6_0::types::FlowAnalysisRuleRunStatusEntity,
+                        >(body.clone())
+                        .map_err(|e| NifiError::UnsupportedEndpoint {
+                            endpoint: format!("{} (body deserialize: {})", "update_run_status", e),
+                            version: "2.6.0".to_string(),
+                        })?,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::controller::ControllerRunStatusApi {
                     client: self.client,
@@ -2022,6 +2575,12 @@ impl<'a> DynamicControllerApi<'a> {
         data: Vec<u8>,
     ) -> Result<types::NarSummaryDto, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::controller::ControllerApi {
+                    client: self.client,
+                };
+                Ok(api.upload_nar(filename, data).await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::controller::ControllerApi {
                     client: self.client,
@@ -2051,6 +2610,29 @@ impl<'a> DynamicControllerServicesApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::ConfigurationAnalysisDto, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::controller_services::ControllerServicesConfigApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(
+                    api
+                        .analyze_configuration(
+                            &serde_json::from_value::<
+                                crate::v2_6_0::types::ConfigurationAnalysisEntity,
+                            >(body.clone())
+                            .map_err(|e| NifiError::UnsupportedEndpoint {
+                                endpoint: format!(
+                                    "{} (body deserialize: {})",
+                                    "analyze_configuration", e
+                                ),
+                                version: "2.6.0".to_string(),
+                            })?,
+                        )
+                        .await?
+                        .into(),
+                )
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::controller_services::ControllerServicesConfigApi {
                     client: self.client,
@@ -2106,6 +2688,10 @@ impl<'a> DynamicControllerServicesApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::ClearBulletinsResultEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => Err(NifiError::UnsupportedEndpoint {
+                endpoint: "clear_bulletins".to_string(),
+                version: "2.6.0".to_string(),
+            }),
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::controller_services::ControllerServicesBulletinsApi {
                     client: self.client,
@@ -2161,6 +2747,24 @@ impl<'a> DynamicControllerServicesApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::ComponentStateDto, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::controller_services::ControllerServicesStateApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(api
+                    .clear_state_1(
+                        &serde_json::from_value::<crate::v2_6_0::types::ComponentStateEntity>(
+                            body.clone(),
+                        )
+                        .map_err(|e| NifiError::UnsupportedEndpoint {
+                            endpoint: format!("{} (body deserialize: {})", "clear_state_1", e),
+                            version: "2.6.0".to_string(),
+                        })?,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::controller_services::ControllerServicesStateApi {
                     client: self.client,
@@ -2206,6 +2810,13 @@ impl<'a> DynamicControllerServicesApi<'a> {
         request_id: &str,
     ) -> Result<types::VerifyConfigRequestDto, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::controller_services::ControllerServicesConfigApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(api.delete_verification_request(request_id).await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::controller_services::ControllerServicesConfigApi {
                     client: self.client,
@@ -2229,6 +2840,12 @@ impl<'a> DynamicControllerServicesApi<'a> {
         ui_only: Option<bool>,
     ) -> Result<types::ControllerServiceEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::controller_services::ControllerServicesApi {
+                    client: self.client,
+                };
+                Ok(api.get_controller_service(id, ui_only).await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::controller_services::ControllerServicesApi {
                     client: self.client,
@@ -2249,6 +2866,14 @@ impl<'a> DynamicControllerServicesApi<'a> {
         id: &str,
     ) -> Result<types::ControllerServiceReferencingComponentsEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api =
+                    crate::v2_6_0::api::controller_services::ControllerServicesReferencesApi {
+                        client: self.client,
+                        id,
+                    };
+                Ok(api.get_controller_service_references().await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api =
                     crate::v2_7_2::api::controller_services::ControllerServicesReferencesApi {
@@ -2275,6 +2900,17 @@ impl<'a> DynamicControllerServicesApi<'a> {
         sensitive: Option<bool>,
     ) -> Result<types::PropertyDescriptorDto, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api =
+                    crate::v2_6_0::api::controller_services::ControllerServicesDescriptorsApi {
+                        client: self.client,
+                        id,
+                    };
+                Ok(api
+                    .get_property_descriptor_1(property_name, sensitive)
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api =
                     crate::v2_7_2::api::controller_services::ControllerServicesDescriptorsApi {
@@ -2302,6 +2938,13 @@ impl<'a> DynamicControllerServicesApi<'a> {
     /// Gets the state for a controller service
     pub async fn get_state(&self, id: &str) -> Result<types::ComponentStateDto, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::controller_services::ControllerServicesStateApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(api.get_state().await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::controller_services::ControllerServicesStateApi {
                     client: self.client,
@@ -2325,6 +2968,13 @@ impl<'a> DynamicControllerServicesApi<'a> {
         request_id: &str,
     ) -> Result<types::VerifyConfigRequestDto, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::controller_services::ControllerServicesConfigApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(api.get_verification_request(request_id).await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::controller_services::ControllerServicesConfigApi {
                     client: self.client,
@@ -2350,6 +3000,20 @@ impl<'a> DynamicControllerServicesApi<'a> {
         disconnected_node_acknowledged: Option<bool>,
     ) -> Result<types::ControllerServiceEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::controller_services::ControllerServicesApi {
+                    client: self.client,
+                };
+                Ok(api
+                    .remove_controller_service(
+                        id,
+                        version,
+                        client_id,
+                        disconnected_node_acknowledged,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::controller_services::ControllerServicesApi {
                     client: self.client,
@@ -2387,6 +3051,27 @@ impl<'a> DynamicControllerServicesApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::VerifyConfigRequestDto, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::controller_services::ControllerServicesConfigApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(api
+                    .submit_config_verification_request(
+                        &serde_json::from_value::<crate::v2_6_0::types::VerifyConfigRequestEntity>(
+                            body.clone(),
+                        )
+                        .map_err(|e| NifiError::UnsupportedEndpoint {
+                            endpoint: format!(
+                                "{} (body deserialize: {})",
+                                "submit_config_verification_request", e
+                            ),
+                            version: "2.6.0".to_string(),
+                        })?,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::controller_services::ControllerServicesConfigApi {
                     client: self.client,
@@ -2438,6 +3123,27 @@ impl<'a> DynamicControllerServicesApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::ControllerServiceEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::controller_services::ControllerServicesApi {
+                    client: self.client,
+                };
+                Ok(api
+                    .update_controller_service(
+                        id,
+                        &serde_json::from_value::<crate::v2_6_0::types::ControllerServiceEntity>(
+                            body.clone(),
+                        )
+                        .map_err(|e| NifiError::UnsupportedEndpoint {
+                            endpoint: format!(
+                                "{} (body deserialize: {})",
+                                "update_controller_service", e
+                            ),
+                            version: "2.6.0".to_string(),
+                        })?,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::controller_services::ControllerServicesApi {
                     client: self.client,
@@ -2489,6 +3195,28 @@ impl<'a> DynamicControllerServicesApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::ControllerServiceReferencingComponentsEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api =
+                    crate::v2_6_0::api::controller_services::ControllerServicesReferencesApi {
+                        client: self.client,
+                        id,
+                    };
+                Ok(api
+                    .update_controller_service_references(
+                        &serde_json::from_value::<
+                            crate::v2_6_0::types::UpdateControllerServiceReferenceRequestEntity,
+                        >(body.clone())
+                        .map_err(|e| NifiError::UnsupportedEndpoint {
+                            endpoint: format!(
+                                "{} (body deserialize: {})",
+                                "update_controller_service_references", e
+                            ),
+                            version: "2.6.0".to_string(),
+                        })?,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api =
                     crate::v2_7_2::api::controller_services::ControllerServicesReferencesApi {
@@ -2542,6 +3270,27 @@ impl<'a> DynamicControllerServicesApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::ControllerServiceEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::controller_services::ControllerServicesRunStatusApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(api
+                    .update_run_status_1(
+                        &serde_json::from_value::<
+                            crate::v2_6_0::types::ControllerServiceRunStatusEntity,
+                        >(body.clone())
+                        .map_err(|e| NifiError::UnsupportedEndpoint {
+                            endpoint: format!(
+                                "{} (body deserialize: {})",
+                                "update_run_status_1", e
+                            ),
+                            version: "2.6.0".to_string(),
+                        })?,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::controller_services::ControllerServicesRunStatusApi {
                     client: self.client,
@@ -2601,6 +3350,12 @@ impl<'a> DynamicCountersApi<'a> {
         cluster_node_id: Option<&str>,
     ) -> Result<types::CountersDto, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::counters::CountersApi {
+                    client: self.client,
+                };
+                Ok(api.get_counters(nodewise, cluster_node_id).await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::counters::CountersApi {
                     client: self.client,
@@ -2618,6 +3373,12 @@ impl<'a> DynamicCountersApi<'a> {
     /// Updates all counters. This will reset all counter values to 0
     pub async fn update_all_counters(&self) -> Result<types::CountersDto, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::counters::CountersApi {
+                    client: self.client,
+                };
+                Ok(api.update_all_counters().await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::counters::CountersApi {
                     client: self.client,
@@ -2635,6 +3396,12 @@ impl<'a> DynamicCountersApi<'a> {
     /// Updates the specified counter. This will reset the counter value to 0
     pub async fn update_counter(&self, id: &str) -> Result<types::CounterDto, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::counters::CountersApi {
+                    client: self.client,
+                };
+                Ok(api.update_counter(id).await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::counters::CountersApi {
                     client: self.client,
@@ -2665,6 +3432,16 @@ impl<'a> DynamicDataTransferApi<'a> {
         response_code: i32,
     ) -> Result<types::TransactionResultEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::datatransfer::DataTransferTransactionsApi {
+                    client: self.client,
+                    port_id,
+                };
+                Ok(api
+                    .commit_input_port_transaction(transaction_id, response_code)
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::datatransfer::DataTransferTransactionsApi {
                     client: self.client,
@@ -2696,6 +3473,16 @@ impl<'a> DynamicDataTransferApi<'a> {
         checksum: &str,
     ) -> Result<types::TransactionResultEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::datatransfer::DataTransferTransactionsApi {
+                    client: self.client,
+                    port_id,
+                };
+                Ok(api
+                    .commit_output_port_transaction(transaction_id, response_code, checksum)
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::datatransfer::DataTransferTransactionsApi {
                     client: self.client,
@@ -2725,6 +3512,13 @@ impl<'a> DynamicDataTransferApi<'a> {
         port_type: &str,
     ) -> Result<types::TransactionResultEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::datatransfer::DataTransferTransactionsApi {
+                    client: self.client,
+                    port_id,
+                };
+                Ok(api.create_port_transaction(port_type).await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::datatransfer::DataTransferTransactionsApi {
                     client: self.client,
@@ -2748,6 +3542,16 @@ impl<'a> DynamicDataTransferApi<'a> {
         transaction_id: &str,
     ) -> Result<types::TransactionResultEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::datatransfer::DataTransferTransactionsApi {
+                    client: self.client,
+                    port_id,
+                };
+                Ok(api
+                    .extend_input_port_transaction_t_t_l(transaction_id)
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::datatransfer::DataTransferTransactionsApi {
                     client: self.client,
@@ -2777,6 +3581,16 @@ impl<'a> DynamicDataTransferApi<'a> {
         transaction_id: &str,
     ) -> Result<types::TransactionResultEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::datatransfer::DataTransferTransactionsApi {
+                    client: self.client,
+                    port_id,
+                };
+                Ok(api
+                    .extend_output_port_transaction_t_t_l(transaction_id)
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::datatransfer::DataTransferTransactionsApi {
                     client: self.client,
@@ -2808,6 +3622,13 @@ impl<'a> DynamicDataTransferApi<'a> {
         data: Vec<u8>,
     ) -> Result<(), NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::datatransfer::DataTransferTransactionsApi {
+                    client: self.client,
+                    port_id,
+                };
+                api.receive_flow_files(transaction_id, filename, data).await
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::datatransfer::DataTransferTransactionsApi {
                     client: self.client,
@@ -2831,6 +3652,13 @@ impl<'a> DynamicDataTransferApi<'a> {
         transaction_id: &str,
     ) -> Result<(), NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::datatransfer::DataTransferTransactionsApi {
+                    client: self.client,
+                    port_id,
+                };
+                api.transfer_flow_files(transaction_id).await
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::datatransfer::DataTransferTransactionsApi {
                     client: self.client,
@@ -2862,6 +3690,27 @@ impl<'a> DynamicFlowApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::ActivateControllerServicesEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::flow::FlowControllerServicesApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(api
+                    .activate_controller_services(
+                        &serde_json::from_value::<
+                            crate::v2_6_0::types::ActivateControllerServicesEntity,
+                        >(body.clone())
+                        .map_err(|e| NifiError::UnsupportedEndpoint {
+                            endpoint: format!(
+                                "{} (body deserialize: {})",
+                                "activate_controller_services", e
+                            ),
+                            version: "2.6.0".to_string(),
+                        })?,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::flow::FlowControllerServicesApi {
                     client: self.client,
@@ -2913,6 +3762,10 @@ impl<'a> DynamicFlowApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::ClearBulletinsForGroupResultsEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => Err(NifiError::UnsupportedEndpoint {
+                endpoint: "clear_bulletins_1".to_string(),
+                version: "2.6.0".to_string(),
+            }),
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::flow::FlowBulletinsApi {
                     client: self.client,
@@ -2957,6 +3810,13 @@ impl<'a> DynamicFlowApi<'a> {
         reporting_task_id: Option<&str>,
     ) -> Result<(), NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::flow::FlowApi {
+                    client: self.client,
+                };
+                api.download_reporting_task_snapshot(reporting_task_id)
+                    .await
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::flow::FlowApi {
                     client: self.client,
@@ -2976,6 +3836,12 @@ impl<'a> DynamicFlowApi<'a> {
     /// Generates a client id.
     pub async fn generate_client_id(&self) -> Result<(), NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::flow::FlowApi {
+                    client: self.client,
+                };
+                api.generate_client_id().await
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::flow::FlowApi {
                     client: self.client,
@@ -2993,6 +3859,12 @@ impl<'a> DynamicFlowApi<'a> {
     /// Retrieves details about this NiFi to put in the About dialog
     pub async fn get_about_info(&self) -> Result<types::AboutDto, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::flow::FlowApi {
+                    client: self.client,
+                };
+                Ok(api.get_about_info().await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::flow::FlowApi {
                     client: self.client,
@@ -3010,6 +3882,12 @@ impl<'a> DynamicFlowApi<'a> {
     /// Gets an action
     pub async fn get_action(&self, id: &str) -> Result<types::ActionEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::flow::FlowApi {
+                    client: self.client,
+                };
+                Ok(api.get_action(id).await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::flow::FlowApi {
                     client: self.client,
@@ -3033,6 +3911,15 @@ impl<'a> DynamicFlowApi<'a> {
         r#type: &str,
     ) -> Result<types::AdditionalDetailsEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::flow::FlowApi {
+                    client: self.client,
+                };
+                Ok(api
+                    .get_additional_details(group, artifact, version, r#type)
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::flow::FlowApi {
                     client: self.client,
@@ -3058,6 +3945,12 @@ impl<'a> DynamicFlowApi<'a> {
         &self,
     ) -> Result<types::FlowAnalysisResultEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::flow::FlowApi {
+                    client: self.client,
+                };
+                Ok(api.get_all_flow_analysis_results().await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::flow::FlowApi {
                     client: self.client,
@@ -3075,6 +3968,12 @@ impl<'a> DynamicFlowApi<'a> {
     /// Retrieves the banners for this NiFi
     pub async fn get_banners(&self) -> Result<types::BannerDto, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::flow::FlowApi {
+                    client: self.client,
+                };
+                Ok(api.get_banners().await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::flow::FlowApi {
                     client: self.client,
@@ -3095,6 +3994,13 @@ impl<'a> DynamicFlowApi<'a> {
         id: &str,
     ) -> Result<types::FlowRegistryBranchesEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::flow::FlowBranchesApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(api.get_branches().await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::flow::FlowBranchesApi {
                     client: self.client,
@@ -3117,6 +4023,13 @@ impl<'a> DynamicFlowApi<'a> {
         id: &str,
     ) -> Result<types::FlowBreadcrumbEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::flow::FlowBreadcrumbsApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(api.get_breadcrumbs().await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::flow::FlowBreadcrumbsApi {
                     client: self.client,
@@ -3140,6 +4053,13 @@ impl<'a> DynamicFlowApi<'a> {
         branch: Option<&str>,
     ) -> Result<types::FlowRegistryBucketsEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::flow::FlowBucketsApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(api.get_buckets(branch).await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::flow::FlowBucketsApi {
                     client: self.client,
@@ -3167,6 +4087,15 @@ impl<'a> DynamicFlowApi<'a> {
         limit: Option<&str>,
     ) -> Result<types::BulletinBoardDto, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::flow::FlowApi {
+                    client: self.client,
+                };
+                Ok(api
+                    .get_bulletin_board(after, source_name, message, source_id, group_id, limit)
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::flow::FlowApi {
                     client: self.client,
@@ -3190,6 +4119,12 @@ impl<'a> DynamicFlowApi<'a> {
     /// Retrieves Controller level bulletins
     pub async fn get_bulletins(&self) -> Result<types::ControllerBulletinsEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::flow::FlowApi {
+                    client: self.client,
+                };
+                Ok(api.get_bulletins().await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::flow::FlowApi {
                     client: self.client,
@@ -3207,6 +4142,12 @@ impl<'a> DynamicFlowApi<'a> {
     /// The cluster summary for this NiFi
     pub async fn get_cluster_summary(&self) -> Result<types::ClusterSummaryDto, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::flow::FlowApi {
+                    client: self.client,
+                };
+                Ok(api.get_cluster_summary().await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::flow::FlowApi {
                     client: self.client,
@@ -3227,6 +4168,12 @@ impl<'a> DynamicFlowApi<'a> {
         component_id: &str,
     ) -> Result<types::ComponentHistoryDto, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::flow::FlowApi {
+                    client: self.client,
+                };
+                Ok(api.get_component_history(component_id).await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::flow::FlowApi {
                     client: self.client,
@@ -3249,6 +4196,16 @@ impl<'a> DynamicFlowApi<'a> {
         cluster_node_id: Option<&str>,
     ) -> Result<types::ConnectionStatisticsEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::flow::FlowStatisticsApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(api
+                    .get_connection_statistics(nodewise, cluster_node_id)
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::flow::FlowStatisticsApi {
                     client: self.client,
@@ -3279,6 +4236,16 @@ impl<'a> DynamicFlowApi<'a> {
         cluster_node_id: Option<&str>,
     ) -> Result<types::ConnectionStatusEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::flow::FlowStatusApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(api
+                    .get_connection_status(nodewise, cluster_node_id)
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::flow::FlowStatusApi {
                     client: self.client,
@@ -3307,6 +4274,13 @@ impl<'a> DynamicFlowApi<'a> {
         id: &str,
     ) -> Result<types::StatusHistoryEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::flow::FlowStatusApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(api.get_connection_status_history().await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::flow::FlowStatusApi {
                     client: self.client,
@@ -3326,6 +4300,12 @@ impl<'a> DynamicFlowApi<'a> {
     /// Retrieves the registered content viewers
     pub async fn get_content_viewers(&self) -> Result<types::ContentViewerEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::flow::FlowApi {
+                    client: self.client,
+                };
+                Ok(api.get_content_viewers().await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::flow::FlowApi {
                     client: self.client,
@@ -3349,6 +4329,15 @@ impl<'a> DynamicFlowApi<'a> {
         r#type: &str,
     ) -> Result<types::ControllerServiceDefinition, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::flow::FlowApi {
+                    client: self.client,
+                };
+                Ok(api
+                    .get_controller_service_definition(group, artifact, version, r#type)
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::flow::FlowApi {
                     client: self.client,
@@ -3381,6 +4370,23 @@ impl<'a> DynamicFlowApi<'a> {
         type_filter: Option<&str>,
     ) -> Result<types::ControllerServiceTypesEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::flow::FlowApi {
+                    client: self.client,
+                };
+                Ok(api
+                    .get_controller_service_types(
+                        service_type,
+                        service_bundle_group,
+                        service_bundle_artifact,
+                        service_bundle_version,
+                        bundle_group_filter,
+                        bundle_artifact_filter,
+                        type_filter,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::flow::FlowApi {
                     client: self.client,
@@ -3424,6 +4430,18 @@ impl<'a> DynamicFlowApi<'a> {
         include_referencing_components: Option<bool>,
     ) -> Result<types::ControllerServicesEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::flow::FlowApi {
+                    client: self.client,
+                };
+                Ok(api
+                    .get_controller_services_from_controller(
+                        ui_only,
+                        include_referencing_components,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::flow::FlowApi {
                     client: self.client,
@@ -3460,6 +4478,21 @@ impl<'a> DynamicFlowApi<'a> {
         ui_only: Option<bool>,
     ) -> Result<types::ControllerServicesEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::flow::FlowControllerServicesApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(api
+                    .get_controller_services_from_group(
+                        include_ancestor_groups,
+                        include_descendant_groups,
+                        include_referencing_components,
+                        ui_only,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::flow::FlowControllerServicesApi {
                     client: self.client,
@@ -3495,6 +4528,12 @@ impl<'a> DynamicFlowApi<'a> {
     /// Gets the current status of this NiFi
     pub async fn get_controller_status(&self) -> Result<types::ControllerStatusDto, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::flow::FlowApi {
+                    client: self.client,
+                };
+                Ok(api.get_controller_status().await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::flow::FlowApi {
                     client: self.client,
@@ -3512,6 +4551,12 @@ impl<'a> DynamicFlowApi<'a> {
     /// Retrieves the user identity of the user making the request
     pub async fn get_current_user(&self) -> Result<types::CurrentUserEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::flow::FlowApi {
+                    client: self.client,
+                };
+                Ok(api.get_current_user().await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::flow::FlowApi {
                     client: self.client,
@@ -3536,6 +4581,16 @@ impl<'a> DynamicFlowApi<'a> {
         branch: Option<&str>,
     ) -> Result<types::VersionedFlowDto, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::flow::FlowBucketsApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(api
+                    .get_details(registry_id, bucket_id, flow_id, branch)
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::flow::FlowBucketsApi {
                     client: self.client,
@@ -3565,6 +4620,12 @@ impl<'a> DynamicFlowApi<'a> {
         ui_only: Option<bool>,
     ) -> Result<types::ProcessGroupFlowEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::flow::FlowApi {
+                    client: self.client,
+                };
+                Ok(api.get_flow(id, ui_only).await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::flow::FlowApi {
                     client: self.client,
@@ -3585,6 +4646,15 @@ impl<'a> DynamicFlowApi<'a> {
         process_group_id: &str,
     ) -> Result<types::FlowAnalysisResultEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::flow::FlowApi {
+                    client: self.client,
+                };
+                Ok(api
+                    .get_flow_analysis_results(process_group_id)
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::flow::FlowApi {
                     client: self.client,
@@ -3614,6 +4684,15 @@ impl<'a> DynamicFlowApi<'a> {
         r#type: &str,
     ) -> Result<types::FlowAnalysisRuleDefinition, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::flow::FlowApi {
+                    client: self.client,
+                };
+                Ok(api
+                    .get_flow_analysis_rule_definition(group, artifact, version, r#type)
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::flow::FlowApi {
                     client: self.client,
@@ -3642,6 +4721,19 @@ impl<'a> DynamicFlowApi<'a> {
         r#type: Option<&str>,
     ) -> Result<types::FlowAnalysisRuleTypesEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::flow::FlowApi {
+                    client: self.client,
+                };
+                Ok(api
+                    .get_flow_analysis_rule_types(
+                        bundle_group_filter,
+                        bundle_artifact_filter,
+                        r#type,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::flow::FlowApi {
                     client: self.client,
@@ -3673,6 +4765,12 @@ impl<'a> DynamicFlowApi<'a> {
     /// Retrieves the configuration for this NiFi flow
     pub async fn get_flow_config(&self) -> Result<types::FlowConfigurationDto, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::flow::FlowApi {
+                    client: self.client,
+                };
+                Ok(api.get_flow_config().await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::flow::FlowApi {
                     client: self.client,
@@ -3698,6 +4796,29 @@ impl<'a> DynamicFlowApi<'a> {
         flow_metrics_reporting_strategy: Option<&str>,
     ) -> Result<(), NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::flow::FlowApi {
+                    client: self.client,
+                };
+                api.get_flow_metrics(
+                    producer,
+                    included_registries
+                        .map(|v| {
+                            serde_json::from_value::<crate::v2_6_0::types::IncludedRegistries>(
+                                serde_json::Value::String(v.to_string()),
+                            )
+                        })
+                        .transpose()
+                        .map_err(|_| NifiError::UnsupportedEndpoint {
+                            endpoint: "get_flow_metrics".to_string(),
+                            version: "2.6.0".to_string(),
+                        })?,
+                    sample_name,
+                    sample_label_value,
+                    root_field_name,
+                )
+                .await
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::flow::FlowApi {
                     client: self.client,
@@ -3777,6 +4898,10 @@ impl<'a> DynamicFlowApi<'a> {
         r#type: &str,
     ) -> Result<types::FlowRegistryClientDefinition, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => Err(NifiError::UnsupportedEndpoint {
+                endpoint: "get_flow_registry_client_definition".to_string(),
+                version: "2.6.0".to_string(),
+            }),
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::flow::FlowApi {
                     client: self.client,
@@ -3806,6 +4931,13 @@ impl<'a> DynamicFlowApi<'a> {
         branch: Option<&str>,
     ) -> Result<types::VersionedFlowsEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::flow::FlowBucketsApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(api.get_flows(registry_id, bucket_id, branch).await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::flow::FlowBucketsApi {
                     client: self.client,
@@ -3830,6 +4962,16 @@ impl<'a> DynamicFlowApi<'a> {
         cluster_node_id: Option<&str>,
     ) -> Result<types::PortStatusEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::flow::FlowStatusApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(api
+                    .get_input_port_status(nodewise, cluster_node_id)
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::flow::FlowStatusApi {
                     client: self.client,
@@ -3855,6 +4997,10 @@ impl<'a> DynamicFlowApi<'a> {
     /// Gets all listen ports configured on this NiFi that the current user has access to
     pub async fn get_listen_ports(&self) -> Result<types::ListenPortsEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => Err(NifiError::UnsupportedEndpoint {
+                endpoint: "get_listen_ports".to_string(),
+                version: "2.6.0".to_string(),
+            }),
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::flow::FlowApi {
                     client: self.client,
@@ -3877,6 +5023,16 @@ impl<'a> DynamicFlowApi<'a> {
         cluster_node_id: Option<&str>,
     ) -> Result<types::PortStatusEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::flow::FlowStatusApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(api
+                    .get_output_port_status(nodewise, cluster_node_id)
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::flow::FlowStatusApi {
                     client: self.client,
@@ -3904,6 +5060,12 @@ impl<'a> DynamicFlowApi<'a> {
         &self,
     ) -> Result<types::ParameterContextsEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::flow::FlowApi {
+                    client: self.client,
+                };
+                Ok(api.get_parameter_contexts().await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::flow::FlowApi {
                     client: self.client,
@@ -3927,6 +5089,15 @@ impl<'a> DynamicFlowApi<'a> {
         r#type: &str,
     ) -> Result<types::ParameterProviderDefinition, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::flow::FlowApi {
+                    client: self.client,
+                };
+                Ok(api
+                    .get_parameter_provider_definition(group, artifact, version, r#type)
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::flow::FlowApi {
                     client: self.client,
@@ -3955,6 +5126,19 @@ impl<'a> DynamicFlowApi<'a> {
         r#type: Option<&str>,
     ) -> Result<types::ParameterProviderTypesEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::flow::FlowApi {
+                    client: self.client,
+                };
+                Ok(api
+                    .get_parameter_provider_types(
+                        bundle_group_filter,
+                        bundle_artifact_filter,
+                        r#type,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::flow::FlowApi {
                     client: self.client,
@@ -3988,6 +5172,12 @@ impl<'a> DynamicFlowApi<'a> {
         &self,
     ) -> Result<types::ParameterProvidersEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::flow::FlowApi {
+                    client: self.client,
+                };
+                Ok(api.get_parameter_providers().await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::flow::FlowApi {
                     client: self.client,
@@ -4005,6 +5195,12 @@ impl<'a> DynamicFlowApi<'a> {
     /// Retrieves the types of prioritizers that this NiFi supports
     pub async fn get_prioritizers(&self) -> Result<types::PrioritizerTypesEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::flow::FlowApi {
+                    client: self.client,
+                };
+                Ok(api.get_prioritizers().await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::flow::FlowApi {
                     client: self.client,
@@ -4028,6 +5224,16 @@ impl<'a> DynamicFlowApi<'a> {
         cluster_node_id: Option<&str>,
     ) -> Result<types::ProcessGroupStatusEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::flow::FlowStatusApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(api
+                    .get_process_group_status(recursive, nodewise, cluster_node_id)
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::flow::FlowStatusApi {
                     client: self.client,
@@ -4056,6 +5262,13 @@ impl<'a> DynamicFlowApi<'a> {
         id: &str,
     ) -> Result<types::StatusHistoryEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::flow::FlowStatusApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(api.get_process_group_status_history().await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::flow::FlowStatusApi {
                     client: self.client,
@@ -4081,6 +5294,15 @@ impl<'a> DynamicFlowApi<'a> {
         r#type: &str,
     ) -> Result<types::ProcessorDefinition, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::flow::FlowApi {
+                    client: self.client,
+                };
+                Ok(api
+                    .get_processor_definition(group, artifact, version, r#type)
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::flow::FlowApi {
                     client: self.client,
@@ -4109,6 +5331,16 @@ impl<'a> DynamicFlowApi<'a> {
         cluster_node_id: Option<&str>,
     ) -> Result<types::ProcessorStatusEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::flow::FlowStatusApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(api
+                    .get_processor_status(nodewise, cluster_node_id)
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::flow::FlowStatusApi {
                     client: self.client,
@@ -4137,6 +5369,13 @@ impl<'a> DynamicFlowApi<'a> {
         id: &str,
     ) -> Result<types::StatusHistoryEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::flow::FlowStatusApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(api.get_processor_status_history().await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::flow::FlowStatusApi {
                     client: self.client,
@@ -4161,6 +5400,15 @@ impl<'a> DynamicFlowApi<'a> {
         r#type: Option<&str>,
     ) -> Result<types::ProcessorTypesEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::flow::FlowApi {
+                    client: self.client,
+                };
+                Ok(api
+                    .get_processor_types(bundle_group_filter, bundle_artifact_filter, r#type)
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::flow::FlowApi {
                     client: self.client,
@@ -4186,6 +5434,12 @@ impl<'a> DynamicFlowApi<'a> {
         &self,
     ) -> Result<types::FlowRegistryClientsEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::flow::FlowApi {
+                    client: self.client,
+                };
+                Ok(api.get_registry_clients().await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::flow::FlowApi {
                     client: self.client,
@@ -4208,6 +5462,16 @@ impl<'a> DynamicFlowApi<'a> {
         cluster_node_id: Option<&str>,
     ) -> Result<types::RemoteProcessGroupStatusEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::flow::FlowStatusApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(api
+                    .get_remote_process_group_status(nodewise, cluster_node_id)
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::flow::FlowStatusApi {
                     client: self.client,
@@ -4236,6 +5500,13 @@ impl<'a> DynamicFlowApi<'a> {
         id: &str,
     ) -> Result<types::StatusHistoryEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::flow::FlowStatusApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(api.get_remote_process_group_status_history().await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::flow::FlowStatusApi {
                     client: self.client,
@@ -4261,6 +5532,15 @@ impl<'a> DynamicFlowApi<'a> {
         r#type: &str,
     ) -> Result<types::ReportingTaskDefinition, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::flow::FlowApi {
+                    client: self.client,
+                };
+                Ok(api
+                    .get_reporting_task_definition(group, artifact, version, r#type)
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::flow::FlowApi {
                     client: self.client,
@@ -4287,6 +5567,15 @@ impl<'a> DynamicFlowApi<'a> {
         reporting_task_id: Option<&str>,
     ) -> Result<types::VersionedReportingTaskSnapshot, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::flow::FlowApi {
+                    client: self.client,
+                };
+                Ok(api
+                    .get_reporting_task_snapshot(reporting_task_id)
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::flow::FlowApi {
                     client: self.client,
@@ -4315,6 +5604,15 @@ impl<'a> DynamicFlowApi<'a> {
         r#type: Option<&str>,
     ) -> Result<types::ReportingTaskTypesEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::flow::FlowApi {
+                    client: self.client,
+                };
+                Ok(api
+                    .get_reporting_task_types(bundle_group_filter, bundle_artifact_filter, r#type)
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::flow::FlowApi {
                     client: self.client,
@@ -4338,6 +5636,12 @@ impl<'a> DynamicFlowApi<'a> {
     /// Gets all reporting tasks
     pub async fn get_reporting_tasks(&self) -> Result<types::ReportingTasksEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::flow::FlowApi {
+                    client: self.client,
+                };
+                Ok(api.get_reporting_tasks().await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::flow::FlowApi {
                     client: self.client,
@@ -4355,6 +5659,12 @@ impl<'a> DynamicFlowApi<'a> {
     /// Retrieves the runtime manifest for this NiFi instance.
     pub async fn get_runtime_manifest(&self) -> Result<types::RuntimeManifest, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::flow::FlowApi {
+                    client: self.client,
+                };
+                Ok(api.get_runtime_manifest().await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::flow::FlowApi {
                     client: self.client,
@@ -4386,6 +5696,28 @@ impl<'a> DynamicFlowApi<'a> {
         limit: Option<i32>,
     ) -> Result<types::FlowComparisonEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::flow::FlowBranchesApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(api
+                    .get_version_differences(
+                        registry_id,
+                        branch_id_a,
+                        bucket_id_a,
+                        flow_id_a,
+                        version_a,
+                        branch_id_b,
+                        bucket_id_b,
+                        flow_id_b,
+                        version_b,
+                        offset,
+                        limit,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::flow::FlowBranchesApi {
                     client: self.client,
@@ -4442,6 +5774,16 @@ impl<'a> DynamicFlowApi<'a> {
         branch: Option<&str>,
     ) -> Result<types::VersionedFlowSnapshotMetadataSetEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::flow::FlowBucketsApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(api
+                    .get_versions(registry_id, bucket_id, flow_id, branch)
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::flow::FlowBucketsApi {
                     client: self.client,
@@ -4477,6 +5819,24 @@ impl<'a> DynamicFlowApi<'a> {
         source_id: Option<&str>,
     ) -> Result<types::HistoryDto, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::flow::FlowApi {
+                    client: self.client,
+                };
+                Ok(api
+                    .query_history(
+                        offset,
+                        count,
+                        sort_column,
+                        sort_order,
+                        start_date,
+                        end_date,
+                        user_identity,
+                        source_id,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::flow::FlowApi {
                     client: self.client,
@@ -4522,6 +5882,27 @@ impl<'a> DynamicFlowApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::ScheduleComponentsEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::flow::FlowApi {
+                    client: self.client,
+                };
+                Ok(api
+                    .schedule_components(
+                        id,
+                        &serde_json::from_value::<crate::v2_6_0::types::ScheduleComponentsEntity>(
+                            body.clone(),
+                        )
+                        .map_err(|e| NifiError::UnsupportedEndpoint {
+                            endpoint: format!(
+                                "{} (body deserialize: {})",
+                                "schedule_components", e
+                            ),
+                            version: "2.6.0".to_string(),
+                        })?,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::flow::FlowApi {
                     client: self.client,
@@ -4572,6 +5953,12 @@ impl<'a> DynamicFlowApi<'a> {
         q: &str,
     ) -> Result<types::ClusterSearchResultsEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::flow::FlowApi {
+                    client: self.client,
+                };
+                Ok(api.search_cluster(q).await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::flow::FlowApi {
                     client: self.client,
@@ -4593,6 +5980,12 @@ impl<'a> DynamicFlowApi<'a> {
         a: Option<&str>,
     ) -> Result<types::SearchResultsDto, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::flow::FlowApi {
+                    client: self.client,
+                };
+                Ok(api.search_flow(q, a).await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::flow::FlowApi {
                     client: self.client,
@@ -4618,6 +6011,13 @@ impl<'a> DynamicFlowFileQueuesApi<'a> {
     /// Creates a request to drop the contents of the queue in this connection.
     pub async fn create_drop_request(&self, id: &str) -> Result<(), NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::flowfilequeues::FlowFileQueuesDropRequestsApi {
+                    client: self.client,
+                    id,
+                };
+                api.create_drop_request().await
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::flowfilequeues::FlowFileQueuesDropRequestsApi {
                     client: self.client,
@@ -4637,6 +6037,13 @@ impl<'a> DynamicFlowFileQueuesApi<'a> {
     /// Lists the contents of the queue in this connection.
     pub async fn create_flow_file_listing(&self, id: &str) -> Result<(), NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::flowfilequeues::FlowFileQueuesListingRequestsApi {
+                    client: self.client,
+                    id,
+                };
+                api.create_flow_file_listing().await
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::flowfilequeues::FlowFileQueuesListingRequestsApi {
                     client: self.client,
@@ -4660,6 +6067,13 @@ impl<'a> DynamicFlowFileQueuesApi<'a> {
         listing_request_id: &str,
     ) -> Result<types::ListingRequestDto, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::flowfilequeues::FlowFileQueuesListingRequestsApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(api.delete_listing_request(listing_request_id).await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::flowfilequeues::FlowFileQueuesListingRequestsApi {
                     client: self.client,
@@ -4685,6 +6099,14 @@ impl<'a> DynamicFlowFileQueuesApi<'a> {
         cluster_node_id: Option<&str>,
     ) -> Result<(), NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::flowfilequeues::FlowFileQueuesFlowfilesApi {
+                    client: self.client,
+                    id,
+                };
+                api.download_flow_file_content(flowfile_uuid, client_id, cluster_node_id)
+                    .await
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::flowfilequeues::FlowFileQueuesFlowfilesApi {
                     client: self.client,
@@ -4710,6 +6132,13 @@ impl<'a> DynamicFlowFileQueuesApi<'a> {
         drop_request_id: &str,
     ) -> Result<types::DropRequestDto, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::flowfilequeues::FlowFileQueuesDropRequestsApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(api.get_drop_request(drop_request_id).await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::flowfilequeues::FlowFileQueuesDropRequestsApi {
                     client: self.client,
@@ -4734,6 +6163,16 @@ impl<'a> DynamicFlowFileQueuesApi<'a> {
         cluster_node_id: Option<&str>,
     ) -> Result<types::FlowFileDto, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::flowfilequeues::FlowFileQueuesFlowfilesApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(api
+                    .get_flow_file(flowfile_uuid, cluster_node_id)
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::flowfilequeues::FlowFileQueuesFlowfilesApi {
                     client: self.client,
@@ -4763,6 +6202,13 @@ impl<'a> DynamicFlowFileQueuesApi<'a> {
         listing_request_id: &str,
     ) -> Result<types::ListingRequestDto, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::flowfilequeues::FlowFileQueuesListingRequestsApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(api.get_listing_request(listing_request_id).await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::flowfilequeues::FlowFileQueuesListingRequestsApi {
                     client: self.client,
@@ -4786,6 +6232,13 @@ impl<'a> DynamicFlowFileQueuesApi<'a> {
         drop_request_id: &str,
     ) -> Result<types::DropRequestDto, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::flowfilequeues::FlowFileQueuesDropRequestsApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(api.remove_drop_request(drop_request_id).await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::flowfilequeues::FlowFileQueuesDropRequestsApi {
                     client: self.client,
@@ -4813,6 +6266,12 @@ impl<'a> DynamicFunnelsApi<'a> {
     /// Gets a funnel
     pub async fn get_funnel(&self, id: &str) -> Result<types::FunnelEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::funnels::FunnelsApi {
+                    client: self.client,
+                };
+                Ok(api.get_funnel(id).await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::funnels::FunnelsApi {
                     client: self.client,
@@ -4836,6 +6295,15 @@ impl<'a> DynamicFunnelsApi<'a> {
         disconnected_node_acknowledged: Option<bool>,
     ) -> Result<types::FunnelEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::funnels::FunnelsApi {
+                    client: self.client,
+                };
+                Ok(api
+                    .remove_funnel(id, version, client_id, disconnected_node_acknowledged)
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::funnels::FunnelsApi {
                     client: self.client,
@@ -4863,6 +6331,22 @@ impl<'a> DynamicFunnelsApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::FunnelEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::funnels::FunnelsApi {
+                    client: self.client,
+                };
+                Ok(api
+                    .update_funnel(
+                        id,
+                        &serde_json::from_value::<crate::v2_6_0::types::FunnelEntity>(body.clone())
+                            .map_err(|e| NifiError::UnsupportedEndpoint {
+                                endpoint: format!("{} (body deserialize: {})", "update_funnel", e),
+                                version: "2.6.0".to_string(),
+                            })?,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::funnels::FunnelsApi {
                     client: self.client,
@@ -4912,6 +6396,10 @@ impl<'a> DynamicInputPortsApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::ClearBulletinsResultEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => Err(NifiError::UnsupportedEndpoint {
+                endpoint: "clear_bulletins_2".to_string(),
+                version: "2.6.0".to_string(),
+            }),
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::inputports::InputPortsBulletinsApi {
                     client: self.client,
@@ -4963,6 +6451,12 @@ impl<'a> DynamicInputPortsApi<'a> {
     /// Gets an input port
     pub async fn get_input_port(&self, id: &str) -> Result<types::PortEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::inputports::InputPortsApi {
+                    client: self.client,
+                };
+                Ok(api.get_input_port(id).await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::inputports::InputPortsApi {
                     client: self.client,
@@ -4986,6 +6480,15 @@ impl<'a> DynamicInputPortsApi<'a> {
         disconnected_node_acknowledged: Option<bool>,
     ) -> Result<types::PortEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::inputports::InputPortsApi {
+                    client: self.client,
+                };
+                Ok(api
+                    .remove_input_port(id, version, client_id, disconnected_node_acknowledged)
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::inputports::InputPortsApi {
                     client: self.client,
@@ -5013,6 +6516,22 @@ impl<'a> DynamicInputPortsApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::PortEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::inputports::InputPortsApi {
+                    client: self.client,
+                };
+                Ok(api
+                    .update_input_port(
+                        id,
+                        &serde_json::from_value::<crate::v2_6_0::types::PortEntity>(body.clone())
+                            .map_err(|e| NifiError::UnsupportedEndpoint {
+                            endpoint: format!("{} (body deserialize: {})", "update_input_port", e),
+                            version: "2.6.0".to_string(),
+                        })?,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::inputports::InputPortsApi {
                     client: self.client,
@@ -5054,6 +6573,27 @@ impl<'a> DynamicInputPortsApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::ProcessorEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::inputports::InputPortsRunStatusApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(api
+                    .update_run_status_2(
+                        &serde_json::from_value::<crate::v2_6_0::types::PortRunStatusEntity>(
+                            body.clone(),
+                        )
+                        .map_err(|e| NifiError::UnsupportedEndpoint {
+                            endpoint: format!(
+                                "{} (body deserialize: {})",
+                                "update_run_status_2", e
+                            ),
+                            version: "2.6.0".to_string(),
+                        })?,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::inputports::InputPortsRunStatusApi {
                     client: self.client,
@@ -5109,6 +6649,12 @@ impl<'a> DynamicLabelsApi<'a> {
     /// Gets a label
     pub async fn get_label(&self, id: &str) -> Result<types::LabelEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::labels::LabelsApi {
+                    client: self.client,
+                };
+                Ok(api.get_label(id).await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::labels::LabelsApi {
                     client: self.client,
@@ -5132,6 +6678,15 @@ impl<'a> DynamicLabelsApi<'a> {
         disconnected_node_acknowledged: Option<bool>,
     ) -> Result<types::LabelEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::labels::LabelsApi {
+                    client: self.client,
+                };
+                Ok(api
+                    .remove_label(id, version, client_id, disconnected_node_acknowledged)
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::labels::LabelsApi {
                     client: self.client,
@@ -5159,6 +6714,22 @@ impl<'a> DynamicLabelsApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::LabelEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::labels::LabelsApi {
+                    client: self.client,
+                };
+                Ok(api
+                    .update_label(
+                        id,
+                        &serde_json::from_value::<crate::v2_6_0::types::LabelEntity>(body.clone())
+                            .map_err(|e| NifiError::UnsupportedEndpoint {
+                                endpoint: format!("{} (body deserialize: {})", "update_label", e),
+                                version: "2.6.0".to_string(),
+                            })?,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::labels::LabelsApi {
                     client: self.client,
@@ -5208,6 +6779,10 @@ impl<'a> DynamicOutputPortsApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::ClearBulletinsResultEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => Err(NifiError::UnsupportedEndpoint {
+                endpoint: "clear_bulletins_3".to_string(),
+                version: "2.6.0".to_string(),
+            }),
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::outputports::OutputPortsBulletinsApi {
                     client: self.client,
@@ -5259,6 +6834,12 @@ impl<'a> DynamicOutputPortsApi<'a> {
     /// Gets an output port
     pub async fn get_output_port(&self, id: &str) -> Result<types::PortEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::outputports::OutputPortsApi {
+                    client: self.client,
+                };
+                Ok(api.get_output_port(id).await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::outputports::OutputPortsApi {
                     client: self.client,
@@ -5282,6 +6863,15 @@ impl<'a> DynamicOutputPortsApi<'a> {
         disconnected_node_acknowledged: Option<bool>,
     ) -> Result<types::PortEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::outputports::OutputPortsApi {
+                    client: self.client,
+                };
+                Ok(api
+                    .remove_output_port(id, version, client_id, disconnected_node_acknowledged)
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::outputports::OutputPortsApi {
                     client: self.client,
@@ -5309,6 +6899,22 @@ impl<'a> DynamicOutputPortsApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::PortEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::outputports::OutputPortsApi {
+                    client: self.client,
+                };
+                Ok(api
+                    .update_output_port(
+                        id,
+                        &serde_json::from_value::<crate::v2_6_0::types::PortEntity>(body.clone())
+                            .map_err(|e| NifiError::UnsupportedEndpoint {
+                            endpoint: format!("{} (body deserialize: {})", "update_output_port", e),
+                            version: "2.6.0".to_string(),
+                        })?,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::outputports::OutputPortsApi {
                     client: self.client,
@@ -5350,6 +6956,27 @@ impl<'a> DynamicOutputPortsApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::ProcessorEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::outputports::OutputPortsRunStatusApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(api
+                    .update_run_status_3(
+                        &serde_json::from_value::<crate::v2_6_0::types::PortRunStatusEntity>(
+                            body.clone(),
+                        )
+                        .map_err(|e| NifiError::UnsupportedEndpoint {
+                            endpoint: format!(
+                                "{} (body deserialize: {})",
+                                "update_run_status_3", e
+                            ),
+                            version: "2.6.0".to_string(),
+                        })?,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::outputports::OutputPortsRunStatusApi {
                     client: self.client,
@@ -5410,6 +7037,13 @@ impl<'a> DynamicParameterContextsApi<'a> {
         data: Vec<u8>,
     ) -> Result<types::AssetDto, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::parametercontexts::ParameterContextsAssetsApi {
+                    client: self.client,
+                    context_id,
+                };
+                Ok(api.create_asset(filename, data).await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::parametercontexts::ParameterContextsAssetsApi {
                     client: self.client,
@@ -5432,6 +7066,26 @@ impl<'a> DynamicParameterContextsApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::ParameterContextEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::parametercontexts::ParameterContextsApi {
+                    client: self.client,
+                };
+                Ok(api
+                    .create_parameter_context(
+                        &serde_json::from_value::<crate::v2_6_0::types::ParameterContextEntity>(
+                            body.clone(),
+                        )
+                        .map_err(|e| NifiError::UnsupportedEndpoint {
+                            endpoint: format!(
+                                "{} (body deserialize: {})",
+                                "create_parameter_context", e
+                            ),
+                            version: "2.6.0".to_string(),
+                        })?,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::parametercontexts::ParameterContextsApi {
                     client: self.client,
@@ -5482,6 +7136,16 @@ impl<'a> DynamicParameterContextsApi<'a> {
         disconnected_node_acknowledged: Option<bool>,
     ) -> Result<types::AssetDto, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::parametercontexts::ParameterContextsAssetsApi {
+                    client: self.client,
+                    context_id,
+                };
+                Ok(api
+                    .delete_asset(asset_id, disconnected_node_acknowledged)
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::parametercontexts::ParameterContextsAssetsApi {
                     client: self.client,
@@ -5513,6 +7177,20 @@ impl<'a> DynamicParameterContextsApi<'a> {
         disconnected_node_acknowledged: Option<bool>,
     ) -> Result<types::ParameterContextEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::parametercontexts::ParameterContextsApi {
+                    client: self.client,
+                };
+                Ok(api
+                    .delete_parameter_context(
+                        id,
+                        version,
+                        client_id,
+                        disconnected_node_acknowledged,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::parametercontexts::ParameterContextsApi {
                     client: self.client,
@@ -5551,6 +7229,17 @@ impl<'a> DynamicParameterContextsApi<'a> {
         disconnected_node_acknowledged: Option<bool>,
     ) -> Result<types::ParameterContextUpdateRequestEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api =
+                    crate::v2_6_0::api::parametercontexts::ParameterContextsUpdateRequestsApi {
+                        client: self.client,
+                        context_id,
+                    };
+                Ok(api
+                    .delete_update_request(request_id, disconnected_node_acknowledged)
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api =
                     crate::v2_7_2::api::parametercontexts::ParameterContextsUpdateRequestsApi {
@@ -5583,6 +7272,17 @@ impl<'a> DynamicParameterContextsApi<'a> {
         disconnected_node_acknowledged: Option<bool>,
     ) -> Result<types::ParameterContextValidationRequestEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api =
+                    crate::v2_6_0::api::parametercontexts::ParameterContextsValidationRequestsApi {
+                        client: self.client,
+                        context_id,
+                    };
+                Ok(api
+                    .delete_validation_request(id, disconnected_node_acknowledged)
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api =
                     crate::v2_7_2::api::parametercontexts::ParameterContextsValidationRequestsApi {
@@ -5614,6 +7314,13 @@ impl<'a> DynamicParameterContextsApi<'a> {
         asset_id: &str,
     ) -> Result<(), NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::parametercontexts::ParameterContextsAssetsApi {
+                    client: self.client,
+                    context_id,
+                };
+                api.get_asset_content(asset_id).await
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::parametercontexts::ParameterContextsAssetsApi {
                     client: self.client,
@@ -5633,6 +7340,13 @@ impl<'a> DynamicParameterContextsApi<'a> {
     /// Lists the assets that belong to the Parameter Context with the given ID
     pub async fn get_assets(&self, context_id: &str) -> Result<types::AssetsEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::parametercontexts::ParameterContextsAssetsApi {
+                    client: self.client,
+                    context_id,
+                };
+                Ok(api.get_assets().await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::parametercontexts::ParameterContextsAssetsApi {
                     client: self.client,
@@ -5656,6 +7370,15 @@ impl<'a> DynamicParameterContextsApi<'a> {
         include_inherited_parameters: Option<bool>,
     ) -> Result<types::ParameterContextEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::parametercontexts::ParameterContextsApi {
+                    client: self.client,
+                };
+                Ok(api
+                    .get_parameter_context(id, include_inherited_parameters)
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::parametercontexts::ParameterContextsApi {
                     client: self.client,
@@ -5683,6 +7406,14 @@ impl<'a> DynamicParameterContextsApi<'a> {
         request_id: &str,
     ) -> Result<types::ParameterContextUpdateRequestEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api =
+                    crate::v2_6_0::api::parametercontexts::ParameterContextsUpdateRequestsApi {
+                        client: self.client,
+                        context_id,
+                    };
+                Ok(api.get_parameter_context_update(request_id).await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api =
                     crate::v2_7_2::api::parametercontexts::ParameterContextsUpdateRequestsApi {
@@ -5708,6 +7439,14 @@ impl<'a> DynamicParameterContextsApi<'a> {
         id: &str,
     ) -> Result<types::ParameterContextValidationRequestEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api =
+                    crate::v2_6_0::api::parametercontexts::ParameterContextsValidationRequestsApi {
+                        client: self.client,
+                        context_id,
+                    };
+                Ok(api.get_validation_request(id).await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api =
                     crate::v2_7_2::api::parametercontexts::ParameterContextsValidationRequestsApi {
@@ -5733,6 +7472,28 @@ impl<'a> DynamicParameterContextsApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::ParameterContextUpdateRequestEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api =
+                    crate::v2_6_0::api::parametercontexts::ParameterContextsUpdateRequestsApi {
+                        client: self.client,
+                        context_id,
+                    };
+                Ok(api
+                    .submit_parameter_context_update(
+                        &serde_json::from_value::<crate::v2_6_0::types::ParameterContextEntity>(
+                            body.clone(),
+                        )
+                        .map_err(|e| NifiError::UnsupportedEndpoint {
+                            endpoint: format!(
+                                "{} (body deserialize: {})",
+                                "submit_parameter_context_update", e
+                            ),
+                            version: "2.6.0".to_string(),
+                        })?,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api =
                     crate::v2_7_2::api::parametercontexts::ParameterContextsUpdateRequestsApi {
@@ -5786,6 +7547,28 @@ impl<'a> DynamicParameterContextsApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::ParameterContextValidationRequestEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api =
+                    crate::v2_6_0::api::parametercontexts::ParameterContextsValidationRequestsApi {
+                        client: self.client,
+                        context_id,
+                    };
+                Ok(api
+                    .submit_validation_request(
+                        &serde_json::from_value::<
+                            crate::v2_6_0::types::ParameterContextValidationRequestEntity,
+                        >(body.clone())
+                        .map_err(|e| NifiError::UnsupportedEndpoint {
+                            endpoint: format!(
+                                "{} (body deserialize: {})",
+                                "submit_validation_request", e
+                            ),
+                            version: "2.6.0".to_string(),
+                        })?,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api =
                     crate::v2_7_2::api::parametercontexts::ParameterContextsValidationRequestsApi {
@@ -5839,6 +7622,27 @@ impl<'a> DynamicParameterContextsApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::ParameterContextEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::parametercontexts::ParameterContextsApi {
+                    client: self.client,
+                };
+                Ok(api
+                    .update_parameter_context(
+                        id,
+                        &serde_json::from_value::<crate::v2_6_0::types::ParameterContextEntity>(
+                            body.clone(),
+                        )
+                        .map_err(|e| NifiError::UnsupportedEndpoint {
+                            endpoint: format!(
+                                "{} (body deserialize: {})",
+                                "update_parameter_context", e
+                            ),
+                            version: "2.6.0".to_string(),
+                        })?,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::parametercontexts::ParameterContextsApi {
                     client: self.client,
@@ -5898,6 +7702,29 @@ impl<'a> DynamicParameterProvidersApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::ConfigurationAnalysisDto, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::parameterproviders::ParameterProvidersConfigApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(
+                    api
+                        .analyze_configuration_1(
+                            &serde_json::from_value::<
+                                crate::v2_6_0::types::ConfigurationAnalysisEntity,
+                            >(body.clone())
+                            .map_err(|e| NifiError::UnsupportedEndpoint {
+                                endpoint: format!(
+                                    "{} (body deserialize: {})",
+                                    "analyze_configuration_1", e
+                                ),
+                                version: "2.6.0".to_string(),
+                            })?,
+                        )
+                        .await?
+                        .into(),
+                )
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::parameterproviders::ParameterProvidersConfigApi {
                     client: self.client,
@@ -5953,6 +7780,10 @@ impl<'a> DynamicParameterProvidersApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::ClearBulletinsResultEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => Err(NifiError::UnsupportedEndpoint {
+                endpoint: "clear_bulletins_4".to_string(),
+                version: "2.6.0".to_string(),
+            }),
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::parameterproviders::ParameterProvidersBulletinsApi {
                     client: self.client,
@@ -6008,6 +7839,24 @@ impl<'a> DynamicParameterProvidersApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::ComponentStateDto, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::parameterproviders::ParameterProvidersStateApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(api
+                    .clear_state_2(
+                        &serde_json::from_value::<crate::v2_6_0::types::ComponentStateEntity>(
+                            body.clone(),
+                        )
+                        .map_err(|e| NifiError::UnsupportedEndpoint {
+                            endpoint: format!("{} (body deserialize: {})", "clear_state_2", e),
+                            version: "2.6.0".to_string(),
+                        })?,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::parameterproviders::ParameterProvidersStateApi {
                     client: self.client,
@@ -6054,6 +7903,16 @@ impl<'a> DynamicParameterProvidersApi<'a> {
         disconnected_node_acknowledged: Option<bool>,
     ) -> Result<types::ParameterProviderApplyParametersRequestDto, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::parameterproviders::ParameterProvidersApplyParametersRequestsApi {
+                    client: self.client,
+                    provider_id: provider_id,
+                };
+                Ok(api
+                    .delete_apply_parameters_request(request_id, disconnected_node_acknowledged)
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::parameterproviders::ParameterProvidersApplyParametersRequestsApi {
                     client: self.client,
@@ -6083,6 +7942,13 @@ impl<'a> DynamicParameterProvidersApi<'a> {
         request_id: &str,
     ) -> Result<types::VerifyConfigRequestDto, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::parameterproviders::ParameterProvidersConfigApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(api.delete_verification_request_1(request_id).await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::parameterproviders::ParameterProvidersConfigApi {
                     client: self.client,
@@ -6106,6 +7972,24 @@ impl<'a> DynamicParameterProvidersApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::ParameterProviderEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::parameterproviders::ParameterProvidersParametersApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(api
+                    .fetch_parameters(
+                        &serde_json::from_value::<
+                            crate::v2_6_0::types::ParameterProviderParameterFetchEntity,
+                        >(body.clone())
+                        .map_err(|e| NifiError::UnsupportedEndpoint {
+                            endpoint: format!("{} (body deserialize: {})", "fetch_parameters", e),
+                            version: "2.6.0".to_string(),
+                        })?,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::parameterproviders::ParameterProvidersParametersApi {
                     client: self.client,
@@ -6150,6 +8034,12 @@ impl<'a> DynamicParameterProvidersApi<'a> {
         id: &str,
     ) -> Result<types::ParameterProviderEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::parameterproviders::ParameterProvidersApi {
+                    client: self.client,
+                };
+                Ok(api.get_parameter_provider(id).await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::parameterproviders::ParameterProvidersApi {
                     client: self.client,
@@ -6171,6 +8061,16 @@ impl<'a> DynamicParameterProvidersApi<'a> {
         request_id: &str,
     ) -> Result<types::ParameterProviderApplyParametersRequestDto, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::parameterproviders::ParameterProvidersApplyParametersRequestsApi {
+                    client: self.client,
+                    provider_id: provider_id,
+                };
+                Ok(api
+                    .get_parameter_provider_apply_parameters_request(request_id)
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::parameterproviders::ParameterProvidersApplyParametersRequestsApi {
                     client: self.client,
@@ -6199,6 +8099,13 @@ impl<'a> DynamicParameterProvidersApi<'a> {
         id: &str,
     ) -> Result<types::ParameterProviderReferencingComponentsEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::parameterproviders::ParameterProvidersReferencesApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(api.get_parameter_provider_references().await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::parameterproviders::ParameterProvidersReferencesApi {
                     client: self.client,
@@ -6222,6 +8129,14 @@ impl<'a> DynamicParameterProvidersApi<'a> {
         property_name: &str,
     ) -> Result<types::PropertyDescriptorDto, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api =
+                    crate::v2_6_0::api::parameterproviders::ParameterProvidersDescriptorsApi {
+                        client: self.client,
+                        id,
+                    };
+                Ok(api.get_property_descriptor_2(property_name).await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api =
                     crate::v2_7_2::api::parameterproviders::ParameterProvidersDescriptorsApi {
@@ -6243,6 +8158,13 @@ impl<'a> DynamicParameterProvidersApi<'a> {
     /// Gets the state for a parameter provider
     pub async fn get_state_1(&self, id: &str) -> Result<types::ComponentStateDto, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::parameterproviders::ParameterProvidersStateApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(api.get_state_1().await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::parameterproviders::ParameterProvidersStateApi {
                     client: self.client,
@@ -6266,6 +8188,13 @@ impl<'a> DynamicParameterProvidersApi<'a> {
         request_id: &str,
     ) -> Result<types::VerifyConfigRequestDto, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::parameterproviders::ParameterProvidersConfigApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(api.get_verification_request_1(request_id).await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::parameterproviders::ParameterProvidersConfigApi {
                     client: self.client,
@@ -6291,6 +8220,20 @@ impl<'a> DynamicParameterProvidersApi<'a> {
         disconnected_node_acknowledged: Option<bool>,
     ) -> Result<types::ParameterProviderEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::parameterproviders::ParameterProvidersApi {
+                    client: self.client,
+                };
+                Ok(api
+                    .remove_parameter_provider(
+                        id,
+                        version,
+                        client_id,
+                        disconnected_node_acknowledged,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::parameterproviders::ParameterProvidersApi {
                     client: self.client,
@@ -6328,6 +8271,27 @@ impl<'a> DynamicParameterProvidersApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::ParameterProviderApplyParametersRequestDto, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::parameterproviders::ParameterProvidersApplyParametersRequestsApi {
+                    client: self.client,
+                    provider_id: provider_id,
+                };
+                Ok(api
+                    .submit_apply_parameters(
+                        &serde_json::from_value::<
+                            crate::v2_6_0::types::ParameterProviderParameterApplicationEntity,
+                        >(body.clone())
+                        .map_err(|e| NifiError::UnsupportedEndpoint {
+                            endpoint: format!(
+                                "{} (body deserialize: {})",
+                                "submit_apply_parameters", e
+                            ),
+                            version: "2.6.0".to_string(),
+                        })?,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::parameterproviders::ParameterProvidersApplyParametersRequestsApi {
                     client: self.client,
@@ -6379,6 +8343,27 @@ impl<'a> DynamicParameterProvidersApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::VerifyConfigRequestDto, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::parameterproviders::ParameterProvidersConfigApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(api
+                    .submit_config_verification_request_1(
+                        &serde_json::from_value::<crate::v2_6_0::types::VerifyConfigRequestEntity>(
+                            body.clone(),
+                        )
+                        .map_err(|e| NifiError::UnsupportedEndpoint {
+                            endpoint: format!(
+                                "{} (body deserialize: {})",
+                                "submit_config_verification_request_1", e
+                            ),
+                            version: "2.6.0".to_string(),
+                        })?,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::parameterproviders::ParameterProvidersConfigApi {
                     client: self.client,
@@ -6430,6 +8415,27 @@ impl<'a> DynamicParameterProvidersApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::ParameterProviderEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::parameterproviders::ParameterProvidersApi {
+                    client: self.client,
+                };
+                Ok(api
+                    .update_parameter_provider(
+                        id,
+                        &serde_json::from_value::<crate::v2_6_0::types::ParameterProviderEntity>(
+                            body.clone(),
+                        )
+                        .map_err(|e| NifiError::UnsupportedEndpoint {
+                            endpoint: format!(
+                                "{} (body deserialize: {})",
+                                "update_parameter_provider", e
+                            ),
+                            version: "2.6.0".to_string(),
+                        })?,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::parameterproviders::ParameterProvidersApi {
                     client: self.client,
@@ -6488,6 +8494,26 @@ impl<'a> DynamicPoliciesApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::AccessPolicyEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::policies::PoliciesApi {
+                    client: self.client,
+                };
+                Ok(api
+                    .create_access_policy(
+                        &serde_json::from_value::<crate::v2_6_0::types::AccessPolicyEntity>(
+                            body.clone(),
+                        )
+                        .map_err(|e| NifiError::UnsupportedEndpoint {
+                            endpoint: format!(
+                                "{} (body deserialize: {})",
+                                "create_access_policy", e
+                            ),
+                            version: "2.6.0".to_string(),
+                        })?,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::policies::PoliciesApi {
                     client: self.client,
@@ -6536,6 +8562,12 @@ impl<'a> DynamicPoliciesApi<'a> {
         id: &str,
     ) -> Result<types::AccessPolicyEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::policies::PoliciesApi {
+                    client: self.client,
+                };
+                Ok(api.get_access_policy(id).await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::policies::PoliciesApi {
                     client: self.client,
@@ -6557,6 +8589,15 @@ impl<'a> DynamicPoliciesApi<'a> {
         resource: &str,
     ) -> Result<types::AccessPolicyEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::policies::PoliciesApi {
+                    client: self.client,
+                };
+                Ok(api
+                    .get_access_policy_for_resource(action, resource)
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::policies::PoliciesApi {
                     client: self.client,
@@ -6586,6 +8627,15 @@ impl<'a> DynamicPoliciesApi<'a> {
         disconnected_node_acknowledged: Option<bool>,
     ) -> Result<types::AccessPolicyEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::policies::PoliciesApi {
+                    client: self.client,
+                };
+                Ok(api
+                    .remove_access_policy(id, version, client_id, disconnected_node_acknowledged)
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::policies::PoliciesApi {
                     client: self.client,
@@ -6613,6 +8663,27 @@ impl<'a> DynamicPoliciesApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::AccessPolicyEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::policies::PoliciesApi {
+                    client: self.client,
+                };
+                Ok(api
+                    .update_access_policy(
+                        id,
+                        &serde_json::from_value::<crate::v2_6_0::types::AccessPolicyEntity>(
+                            body.clone(),
+                        )
+                        .map_err(|e| NifiError::UnsupportedEndpoint {
+                            endpoint: format!(
+                                "{} (body deserialize: {})",
+                                "update_access_policy", e
+                            ),
+                            version: "2.6.0".to_string(),
+                        })?,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::policies::PoliciesApi {
                     client: self.client,
@@ -6672,6 +8743,24 @@ impl<'a> DynamicProcessGroupsApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::CopyResponseEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::processgroups::ProcessGroupsCopyApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(api
+                    .copy(
+                        &serde_json::from_value::<crate::v2_6_0::types::CopyRequestEntity>(
+                            body.clone(),
+                        )
+                        .map_err(|e| NifiError::UnsupportedEndpoint {
+                            endpoint: format!("{} (body deserialize: {})", "copy", e),
+                            version: "2.6.0".to_string(),
+                        })?,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::processgroups::ProcessGroupsCopyApi {
                     client: self.client,
@@ -6717,6 +8806,24 @@ impl<'a> DynamicProcessGroupsApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::FlowDto, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::processgroups::ProcessGroupsSnippetInstanceApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(api
+                    .copy_snippet(
+                        &serde_json::from_value::<crate::v2_6_0::types::CopySnippetRequestEntity>(
+                            body.clone(),
+                        )
+                        .map_err(|e| NifiError::UnsupportedEndpoint {
+                            endpoint: format!("{} (body deserialize: {})", "copy_snippet", e),
+                            version: "2.6.0".to_string(),
+                        })?,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::processgroups::ProcessGroupsSnippetInstanceApi {
                     client: self.client,
@@ -6762,6 +8869,24 @@ impl<'a> DynamicProcessGroupsApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::ConnectionEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::processgroups::ProcessGroupsConnectionsApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(api
+                    .create_connection(
+                        &serde_json::from_value::<crate::v2_6_0::types::ConnectionEntity>(
+                            body.clone(),
+                        )
+                        .map_err(|e| NifiError::UnsupportedEndpoint {
+                            endpoint: format!("{} (body deserialize: {})", "create_connection", e),
+                            version: "2.6.0".to_string(),
+                        })?,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::processgroups::ProcessGroupsConnectionsApi {
                     client: self.client,
@@ -6807,6 +8932,27 @@ impl<'a> DynamicProcessGroupsApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::ControllerServiceEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::processgroups::ProcessGroupsControllerServicesApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(api
+                    .create_controller_service_1(
+                        &serde_json::from_value::<crate::v2_6_0::types::ControllerServiceEntity>(
+                            body.clone(),
+                        )
+                        .map_err(|e| NifiError::UnsupportedEndpoint {
+                            endpoint: format!(
+                                "{} (body deserialize: {})",
+                                "create_controller_service_1", e
+                            ),
+                            version: "2.6.0".to_string(),
+                        })?,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::processgroups::ProcessGroupsControllerServicesApi {
                     client: self.client,
@@ -6854,6 +9000,13 @@ impl<'a> DynamicProcessGroupsApi<'a> {
     /// Creates a request to drop all flowfiles of all connection queues in this process group.
     pub async fn create_empty_all_connections_request(&self, id: &str) -> Result<(), NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::processgroups::ProcessGroupsEmptyAllConnectionsRequestsApi {
+                    client: self.client,
+                    id: id,
+                };
+                api.create_empty_all_connections_request().await
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::processgroups::ProcessGroupsEmptyAllConnectionsRequestsApi {
                     client: self.client,
@@ -6877,6 +9030,22 @@ impl<'a> DynamicProcessGroupsApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::FunnelEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::processgroups::ProcessGroupsFunnelsApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(api
+                    .create_funnel(
+                        &serde_json::from_value::<crate::v2_6_0::types::FunnelEntity>(body.clone())
+                            .map_err(|e| NifiError::UnsupportedEndpoint {
+                                endpoint: format!("{} (body deserialize: {})", "create_funnel", e),
+                                version: "2.6.0".to_string(),
+                            })?,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::processgroups::ProcessGroupsFunnelsApi {
                     client: self.client,
@@ -6918,6 +9087,22 @@ impl<'a> DynamicProcessGroupsApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::PortEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::processgroups::ProcessGroupsInputPortsApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(api
+                    .create_input_port(
+                        &serde_json::from_value::<crate::v2_6_0::types::PortEntity>(body.clone())
+                            .map_err(|e| NifiError::UnsupportedEndpoint {
+                            endpoint: format!("{} (body deserialize: {})", "create_input_port", e),
+                            version: "2.6.0".to_string(),
+                        })?,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::processgroups::ProcessGroupsInputPortsApi {
                     client: self.client,
@@ -6959,6 +9144,22 @@ impl<'a> DynamicProcessGroupsApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::LabelEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::processgroups::ProcessGroupsLabelsApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(api
+                    .create_label(
+                        &serde_json::from_value::<crate::v2_6_0::types::LabelEntity>(body.clone())
+                            .map_err(|e| NifiError::UnsupportedEndpoint {
+                                endpoint: format!("{} (body deserialize: {})", "create_label", e),
+                                version: "2.6.0".to_string(),
+                            })?,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::processgroups::ProcessGroupsLabelsApi {
                     client: self.client,
@@ -7000,6 +9201,22 @@ impl<'a> DynamicProcessGroupsApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::PortEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::processgroups::ProcessGroupsOutputPortsApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(api
+                    .create_output_port(
+                        &serde_json::from_value::<crate::v2_6_0::types::PortEntity>(body.clone())
+                            .map_err(|e| NifiError::UnsupportedEndpoint {
+                            endpoint: format!("{} (body deserialize: {})", "create_output_port", e),
+                            version: "2.6.0".to_string(),
+                        })?,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::processgroups::ProcessGroupsOutputPortsApi {
                     client: self.client,
@@ -7042,6 +9259,40 @@ impl<'a> DynamicProcessGroupsApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::ProcessGroupEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::processgroups::ProcessGroupsProcessGroupsApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(api
+                    .create_process_group(
+                        parameter_context_handling_strategy
+                            .map(|v| {
+                                serde_json::from_value::<
+                                    crate::v2_6_0::types::ParameterContextHandlingStrategy,
+                                >(serde_json::Value::String(
+                                    v.to_string(),
+                                ))
+                            })
+                            .transpose()
+                            .map_err(|_| NifiError::UnsupportedEndpoint {
+                                endpoint: "create_process_group".to_string(),
+                                version: "2.6.0".to_string(),
+                            })?,
+                        &serde_json::from_value::<crate::v2_6_0::types::ProcessGroupEntity>(
+                            body.clone(),
+                        )
+                        .map_err(|e| NifiError::UnsupportedEndpoint {
+                            endpoint: format!(
+                                "{} (body deserialize: {})",
+                                "create_process_group", e
+                            ),
+                            version: "2.6.0".to_string(),
+                        })?,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::processgroups::ProcessGroupsProcessGroupsApi {
                     client: self.client,
@@ -7119,6 +9370,24 @@ impl<'a> DynamicProcessGroupsApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::ProcessorEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::processgroups::ProcessGroupsProcessorsApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(api
+                    .create_processor(
+                        &serde_json::from_value::<crate::v2_6_0::types::ProcessorEntity>(
+                            body.clone(),
+                        )
+                        .map_err(|e| NifiError::UnsupportedEndpoint {
+                            endpoint: format!("{} (body deserialize: {})", "create_processor", e),
+                            version: "2.6.0".to_string(),
+                        })?,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::processgroups::ProcessGroupsProcessorsApi {
                     client: self.client,
@@ -7164,6 +9433,27 @@ impl<'a> DynamicProcessGroupsApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::RemoteProcessGroupEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::processgroups::ProcessGroupsRemoteProcessGroupsApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(api
+                    .create_remote_process_group(
+                        &serde_json::from_value::<crate::v2_6_0::types::RemoteProcessGroupEntity>(
+                            body.clone(),
+                        )
+                        .map_err(|e| NifiError::UnsupportedEndpoint {
+                            endpoint: format!(
+                                "{} (body deserialize: {})",
+                                "create_remote_process_group", e
+                            ),
+                            version: "2.6.0".to_string(),
+                        })?,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::processgroups::ProcessGroupsRemoteProcessGroupsApi {
                     client: self.client,
@@ -7215,6 +9505,15 @@ impl<'a> DynamicProcessGroupsApi<'a> {
         disconnected_node_acknowledged: Option<bool>,
     ) -> Result<types::ProcessGroupReplaceRequestEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::processgroups::ProcessGroupsApi {
+                    client: self.client,
+                };
+                Ok(api
+                    .delete_replace_process_group_request(id, disconnected_node_acknowledged)
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::processgroups::ProcessGroupsApi {
                     client: self.client,
@@ -7242,6 +9541,13 @@ impl<'a> DynamicProcessGroupsApi<'a> {
         include_referenced_services: Option<bool>,
     ) -> Result<(), NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::processgroups::ProcessGroupsDownloadApi {
+                    client: self.client,
+                    id,
+                };
+                api.export_process_group(include_referenced_services).await
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::processgroups::ProcessGroupsDownloadApi {
                     client: self.client,
@@ -7261,6 +9567,13 @@ impl<'a> DynamicProcessGroupsApi<'a> {
     /// Gets all connections
     pub async fn get_connections(&self, id: &str) -> Result<types::ConnectionsEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::processgroups::ProcessGroupsConnectionsApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(api.get_connections().await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::processgroups::ProcessGroupsConnectionsApi {
                     client: self.client,
@@ -7284,6 +9597,16 @@ impl<'a> DynamicProcessGroupsApi<'a> {
         drop_request_id: &str,
     ) -> Result<types::DropRequestDto, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::processgroups::ProcessGroupsEmptyAllConnectionsRequestsApi {
+                    client: self.client,
+                    id: id,
+                };
+                Ok(api
+                    .get_drop_all_flowfiles_request(drop_request_id)
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::processgroups::ProcessGroupsEmptyAllConnectionsRequestsApi {
                     client: self.client,
@@ -7309,6 +9632,13 @@ impl<'a> DynamicProcessGroupsApi<'a> {
     /// Gets all funnels
     pub async fn get_funnels(&self, id: &str) -> Result<types::FunnelsEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::processgroups::ProcessGroupsFunnelsApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(api.get_funnels().await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::processgroups::ProcessGroupsFunnelsApi {
                     client: self.client,
@@ -7328,6 +9658,13 @@ impl<'a> DynamicProcessGroupsApi<'a> {
     /// Gets all input ports
     pub async fn get_input_ports(&self, id: &str) -> Result<types::InputPortsEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::processgroups::ProcessGroupsInputPortsApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(api.get_input_ports().await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::processgroups::ProcessGroupsInputPortsApi {
                     client: self.client,
@@ -7347,6 +9684,13 @@ impl<'a> DynamicProcessGroupsApi<'a> {
     /// Gets all labels
     pub async fn get_labels(&self, id: &str) -> Result<types::LabelsEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::processgroups::ProcessGroupsLabelsApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(api.get_labels().await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::processgroups::ProcessGroupsLabelsApi {
                     client: self.client,
@@ -7369,6 +9713,13 @@ impl<'a> DynamicProcessGroupsApi<'a> {
         id: &str,
     ) -> Result<types::FlowComparisonEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::processgroups::ProcessGroupsLocalModificationsApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(api.get_local_modifications().await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::processgroups::ProcessGroupsLocalModificationsApi {
                     client: self.client,
@@ -7388,6 +9739,13 @@ impl<'a> DynamicProcessGroupsApi<'a> {
     /// Gets all output ports
     pub async fn get_output_ports(&self, id: &str) -> Result<types::OutputPortsEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::processgroups::ProcessGroupsOutputPortsApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(api.get_output_ports().await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::processgroups::ProcessGroupsOutputPortsApi {
                     client: self.client,
@@ -7410,6 +9768,12 @@ impl<'a> DynamicProcessGroupsApi<'a> {
         id: &str,
     ) -> Result<types::ProcessGroupEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::processgroups::ProcessGroupsApi {
+                    client: self.client,
+                };
+                Ok(api.get_process_group(id).await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::processgroups::ProcessGroupsApi {
                     client: self.client,
@@ -7430,6 +9794,13 @@ impl<'a> DynamicProcessGroupsApi<'a> {
         id: &str,
     ) -> Result<types::ProcessGroupsEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::processgroups::ProcessGroupsProcessGroupsApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(api.get_process_groups().await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::processgroups::ProcessGroupsProcessGroupsApi {
                     client: self.client,
@@ -7453,6 +9824,13 @@ impl<'a> DynamicProcessGroupsApi<'a> {
         include_descendant_groups: Option<bool>,
     ) -> Result<types::ProcessorsEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::processgroups::ProcessGroupsProcessorsApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(api.get_processors(include_descendant_groups).await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::processgroups::ProcessGroupsProcessorsApi {
                     client: self.client,
@@ -7475,6 +9853,13 @@ impl<'a> DynamicProcessGroupsApi<'a> {
         id: &str,
     ) -> Result<types::RemoteProcessGroupsEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::processgroups::ProcessGroupsRemoteProcessGroupsApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(api.get_remote_process_groups().await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::processgroups::ProcessGroupsRemoteProcessGroupsApi {
                     client: self.client,
@@ -7497,6 +9882,12 @@ impl<'a> DynamicProcessGroupsApi<'a> {
         id: &str,
     ) -> Result<types::ProcessGroupReplaceRequestEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::processgroups::ProcessGroupsApi {
+                    client: self.client,
+                };
+                Ok(api.get_replace_process_group_request(id).await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::processgroups::ProcessGroupsApi {
                     client: self.client,
@@ -7518,6 +9909,27 @@ impl<'a> DynamicProcessGroupsApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::ProcessGroupEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::processgroups::ProcessGroupsProcessGroupsApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(api
+                    .import_process_group(
+                        &serde_json::from_value::<crate::v2_6_0::types::ProcessGroupUploadEntity>(
+                            body.clone(),
+                        )
+                        .map_err(|e| NifiError::UnsupportedEndpoint {
+                            endpoint: format!(
+                                "{} (body deserialize: {})",
+                                "import_process_group", e
+                            ),
+                            version: "2.6.0".to_string(),
+                        })?,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::processgroups::ProcessGroupsProcessGroupsApi {
                     client: self.client,
@@ -7569,6 +9981,27 @@ impl<'a> DynamicProcessGroupsApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::ProcessGroupReplaceRequestEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::processgroups::ProcessGroupsReplaceRequestsApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(api
+                    .initiate_replace_process_group(
+                        &serde_json::from_value::<crate::v2_6_0::types::ProcessGroupImportEntity>(
+                            body.clone(),
+                        )
+                        .map_err(|e| NifiError::UnsupportedEndpoint {
+                            endpoint: format!(
+                                "{} (body deserialize: {})",
+                                "initiate_replace_process_group", e
+                            ),
+                            version: "2.6.0".to_string(),
+                        })?,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::processgroups::ProcessGroupsReplaceRequestsApi {
                     client: self.client,
@@ -7620,6 +10053,24 @@ impl<'a> DynamicProcessGroupsApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::PasteResponseEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::processgroups::ProcessGroupsPasteApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(api
+                    .paste(
+                        &serde_json::from_value::<crate::v2_6_0::types::PasteRequestEntity>(
+                            body.clone(),
+                        )
+                        .map_err(|e| NifiError::UnsupportedEndpoint {
+                            endpoint: format!("{} (body deserialize: {})", "paste", e),
+                            version: "2.6.0".to_string(),
+                        })?,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::processgroups::ProcessGroupsPasteApi {
                     client: self.client,
@@ -7665,6 +10116,13 @@ impl<'a> DynamicProcessGroupsApi<'a> {
         drop_request_id: &str,
     ) -> Result<types::DropRequestDto, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::processgroups::ProcessGroupsEmptyAllConnectionsRequestsApi {
+                    client: self.client,
+                    id: id,
+                };
+                Ok(api.remove_drop_request_1(drop_request_id).await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::processgroups::ProcessGroupsEmptyAllConnectionsRequestsApi {
                     client: self.client,
@@ -7690,6 +10148,15 @@ impl<'a> DynamicProcessGroupsApi<'a> {
         disconnected_node_acknowledged: Option<bool>,
     ) -> Result<types::ProcessGroupEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::processgroups::ProcessGroupsApi {
+                    client: self.client,
+                };
+                Ok(api
+                    .remove_process_group(id, version, client_id, disconnected_node_acknowledged)
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::processgroups::ProcessGroupsApi {
                     client: self.client,
@@ -7717,6 +10184,27 @@ impl<'a> DynamicProcessGroupsApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::ProcessGroupImportEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::processgroups::ProcessGroupsFlowContentsApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(api
+                    .replace_process_group(
+                        &serde_json::from_value::<crate::v2_6_0::types::ProcessGroupImportEntity>(
+                            body.clone(),
+                        )
+                        .map_err(|e| NifiError::UnsupportedEndpoint {
+                            endpoint: format!(
+                                "{} (body deserialize: {})",
+                                "replace_process_group", e
+                            ),
+                            version: "2.6.0".to_string(),
+                        })?,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::processgroups::ProcessGroupsFlowContentsApi {
                     client: self.client,
@@ -7768,6 +10256,27 @@ impl<'a> DynamicProcessGroupsApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::ProcessGroupEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::processgroups::ProcessGroupsApi {
+                    client: self.client,
+                };
+                Ok(api
+                    .update_process_group(
+                        id,
+                        &serde_json::from_value::<crate::v2_6_0::types::ProcessGroupEntity>(
+                            body.clone(),
+                        )
+                        .map_err(|e| NifiError::UnsupportedEndpoint {
+                            endpoint: format!(
+                                "{} (body deserialize: {})",
+                                "update_process_group", e
+                            ),
+                            version: "2.6.0".to_string(),
+                        })?,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::processgroups::ProcessGroupsApi {
                     client: self.client,
@@ -7818,6 +10327,13 @@ impl<'a> DynamicProcessGroupsApi<'a> {
         id: &str,
     ) -> Result<types::ProcessGroupEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::processgroups::ProcessGroupsProcessGroupsApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(api.upload_process_group().await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::processgroups::ProcessGroupsProcessGroupsApi {
                     client: self.client,
@@ -7849,6 +10365,29 @@ impl<'a> DynamicProcessorsApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::ConfigurationAnalysisDto, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::processors::ProcessorsConfigApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(
+                    api
+                        .analyze_configuration_2(
+                            &serde_json::from_value::<
+                                crate::v2_6_0::types::ConfigurationAnalysisEntity,
+                            >(body.clone())
+                            .map_err(|e| NifiError::UnsupportedEndpoint {
+                                endpoint: format!(
+                                    "{} (body deserialize: {})",
+                                    "analyze_configuration_2", e
+                                ),
+                                version: "2.6.0".to_string(),
+                            })?,
+                        )
+                        .await?
+                        .into(),
+                )
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::processors::ProcessorsConfigApi {
                     client: self.client,
@@ -7904,6 +10443,10 @@ impl<'a> DynamicProcessorsApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::ClearBulletinsResultEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => Err(NifiError::UnsupportedEndpoint {
+                endpoint: "clear_bulletins_5".to_string(),
+                version: "2.6.0".to_string(),
+            }),
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::processors::ProcessorsBulletinsApi {
                     client: self.client,
@@ -7959,6 +10502,24 @@ impl<'a> DynamicProcessorsApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::ComponentStateDto, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::processors::ProcessorsStateApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(api
+                    .clear_state_3(
+                        &serde_json::from_value::<crate::v2_6_0::types::ComponentStateEntity>(
+                            body.clone(),
+                        )
+                        .map_err(|e| NifiError::UnsupportedEndpoint {
+                            endpoint: format!("{} (body deserialize: {})", "clear_state_3", e),
+                            version: "2.6.0".to_string(),
+                        })?,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::processors::ProcessorsStateApi {
                     client: self.client,
@@ -8006,6 +10567,15 @@ impl<'a> DynamicProcessorsApi<'a> {
         disconnected_node_acknowledged: Option<bool>,
     ) -> Result<types::ProcessorEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::processors::ProcessorsApi {
+                    client: self.client,
+                };
+                Ok(api
+                    .delete_processor(id, version, client_id, disconnected_node_acknowledged)
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::processors::ProcessorsApi {
                     client: self.client,
@@ -8033,6 +10603,13 @@ impl<'a> DynamicProcessorsApi<'a> {
         request_id: &str,
     ) -> Result<types::VerifyConfigRequestDto, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::processors::ProcessorsConfigApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(api.delete_verification_request_2(request_id).await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::processors::ProcessorsConfigApi {
                     client: self.client,
@@ -8052,6 +10629,12 @@ impl<'a> DynamicProcessorsApi<'a> {
     /// Gets a processor
     pub async fn get_processor(&self, id: &str) -> Result<types::ProcessorEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::processors::ProcessorsApi {
+                    client: self.client,
+                };
+                Ok(api.get_processor(id).await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::processors::ProcessorsApi {
                     client: self.client,
@@ -8072,6 +10655,13 @@ impl<'a> DynamicProcessorsApi<'a> {
         id: &str,
     ) -> Result<types::ProcessorEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::processors::ProcessorsDiagnosticsApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(api.get_processor_diagnostics().await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::processors::ProcessorsDiagnosticsApi {
                     client: self.client,
@@ -8094,6 +10684,26 @@ impl<'a> DynamicProcessorsApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::ProcessorsRunStatusDetailsEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::processors::ProcessorsApi {
+                    client: self.client,
+                };
+                Ok(api
+                    .get_processor_run_status_details(
+                        &serde_json::from_value::<
+                            crate::v2_6_0::types::RunStatusDetailsRequestEntity,
+                        >(body.clone())
+                        .map_err(|e| NifiError::UnsupportedEndpoint {
+                            endpoint: format!(
+                                "{} (body deserialize: {})",
+                                "get_processor_run_status_details", e
+                            ),
+                            version: "2.6.0".to_string(),
+                        })?,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::processors::ProcessorsApi {
                     client: self.client,
@@ -8145,6 +10755,16 @@ impl<'a> DynamicProcessorsApi<'a> {
         sensitive: Option<bool>,
     ) -> Result<types::PropertyDescriptorDto, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::processors::ProcessorsDescriptorsApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(api
+                    .get_property_descriptor_3(client_id, property_name, sensitive)
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::processors::ProcessorsDescriptorsApi {
                     client: self.client,
@@ -8170,6 +10790,13 @@ impl<'a> DynamicProcessorsApi<'a> {
     /// Gets the state for a processor
     pub async fn get_state_2(&self, id: &str) -> Result<types::ComponentStateDto, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::processors::ProcessorsStateApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(api.get_state_2().await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::processors::ProcessorsStateApi {
                     client: self.client,
@@ -8193,6 +10820,13 @@ impl<'a> DynamicProcessorsApi<'a> {
         request_id: &str,
     ) -> Result<types::VerifyConfigRequestDto, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::processors::ProcessorsConfigApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(api.get_verification_request_2(request_id).await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::processors::ProcessorsConfigApi {
                     client: self.client,
@@ -8216,6 +10850,27 @@ impl<'a> DynamicProcessorsApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::VerifyConfigRequestDto, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::processors::ProcessorsConfigApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(api
+                    .submit_processor_verification_request(
+                        &serde_json::from_value::<crate::v2_6_0::types::VerifyConfigRequestEntity>(
+                            body.clone(),
+                        )
+                        .map_err(|e| NifiError::UnsupportedEndpoint {
+                            endpoint: format!(
+                                "{} (body deserialize: {})",
+                                "submit_processor_verification_request", e
+                            ),
+                            version: "2.6.0".to_string(),
+                        })?,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::processors::ProcessorsConfigApi {
                     client: self.client,
@@ -8263,6 +10918,13 @@ impl<'a> DynamicProcessorsApi<'a> {
     /// Terminates a processor, essentially "deleting" its threads and any active tasks
     pub async fn terminate_processor(&self, id: &str) -> Result<types::ProcessorEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::processors::ProcessorsThreadsApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(api.terminate_processor().await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::processors::ProcessorsThreadsApi {
                     client: self.client,
@@ -8286,6 +10948,24 @@ impl<'a> DynamicProcessorsApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::ProcessorEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::processors::ProcessorsApi {
+                    client: self.client,
+                };
+                Ok(api
+                    .update_processor(
+                        id,
+                        &serde_json::from_value::<crate::v2_6_0::types::ProcessorEntity>(
+                            body.clone(),
+                        )
+                        .map_err(|e| NifiError::UnsupportedEndpoint {
+                            endpoint: format!("{} (body deserialize: {})", "update_processor", e),
+                            version: "2.6.0".to_string(),
+                        })?,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::processors::ProcessorsApi {
                     client: self.client,
@@ -8331,6 +11011,27 @@ impl<'a> DynamicProcessorsApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::ProcessorEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::processors::ProcessorsRunStatusApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(api
+                    .update_run_status_4(
+                        &serde_json::from_value::<crate::v2_6_0::types::ProcessorRunStatusEntity>(
+                            body.clone(),
+                        )
+                        .map_err(|e| NifiError::UnsupportedEndpoint {
+                            endpoint: format!(
+                                "{} (body deserialize: {})",
+                                "update_run_status_4", e
+                            ),
+                            version: "2.6.0".to_string(),
+                        })?,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::processors::ProcessorsRunStatusApi {
                     client: self.client,
@@ -8390,6 +11091,12 @@ impl<'a> DynamicProvenanceApi<'a> {
         cluster_node_id: Option<&str>,
     ) -> Result<types::LineageDto, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::provenance::ProvenanceApi {
+                    client: self.client,
+                };
+                Ok(api.delete_lineage(id, cluster_node_id).await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::provenance::ProvenanceApi {
                     client: self.client,
@@ -8411,6 +11118,12 @@ impl<'a> DynamicProvenanceApi<'a> {
         cluster_node_id: Option<&str>,
     ) -> Result<types::ProvenanceDto, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::provenance::ProvenanceApi {
+                    client: self.client,
+                };
+                Ok(api.delete_provenance(id, cluster_node_id).await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::provenance::ProvenanceApi {
                     client: self.client,
@@ -8432,6 +11145,12 @@ impl<'a> DynamicProvenanceApi<'a> {
         cluster_node_id: Option<&str>,
     ) -> Result<types::LineageDto, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::provenance::ProvenanceApi {
+                    client: self.client,
+                };
+                Ok(api.get_lineage(id, cluster_node_id).await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::provenance::ProvenanceApi {
                     client: self.client,
@@ -8455,6 +11174,15 @@ impl<'a> DynamicProvenanceApi<'a> {
         incremental_results: Option<bool>,
     ) -> Result<types::ProvenanceDto, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::provenance::ProvenanceApi {
+                    client: self.client,
+                };
+                Ok(api
+                    .get_provenance(id, cluster_node_id, summarize, incremental_results)
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::provenance::ProvenanceApi {
                     client: self.client,
@@ -8478,6 +11206,12 @@ impl<'a> DynamicProvenanceApi<'a> {
     /// Gets the searchable attributes for provenance events
     pub async fn get_search_options(&self) -> Result<types::ProvenanceOptionsDto, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::provenance::ProvenanceApi {
+                    client: self.client,
+                };
+                Ok(api.get_search_options().await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::provenance::ProvenanceApi {
                     client: self.client,
@@ -8498,6 +11232,26 @@ impl<'a> DynamicProvenanceApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::LineageDto, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::provenance::ProvenanceApi {
+                    client: self.client,
+                };
+                Ok(api
+                    .submit_lineage_request(
+                        &serde_json::from_value::<crate::v2_6_0::types::LineageEntity>(
+                            body.clone(),
+                        )
+                        .map_err(|e| NifiError::UnsupportedEndpoint {
+                            endpoint: format!(
+                                "{} (body deserialize: {})",
+                                "submit_lineage_request", e
+                            ),
+                            version: "2.6.0".to_string(),
+                        })?,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::provenance::ProvenanceApi {
                     client: self.client,
@@ -8546,6 +11300,26 @@ impl<'a> DynamicProvenanceApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::ProvenanceDto, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::provenance::ProvenanceApi {
+                    client: self.client,
+                };
+                Ok(api
+                    .submit_provenance_request(
+                        &serde_json::from_value::<crate::v2_6_0::types::ProvenanceEntity>(
+                            body.clone(),
+                        )
+                        .map_err(|e| NifiError::UnsupportedEndpoint {
+                            endpoint: format!(
+                                "{} (body deserialize: {})",
+                                "submit_provenance_request", e
+                            ),
+                            version: "2.6.0".to_string(),
+                        })?,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::provenance::ProvenanceApi {
                     client: self.client,
@@ -8603,6 +11377,13 @@ impl<'a> DynamicProvenanceEventsApi<'a> {
         cluster_node_id: Option<&str>,
     ) -> Result<(), NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::provenanceevents::ProvenanceEventsContentApi {
+                    client: self.client,
+                    id,
+                };
+                api.get_input_content(cluster_node_id).await
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::provenanceevents::ProvenanceEventsContentApi {
                     client: self.client,
@@ -8626,6 +11407,15 @@ impl<'a> DynamicProvenanceEventsApi<'a> {
         limit: Option<i32>,
     ) -> Result<types::LatestProvenanceEventsDto, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::provenanceevents::ProvenanceEventsApi {
+                    client: self.client,
+                };
+                Ok(api
+                    .get_latest_provenance_events(component_id, limit)
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::provenanceevents::ProvenanceEventsApi {
                     client: self.client,
@@ -8653,6 +11443,13 @@ impl<'a> DynamicProvenanceEventsApi<'a> {
         cluster_node_id: Option<&str>,
     ) -> Result<(), NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::provenanceevents::ProvenanceEventsContentApi {
+                    client: self.client,
+                    id,
+                };
+                api.get_output_content(cluster_node_id).await
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::provenanceevents::ProvenanceEventsContentApi {
                     client: self.client,
@@ -8676,6 +11473,12 @@ impl<'a> DynamicProvenanceEventsApi<'a> {
         cluster_node_id: Option<&str>,
     ) -> Result<types::ProvenanceEventDto, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::provenanceevents::ProvenanceEventsApi {
+                    client: self.client,
+                };
+                Ok(api.get_provenance_event(id, cluster_node_id).await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::provenanceevents::ProvenanceEventsApi {
                     client: self.client,
@@ -8696,6 +11499,23 @@ impl<'a> DynamicProvenanceEventsApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::ProvenanceEventDto, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::provenanceevents::ProvenanceEventsApi {
+                    client: self.client,
+                };
+                Ok(api
+                    .submit_replay(
+                        &serde_json::from_value::<crate::v2_6_0::types::SubmitReplayRequestEntity>(
+                            body.clone(),
+                        )
+                        .map_err(|e| NifiError::UnsupportedEndpoint {
+                            endpoint: format!("{} (body deserialize: {})", "submit_replay", e),
+                            version: "2.6.0".to_string(),
+                        })?,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::provenanceevents::ProvenanceEventsApi {
                     client: self.client,
@@ -8738,6 +11558,28 @@ impl<'a> DynamicProvenanceEventsApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::ReplayLastEventResponseEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::provenanceevents::ProvenanceEventsApi {
+                    client: self.client,
+                };
+                Ok(
+                    api
+                        .submit_replay_latest_event(
+                            &serde_json::from_value::<
+                                crate::v2_6_0::types::ReplayLastEventRequestEntity,
+                            >(body.clone())
+                            .map_err(|e| NifiError::UnsupportedEndpoint {
+                                endpoint: format!(
+                                    "{} (body deserialize: {})",
+                                    "submit_replay_latest_event", e
+                                ),
+                                version: "2.6.0".to_string(),
+                            })?,
+                        )
+                        .await?
+                        .into(),
+                )
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::provenanceevents::ProvenanceEventsApi {
                     client: self.client,
@@ -8799,6 +11641,10 @@ impl<'a> DynamicRemoteProcessGroupsApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::ClearBulletinsResultEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => Err(NifiError::UnsupportedEndpoint {
+                endpoint: "clear_bulletins_6".to_string(),
+                version: "2.6.0".to_string(),
+            }),
             DetectedVersion::V2_7_2 => {
                 let api =
                     crate::v2_7_2::api::remoteprocessgroups::RemoteProcessGroupsBulletinsApi {
@@ -8855,6 +11701,12 @@ impl<'a> DynamicRemoteProcessGroupsApi<'a> {
         id: &str,
     ) -> Result<types::RemoteProcessGroupEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::remoteprocessgroups::RemoteProcessGroupsApi {
+                    client: self.client,
+                };
+                Ok(api.get_remote_process_group(id).await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::remoteprocessgroups::RemoteProcessGroupsApi {
                     client: self.client,
@@ -8872,6 +11724,13 @@ impl<'a> DynamicRemoteProcessGroupsApi<'a> {
     /// Gets the state for a RemoteProcessGroup
     pub async fn get_state_3(&self, id: &str) -> Result<types::ComponentStateDto, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::remoteprocessgroups::RemoteProcessGroupsStateApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(api.get_state_3().await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::remoteprocessgroups::RemoteProcessGroupsStateApi {
                     client: self.client,
@@ -8897,6 +11756,20 @@ impl<'a> DynamicRemoteProcessGroupsApi<'a> {
         disconnected_node_acknowledged: Option<bool>,
     ) -> Result<types::RemoteProcessGroupEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::remoteprocessgroups::RemoteProcessGroupsApi {
+                    client: self.client,
+                };
+                Ok(api
+                    .remove_remote_process_group(
+                        id,
+                        version,
+                        client_id,
+                        disconnected_node_acknowledged,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::remoteprocessgroups::RemoteProcessGroupsApi {
                     client: self.client,
@@ -8934,6 +11807,27 @@ impl<'a> DynamicRemoteProcessGroupsApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::RemoteProcessGroupEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::remoteprocessgroups::RemoteProcessGroupsApi {
+                    client: self.client,
+                };
+                Ok(api
+                    .update_remote_process_group(
+                        id,
+                        &serde_json::from_value::<crate::v2_6_0::types::RemoteProcessGroupEntity>(
+                            body.clone(),
+                        )
+                        .map_err(|e| NifiError::UnsupportedEndpoint {
+                            endpoint: format!(
+                                "{} (body deserialize: {})",
+                                "update_remote_process_group", e
+                            ),
+                            version: "2.6.0".to_string(),
+                        })?,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::remoteprocessgroups::RemoteProcessGroupsApi {
                     client: self.client,
@@ -8986,6 +11880,31 @@ impl<'a> DynamicRemoteProcessGroupsApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::RemoteProcessGroupPortEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api =
+                    crate::v2_6_0::api::remoteprocessgroups::RemoteProcessGroupsInputPortsApi {
+                        client: self.client,
+                        id,
+                    };
+                Ok(
+                    api
+                        .update_remote_process_group_input_port(
+                            port_id,
+                            &serde_json::from_value::<
+                                crate::v2_6_0::types::RemoteProcessGroupPortEntity,
+                            >(body.clone())
+                            .map_err(|e| NifiError::UnsupportedEndpoint {
+                                endpoint: format!(
+                                    "{} (body deserialize: {})",
+                                    "update_remote_process_group_input_port", e
+                                ),
+                                version: "2.6.0".to_string(),
+                            })?,
+                        )
+                        .await?
+                        .into(),
+                )
+            }
             DetectedVersion::V2_7_2 => {
                 let api =
                     crate::v2_7_2::api::remoteprocessgroups::RemoteProcessGroupsInputPortsApi {
@@ -9046,6 +11965,29 @@ impl<'a> DynamicRemoteProcessGroupsApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::RemoteProcessGroupPortEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api =
+                    crate::v2_6_0::api::remoteprocessgroups::RemoteProcessGroupsInputPortsApi {
+                        client: self.client,
+                        id,
+                    };
+                Ok(api
+                    .update_remote_process_group_input_port_run_status(
+                        port_id,
+                        &serde_json::from_value::<crate::v2_6_0::types::RemotePortRunStatusEntity>(
+                            body.clone(),
+                        )
+                        .map_err(|e| NifiError::UnsupportedEndpoint {
+                            endpoint: format!(
+                                "{} (body deserialize: {})",
+                                "update_remote_process_group_input_port_run_status", e
+                            ),
+                            version: "2.6.0".to_string(),
+                        })?,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api =
                     crate::v2_7_2::api::remoteprocessgroups::RemoteProcessGroupsInputPortsApi {
@@ -9102,6 +12044,31 @@ impl<'a> DynamicRemoteProcessGroupsApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::RemoteProcessGroupPortEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api =
+                    crate::v2_6_0::api::remoteprocessgroups::RemoteProcessGroupsOutputPortsApi {
+                        client: self.client,
+                        id,
+                    };
+                Ok(
+                    api
+                        .update_remote_process_group_output_port(
+                            port_id,
+                            &serde_json::from_value::<
+                                crate::v2_6_0::types::RemoteProcessGroupPortEntity,
+                            >(body.clone())
+                            .map_err(|e| NifiError::UnsupportedEndpoint {
+                                endpoint: format!(
+                                    "{} (body deserialize: {})",
+                                    "update_remote_process_group_output_port", e
+                                ),
+                                version: "2.6.0".to_string(),
+                            })?,
+                        )
+                        .await?
+                        .into(),
+                )
+            }
             DetectedVersion::V2_7_2 => {
                 let api =
                     crate::v2_7_2::api::remoteprocessgroups::RemoteProcessGroupsOutputPortsApi {
@@ -9162,6 +12129,29 @@ impl<'a> DynamicRemoteProcessGroupsApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::RemoteProcessGroupPortEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api =
+                    crate::v2_6_0::api::remoteprocessgroups::RemoteProcessGroupsOutputPortsApi {
+                        client: self.client,
+                        id,
+                    };
+                Ok(api
+                    .update_remote_process_group_output_port_run_status(
+                        port_id,
+                        &serde_json::from_value::<crate::v2_6_0::types::RemotePortRunStatusEntity>(
+                            body.clone(),
+                        )
+                        .map_err(|e| NifiError::UnsupportedEndpoint {
+                            endpoint: format!(
+                                "{} (body deserialize: {})",
+                                "update_remote_process_group_output_port_run_status", e
+                            ),
+                            version: "2.6.0".to_string(),
+                        })?,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api =
                     crate::v2_7_2::api::remoteprocessgroups::RemoteProcessGroupsOutputPortsApi {
@@ -9217,6 +12207,28 @@ impl<'a> DynamicRemoteProcessGroupsApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::RemoteProcessGroupEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api =
+                    crate::v2_6_0::api::remoteprocessgroups::RemoteProcessGroupsRunStatusApi {
+                        client: self.client,
+                        id,
+                    };
+                Ok(api
+                    .update_remote_process_group_run_status(
+                        &serde_json::from_value::<crate::v2_6_0::types::RemotePortRunStatusEntity>(
+                            body.clone(),
+                        )
+                        .map_err(|e| NifiError::UnsupportedEndpoint {
+                            endpoint: format!(
+                                "{} (body deserialize: {})",
+                                "update_remote_process_group_run_status", e
+                            ),
+                            version: "2.6.0".to_string(),
+                        })?,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api =
                     crate::v2_7_2::api::remoteprocessgroups::RemoteProcessGroupsRunStatusApi {
@@ -9270,6 +12282,28 @@ impl<'a> DynamicRemoteProcessGroupsApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::RemoteProcessGroupEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api =
+                    crate::v2_6_0::api::remoteprocessgroups::RemoteProcessGroupsRunStatusApi {
+                        client: self.client,
+                        id,
+                    };
+                Ok(api
+                    .update_remote_process_group_run_statuses(
+                        &serde_json::from_value::<crate::v2_6_0::types::RemotePortRunStatusEntity>(
+                            body.clone(),
+                        )
+                        .map_err(|e| NifiError::UnsupportedEndpoint {
+                            endpoint: format!(
+                                "{} (body deserialize: {})",
+                                "update_remote_process_group_run_statuses", e
+                            ),
+                            version: "2.6.0".to_string(),
+                        })?,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api =
                     crate::v2_7_2::api::remoteprocessgroups::RemoteProcessGroupsRunStatusApi {
@@ -9331,6 +12365,29 @@ impl<'a> DynamicReportingTasksApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::ConfigurationAnalysisDto, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::reportingtasks::ReportingTasksConfigApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(
+                    api
+                        .analyze_configuration_3(
+                            &serde_json::from_value::<
+                                crate::v2_6_0::types::ConfigurationAnalysisEntity,
+                            >(body.clone())
+                            .map_err(|e| NifiError::UnsupportedEndpoint {
+                                endpoint: format!(
+                                    "{} (body deserialize: {})",
+                                    "analyze_configuration_3", e
+                                ),
+                                version: "2.6.0".to_string(),
+                            })?,
+                        )
+                        .await?
+                        .into(),
+                )
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::reportingtasks::ReportingTasksConfigApi {
                     client: self.client,
@@ -9386,6 +12443,10 @@ impl<'a> DynamicReportingTasksApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::ClearBulletinsResultEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => Err(NifiError::UnsupportedEndpoint {
+                endpoint: "clear_bulletins_7".to_string(),
+                version: "2.6.0".to_string(),
+            }),
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::reportingtasks::ReportingTasksBulletinsApi {
                     client: self.client,
@@ -9441,6 +12502,24 @@ impl<'a> DynamicReportingTasksApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::ComponentStateDto, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::reportingtasks::ReportingTasksStateApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(api
+                    .clear_state_4(
+                        &serde_json::from_value::<crate::v2_6_0::types::ComponentStateEntity>(
+                            body.clone(),
+                        )
+                        .map_err(|e| NifiError::UnsupportedEndpoint {
+                            endpoint: format!("{} (body deserialize: {})", "clear_state_4", e),
+                            version: "2.6.0".to_string(),
+                        })?,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::reportingtasks::ReportingTasksStateApi {
                     client: self.client,
@@ -9486,6 +12565,13 @@ impl<'a> DynamicReportingTasksApi<'a> {
         request_id: &str,
     ) -> Result<types::VerifyConfigRequestDto, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::reportingtasks::ReportingTasksConfigApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(api.delete_verification_request_3(request_id).await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::reportingtasks::ReportingTasksConfigApi {
                     client: self.client,
@@ -9510,6 +12596,16 @@ impl<'a> DynamicReportingTasksApi<'a> {
         sensitive: Option<bool>,
     ) -> Result<types::PropertyDescriptorDto, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::reportingtasks::ReportingTasksDescriptorsApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(api
+                    .get_property_descriptor_4(property_name, sensitive)
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::reportingtasks::ReportingTasksDescriptorsApi {
                     client: self.client,
@@ -9538,6 +12634,12 @@ impl<'a> DynamicReportingTasksApi<'a> {
         id: &str,
     ) -> Result<types::ReportingTaskEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::reportingtasks::ReportingTasksApi {
+                    client: self.client,
+                };
+                Ok(api.get_reporting_task(id).await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::reportingtasks::ReportingTasksApi {
                     client: self.client,
@@ -9555,6 +12657,13 @@ impl<'a> DynamicReportingTasksApi<'a> {
     /// Gets the state for a reporting task
     pub async fn get_state_4(&self, id: &str) -> Result<types::ComponentStateDto, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::reportingtasks::ReportingTasksStateApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(api.get_state_4().await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::reportingtasks::ReportingTasksStateApi {
                     client: self.client,
@@ -9578,6 +12687,13 @@ impl<'a> DynamicReportingTasksApi<'a> {
         request_id: &str,
     ) -> Result<types::VerifyConfigRequestDto, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::reportingtasks::ReportingTasksConfigApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(api.get_verification_request_3(request_id).await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::reportingtasks::ReportingTasksConfigApi {
                     client: self.client,
@@ -9603,6 +12719,15 @@ impl<'a> DynamicReportingTasksApi<'a> {
         disconnected_node_acknowledged: Option<bool>,
     ) -> Result<types::ReportingTaskEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::reportingtasks::ReportingTasksApi {
+                    client: self.client,
+                };
+                Ok(api
+                    .remove_reporting_task(id, version, client_id, disconnected_node_acknowledged)
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::reportingtasks::ReportingTasksApi {
                     client: self.client,
@@ -9630,6 +12755,27 @@ impl<'a> DynamicReportingTasksApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::VerifyConfigRequestDto, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::reportingtasks::ReportingTasksConfigApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(api
+                    .submit_config_verification_request_2(
+                        &serde_json::from_value::<crate::v2_6_0::types::VerifyConfigRequestEntity>(
+                            body.clone(),
+                        )
+                        .map_err(|e| NifiError::UnsupportedEndpoint {
+                            endpoint: format!(
+                                "{} (body deserialize: {})",
+                                "submit_config_verification_request_2", e
+                            ),
+                            version: "2.6.0".to_string(),
+                        })?,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::reportingtasks::ReportingTasksConfigApi {
                     client: self.client,
@@ -9681,6 +12827,27 @@ impl<'a> DynamicReportingTasksApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::ReportingTaskEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::reportingtasks::ReportingTasksApi {
+                    client: self.client,
+                };
+                Ok(api
+                    .update_reporting_task(
+                        id,
+                        &serde_json::from_value::<crate::v2_6_0::types::ReportingTaskEntity>(
+                            body.clone(),
+                        )
+                        .map_err(|e| NifiError::UnsupportedEndpoint {
+                            endpoint: format!(
+                                "{} (body deserialize: {})",
+                                "update_reporting_task", e
+                            ),
+                            version: "2.6.0".to_string(),
+                        })?,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::reportingtasks::ReportingTasksApi {
                     client: self.client,
@@ -9732,6 +12899,29 @@ impl<'a> DynamicReportingTasksApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::ReportingTaskEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::reportingtasks::ReportingTasksRunStatusApi {
+                    client: self.client,
+                    id,
+                };
+                Ok(
+                    api
+                        .update_run_status_5(
+                            &serde_json::from_value::<
+                                crate::v2_6_0::types::ReportingTaskRunStatusEntity,
+                            >(body.clone())
+                            .map_err(|e| NifiError::UnsupportedEndpoint {
+                                endpoint: format!(
+                                    "{} (body deserialize: {})",
+                                    "update_run_status_5", e
+                                ),
+                                version: "2.6.0".to_string(),
+                            })?,
+                        )
+                        .await?
+                        .into(),
+                )
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::reportingtasks::ReportingTasksRunStatusApi {
                     client: self.client,
@@ -9791,6 +12981,12 @@ impl<'a> DynamicResourcesApi<'a> {
     /// Gets the available resources that support access/authorization policies
     pub async fn get_resources(&self) -> Result<types::ResourcesEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::resources::ResourcesApi {
+                    client: self.client,
+                };
+                Ok(api.get_resources().await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::resources::ResourcesApi {
                     client: self.client,
@@ -9816,6 +13012,12 @@ impl<'a> DynamicSiteToSiteApi<'a> {
     /// Returns the available Peers and its status of this NiFi
     pub async fn get_peers(&self) -> Result<types::PeersEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::sitetosite::SiteToSiteApi {
+                    client: self.client,
+                };
+                Ok(api.get_peers().await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::sitetosite::SiteToSiteApi {
                     client: self.client,
@@ -9833,6 +13035,12 @@ impl<'a> DynamicSiteToSiteApi<'a> {
     /// Returns the details about this NiFi necessary to communicate via site to site
     pub async fn get_site_to_site_details(&self) -> Result<types::ControllerDto, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::sitetosite::SiteToSiteApi {
+                    client: self.client,
+                };
+                Ok(api.get_site_to_site_details().await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::sitetosite::SiteToSiteApi {
                     client: self.client,
@@ -9861,6 +13069,23 @@ impl<'a> DynamicSnippetsApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::SnippetEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::snippets::SnippetsApi {
+                    client: self.client,
+                };
+                Ok(api
+                    .create_snippet(
+                        &serde_json::from_value::<crate::v2_6_0::types::SnippetEntity>(
+                            body.clone(),
+                        )
+                        .map_err(|e| NifiError::UnsupportedEndpoint {
+                            endpoint: format!("{} (body deserialize: {})", "create_snippet", e),
+                            version: "2.6.0".to_string(),
+                        })?,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::snippets::SnippetsApi {
                     client: self.client,
@@ -9904,6 +13129,15 @@ impl<'a> DynamicSnippetsApi<'a> {
         disconnected_node_acknowledged: Option<bool>,
     ) -> Result<types::SnippetEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::snippets::SnippetsApi {
+                    client: self.client,
+                };
+                Ok(api
+                    .delete_snippet(id, disconnected_node_acknowledged)
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::snippets::SnippetsApi {
                     client: self.client,
@@ -9931,6 +13165,24 @@ impl<'a> DynamicSnippetsApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::SnippetEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::snippets::SnippetsApi {
+                    client: self.client,
+                };
+                Ok(api
+                    .update_snippet(
+                        id,
+                        &serde_json::from_value::<crate::v2_6_0::types::SnippetEntity>(
+                            body.clone(),
+                        )
+                        .map_err(|e| NifiError::UnsupportedEndpoint {
+                            endpoint: format!("{} (body deserialize: {})", "update_snippet", e),
+                            version: "2.6.0".to_string(),
+                        })?,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::snippets::SnippetsApi {
                     client: self.client,
@@ -9983,6 +13235,12 @@ impl<'a> DynamicSystemDiagnosticsApi<'a> {
         bean_name_filter: Option<&str>,
     ) -> Result<types::JmxMetricsResultsEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::systemdiagnostics::SystemDiagnosticsApi {
+                    client: self.client,
+                };
+                Ok(api.get_jmx_metrics(bean_name_filter).await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::systemdiagnostics::SystemDiagnosticsApi {
                     client: self.client,
@@ -10005,6 +13263,29 @@ impl<'a> DynamicSystemDiagnosticsApi<'a> {
         cluster_node_id: Option<&str>,
     ) -> Result<types::SystemDiagnosticsDto, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::systemdiagnostics::SystemDiagnosticsApi {
+                    client: self.client,
+                };
+                Ok(api
+                    .get_system_diagnostics(
+                        nodewise,
+                        diagnostic_level
+                            .map(|v| {
+                                serde_json::from_value::<crate::v2_6_0::types::DiagnosticLevel>(
+                                    serde_json::Value::String(v.to_string()),
+                                )
+                            })
+                            .transpose()
+                            .map_err(|_| NifiError::UnsupportedEndpoint {
+                                endpoint: "get_system_diagnostics".to_string(),
+                                version: "2.6.0".to_string(),
+                            })?,
+                        cluster_node_id,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::systemdiagnostics::SystemDiagnosticsApi {
                     client: self.client,
@@ -10067,6 +13348,21 @@ impl<'a> DynamicTenantsApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::UserEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::tenants::TenantsApi {
+                    client: self.client,
+                };
+                Ok(api
+                    .create_user(
+                        &serde_json::from_value::<crate::v2_6_0::types::UserEntity>(body.clone())
+                            .map_err(|e| NifiError::UnsupportedEndpoint {
+                            endpoint: format!("{} (body deserialize: {})", "create_user", e),
+                            version: "2.6.0".to_string(),
+                        })?,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::tenants::TenantsApi {
                     client: self.client,
@@ -10105,6 +13401,23 @@ impl<'a> DynamicTenantsApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::UserGroupEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::tenants::TenantsApi {
+                    client: self.client,
+                };
+                Ok(api
+                    .create_user_group(
+                        &serde_json::from_value::<crate::v2_6_0::types::UserGroupEntity>(
+                            body.clone(),
+                        )
+                        .map_err(|e| NifiError::UnsupportedEndpoint {
+                            endpoint: format!("{} (body deserialize: {})", "create_user_group", e),
+                            version: "2.6.0".to_string(),
+                        })?,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::tenants::TenantsApi {
                     client: self.client,
@@ -10144,6 +13457,12 @@ impl<'a> DynamicTenantsApi<'a> {
     /// Gets a user
     pub async fn get_user(&self, id: &str) -> Result<types::UserEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::tenants::TenantsApi {
+                    client: self.client,
+                };
+                Ok(api.get_user(id).await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::tenants::TenantsApi {
                     client: self.client,
@@ -10161,6 +13480,12 @@ impl<'a> DynamicTenantsApi<'a> {
     /// Gets a user group
     pub async fn get_user_group(&self, id: &str) -> Result<types::UserGroupEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::tenants::TenantsApi {
+                    client: self.client,
+                };
+                Ok(api.get_user_group(id).await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::tenants::TenantsApi {
                     client: self.client,
@@ -10178,6 +13503,12 @@ impl<'a> DynamicTenantsApi<'a> {
     /// Gets all user groups
     pub async fn get_user_groups(&self) -> Result<types::UserGroupsEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::tenants::TenantsApi {
+                    client: self.client,
+                };
+                Ok(api.get_user_groups().await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::tenants::TenantsApi {
                     client: self.client,
@@ -10195,6 +13526,12 @@ impl<'a> DynamicTenantsApi<'a> {
     /// Gets all users
     pub async fn get_users(&self) -> Result<types::UsersEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::tenants::TenantsApi {
+                    client: self.client,
+                };
+                Ok(api.get_users().await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::tenants::TenantsApi {
                     client: self.client,
@@ -10218,6 +13555,15 @@ impl<'a> DynamicTenantsApi<'a> {
         disconnected_node_acknowledged: Option<bool>,
     ) -> Result<types::UserEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::tenants::TenantsApi {
+                    client: self.client,
+                };
+                Ok(api
+                    .remove_user(id, version, client_id, disconnected_node_acknowledged)
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::tenants::TenantsApi {
                     client: self.client,
@@ -10247,6 +13593,15 @@ impl<'a> DynamicTenantsApi<'a> {
         disconnected_node_acknowledged: Option<bool>,
     ) -> Result<types::UserGroupEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::tenants::TenantsApi {
+                    client: self.client,
+                };
+                Ok(api
+                    .remove_user_group(id, version, client_id, disconnected_node_acknowledged)
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::tenants::TenantsApi {
                     client: self.client,
@@ -10270,6 +13625,12 @@ impl<'a> DynamicTenantsApi<'a> {
     /// Searches for a tenant with the specified identity
     pub async fn search_tenants(&self, q: &str) -> Result<types::TenantsEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::tenants::TenantsApi {
+                    client: self.client,
+                };
+                Ok(api.search_tenants(q).await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::tenants::TenantsApi {
                     client: self.client,
@@ -10291,6 +13652,22 @@ impl<'a> DynamicTenantsApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::UserEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::tenants::TenantsApi {
+                    client: self.client,
+                };
+                Ok(api
+                    .update_user(
+                        id,
+                        &serde_json::from_value::<crate::v2_6_0::types::UserEntity>(body.clone())
+                            .map_err(|e| NifiError::UnsupportedEndpoint {
+                            endpoint: format!("{} (body deserialize: {})", "update_user", e),
+                            version: "2.6.0".to_string(),
+                        })?,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::tenants::TenantsApi {
                     client: self.client,
@@ -10332,6 +13709,24 @@ impl<'a> DynamicTenantsApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::UserGroupEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::tenants::TenantsApi {
+                    client: self.client,
+                };
+                Ok(api
+                    .update_user_group(
+                        id,
+                        &serde_json::from_value::<crate::v2_6_0::types::UserGroupEntity>(
+                            body.clone(),
+                        )
+                        .map_err(|e| NifiError::UnsupportedEndpoint {
+                            endpoint: format!("{} (body deserialize: {})", "update_user_group", e),
+                            version: "2.6.0".to_string(),
+                        })?,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::tenants::TenantsApi {
                     client: self.client,
@@ -10384,6 +13779,24 @@ impl<'a> DynamicVersionsApi<'a> {
         body: &serde_json::Value,
     ) -> Result<(), NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::versions::VersionsApi {
+                    client: self.client,
+                };
+                api.create_version_control_request(
+                    &serde_json::from_value::<crate::v2_6_0::types::CreateActiveRequestEntity>(
+                        body.clone(),
+                    )
+                    .map_err(|e| NifiError::UnsupportedEndpoint {
+                        endpoint: format!(
+                            "{} (body deserialize: {})",
+                            "create_version_control_request", e
+                        ),
+                        version: "2.6.0".to_string(),
+                    })?,
+                )
+                .await
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::versions::VersionsApi {
                     client: self.client,
@@ -10429,6 +13842,15 @@ impl<'a> DynamicVersionsApi<'a> {
         disconnected_node_acknowledged: Option<bool>,
     ) -> Result<types::VersionedFlowUpdateRequestEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::versions::VersionsApi {
+                    client: self.client,
+                };
+                Ok(api
+                    .delete_revert_request(id, disconnected_node_acknowledged)
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::versions::VersionsApi {
                     client: self.client,
@@ -10456,6 +13878,15 @@ impl<'a> DynamicVersionsApi<'a> {
         disconnected_node_acknowledged: Option<bool>,
     ) -> Result<types::VersionedFlowUpdateRequestEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::versions::VersionsApi {
+                    client: self.client,
+                };
+                Ok(api
+                    .delete_update_request_1(id, disconnected_node_acknowledged)
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::versions::VersionsApi {
                     client: self.client,
@@ -10483,6 +13914,13 @@ impl<'a> DynamicVersionsApi<'a> {
         disconnected_node_acknowledged: Option<bool>,
     ) -> Result<(), NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::versions::VersionsApi {
+                    client: self.client,
+                };
+                api.delete_version_control_request(id, disconnected_node_acknowledged)
+                    .await
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::versions::VersionsApi {
                     client: self.client,
@@ -10502,6 +13940,13 @@ impl<'a> DynamicVersionsApi<'a> {
     /// Gets the latest version of a Process Group for download
     pub async fn export_flow_version(&self, id: &str) -> Result<(), NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::versions::VersionsDownloadApi {
+                    client: self.client,
+                    id,
+                };
+                api.export_flow_version().await
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::versions::VersionsDownloadApi {
                     client: self.client,
@@ -10524,6 +13969,12 @@ impl<'a> DynamicVersionsApi<'a> {
         id: &str,
     ) -> Result<types::VersionedFlowUpdateRequestEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::versions::VersionsApi {
+                    client: self.client,
+                };
+                Ok(api.get_revert_request(id).await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::versions::VersionsApi {
                     client: self.client,
@@ -10544,6 +13995,12 @@ impl<'a> DynamicVersionsApi<'a> {
         id: &str,
     ) -> Result<types::VersionedFlowUpdateRequestEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::versions::VersionsApi {
+                    client: self.client,
+                };
+                Ok(api.get_update_request(id).await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::versions::VersionsApi {
                     client: self.client,
@@ -10564,6 +14021,12 @@ impl<'a> DynamicVersionsApi<'a> {
         id: &str,
     ) -> Result<types::VersionControlInformationEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::versions::VersionsApi {
+                    client: self.client,
+                };
+                Ok(api.get_version_information(id).await?.into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::versions::VersionsApi {
                     client: self.client,
@@ -10585,6 +14048,27 @@ impl<'a> DynamicVersionsApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::VersionedFlowUpdateRequestEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::versions::VersionsApi {
+                    client: self.client,
+                };
+                Ok(api
+                    .initiate_revert_flow_version(
+                        id,
+                        &serde_json::from_value::<
+                            crate::v2_6_0::types::VersionControlInformationEntity,
+                        >(body.clone())
+                        .map_err(|e| NifiError::UnsupportedEndpoint {
+                            endpoint: format!(
+                                "{} (body deserialize: {})",
+                                "initiate_revert_flow_version", e
+                            ),
+                            version: "2.6.0".to_string(),
+                        })?,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::versions::VersionsApi {
                     client: self.client,
@@ -10636,6 +14120,27 @@ impl<'a> DynamicVersionsApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::VersionedFlowUpdateRequestEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::versions::VersionsApi {
+                    client: self.client,
+                };
+                Ok(api
+                    .initiate_version_control_update(
+                        id,
+                        &serde_json::from_value::<
+                            crate::v2_6_0::types::VersionControlInformationEntity,
+                        >(body.clone())
+                        .map_err(|e| NifiError::UnsupportedEndpoint {
+                            endpoint: format!(
+                                "{} (body deserialize: {})",
+                                "initiate_version_control_update", e
+                            ),
+                            version: "2.6.0".to_string(),
+                        })?,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::versions::VersionsApi {
                     client: self.client,
@@ -10687,6 +14192,27 @@ impl<'a> DynamicVersionsApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::VersionControlInformationEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::versions::VersionsApi {
+                    client: self.client,
+                };
+                Ok(api
+                    .save_to_flow_registry(
+                        id,
+                        &serde_json::from_value::<
+                            crate::v2_6_0::types::StartVersionControlRequestEntity,
+                        >(body.clone())
+                        .map_err(|e| NifiError::UnsupportedEndpoint {
+                            endpoint: format!(
+                                "{} (body deserialize: {})",
+                                "save_to_flow_registry", e
+                            ),
+                            version: "2.6.0".to_string(),
+                        })?,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::versions::VersionsApi {
                     client: self.client,
@@ -10740,6 +14266,15 @@ impl<'a> DynamicVersionsApi<'a> {
         disconnected_node_acknowledged: Option<bool>,
     ) -> Result<types::VersionControlInformationEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::versions::VersionsApi {
+                    client: self.client,
+                };
+                Ok(api
+                    .stop_version_control(id, version, client_id, disconnected_node_acknowledged)
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::versions::VersionsApi {
                     client: self.client,
@@ -10767,6 +14302,29 @@ impl<'a> DynamicVersionsApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::VersionControlInformationEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::versions::VersionsApi {
+                    client: self.client,
+                };
+                Ok(
+                    api
+                        .update_flow_version(
+                            id,
+                            &serde_json::from_value::<
+                                crate::v2_6_0::types::VersionedFlowSnapshotEntity,
+                            >(body.clone())
+                            .map_err(|e| NifiError::UnsupportedEndpoint {
+                                endpoint: format!(
+                                    "{} (body deserialize: {})",
+                                    "update_flow_version", e
+                                ),
+                                version: "2.6.0".to_string(),
+                            })?,
+                        )
+                        .await?
+                        .into(),
+                )
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::versions::VersionsApi {
                     client: self.client,
@@ -10822,6 +14380,27 @@ impl<'a> DynamicVersionsApi<'a> {
         body: &serde_json::Value,
     ) -> Result<types::VersionControlInformationEntity, NifiError> {
         match self.version {
+            DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::versions::VersionsApi {
+                    client: self.client,
+                };
+                Ok(api
+                    .update_version_control_request(
+                        id,
+                        &serde_json::from_value::<
+                            crate::v2_6_0::types::VersionControlComponentMappingEntity,
+                        >(body.clone())
+                        .map_err(|e| NifiError::UnsupportedEndpoint {
+                            endpoint: format!(
+                                "{} (body deserialize: {})",
+                                "update_version_control_request", e
+                            ),
+                            version: "2.6.0".to_string(),
+                        })?,
+                    )
+                    .await?
+                    .into())
+            }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::versions::VersionsApi {
                     client: self.client,

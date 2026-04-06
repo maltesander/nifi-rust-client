@@ -312,13 +312,17 @@ fn emit_dynamic_method(
         .map(|name| format!(", {}: &str", escape_keyword(name)))
         .collect();
 
-    // Query params — use Option<&str> for ALL, including enum types
-    let query_param_args: String = ep
-        .query_params
+    // Query params — build the superset (union) across all versions.
+    // Params that don't exist in every version are forced to Option even if required in some.
+    let merged_query_params = merge_query_params(ep_by_version);
+    let all_version_count = ep_by_version.len();
+    let query_param_args: String = merged_query_params
         .iter()
-        .map(|qp| {
+        .map(|(qp, presence_count)| {
             let rust_type = dynamic_query_param_type(qp);
-            if qp.required {
+            // If the param is not present in every version, force it to Option
+            let force_option = *presence_count < all_version_count;
+            if qp.required && !force_option {
                 format!(", {}: {rust_type}", escape_keyword(&qp.rust_name))
             } else {
                 format!(", {}: Option<{rust_type}>", escape_keyword(&qp.rust_name))
@@ -355,7 +359,7 @@ fn emit_dynamic_method(
     for (ver, mod_name, _feature, _spec) in versions {
         let variant = version_to_variant(ver);
         if let Some(info) = ep_by_version.get(ver) {
-            emit_version_arm(out, ver, mod_name, &variant, info, tag_struct_name, tag_module_name, ep, is_void);
+            emit_version_arm(out, ver, mod_name, &variant, info, tag_struct_name, tag_module_name, &merged_query_params, all_version_count, is_void);
         } else {
             // Endpoint not available in this version
             out.push_str(&format!(
@@ -377,9 +381,11 @@ fn emit_version_arm(
     info: &EndpointInfo<'_>,
     tag_struct_name: &str,
     tag_module_name: &str,
-    ep: &Endpoint,
+    merged_query_params: &[(QueryParam, usize)],
+    all_version_count: usize,
     is_void: bool,
 ) {
+    let ep = info.endpoint;
     out.push_str(&format!(
         "            DetectedVersion::{variant} => {{\n"
     ));
@@ -410,16 +416,31 @@ fn emit_version_arm(
         }
         call_args.push(escape_keyword(&p.name));
     }
-    // Query params — need conversion for enum types
+    // Query params — only pass params this version actually has.
+    // Check the merged superset to see if the param was forced to Option in the signature.
     for qp in &ep.query_params {
+        // Was this param forced to Option in the method signature?
+        let forced_option = merged_query_params.iter()
+            .find(|(mq, _)| mq.rust_name == qp.rust_name)
+            .map(|(_, count)| *count < all_version_count)
+            .unwrap_or(false);
+
         if qp.enum_type_name.is_some() {
             // Convert &str to the version-specific enum type
             let type_name = qp.enum_type_name.as_deref().unwrap();
-            if qp.required {
+            if qp.required && !forced_option {
                 call_args.push(format!(
                     "serde_json::from_value::<crate::{mod_name}::types::{type_name}>(serde_json::Value::String({name}.to_string())).map_err(|_| NifiError::UnsupportedEndpoint {{ endpoint: \"{fn_name}\".to_string(), version: \"{ver}\".to_string() }})?",
                     name = escape_keyword(&qp.rust_name),
                     fn_name = ep.fn_name,
+                ));
+            } else if qp.required && forced_option {
+                // Required in this version but Option in the signature — unwrap with error
+                call_args.push(format!(
+                    "serde_json::from_value::<crate::{mod_name}::types::{type_name}>(serde_json::Value::String({name}.ok_or_else(|| NifiError::UnsupportedEndpoint {{ endpoint: \"{fn_name} (missing required param {raw_name})\".to_string(), version: \"{ver}\".to_string() }})?.to_string())).map_err(|_| NifiError::UnsupportedEndpoint {{ endpoint: \"{fn_name}\".to_string(), version: \"{ver}\".to_string() }})?",
+                    name = escape_keyword(&qp.rust_name),
+                    fn_name = ep.fn_name,
+                    raw_name = qp.rust_name,
                 ));
             } else {
                 call_args.push(format!(
@@ -428,6 +449,14 @@ fn emit_version_arm(
                     fn_name = ep.fn_name,
                 ));
             }
+        } else if qp.required && forced_option {
+            // Required in this version but Option in the signature — unwrap with error
+            call_args.push(format!(
+                "{name}.ok_or_else(|| NifiError::UnsupportedEndpoint {{ endpoint: \"{fn_name} (missing required param {raw_name})\".to_string(), version: \"{ver}\".to_string() }})?",
+                name = escape_keyword(&qp.rust_name),
+                fn_name = ep.fn_name,
+                raw_name = qp.rust_name,
+            ));
         } else {
             call_args.push(escape_keyword(&qp.rust_name));
         }
@@ -465,6 +494,27 @@ fn emit_version_arm(
     }
 
     out.push_str("            }\n");
+}
+
+/// Merge query params from all versions of an endpoint into a superset.
+/// Returns each unique param (by rust_name) along with the count of versions it appears in.
+/// Preserves insertion order: params appear in the order first seen across versions.
+fn merge_query_params(ep_by_version: &BTreeMap<&str, EndpointInfo<'_>>) -> Vec<(QueryParam, usize)> {
+    let mut result: Vec<(QueryParam, usize)> = Vec::new();
+    for info in ep_by_version.values() {
+        for qp in &info.endpoint.query_params {
+            if let Some((existing, count)) = result.iter_mut().find(|(q, _)| q.rust_name == qp.rust_name) {
+                *count += 1;
+                // If any version marks it optional, keep it optional
+                if !qp.required {
+                    existing.required = false;
+                }
+            } else {
+                result.push((qp.clone(), 1));
+            }
+        }
+    }
+    result
 }
 
 /// For dynamic mode, all query params use simple types (strings for enums).
