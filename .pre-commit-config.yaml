@@ -67,10 +67,10 @@ repos:
         pass_filenames: false
         files: Cargo\.(toml|lock)|deny\.toml
 
-      - id: codegen-check
-        name: codegen-check
+      - id: openapi-gen-check
+        name: openapi-gen-check
         language: system
-        entry: bash -c 'cargo run -p nifi-codegen && git diff --exit-code crates/nifi-rust-client/src/api crates/nifi-rust-client/src/types crates/nifi-rust-client/tests/generated_tests.rs'
+        entry: bash -c 'cargo run -p nifi-openapi-gen && git diff --exit-code -- crates/nifi-rust-client/src/api crates/nifi-rust-client/src/types crates/nifi-rust-client/tests/'
         stages: [pre-commit, pre-merge-commit]
         pass_filenames: false
-        files: crates/nifi-codegen/src/|crates/nifi-codegen/specs/
+        files: crates/nifi-openapi-gen/src/|crates/nifi-openapi-gen/specs/

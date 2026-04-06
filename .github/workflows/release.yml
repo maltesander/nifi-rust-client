@@ -22,17 +22,10 @@ jobs:
 
       - uses: Swatinem/rust-cache@v2
 
-      - name: Check formatting
-        run: cargo fmt --all -- --check
-
-      - name: Clippy (nifi-2-8-0)
-        run: cargo clippy -p nifi-rust-client -p nifi-openapi-gen -- -D warnings
+      - uses: pre-commit/action@v3.0.1
 
       - name: Clippy (nifi-2-7-2)
         run: cargo clippy -p nifi-rust-client --no-default-features --features nifi-2-7-2 -- -D warnings
-
-      - name: Test (nifi-2-8-0)
-        run: cargo test -p nifi-rust-client -p nifi-openapi-gen
 
       - name: Test (nifi-2-7-2)
         run: cargo test -p nifi-rust-client --no-default-features --features nifi-2-7-2
