@@ -449,6 +449,37 @@ fn main() {
         }
     }
 
+    // 6b. Delete entire version dirs (src/v*/ and tests/v*_generated_tests.rs) for versions
+    // that exist on disk but are no longer in the spec list. Only applies when running in
+    // full-discovery mode (no NIFI_VERSION / NIFI_API_SPEC override), so a single-version
+    // regeneration run doesn't accidentally wipe sibling versions.
+    let is_full_discovery = std::env::var("NIFI_VERSION").is_err()
+        && std::env::var("NIFI_API_SPEC").is_err();
+    if is_full_discovery {
+        let on_disk_versions = discover_versions(&client.join("src"));
+        let active: HashSet<&str> = spec_versions.iter().map(String::as_str).collect();
+        for version_str in &on_disk_versions {
+            if !active.contains(version_str.as_str()) {
+                let mod_name = version_to_mod_name(version_str);
+                let versioned_src = client.join("src").join(&mod_name);
+                if versioned_src.exists() {
+                    std::fs::remove_dir_all(&versioned_src)
+                        .unwrap_or_else(|_| panic!("remove {}", versioned_src.display()));
+                    println!("  removed stale version dir {}", versioned_src.display());
+                }
+                let test_file = client.join(format!(
+                    "tests/v{}_generated_tests.rs",
+                    version_str.replace('.', "_")
+                ));
+                if test_file.exists() {
+                    std::fs::remove_file(&test_file)
+                        .unwrap_or_else(|_| panic!("remove {}", test_file.display()));
+                    println!("  removed stale test file {}", test_file.display());
+                }
+            }
+        }
+    }
+
     // One-time migration: remove old flat layout if present
     migrate_flat_layout(&client);
 
