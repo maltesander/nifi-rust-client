@@ -127,6 +127,31 @@ fn emit_param_docs(out: &mut String, ep: &Endpoint, skip_param: Option<&str>) {
     }
 }
 
+/// Appends `# Errors` and `# Permissions` rustdoc sections.
+fn emit_error_and_permission_docs(out: &mut String, ep: &Endpoint) {
+    if !ep.error_responses.is_empty() {
+        out.push_str("    ///\n    /// # Errors\n");
+        let mut sorted: Vec<&(String, String)> = ep.error_responses.iter().collect();
+        sorted.sort_by(|a, b| a.0.cmp(&b.0));
+        for (code, desc) in &sorted {
+            out.push_str(&format!("    /// - `{code}`: {desc}\n"));
+        }
+    }
+
+    if let Some(policies) = &ep.security {
+        out.push_str("    ///\n    /// # Permissions\n");
+        match policies.len() {
+            0 => out.push_str("    /// No authentication required.\n"),
+            1 => out.push_str(&format!("    /// Requires `{}`.\n", policies[0])),
+            _ => {
+                for p in policies {
+                    out.push_str(&format!("    /// - `{p}`\n"));
+                }
+            }
+        }
+    }
+}
+
 fn emit_sub_struct(sg: &SubGroup) -> String {
     let mut out = String::new();
     out.push_str(&format!(
@@ -166,6 +191,7 @@ fn emit_method_for_sub_group(ep: &Endpoint, primary_param: &str) -> String {
             ep.path
         ));
         emit_param_docs(&mut out, ep, Some(primary_param));
+        emit_error_and_permission_docs(&mut out, ep);
     }
 
     let return_ty = match &ep.response_inner {
@@ -254,6 +280,7 @@ fn emit_method(ep: &Endpoint) -> String {
             ep.path
         ));
         emit_param_docs(&mut out, ep, None);
+        emit_error_and_permission_docs(&mut out, ep);
     }
 
     let return_ty = match &ep.response_inner {
