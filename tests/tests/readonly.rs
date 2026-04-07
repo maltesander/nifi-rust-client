@@ -80,7 +80,7 @@ async fn about_info_returns_nifi_version() {
         .await
         .expect("failed to get about info");
     assert!(
-        about.title.as_deref().unwrap_or("").len() > 0,
+        !about.title.as_deref().unwrap_or("").is_empty(),
         "expected non-empty title in AboutDto"
     );
 }
@@ -163,7 +163,11 @@ async fn processor_types_returns_ok() {
         .await
         .expect("failed to get processor types");
     assert!(
-        entity.processor_types.as_deref().unwrap_or_default().len() > 0,
+        !entity
+            .processor_types
+            .as_deref()
+            .unwrap_or_default()
+            .is_empty(),
         "expected at least one processor type"
     );
 }
@@ -178,12 +182,11 @@ async fn controller_service_types_returns_ok() {
         .await
         .expect("failed to get controller service types");
     assert!(
-        entity
+        !entity
             .controller_service_types
             .as_deref()
             .unwrap_or_default()
-            .len()
-            > 0,
+            .is_empty(),
         "expected at least one controller service type"
     );
 }
@@ -198,12 +201,11 @@ async fn reporting_task_types_returns_ok() {
         .await
         .expect("failed to get reporting task types");
     assert!(
-        entity
+        !entity
             .reporting_task_types
             .as_deref()
             .unwrap_or_default()
-            .len()
-            > 0,
+            .is_empty(),
         "expected at least one reporting task type"
     );
 }

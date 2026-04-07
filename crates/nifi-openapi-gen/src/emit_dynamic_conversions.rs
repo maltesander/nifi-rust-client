@@ -191,9 +191,10 @@ pub fn emit_dynamic_conversions(
                 }
                 TypeKind::Entity { field, inner: _ } => {
                     let escaped_field = escape_keyword(field);
-                    // Per-version entity has non-Optional inner field; dynamic has Option
+                    // Per-version entity inner field is Option<T>; unwrap with unwrap_or_default
+                    // before converting so we don't need From<Option<T>>.
                     out.push_str(&format!(
-                        "        Self {{ {escaped_field}: Some(v.{escaped_field}.into()) }}\n"
+                        "        Self {{ {escaped_field}: Some(v.{escaped_field}.unwrap_or_default().into()) }}\n"
                     ));
                 }
                 TypeKind::StringEnum(_) => {

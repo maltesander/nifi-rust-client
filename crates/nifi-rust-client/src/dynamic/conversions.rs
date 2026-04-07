@@ -21,7 +21,7 @@ impl From<crate::v2_6_0::types::AboutDto> for super::types::AboutDto {
 impl From<crate::v2_6_0::types::AboutEntity> for super::types::AboutEntity {
     fn from(v: crate::v2_6_0::types::AboutEntity) -> Self {
         Self {
-            about: Some(v.about.into()),
+            about: Some(v.about.unwrap_or_default().into()),
         }
     }
 }
@@ -245,7 +245,7 @@ impl From<crate::v2_6_0::types::AssetDto> for super::types::AssetDto {
 impl From<crate::v2_6_0::types::AssetEntity> for super::types::AssetEntity {
     fn from(v: crate::v2_6_0::types::AssetEntity) -> Self {
         Self {
-            asset: Some(v.asset.into()),
+            asset: Some(v.asset.unwrap_or_default().into()),
         }
     }
 }
@@ -304,7 +304,9 @@ impl From<crate::v2_6_0::types::AuthenticationConfigurationEntity>
 {
     fn from(v: crate::v2_6_0::types::AuthenticationConfigurationEntity) -> Self {
         Self {
-            authentication_configuration: Some(v.authentication_configuration.into()),
+            authentication_configuration: Some(
+                v.authentication_configuration.unwrap_or_default().into(),
+            ),
         }
     }
 }
@@ -321,7 +323,7 @@ impl From<crate::v2_6_0::types::BannerDto> for super::types::BannerDto {
 impl From<crate::v2_6_0::types::BannerEntity> for super::types::BannerEntity {
     fn from(v: crate::v2_6_0::types::BannerEntity) -> Self {
         Self {
-            banners: Some(v.banners.into()),
+            banners: Some(v.banners.unwrap_or_default().into()),
         }
     }
 }
@@ -373,7 +375,7 @@ impl From<crate::v2_6_0::types::BulletinBoardDto> for super::types::BulletinBoar
 impl From<crate::v2_6_0::types::BulletinBoardEntity> for super::types::BulletinBoardEntity {
     fn from(v: crate::v2_6_0::types::BulletinBoardEntity) -> Self {
         Self {
-            bulletin_board: Some(v.bulletin_board.into()),
+            bulletin_board: Some(v.bulletin_board.unwrap_or_default().into()),
         }
     }
 }
@@ -463,7 +465,7 @@ impl From<crate::v2_6_0::types::ClusterDto> for super::types::ClusterDto {
 impl From<crate::v2_6_0::types::ClusterEntity> for super::types::ClusterEntity {
     fn from(v: crate::v2_6_0::types::ClusterEntity) -> Self {
         Self {
-            cluster: Some(v.cluster.into()),
+            cluster: Some(v.cluster.unwrap_or_default().into()),
         }
     }
 }
@@ -495,7 +497,7 @@ impl From<crate::v2_6_0::types::ClusterSummaryDto> for super::types::ClusterSumm
 impl From<crate::v2_6_0::types::ClusterSummaryEntity> for super::types::ClusterSummaryEntity {
     fn from(v: crate::v2_6_0::types::ClusterSummaryEntity) -> Self {
         Self {
-            cluster_summary: Some(v.cluster_summary.into()),
+            cluster_summary: Some(v.cluster_summary.unwrap_or_default().into()),
         }
     }
 }
@@ -534,7 +536,7 @@ impl From<crate::v2_6_0::types::ComponentHistoryDto> for super::types::Component
 impl From<crate::v2_6_0::types::ComponentHistoryEntity> for super::types::ComponentHistoryEntity {
     fn from(v: crate::v2_6_0::types::ComponentHistoryEntity) -> Self {
         Self {
-            component_history: Some(v.component_history.into()),
+            component_history: Some(v.component_history.unwrap_or_default().into()),
         }
     }
 }
@@ -636,7 +638,7 @@ impl From<crate::v2_6_0::types::ComponentStateDto> for super::types::ComponentSt
 impl From<crate::v2_6_0::types::ComponentStateEntity> for super::types::ComponentStateEntity {
     fn from(v: crate::v2_6_0::types::ComponentStateEntity) -> Self {
         Self {
-            component_state: Some(v.component_state.into()),
+            component_state: Some(v.component_state.unwrap_or_default().into()),
         }
     }
 }
@@ -731,7 +733,7 @@ impl From<crate::v2_6_0::types::ConfigurationAnalysisEntity>
 {
     fn from(v: crate::v2_6_0::types::ConfigurationAnalysisEntity) -> Self {
         Self {
-            configuration_analysis: Some(v.configuration_analysis.into()),
+            configuration_analysis: Some(v.configuration_analysis.unwrap_or_default().into()),
         }
     }
 }
@@ -1087,7 +1089,7 @@ impl From<crate::v2_6_0::types::ControllerDto> for super::types::ControllerDto {
 impl From<crate::v2_6_0::types::ControllerEntity> for super::types::ControllerEntity {
     fn from(v: crate::v2_6_0::types::ControllerEntity) -> Self {
         Self {
-            controller: Some(v.controller.into()),
+            controller: Some(v.controller.unwrap_or_default().into()),
         }
     }
 }
@@ -1372,7 +1374,7 @@ impl From<crate::v2_6_0::types::ControllerStatusDto> for super::types::Controlle
 impl From<crate::v2_6_0::types::ControllerStatusEntity> for super::types::ControllerStatusEntity {
     fn from(v: crate::v2_6_0::types::ControllerStatusEntity) -> Self {
         Self {
-            controller_status: Some(v.controller_status.into()),
+            controller_status: Some(v.controller_status.unwrap_or_default().into()),
         }
     }
 }
@@ -1457,7 +1459,7 @@ impl From<crate::v2_6_0::types::CounterDto> for super::types::CounterDto {
 impl From<crate::v2_6_0::types::CounterEntity> for super::types::CounterEntity {
     fn from(v: crate::v2_6_0::types::CounterEntity) -> Self {
         Self {
-            counter: Some(v.counter.into()),
+            counter: Some(v.counter.unwrap_or_default().into()),
         }
     }
 }
@@ -1476,7 +1478,7 @@ impl From<crate::v2_6_0::types::CountersDto> for super::types::CountersDto {
 impl From<crate::v2_6_0::types::CountersEntity> for super::types::CountersEntity {
     fn from(v: crate::v2_6_0::types::CountersEntity) -> Self {
         Self {
-            counters: Some(v.counters.into()),
+            counters: Some(v.counters.unwrap_or_default().into()),
         }
     }
 }
@@ -1617,7 +1619,7 @@ impl From<crate::v2_6_0::types::DropRequestDto> for super::types::DropRequestDto
 impl From<crate::v2_6_0::types::DropRequestEntity> for super::types::DropRequestEntity {
     fn from(v: crate::v2_6_0::types::DropRequestEntity) -> Self {
         Self {
-            drop_request: Some(v.drop_request.into()),
+            drop_request: Some(v.drop_request.unwrap_or_default().into()),
         }
     }
 }
@@ -1917,7 +1919,7 @@ impl From<crate::v2_6_0::types::FlowConfigurationDto> for super::types::FlowConf
 impl From<crate::v2_6_0::types::FlowConfigurationEntity> for super::types::FlowConfigurationEntity {
     fn from(v: crate::v2_6_0::types::FlowConfigurationEntity) -> Self {
         Self {
-            flow_configuration: Some(v.flow_configuration.into()),
+            flow_configuration: Some(v.flow_configuration.unwrap_or_default().into()),
         }
     }
 }
@@ -1952,7 +1954,7 @@ impl From<crate::v2_6_0::types::FlowDto> for super::types::FlowDto {
 impl From<crate::v2_6_0::types::FlowEntity> for super::types::FlowEntity {
     fn from(v: crate::v2_6_0::types::FlowEntity) -> Self {
         Self {
-            flow: Some(v.flow.into()),
+            flow: Some(v.flow.unwrap_or_default().into()),
         }
     }
 }
@@ -1986,7 +1988,7 @@ impl From<crate::v2_6_0::types::FlowFileDto> for super::types::FlowFileDto {
 impl From<crate::v2_6_0::types::FlowFileEntity> for super::types::FlowFileEntity {
     fn from(v: crate::v2_6_0::types::FlowFileEntity) -> Self {
         Self {
-            flow_file: Some(v.flow_file.into()),
+            flow_file: Some(v.flow_file.unwrap_or_default().into()),
         }
     }
 }
@@ -2021,7 +2023,7 @@ impl From<crate::v2_6_0::types::FlowRegistryBranchEntity>
 {
     fn from(v: crate::v2_6_0::types::FlowRegistryBranchEntity) -> Self {
         Self {
-            branch: Some(v.branch.into()),
+            branch: Some(v.branch.unwrap_or_default().into()),
         }
     }
 }
@@ -2259,7 +2261,7 @@ impl From<crate::v2_6_0::types::HistoryDto> for super::types::HistoryDto {
 impl From<crate::v2_6_0::types::HistoryEntity> for super::types::HistoryEntity {
     fn from(v: crate::v2_6_0::types::HistoryEntity) -> Self {
         Self {
-            history: Some(v.history.into()),
+            history: Some(v.history.unwrap_or_default().into()),
         }
     }
 }
@@ -2368,7 +2370,7 @@ impl From<crate::v2_6_0::types::LatestProvenanceEventsEntity>
 {
     fn from(v: crate::v2_6_0::types::LatestProvenanceEventsEntity) -> Self {
         Self {
-            latest_provenance_events: Some(v.latest_provenance_events.into()),
+            latest_provenance_events: Some(v.latest_provenance_events.unwrap_or_default().into()),
         }
     }
 }
@@ -2391,7 +2393,7 @@ impl From<crate::v2_6_0::types::LineageDto> for super::types::LineageDto {
 impl From<crate::v2_6_0::types::LineageEntity> for super::types::LineageEntity {
     fn from(v: crate::v2_6_0::types::LineageEntity) -> Self {
         Self {
-            lineage: Some(v.lineage.into()),
+            lineage: Some(v.lineage.unwrap_or_default().into()),
         }
     }
 }
@@ -2447,7 +2449,7 @@ impl From<crate::v2_6_0::types::ListingRequestDto> for super::types::ListingRequ
 impl From<crate::v2_6_0::types::ListingRequestEntity> for super::types::ListingRequestEntity {
     fn from(v: crate::v2_6_0::types::ListingRequestEntity) -> Self {
         Self {
-            listing_request: Some(v.listing_request.into()),
+            listing_request: Some(v.listing_request.unwrap_or_default().into()),
         }
     }
 }
@@ -2543,7 +2545,7 @@ impl From<crate::v2_6_0::types::NarSummaryDto> for super::types::NarSummaryDto {
 impl From<crate::v2_6_0::types::NarSummaryEntity> for super::types::NarSummaryEntity {
     fn from(v: crate::v2_6_0::types::NarSummaryEntity) -> Self {
         Self {
-            nar_summary: Some(v.nar_summary.into()),
+            nar_summary: Some(v.nar_summary.unwrap_or_default().into()),
         }
     }
 }
@@ -2609,7 +2611,7 @@ impl From<crate::v2_6_0::types::NodeDto> for super::types::NodeDto {
 impl From<crate::v2_6_0::types::NodeEntity> for super::types::NodeEntity {
     fn from(v: crate::v2_6_0::types::NodeEntity) -> Self {
         Self {
-            node: Some(v.node.into()),
+            node: Some(v.node.unwrap_or_default().into()),
         }
     }
 }
@@ -3009,7 +3011,7 @@ impl From<crate::v2_6_0::types::ParameterProviderApplyParametersRequestEntity>
 {
     fn from(v: crate::v2_6_0::types::ParameterProviderApplyParametersRequestEntity) -> Self {
         Self {
-            request: Some(v.request.into()),
+            request: Some(v.request.unwrap_or_default().into()),
         }
     }
 }
@@ -4258,7 +4260,7 @@ impl From<crate::v2_6_0::types::PropertyDescriptorEntity>
 {
     fn from(v: crate::v2_6_0::types::PropertyDescriptorEntity) -> Self {
         Self {
-            property_descriptor: Some(v.property_descriptor.into()),
+            property_descriptor: Some(v.property_descriptor.unwrap_or_default().into()),
         }
     }
 }
@@ -4316,7 +4318,7 @@ impl From<crate::v2_6_0::types::ProvenanceDto> for super::types::ProvenanceDto {
 impl From<crate::v2_6_0::types::ProvenanceEntity> for super::types::ProvenanceEntity {
     fn from(v: crate::v2_6_0::types::ProvenanceEntity) -> Self {
         Self {
-            provenance: Some(v.provenance.into()),
+            provenance: Some(v.provenance.unwrap_or_default().into()),
         }
     }
 }
@@ -4375,7 +4377,7 @@ impl From<crate::v2_6_0::types::ProvenanceEventDto> for super::types::Provenance
 impl From<crate::v2_6_0::types::ProvenanceEventEntity> for super::types::ProvenanceEventEntity {
     fn from(v: crate::v2_6_0::types::ProvenanceEventEntity) -> Self {
         Self {
-            provenance_event: Some(v.provenance_event.into()),
+            provenance_event: Some(v.provenance_event.unwrap_or_default().into()),
         }
     }
 }
@@ -4427,7 +4429,7 @@ impl From<crate::v2_6_0::types::ProvenanceOptionsDto> for super::types::Provenan
 impl From<crate::v2_6_0::types::ProvenanceOptionsEntity> for super::types::ProvenanceOptionsEntity {
     fn from(v: crate::v2_6_0::types::ProvenanceOptionsEntity) -> Self {
         Self {
-            provenance_options: Some(v.provenance_options.into()),
+            provenance_options: Some(v.provenance_options.unwrap_or_default().into()),
         }
     }
 }
@@ -5103,7 +5105,7 @@ impl From<crate::v2_6_0::types::RuntimeManifest> for super::types::RuntimeManife
 impl From<crate::v2_6_0::types::RuntimeManifestEntity> for super::types::RuntimeManifestEntity {
     fn from(v: crate::v2_6_0::types::RuntimeManifestEntity) -> Self {
         Self {
-            runtime_manifest: Some(v.runtime_manifest.into()),
+            runtime_manifest: Some(v.runtime_manifest.unwrap_or_default().into()),
         }
     }
 }
@@ -5205,7 +5207,7 @@ impl From<crate::v2_6_0::types::SearchResultsDto> for super::types::SearchResult
 impl From<crate::v2_6_0::types::SearchResultsEntity> for super::types::SearchResultsEntity {
     fn from(v: crate::v2_6_0::types::SearchResultsEntity) -> Self {
         Self {
-            search_results_d_t_o: Some(v.search_results_d_t_o.into()),
+            search_results_d_t_o: Some(v.search_results_d_t_o.unwrap_or_default().into()),
         }
     }
 }
@@ -5406,7 +5408,7 @@ impl From<crate::v2_6_0::types::SystemDiagnosticsDto> for super::types::SystemDi
 impl From<crate::v2_6_0::types::SystemDiagnosticsEntity> for super::types::SystemDiagnosticsEntity {
     fn from(v: crate::v2_6_0::types::SystemDiagnosticsEntity) -> Self {
         Self {
-            system_diagnostics: Some(v.system_diagnostics.into()),
+            system_diagnostics: Some(v.system_diagnostics.unwrap_or_default().into()),
         }
     }
 }
@@ -5676,7 +5678,7 @@ impl From<crate::v2_6_0::types::VerifyConfigRequestEntity>
 {
     fn from(v: crate::v2_6_0::types::VerifyConfigRequestEntity) -> Self {
         Self {
-            request: Some(v.request.into()),
+            request: Some(v.request.unwrap_or_default().into()),
         }
     }
 }
@@ -5880,7 +5882,7 @@ impl From<crate::v2_6_0::types::VersionedFlowDto> for super::types::VersionedFlo
 impl From<crate::v2_6_0::types::VersionedFlowEntity> for super::types::VersionedFlowEntity {
     fn from(v: crate::v2_6_0::types::VersionedFlowEntity) -> Self {
         Self {
-            versioned_flow: Some(v.versioned_flow.into()),
+            versioned_flow: Some(v.versioned_flow.unwrap_or_default().into()),
         }
     }
 }
@@ -6401,7 +6403,7 @@ impl From<crate::v2_7_2::types::AboutDto> for super::types::AboutDto {
 impl From<crate::v2_7_2::types::AboutEntity> for super::types::AboutEntity {
     fn from(v: crate::v2_7_2::types::AboutEntity) -> Self {
         Self {
-            about: Some(v.about.into()),
+            about: Some(v.about.unwrap_or_default().into()),
         }
     }
 }
@@ -6625,7 +6627,7 @@ impl From<crate::v2_7_2::types::AssetDto> for super::types::AssetDto {
 impl From<crate::v2_7_2::types::AssetEntity> for super::types::AssetEntity {
     fn from(v: crate::v2_7_2::types::AssetEntity) -> Self {
         Self {
-            asset: Some(v.asset.into()),
+            asset: Some(v.asset.unwrap_or_default().into()),
         }
     }
 }
@@ -6684,7 +6686,9 @@ impl From<crate::v2_7_2::types::AuthenticationConfigurationEntity>
 {
     fn from(v: crate::v2_7_2::types::AuthenticationConfigurationEntity) -> Self {
         Self {
-            authentication_configuration: Some(v.authentication_configuration.into()),
+            authentication_configuration: Some(
+                v.authentication_configuration.unwrap_or_default().into(),
+            ),
         }
     }
 }
@@ -6701,7 +6705,7 @@ impl From<crate::v2_7_2::types::BannerDto> for super::types::BannerDto {
 impl From<crate::v2_7_2::types::BannerEntity> for super::types::BannerEntity {
     fn from(v: crate::v2_7_2::types::BannerEntity) -> Self {
         Self {
-            banners: Some(v.banners.into()),
+            banners: Some(v.banners.unwrap_or_default().into()),
         }
     }
 }
@@ -6753,7 +6757,7 @@ impl From<crate::v2_7_2::types::BulletinBoardDto> for super::types::BulletinBoar
 impl From<crate::v2_7_2::types::BulletinBoardEntity> for super::types::BulletinBoardEntity {
     fn from(v: crate::v2_7_2::types::BulletinBoardEntity) -> Self {
         Self {
-            bulletin_board: Some(v.bulletin_board.into()),
+            bulletin_board: Some(v.bulletin_board.unwrap_or_default().into()),
         }
     }
 }
@@ -6889,7 +6893,7 @@ impl From<crate::v2_7_2::types::ClusterDto> for super::types::ClusterDto {
 impl From<crate::v2_7_2::types::ClusterEntity> for super::types::ClusterEntity {
     fn from(v: crate::v2_7_2::types::ClusterEntity) -> Self {
         Self {
-            cluster: Some(v.cluster.into()),
+            cluster: Some(v.cluster.unwrap_or_default().into()),
         }
     }
 }
@@ -6921,7 +6925,7 @@ impl From<crate::v2_7_2::types::ClusterSummaryDto> for super::types::ClusterSumm
 impl From<crate::v2_7_2::types::ClusterSummaryEntity> for super::types::ClusterSummaryEntity {
     fn from(v: crate::v2_7_2::types::ClusterSummaryEntity) -> Self {
         Self {
-            cluster_summary: Some(v.cluster_summary.into()),
+            cluster_summary: Some(v.cluster_summary.unwrap_or_default().into()),
         }
     }
 }
@@ -6960,7 +6964,7 @@ impl From<crate::v2_7_2::types::ComponentHistoryDto> for super::types::Component
 impl From<crate::v2_7_2::types::ComponentHistoryEntity> for super::types::ComponentHistoryEntity {
     fn from(v: crate::v2_7_2::types::ComponentHistoryEntity) -> Self {
         Self {
-            component_history: Some(v.component_history.into()),
+            component_history: Some(v.component_history.unwrap_or_default().into()),
         }
     }
 }
@@ -7064,7 +7068,7 @@ impl From<crate::v2_7_2::types::ComponentStateDto> for super::types::ComponentSt
 impl From<crate::v2_7_2::types::ComponentStateEntity> for super::types::ComponentStateEntity {
     fn from(v: crate::v2_7_2::types::ComponentStateEntity) -> Self {
         Self {
-            component_state: Some(v.component_state.into()),
+            component_state: Some(v.component_state.unwrap_or_default().into()),
         }
     }
 }
@@ -7159,7 +7163,7 @@ impl From<crate::v2_7_2::types::ConfigurationAnalysisEntity>
 {
     fn from(v: crate::v2_7_2::types::ConfigurationAnalysisEntity) -> Self {
         Self {
-            configuration_analysis: Some(v.configuration_analysis.into()),
+            configuration_analysis: Some(v.configuration_analysis.unwrap_or_default().into()),
         }
     }
 }
@@ -7515,7 +7519,7 @@ impl From<crate::v2_7_2::types::ControllerDto> for super::types::ControllerDto {
 impl From<crate::v2_7_2::types::ControllerEntity> for super::types::ControllerEntity {
     fn from(v: crate::v2_7_2::types::ControllerEntity) -> Self {
         Self {
-            controller: Some(v.controller.into()),
+            controller: Some(v.controller.unwrap_or_default().into()),
         }
     }
 }
@@ -7800,7 +7804,7 @@ impl From<crate::v2_7_2::types::ControllerStatusDto> for super::types::Controlle
 impl From<crate::v2_7_2::types::ControllerStatusEntity> for super::types::ControllerStatusEntity {
     fn from(v: crate::v2_7_2::types::ControllerStatusEntity) -> Self {
         Self {
-            controller_status: Some(v.controller_status.into()),
+            controller_status: Some(v.controller_status.unwrap_or_default().into()),
         }
     }
 }
@@ -7885,7 +7889,7 @@ impl From<crate::v2_7_2::types::CounterDto> for super::types::CounterDto {
 impl From<crate::v2_7_2::types::CounterEntity> for super::types::CounterEntity {
     fn from(v: crate::v2_7_2::types::CounterEntity) -> Self {
         Self {
-            counter: Some(v.counter.into()),
+            counter: Some(v.counter.unwrap_or_default().into()),
         }
     }
 }
@@ -7904,7 +7908,7 @@ impl From<crate::v2_7_2::types::CountersDto> for super::types::CountersDto {
 impl From<crate::v2_7_2::types::CountersEntity> for super::types::CountersEntity {
     fn from(v: crate::v2_7_2::types::CountersEntity) -> Self {
         Self {
-            counters: Some(v.counters.into()),
+            counters: Some(v.counters.unwrap_or_default().into()),
         }
     }
 }
@@ -8045,7 +8049,7 @@ impl From<crate::v2_7_2::types::DropRequestDto> for super::types::DropRequestDto
 impl From<crate::v2_7_2::types::DropRequestEntity> for super::types::DropRequestEntity {
     fn from(v: crate::v2_7_2::types::DropRequestEntity) -> Self {
         Self {
-            drop_request: Some(v.drop_request.into()),
+            drop_request: Some(v.drop_request.unwrap_or_default().into()),
         }
     }
 }
@@ -8345,7 +8349,7 @@ impl From<crate::v2_7_2::types::FlowConfigurationDto> for super::types::FlowConf
 impl From<crate::v2_7_2::types::FlowConfigurationEntity> for super::types::FlowConfigurationEntity {
     fn from(v: crate::v2_7_2::types::FlowConfigurationEntity) -> Self {
         Self {
-            flow_configuration: Some(v.flow_configuration.into()),
+            flow_configuration: Some(v.flow_configuration.unwrap_or_default().into()),
         }
     }
 }
@@ -8380,7 +8384,7 @@ impl From<crate::v2_7_2::types::FlowDto> for super::types::FlowDto {
 impl From<crate::v2_7_2::types::FlowEntity> for super::types::FlowEntity {
     fn from(v: crate::v2_7_2::types::FlowEntity) -> Self {
         Self {
-            flow: Some(v.flow.into()),
+            flow: Some(v.flow.unwrap_or_default().into()),
         }
     }
 }
@@ -8414,7 +8418,7 @@ impl From<crate::v2_7_2::types::FlowFileDto> for super::types::FlowFileDto {
 impl From<crate::v2_7_2::types::FlowFileEntity> for super::types::FlowFileEntity {
     fn from(v: crate::v2_7_2::types::FlowFileEntity) -> Self {
         Self {
-            flow_file: Some(v.flow_file.into()),
+            flow_file: Some(v.flow_file.unwrap_or_default().into()),
         }
     }
 }
@@ -8458,7 +8462,7 @@ impl From<crate::v2_7_2::types::FlowRegistryBranchEntity>
 {
     fn from(v: crate::v2_7_2::types::FlowRegistryBranchEntity) -> Self {
         Self {
-            branch: Some(v.branch.into()),
+            branch: Some(v.branch.unwrap_or_default().into()),
         }
     }
 }
@@ -8737,7 +8741,7 @@ impl From<crate::v2_7_2::types::HistoryDto> for super::types::HistoryDto {
 impl From<crate::v2_7_2::types::HistoryEntity> for super::types::HistoryEntity {
     fn from(v: crate::v2_7_2::types::HistoryEntity) -> Self {
         Self {
-            history: Some(v.history.into()),
+            history: Some(v.history.unwrap_or_default().into()),
         }
     }
 }
@@ -8846,7 +8850,7 @@ impl From<crate::v2_7_2::types::LatestProvenanceEventsEntity>
 {
     fn from(v: crate::v2_7_2::types::LatestProvenanceEventsEntity) -> Self {
         Self {
-            latest_provenance_events: Some(v.latest_provenance_events.into()),
+            latest_provenance_events: Some(v.latest_provenance_events.unwrap_or_default().into()),
         }
     }
 }
@@ -8869,7 +8873,7 @@ impl From<crate::v2_7_2::types::LineageDto> for super::types::LineageDto {
 impl From<crate::v2_7_2::types::LineageEntity> for super::types::LineageEntity {
     fn from(v: crate::v2_7_2::types::LineageEntity) -> Self {
         Self {
-            lineage: Some(v.lineage.into()),
+            lineage: Some(v.lineage.unwrap_or_default().into()),
         }
     }
 }
@@ -8952,7 +8956,7 @@ impl From<crate::v2_7_2::types::ListingRequestDto> for super::types::ListingRequ
 impl From<crate::v2_7_2::types::ListingRequestEntity> for super::types::ListingRequestEntity {
     fn from(v: crate::v2_7_2::types::ListingRequestEntity) -> Self {
         Self {
-            listing_request: Some(v.listing_request.into()),
+            listing_request: Some(v.listing_request.unwrap_or_default().into()),
         }
     }
 }
@@ -9048,7 +9052,7 @@ impl From<crate::v2_7_2::types::NarSummaryDto> for super::types::NarSummaryDto {
 impl From<crate::v2_7_2::types::NarSummaryEntity> for super::types::NarSummaryEntity {
     fn from(v: crate::v2_7_2::types::NarSummaryEntity) -> Self {
         Self {
-            nar_summary: Some(v.nar_summary.into()),
+            nar_summary: Some(v.nar_summary.unwrap_or_default().into()),
         }
     }
 }
@@ -9114,7 +9118,7 @@ impl From<crate::v2_7_2::types::NodeDto> for super::types::NodeDto {
 impl From<crate::v2_7_2::types::NodeEntity> for super::types::NodeEntity {
     fn from(v: crate::v2_7_2::types::NodeEntity) -> Self {
         Self {
-            node: Some(v.node.into()),
+            node: Some(v.node.unwrap_or_default().into()),
         }
     }
 }
@@ -9514,7 +9518,7 @@ impl From<crate::v2_7_2::types::ParameterProviderApplyParametersRequestEntity>
 {
     fn from(v: crate::v2_7_2::types::ParameterProviderApplyParametersRequestEntity) -> Self {
         Self {
-            request: Some(v.request.into()),
+            request: Some(v.request.unwrap_or_default().into()),
         }
     }
 }
@@ -10773,7 +10777,7 @@ impl From<crate::v2_7_2::types::PropertyDescriptorEntity>
 {
     fn from(v: crate::v2_7_2::types::PropertyDescriptorEntity) -> Self {
         Self {
-            property_descriptor: Some(v.property_descriptor.into()),
+            property_descriptor: Some(v.property_descriptor.unwrap_or_default().into()),
         }
     }
 }
@@ -10847,7 +10851,7 @@ impl From<crate::v2_7_2::types::ProvenanceDto> for super::types::ProvenanceDto {
 impl From<crate::v2_7_2::types::ProvenanceEntity> for super::types::ProvenanceEntity {
     fn from(v: crate::v2_7_2::types::ProvenanceEntity) -> Self {
         Self {
-            provenance: Some(v.provenance.into()),
+            provenance: Some(v.provenance.unwrap_or_default().into()),
         }
     }
 }
@@ -10906,7 +10910,7 @@ impl From<crate::v2_7_2::types::ProvenanceEventDto> for super::types::Provenance
 impl From<crate::v2_7_2::types::ProvenanceEventEntity> for super::types::ProvenanceEventEntity {
     fn from(v: crate::v2_7_2::types::ProvenanceEventEntity) -> Self {
         Self {
-            provenance_event: Some(v.provenance_event.into()),
+            provenance_event: Some(v.provenance_event.unwrap_or_default().into()),
         }
     }
 }
@@ -10958,7 +10962,7 @@ impl From<crate::v2_7_2::types::ProvenanceOptionsDto> for super::types::Provenan
 impl From<crate::v2_7_2::types::ProvenanceOptionsEntity> for super::types::ProvenanceOptionsEntity {
     fn from(v: crate::v2_7_2::types::ProvenanceOptionsEntity) -> Self {
         Self {
-            provenance_options: Some(v.provenance_options.into()),
+            provenance_options: Some(v.provenance_options.unwrap_or_default().into()),
         }
     }
 }
@@ -11634,7 +11638,7 @@ impl From<crate::v2_7_2::types::RuntimeManifest> for super::types::RuntimeManife
 impl From<crate::v2_7_2::types::RuntimeManifestEntity> for super::types::RuntimeManifestEntity {
     fn from(v: crate::v2_7_2::types::RuntimeManifestEntity) -> Self {
         Self {
-            runtime_manifest: Some(v.runtime_manifest.into()),
+            runtime_manifest: Some(v.runtime_manifest.unwrap_or_default().into()),
         }
     }
 }
@@ -11736,7 +11740,7 @@ impl From<crate::v2_7_2::types::SearchResultsDto> for super::types::SearchResult
 impl From<crate::v2_7_2::types::SearchResultsEntity> for super::types::SearchResultsEntity {
     fn from(v: crate::v2_7_2::types::SearchResultsEntity) -> Self {
         Self {
-            search_results_d_t_o: Some(v.search_results_d_t_o.into()),
+            search_results_d_t_o: Some(v.search_results_d_t_o.unwrap_or_default().into()),
         }
     }
 }
@@ -11937,7 +11941,7 @@ impl From<crate::v2_7_2::types::SystemDiagnosticsDto> for super::types::SystemDi
 impl From<crate::v2_7_2::types::SystemDiagnosticsEntity> for super::types::SystemDiagnosticsEntity {
     fn from(v: crate::v2_7_2::types::SystemDiagnosticsEntity) -> Self {
         Self {
-            system_diagnostics: Some(v.system_diagnostics.into()),
+            system_diagnostics: Some(v.system_diagnostics.unwrap_or_default().into()),
         }
     }
 }
@@ -12207,7 +12211,7 @@ impl From<crate::v2_7_2::types::VerifyConfigRequestEntity>
 {
     fn from(v: crate::v2_7_2::types::VerifyConfigRequestEntity) -> Self {
         Self {
-            request: Some(v.request.into()),
+            request: Some(v.request.unwrap_or_default().into()),
         }
     }
 }
@@ -12411,7 +12415,7 @@ impl From<crate::v2_7_2::types::VersionedFlowDto> for super::types::VersionedFlo
 impl From<crate::v2_7_2::types::VersionedFlowEntity> for super::types::VersionedFlowEntity {
     fn from(v: crate::v2_7_2::types::VersionedFlowEntity) -> Self {
         Self {
-            versioned_flow: Some(v.versioned_flow.into()),
+            versioned_flow: Some(v.versioned_flow.unwrap_or_default().into()),
         }
     }
 }
@@ -12948,7 +12952,7 @@ impl From<crate::v2_8_0::types::AboutDto> for super::types::AboutDto {
 impl From<crate::v2_8_0::types::AboutEntity> for super::types::AboutEntity {
     fn from(v: crate::v2_8_0::types::AboutEntity) -> Self {
         Self {
-            about: Some(v.about.into()),
+            about: Some(v.about.unwrap_or_default().into()),
         }
     }
 }
@@ -13172,7 +13176,7 @@ impl From<crate::v2_8_0::types::AssetDto> for super::types::AssetDto {
 impl From<crate::v2_8_0::types::AssetEntity> for super::types::AssetEntity {
     fn from(v: crate::v2_8_0::types::AssetEntity) -> Self {
         Self {
-            asset: Some(v.asset.into()),
+            asset: Some(v.asset.unwrap_or_default().into()),
         }
     }
 }
@@ -13231,7 +13235,9 @@ impl From<crate::v2_8_0::types::AuthenticationConfigurationEntity>
 {
     fn from(v: crate::v2_8_0::types::AuthenticationConfigurationEntity) -> Self {
         Self {
-            authentication_configuration: Some(v.authentication_configuration.into()),
+            authentication_configuration: Some(
+                v.authentication_configuration.unwrap_or_default().into(),
+            ),
         }
     }
 }
@@ -13248,7 +13254,7 @@ impl From<crate::v2_8_0::types::BannerDto> for super::types::BannerDto {
 impl From<crate::v2_8_0::types::BannerEntity> for super::types::BannerEntity {
     fn from(v: crate::v2_8_0::types::BannerEntity) -> Self {
         Self {
-            banners: Some(v.banners.into()),
+            banners: Some(v.banners.unwrap_or_default().into()),
         }
     }
 }
@@ -13300,7 +13306,7 @@ impl From<crate::v2_8_0::types::BulletinBoardDto> for super::types::BulletinBoar
 impl From<crate::v2_8_0::types::BulletinBoardEntity> for super::types::BulletinBoardEntity {
     fn from(v: crate::v2_8_0::types::BulletinBoardEntity) -> Self {
         Self {
-            bulletin_board: Some(v.bulletin_board.into()),
+            bulletin_board: Some(v.bulletin_board.unwrap_or_default().into()),
         }
     }
 }
@@ -13436,7 +13442,7 @@ impl From<crate::v2_8_0::types::ClusterDto> for super::types::ClusterDto {
 impl From<crate::v2_8_0::types::ClusterEntity> for super::types::ClusterEntity {
     fn from(v: crate::v2_8_0::types::ClusterEntity) -> Self {
         Self {
-            cluster: Some(v.cluster.into()),
+            cluster: Some(v.cluster.unwrap_or_default().into()),
         }
     }
 }
@@ -13468,7 +13474,7 @@ impl From<crate::v2_8_0::types::ClusterSummaryDto> for super::types::ClusterSumm
 impl From<crate::v2_8_0::types::ClusterSummaryEntity> for super::types::ClusterSummaryEntity {
     fn from(v: crate::v2_8_0::types::ClusterSummaryEntity) -> Self {
         Self {
-            cluster_summary: Some(v.cluster_summary.into()),
+            cluster_summary: Some(v.cluster_summary.unwrap_or_default().into()),
         }
     }
 }
@@ -13507,7 +13513,7 @@ impl From<crate::v2_8_0::types::ComponentHistoryDto> for super::types::Component
 impl From<crate::v2_8_0::types::ComponentHistoryEntity> for super::types::ComponentHistoryEntity {
     fn from(v: crate::v2_8_0::types::ComponentHistoryEntity) -> Self {
         Self {
-            component_history: Some(v.component_history.into()),
+            component_history: Some(v.component_history.unwrap_or_default().into()),
         }
     }
 }
@@ -13611,7 +13617,7 @@ impl From<crate::v2_8_0::types::ComponentStateDto> for super::types::ComponentSt
 impl From<crate::v2_8_0::types::ComponentStateEntity> for super::types::ComponentStateEntity {
     fn from(v: crate::v2_8_0::types::ComponentStateEntity) -> Self {
         Self {
-            component_state: Some(v.component_state.into()),
+            component_state: Some(v.component_state.unwrap_or_default().into()),
         }
     }
 }
@@ -13706,7 +13712,7 @@ impl From<crate::v2_8_0::types::ConfigurationAnalysisEntity>
 {
     fn from(v: crate::v2_8_0::types::ConfigurationAnalysisEntity) -> Self {
         Self {
-            configuration_analysis: Some(v.configuration_analysis.into()),
+            configuration_analysis: Some(v.configuration_analysis.unwrap_or_default().into()),
         }
     }
 }
@@ -14062,7 +14068,7 @@ impl From<crate::v2_8_0::types::ControllerDto> for super::types::ControllerDto {
 impl From<crate::v2_8_0::types::ControllerEntity> for super::types::ControllerEntity {
     fn from(v: crate::v2_8_0::types::ControllerEntity) -> Self {
         Self {
-            controller: Some(v.controller.into()),
+            controller: Some(v.controller.unwrap_or_default().into()),
         }
     }
 }
@@ -14347,7 +14353,7 @@ impl From<crate::v2_8_0::types::ControllerStatusDto> for super::types::Controlle
 impl From<crate::v2_8_0::types::ControllerStatusEntity> for super::types::ControllerStatusEntity {
     fn from(v: crate::v2_8_0::types::ControllerStatusEntity) -> Self {
         Self {
-            controller_status: Some(v.controller_status.into()),
+            controller_status: Some(v.controller_status.unwrap_or_default().into()),
         }
     }
 }
@@ -14432,7 +14438,7 @@ impl From<crate::v2_8_0::types::CounterDto> for super::types::CounterDto {
 impl From<crate::v2_8_0::types::CounterEntity> for super::types::CounterEntity {
     fn from(v: crate::v2_8_0::types::CounterEntity) -> Self {
         Self {
-            counter: Some(v.counter.into()),
+            counter: Some(v.counter.unwrap_or_default().into()),
         }
     }
 }
@@ -14451,7 +14457,7 @@ impl From<crate::v2_8_0::types::CountersDto> for super::types::CountersDto {
 impl From<crate::v2_8_0::types::CountersEntity> for super::types::CountersEntity {
     fn from(v: crate::v2_8_0::types::CountersEntity) -> Self {
         Self {
-            counters: Some(v.counters.into()),
+            counters: Some(v.counters.unwrap_or_default().into()),
         }
     }
 }
@@ -14592,7 +14598,7 @@ impl From<crate::v2_8_0::types::DropRequestDto> for super::types::DropRequestDto
 impl From<crate::v2_8_0::types::DropRequestEntity> for super::types::DropRequestEntity {
     fn from(v: crate::v2_8_0::types::DropRequestEntity) -> Self {
         Self {
-            drop_request: Some(v.drop_request.into()),
+            drop_request: Some(v.drop_request.unwrap_or_default().into()),
         }
     }
 }
@@ -14892,7 +14898,7 @@ impl From<crate::v2_8_0::types::FlowConfigurationDto> for super::types::FlowConf
 impl From<crate::v2_8_0::types::FlowConfigurationEntity> for super::types::FlowConfigurationEntity {
     fn from(v: crate::v2_8_0::types::FlowConfigurationEntity) -> Self {
         Self {
-            flow_configuration: Some(v.flow_configuration.into()),
+            flow_configuration: Some(v.flow_configuration.unwrap_or_default().into()),
         }
     }
 }
@@ -14927,7 +14933,7 @@ impl From<crate::v2_8_0::types::FlowDto> for super::types::FlowDto {
 impl From<crate::v2_8_0::types::FlowEntity> for super::types::FlowEntity {
     fn from(v: crate::v2_8_0::types::FlowEntity) -> Self {
         Self {
-            flow: Some(v.flow.into()),
+            flow: Some(v.flow.unwrap_or_default().into()),
         }
     }
 }
@@ -14961,7 +14967,7 @@ impl From<crate::v2_8_0::types::FlowFileDto> for super::types::FlowFileDto {
 impl From<crate::v2_8_0::types::FlowFileEntity> for super::types::FlowFileEntity {
     fn from(v: crate::v2_8_0::types::FlowFileEntity) -> Self {
         Self {
-            flow_file: Some(v.flow_file.into()),
+            flow_file: Some(v.flow_file.unwrap_or_default().into()),
         }
     }
 }
@@ -15005,7 +15011,7 @@ impl From<crate::v2_8_0::types::FlowRegistryBranchEntity>
 {
     fn from(v: crate::v2_8_0::types::FlowRegistryBranchEntity) -> Self {
         Self {
-            branch: Some(v.branch.into()),
+            branch: Some(v.branch.unwrap_or_default().into()),
         }
     }
 }
@@ -15284,7 +15290,7 @@ impl From<crate::v2_8_0::types::HistoryDto> for super::types::HistoryDto {
 impl From<crate::v2_8_0::types::HistoryEntity> for super::types::HistoryEntity {
     fn from(v: crate::v2_8_0::types::HistoryEntity) -> Self {
         Self {
-            history: Some(v.history.into()),
+            history: Some(v.history.unwrap_or_default().into()),
         }
     }
 }
@@ -15393,7 +15399,7 @@ impl From<crate::v2_8_0::types::LatestProvenanceEventsEntity>
 {
     fn from(v: crate::v2_8_0::types::LatestProvenanceEventsEntity) -> Self {
         Self {
-            latest_provenance_events: Some(v.latest_provenance_events.into()),
+            latest_provenance_events: Some(v.latest_provenance_events.unwrap_or_default().into()),
         }
     }
 }
@@ -15416,7 +15422,7 @@ impl From<crate::v2_8_0::types::LineageDto> for super::types::LineageDto {
 impl From<crate::v2_8_0::types::LineageEntity> for super::types::LineageEntity {
     fn from(v: crate::v2_8_0::types::LineageEntity) -> Self {
         Self {
-            lineage: Some(v.lineage.into()),
+            lineage: Some(v.lineage.unwrap_or_default().into()),
         }
     }
 }
@@ -15499,7 +15505,7 @@ impl From<crate::v2_8_0::types::ListingRequestDto> for super::types::ListingRequ
 impl From<crate::v2_8_0::types::ListingRequestEntity> for super::types::ListingRequestEntity {
     fn from(v: crate::v2_8_0::types::ListingRequestEntity) -> Self {
         Self {
-            listing_request: Some(v.listing_request.into()),
+            listing_request: Some(v.listing_request.unwrap_or_default().into()),
         }
     }
 }
@@ -15595,7 +15601,7 @@ impl From<crate::v2_8_0::types::NarSummaryDto> for super::types::NarSummaryDto {
 impl From<crate::v2_8_0::types::NarSummaryEntity> for super::types::NarSummaryEntity {
     fn from(v: crate::v2_8_0::types::NarSummaryEntity) -> Self {
         Self {
-            nar_summary: Some(v.nar_summary.into()),
+            nar_summary: Some(v.nar_summary.unwrap_or_default().into()),
         }
     }
 }
@@ -15661,7 +15667,7 @@ impl From<crate::v2_8_0::types::NodeDto> for super::types::NodeDto {
 impl From<crate::v2_8_0::types::NodeEntity> for super::types::NodeEntity {
     fn from(v: crate::v2_8_0::types::NodeEntity) -> Self {
         Self {
-            node: Some(v.node.into()),
+            node: Some(v.node.unwrap_or_default().into()),
         }
     }
 }
@@ -16061,7 +16067,7 @@ impl From<crate::v2_8_0::types::ParameterProviderApplyParametersRequestEntity>
 {
     fn from(v: crate::v2_8_0::types::ParameterProviderApplyParametersRequestEntity) -> Self {
         Self {
-            request: Some(v.request.into()),
+            request: Some(v.request.unwrap_or_default().into()),
         }
     }
 }
@@ -17320,7 +17326,7 @@ impl From<crate::v2_8_0::types::PropertyDescriptorEntity>
 {
     fn from(v: crate::v2_8_0::types::PropertyDescriptorEntity) -> Self {
         Self {
-            property_descriptor: Some(v.property_descriptor.into()),
+            property_descriptor: Some(v.property_descriptor.unwrap_or_default().into()),
         }
     }
 }
@@ -17394,7 +17400,7 @@ impl From<crate::v2_8_0::types::ProvenanceDto> for super::types::ProvenanceDto {
 impl From<crate::v2_8_0::types::ProvenanceEntity> for super::types::ProvenanceEntity {
     fn from(v: crate::v2_8_0::types::ProvenanceEntity) -> Self {
         Self {
-            provenance: Some(v.provenance.into()),
+            provenance: Some(v.provenance.unwrap_or_default().into()),
         }
     }
 }
@@ -17453,7 +17459,7 @@ impl From<crate::v2_8_0::types::ProvenanceEventDto> for super::types::Provenance
 impl From<crate::v2_8_0::types::ProvenanceEventEntity> for super::types::ProvenanceEventEntity {
     fn from(v: crate::v2_8_0::types::ProvenanceEventEntity) -> Self {
         Self {
-            provenance_event: Some(v.provenance_event.into()),
+            provenance_event: Some(v.provenance_event.unwrap_or_default().into()),
         }
     }
 }
@@ -17505,7 +17511,7 @@ impl From<crate::v2_8_0::types::ProvenanceOptionsDto> for super::types::Provenan
 impl From<crate::v2_8_0::types::ProvenanceOptionsEntity> for super::types::ProvenanceOptionsEntity {
     fn from(v: crate::v2_8_0::types::ProvenanceOptionsEntity) -> Self {
         Self {
-            provenance_options: Some(v.provenance_options.into()),
+            provenance_options: Some(v.provenance_options.unwrap_or_default().into()),
         }
     }
 }
@@ -18181,7 +18187,7 @@ impl From<crate::v2_8_0::types::RuntimeManifest> for super::types::RuntimeManife
 impl From<crate::v2_8_0::types::RuntimeManifestEntity> for super::types::RuntimeManifestEntity {
     fn from(v: crate::v2_8_0::types::RuntimeManifestEntity) -> Self {
         Self {
-            runtime_manifest: Some(v.runtime_manifest.into()),
+            runtime_manifest: Some(v.runtime_manifest.unwrap_or_default().into()),
         }
     }
 }
@@ -18283,7 +18289,7 @@ impl From<crate::v2_8_0::types::SearchResultsDto> for super::types::SearchResult
 impl From<crate::v2_8_0::types::SearchResultsEntity> for super::types::SearchResultsEntity {
     fn from(v: crate::v2_8_0::types::SearchResultsEntity) -> Self {
         Self {
-            search_results_d_t_o: Some(v.search_results_d_t_o.into()),
+            search_results_d_t_o: Some(v.search_results_d_t_o.unwrap_or_default().into()),
         }
     }
 }
@@ -18484,7 +18490,7 @@ impl From<crate::v2_8_0::types::SystemDiagnosticsDto> for super::types::SystemDi
 impl From<crate::v2_8_0::types::SystemDiagnosticsEntity> for super::types::SystemDiagnosticsEntity {
     fn from(v: crate::v2_8_0::types::SystemDiagnosticsEntity) -> Self {
         Self {
-            system_diagnostics: Some(v.system_diagnostics.into()),
+            system_diagnostics: Some(v.system_diagnostics.unwrap_or_default().into()),
         }
     }
 }
@@ -18754,7 +18760,7 @@ impl From<crate::v2_8_0::types::VerifyConfigRequestEntity>
 {
     fn from(v: crate::v2_8_0::types::VerifyConfigRequestEntity) -> Self {
         Self {
-            request: Some(v.request.into()),
+            request: Some(v.request.unwrap_or_default().into()),
         }
     }
 }
@@ -18958,7 +18964,7 @@ impl From<crate::v2_8_0::types::VersionedFlowDto> for super::types::VersionedFlo
 impl From<crate::v2_8_0::types::VersionedFlowEntity> for super::types::VersionedFlowEntity {
     fn from(v: crate::v2_8_0::types::VersionedFlowEntity) -> Self {
         Self {
-            versioned_flow: Some(v.versioned_flow.into()),
+            versioned_flow: Some(v.versioned_flow.unwrap_or_default().into()),
         }
     }
 }

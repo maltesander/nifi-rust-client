@@ -91,19 +91,18 @@ async fn provenance_search_and_events() {
     };
 
     // ── fetch a specific event by id if the query returned any ────────────────
-    if let Some(event) = provenance
+    if let Some(event_id) = provenance
         .results
         .as_ref()
         .and_then(|r| r.provenance_events.as_deref())
         .and_then(|e| e.first())
+        .and_then(|e| e.event_id)
     {
-        if let Some(event_id) = event.event_id {
-            client
-                .provenanceevents_api()
-                .get_provenance_event(&event_id.to_string(), None)
-                .await
-                .expect("failed to get provenance event by id");
-        }
+        client
+            .provenanceevents_api()
+            .get_provenance_event(&event_id.to_string(), None)
+            .await
+            .expect("failed to get provenance event by id");
     }
 
     // ── delete the provenance query ───────────────────────────────────────────
