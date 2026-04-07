@@ -74,9 +74,6 @@ Every endpoint NiFi exposes is available as a typed Rust method — nothing hand
 **Two modes for different needs.**
 Use **static mode** for full type safety and IDE autocompletion when you target a known NiFi version. Use **dynamic mode** when your tool needs to talk to multiple NiFi clusters running different versions — the client auto-detects the API version at connect time and dispatches to the right generated code.
 
-**Multi-version support with zero ceremony.**
-Pin to specific NiFi version via a Cargo feature flag, or enable `dynamic` to compile all versions and let the client pick at runtime. Adding a new NiFi version is one command — the generator handles features, types, dispatch, and tests automatically.
-
 **Tested against real NiFi instances.**
 Every generated endpoint gets an auto-generated wiremock stub. Integration tests run against a Docker-hosted NiFi and cover the full request/response cycle — not just serialization. Both static and dynamic modes have dedicated test suites.
 
