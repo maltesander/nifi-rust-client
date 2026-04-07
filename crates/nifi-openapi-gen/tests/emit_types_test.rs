@@ -390,7 +390,7 @@ fn emit_multiline_field_doc() {
 }
 
 #[test]
-fn emit_read_only_field_has_skip_serializing_and_doc() {
+fn emit_read_only_field_has_doc_annotation() {
     let spec = spec_with_types(vec![TypeDef {
         name: "AboutDto".into(),
         kind: TypeKind::Dto,
@@ -414,20 +414,11 @@ fn emit_read_only_field_has_skip_serializing_and_doc() {
     }]);
     let out = all_output(&spec);
 
-    // read-only field gets skip_serializing
+    // read-only field gets "Read-only" annotation in doc
+    assert!(out.contains("Read-only"), "missing Read-only annotation: {out}");
+    // read-only fields are NOT skip_serializing (NiFi requires them in update requests)
     assert!(
-        out.contains("#[serde(skip_serializing)]"),
-        "missing skip_serializing: {out}"
-    );
-    // read-only field gets annotation in doc
-    assert!(
-        out.contains("Read-only"),
-        "missing Read-only annotation: {out}"
-    );
-    // non-read-only field does NOT get skip_serializing
-    let version_section = out.split("pub version").nth(1).unwrap_or("");
-    assert!(
-        !version_section.contains("#[serde(skip_serializing)]"),
-        "version should not have skip_serializing"
+        !out.contains("#[serde(skip_serializing)]"),
+        "read-only fields must not have skip_serializing: {out}"
     );
 }

@@ -140,20 +140,13 @@ fn emit_dto(t: &TypeDef) -> String {
         if let Some(doc) = &field.doc {
             if field.read_only {
                 let mut full_doc = doc.clone();
-                full_doc.push_str(
-                    " Read-only — this field is ignored when serializing requests to NiFi.",
-                );
+                full_doc.push_str(" Read-only — set by NiFi.");
                 emit_doc_comment(&mut out, &full_doc, "    ");
             } else {
                 emit_doc_comment(&mut out, doc, "    ");
             }
         } else if field.read_only {
-            out.push_str(
-                "    /// Read-only — this field is ignored when serializing requests to NiFi.\n",
-            );
-        }
-        if field.read_only {
-            out.push_str("    #[serde(skip_serializing)]\n");
+            out.push_str("    /// Read-only — set by NiFi.\n");
         }
         let ty_str = field_type_to_rust(&field.ty, &t.name, &field.rust_name);
         let field_ident = escape_keyword(&field.rust_name);

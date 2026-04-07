@@ -17,8 +17,7 @@ pub struct AboutDto {
     pub build_timestamp: Option<String>,
     /// The URL for the content viewer if configured.
     pub content_viewer_url: Option<String>,
-    /// The timezone of the NiFi instance. Read-only — this field is ignored when serializing requests to NiFi.
-    #[serde(skip_serializing)]
+    /// The timezone of the NiFi instance. Read-only — set by NiFi.
     pub timezone: Option<String>,
     /// The title to be used on the page and in the about dialog.
     pub title: Option<String>,
@@ -37,8 +36,7 @@ pub struct AboutEntity {
 #[serde(rename_all = "camelCase")]
 pub struct ActionEntity {
     pub action: Option<ActionDto>,
-    /// Indicates whether the user can read a given resource. Read-only — this field is ignored when serializing requests to NiFi.
-    #[serde(skip_serializing)]
+    /// Indicates whether the user can read a given resource. Read-only — set by NiFi.
     pub can_read: Option<bool>,
     pub id: Option<i32>,
     pub source_id: Option<String>,
@@ -139,24 +137,21 @@ pub struct ClusterSummaryEntity {
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ConnectionStatisticsEntity {
-    /// Indicates whether the user can read a given resource. Read-only — this field is ignored when serializing requests to NiFi.
-    #[serde(skip_serializing)]
+    /// Indicates whether the user can read a given resource. Read-only — set by NiFi.
     pub can_read: Option<bool>,
     pub connection_statistics: Option<ConnectionStatisticsDto>,
 }
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ConnectionStatusEntity {
-    /// Indicates whether the user can read a given resource. Read-only — this field is ignored when serializing requests to NiFi.
-    #[serde(skip_serializing)]
+    /// Indicates whether the user can read a given resource. Read-only — set by NiFi.
     pub can_read: Option<bool>,
     pub connection_status: Option<ConnectionStatusDto>,
 }
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ContentViewerEntity {
-    /// The Content Viewers. Read-only — this field is ignored when serializing requests to NiFi.
-    #[serde(skip_serializing)]
+    /// The Content Viewers. Read-only — set by NiFi.
     pub content_viewers: Option<Vec<ContentViewerDto>>,
 }
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -289,8 +284,7 @@ pub struct CurrentUserEntity {
     pub counters_permissions: Option<PermissionsDto>,
     /// The user identity being serialized.
     pub identity: Option<String>,
-    /// Whether the system is configured to support logout operations based on current user authentication status Read-only — this field is ignored when serializing requests to NiFi.
-    #[serde(skip_serializing)]
+    /// Whether the system is configured to support logout operations based on current user authentication status Read-only — set by NiFi.
     pub logout_supported: Option<bool>,
     pub parameter_context_permissions: Option<PermissionsDto>,
     pub policies_permissions: Option<PermissionsDto>,
@@ -382,8 +376,7 @@ pub struct FlowBreadcrumbEntity {
     pub id: Option<String>,
     pub parent_breadcrumb: Option<Box<FlowBreadcrumbEntity>>,
     pub permissions: Option<PermissionsDto>,
-    /// The current state of the Process Group, as it relates to the Versioned Flow Read-only — this field is ignored when serializing requests to NiFi.
-    #[serde(skip_serializing)]
+    /// The current state of the Process Group, as it relates to the Versioned Flow Read-only — set by NiFi.
     pub versioned_flow_state: Option<FlowBreadcrumbEntityVersionedFlowState>,
 }
 /// The controller configuration.
@@ -396,14 +389,11 @@ pub struct FlowConfigurationDto {
     pub default_back_pressure_data_size_threshold: Option<String>,
     /// The default back pressure object threshold.
     pub default_back_pressure_object_threshold: Option<i64>,
-    /// Whether this NiFi supports a configurable authorizer. Read-only — this field is ignored when serializing requests to NiFi.
-    #[serde(skip_serializing)]
+    /// Whether this NiFi supports a configurable authorizer. Read-only — set by NiFi.
     pub supports_configurable_authorizer: Option<bool>,
-    /// Whether this NiFi supports configurable users and groups. Read-only — this field is ignored when serializing requests to NiFi.
-    #[serde(skip_serializing)]
+    /// Whether this NiFi supports configurable users and groups. Read-only — set by NiFi.
     pub supports_configurable_users_and_groups: Option<bool>,
-    /// Whether this NiFi supports a managed authorizer. Managed authorizers can visualize users, groups, and policies in the UI. Read-only — this field is ignored when serializing requests to NiFi.
-    #[serde(skip_serializing)]
+    /// Whether this NiFi supports a managed authorizer. Managed authorizers can visualize users, groups, and policies in the UI. Read-only — set by NiFi.
     pub supports_managed_authorizer: Option<bool>,
     /// The time offset of the system.
     pub time_offset: Option<i32>,
@@ -480,8 +470,7 @@ pub struct ListenPortsEntity {
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ParameterContextsEntity {
-    /// The current time on the system. Read-only — this field is ignored when serializing requests to NiFi.
-    #[serde(skip_serializing)]
+    /// The current time on the system. Read-only — set by NiFi.
     pub current_time: Option<String>,
     /// The Parameter Contexts
     pub parameter_contexts: Option<Vec<ParameterContextEntity>>,
@@ -549,8 +538,7 @@ pub struct ParameterProvidersEntity {
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PortStatusEntity {
-    /// Indicates whether the user can read a given resource. Read-only — this field is ignored when serializing requests to NiFi.
-    #[serde(skip_serializing)]
+    /// Indicates whether the user can read a given resource. Read-only — set by NiFi.
     pub can_read: Option<bool>,
     pub port_status: Option<PortStatusDto>,
 }
@@ -569,8 +557,7 @@ pub struct ProcessGroupFlowEntity {
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ProcessGroupStatusEntity {
-    /// Indicates whether the user can read a given resource. Read-only — this field is ignored when serializing requests to NiFi.
-    #[serde(skip_serializing)]
+    /// Indicates whether the user can read a given resource. Read-only — set by NiFi.
     pub can_read: Option<bool>,
     pub process_group_status: Option<ProcessGroupStatusDto>,
 }
@@ -678,8 +665,7 @@ pub struct ProcessorDefinition {
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ProcessorStatusEntity {
-    /// Indicates whether the user can read a given resource. Read-only — this field is ignored when serializing requests to NiFi.
-    #[serde(skip_serializing)]
+    /// Indicates whether the user can read a given resource. Read-only — set by NiFi.
     pub can_read: Option<bool>,
     pub processor_status: Option<ProcessorStatusDto>,
 }
@@ -691,8 +677,7 @@ pub struct ProcessorTypesEntity {
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RemoteProcessGroupStatusEntity {
-    /// Indicates whether the user can read a given resource. Read-only — this field is ignored when serializing requests to NiFi.
-    #[serde(skip_serializing)]
+    /// Indicates whether the user can read a given resource. Read-only — set by NiFi.
     pub can_read: Option<bool>,
     pub remote_process_group_status: Option<RemoteProcessGroupStatusDto>,
 }
@@ -842,8 +827,7 @@ pub struct SearchResultsEntity {
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct StatusHistoryEntity {
-    /// Indicates whether the user can read a given resource. Read-only — this field is ignored when serializing requests to NiFi.
-    #[serde(skip_serializing)]
+    /// Indicates whether the user can read a given resource. Read-only — set by NiFi.
     pub can_read: Option<bool>,
     pub status_history: Option<StatusHistoryDto>,
 }

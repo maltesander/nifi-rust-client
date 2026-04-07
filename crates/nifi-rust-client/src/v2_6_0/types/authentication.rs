@@ -7,17 +7,13 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AuthenticationConfigurationDto {
-    /// Whether the system requires login through an external Identity Provider Read-only — this field is ignored when serializing requests to NiFi.
-    #[serde(skip_serializing)]
+    /// Whether the system requires login through an external Identity Provider Read-only — set by NiFi.
     pub external_login_required: Option<bool>,
-    /// Whether the system is configured to support login operations Read-only — this field is ignored when serializing requests to NiFi.
-    #[serde(skip_serializing)]
+    /// Whether the system is configured to support login operations Read-only — set by NiFi.
     pub login_supported: Option<bool>,
-    /// Location for initiating login processing Read-only — this field is ignored when serializing requests to NiFi.
-    #[serde(skip_serializing)]
+    /// Location for initiating login processing Read-only — set by NiFi.
     pub login_uri: Option<String>,
-    /// Location for initiating logout processing Read-only — this field is ignored when serializing requests to NiFi.
-    #[serde(skip_serializing)]
+    /// Location for initiating logout processing Read-only — set by NiFi.
     pub logout_uri: Option<String>,
 }
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]

@@ -170,8 +170,7 @@ pub struct ProcessGroupEntity {
     pub id: Option<String>,
     /// The number of inactive remote ports in the process group.
     pub inactive_remote_port_count: Option<i32>,
-    /// The number of input ports in the process group. Read-only — this field is ignored when serializing requests to NiFi.
-    #[serde(skip_serializing)]
+    /// The number of input ports in the process group. Read-only — set by NiFi.
     pub input_port_count: Option<i32>,
     /// The number of invalid components in the process group.
     pub invalid_count: Option<i32>,
@@ -183,8 +182,7 @@ pub struct ProcessGroupEntity {
     pub locally_modified_and_stale_count: Option<i32>,
     /// The number of locally modified versioned process groups in the process group.
     pub locally_modified_count: Option<i32>,
-    /// The number of output ports in the process group. Read-only — this field is ignored when serializing requests to NiFi.
-    #[serde(skip_serializing)]
+    /// The number of output ports in the process group. Read-only — set by NiFi.
     pub output_port_count: Option<i32>,
     pub parameter_context: Option<ParameterContextReferenceEntity>,
     pub permissions: Option<PermissionsDto>,
@@ -210,8 +208,7 @@ pub struct ProcessGroupEntity {
     /// The URI for futures requests to the component.
     pub uri: Option<String>,
     pub versioned_flow_snapshot: Option<RegisteredFlowSnapshot>,
-    /// The current state of the Process Group, as it relates to the Versioned Flow Read-only — this field is ignored when serializing requests to NiFi.
-    #[serde(skip_serializing)]
+    /// The current state of the Process Group, as it relates to the Versioned Flow Read-only — set by NiFi.
     pub versioned_flow_state: Option<ProcessGroupEntityVersionedFlowState>,
 }
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
