@@ -72,6 +72,23 @@ git add specs/2.9.0/ \
 
 The generator uses semver ordering (via the `semver` crate) to determine the latest version when setting the `default` Cargo feature.
 
+## Generated doc comments
+
+The generator enriches every method and struct with documentation derived from the OpenAPI spec:
+
+**API methods** (`emit_api.rs`):
+- The OpenAPI `summary` becomes the one-line method doc; `description` (if present) is appended as additional paragraphs. Multi-line descriptions are emitted verbatim — blank lines become `///` separator lines.
+- A `# Errors` rustdoc section lists every documented non-2xx HTTP response code and its description, sorted by status code.
+- A `# Permissions` rustdoc section lists the NiFi policy expressions required to call the endpoint. Endpoints with no authentication requirement get "No authentication required."
+
+**DTO/entity structs** (`emit_types.rs`):
+- Struct and field docs are emitted as full multi-line rustdoc comments, preserving paragraph breaks from the spec.
+- Fields marked `readOnly` in the spec receive `#[serde(skip_serializing)]` so they are never sent in request bodies. Their doc comment is appended with "Read-only — this field is ignored when serializing requests to NiFi."
+
+## Stale file cleanup
+
+During a full-discovery run (no `NIFI_VERSION` / `NIFI_API_SPEC` override), the generator scans for `src/v*/` directories and `tests/v*_generated_tests.rs` files whose version is no longer present in `specs/` and deletes them automatically. Single-version runs leave other version directories untouched.
+
 ## Architecture
 
 The generator is structured as:

@@ -195,8 +195,11 @@ All methods return `Result<T, NifiError>`. Variants:
 
 - `NifiError::Api { status, message }` — NiFi returned a non-2xx response
 - `NifiError::Http { source }` — network or transport error
-- `NifiError::Json { source }` — response deserialization failed
-- `NifiError::InvalidUrl { source }` — bad base URL passed to the builder
+- `NifiError::Auth { message }` — authentication failed (e.g. bad credentials)
+- `NifiError::InvalidBaseUrl { source }` — bad base URL passed to the builder
+- `NifiError::InvalidCertificate { source }` — invalid CA certificate passed to the builder
+- `NifiError::UnsupportedVersion { detected }` — dynamic mode detected a NiFi version not compiled in
+- `NifiError::UnsupportedEndpoint { endpoint, version }` — dynamic mode: endpoint not available in the connected NiFi version
 
 ## Integration test coverage
 
@@ -204,7 +207,11 @@ The following API groups have CRUD lifecycle tests (create → get → update �
 
 | File | Groups covered |
 |------|---------------|
+| `tests/tests/connect.rs` | client builder (insecure TLS, custom CA cert) |
+| `tests/tests/flow.rs` | flow status, current user identity, logout |
 | `tests/tests/processgroups.rs` | process groups, processors (with `includeDescendantGroups`) |
+| `tests/tests/connections.rs` | connections (full CRUD lifecycle) |
+| `tests/tests/controller_services.rs` | controller services (type discovered at runtime) |
 | `tests/tests/labels.rs` | labels |
 | `tests/tests/funnels.rs` | funnels |
 | `tests/tests/inputports.rs` | input ports |
@@ -213,12 +220,12 @@ The following API groups have CRUD lifecycle tests (create → get → update �
 | `tests/tests/reportingtasks.rs` | reporting tasks (type discovered at runtime) |
 | `tests/tests/tenants.rs` | users, user groups |
 | `tests/tests/readonly.rs` | system diagnostics, resources, site-to-site, counters, authentication (smoke only) |
+| `tests/tests/dynamic.rs` | dynamic mode: version detection, about, resources, system diagnostics, current user, process groups |
 
 The following API groups are **not yet covered** due to requiring complex setup beyond a fresh NiFi instance:
 
 | Group | Reason |
 |-------|--------|
-| `connections` | Requires source + destination ports to already exist and be connected |
 | `flowfilequeues` | Requires active connections with queued flow files |
 | `remoteprocessgroups` | Requires a reachable remote NiFi URL |
 | `datatransfer` | Requires active site-to-site input/output ports |
