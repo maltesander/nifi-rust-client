@@ -17,6 +17,16 @@ impl<'a> SnippetsApi<'a> {
     ///
     /// # Parameters
     /// - `body`: The snippet configuration details.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read or Write - /{component-type}/{uuid} - For every component (all Read or all Write) in the Snippet and their descendant components`.
     pub async fn create_snippet(
         &self,
         body: &crate::v2_8_0::types::SnippetEntity,
@@ -30,6 +40,17 @@ impl<'a> SnippetsApi<'a> {
     /// # Parameters
     /// - `id`: The snippet id.
     /// - `disconnected_node_acknowledged`: Acknowledges that this node is disconnected to allow for mutable requests to proceed.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// - `Write - /{component-type}/{uuid} - For each component in the Snippet and their descendant components`
+    /// - `Write - Parent Process Group - /process-groups/{uuid}`
     pub async fn delete_snippet(
         &self,
         id: &str,
@@ -50,6 +71,17 @@ impl<'a> SnippetsApi<'a> {
     /// # Parameters
     /// - `id`: The snippet id.
     /// - `body`: The snippet configuration details.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// - `Write Process Group - /process-groups/{uuid}`
+    /// - `Write - /{component-type}/{uuid} - For each component in the Snippet and their descendant components`
     pub async fn update_snippet(
         &self,
         id: &str,

@@ -17,6 +17,16 @@ impl<'a> ProcessorsApi<'a> {
     ///
     /// # Parameters
     /// - `body`: The request for the processors that should be included in the results
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /processors/{uuid} for each processor whose run status information is requested`.
     pub async fn get_processor_run_status_details(
         &self,
         body: &crate::v2_7_2::types::RunStatusDetailsRequestEntity,
@@ -34,6 +44,18 @@ impl<'a> ProcessorsApi<'a> {
     /// - `version`: The revision is used to verify the client is working with the latest version of the flow.
     /// - `client_id`: If the client id is not specified, new one will be generated. This value (whether specified or generated) is included in the response.
     /// - `disconnected_node_acknowledged`: Acknowledges that this node is disconnected to allow for mutable requests to proceed.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// - `Write - /processors/{uuid}`
+    /// - `Write - Parent Process Group - /process-groups/{uuid}`
+    /// - `Read - any referenced Controller Services - /controller-services/{uuid}`
     pub async fn delete_processor(
         &self,
         id: &str,
@@ -61,6 +83,16 @@ impl<'a> ProcessorsApi<'a> {
     ///
     /// # Parameters
     /// - `id`: The processor id.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /processors/{uuid}`.
     pub async fn get_processor(
         &self,
         id: &str,
@@ -74,6 +106,17 @@ impl<'a> ProcessorsApi<'a> {
     /// # Parameters
     /// - `id`: The processor id.
     /// - `body`: The processor configuration details.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// - `Write - /processors/{uuid}`
+    /// - `Read - any referenced Controller Services if this request changes the reference - /controller-services/{uuid}`
     pub async fn update_processor(
         &self,
         id: &str,
@@ -161,6 +204,16 @@ impl<'a> ProcessorsBulletinsApi<'a> {
     ///
     /// # Parameters
     /// - `body`: The clear bulletin request specifying the timestamp from which to clear bulletins.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Write - /processors/{uuid}`.
     pub async fn clear_bulletins_5(
         &self,
         body: &crate::v2_7_2::types::ClearBulletinsRequestEntity,
@@ -187,6 +240,16 @@ impl<'a> ProcessorsConfigApi<'a> {
     ///
     /// # Parameters
     /// - `body`: The processor configuration analysis request.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /processors/{uuid}`.
     pub async fn analyze_configuration_2(
         &self,
         body: &crate::v2_7_2::types::ConfigurationAnalysisEntity,
@@ -206,6 +269,16 @@ impl<'a> ProcessorsConfigApi<'a> {
     ///
     /// # Parameters
     /// - `body`: The processor configuration verification request.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /processors/{uuid}`.
     pub async fn submit_processor_verification_request(
         &self,
         body: &crate::v2_7_2::types::VerifyConfigRequestEntity,
@@ -228,6 +301,16 @@ impl<'a> ProcessorsConfigApi<'a> {
     ///
     /// # Parameters
     /// - `request_id`: The ID of the Verification Request
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Only the user that submitted the request can remove it`.
     pub async fn delete_verification_request_2(
         &self,
         request_id: &str,
@@ -249,6 +332,16 @@ impl<'a> ProcessorsConfigApi<'a> {
     ///
     /// # Parameters
     /// - `request_id`: The ID of the Verification Request
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Only the user that submitted the request can get it`.
     pub async fn get_verification_request_2(
         &self,
         request_id: &str,
@@ -281,6 +374,16 @@ impl<'a> ProcessorsDescriptorsApi<'a> {
     /// - `client_id`: If the client id is not specified, new one will be generated. This value (whether specified or generated) is included in the response.
     /// - `property_name`: The property name.
     /// - `sensitive`: Property Descriptor requested sensitive status
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /processors/{uuid}`.
     pub async fn get_property_descriptor_3(
         &self,
         client_id: Option<&str>,
@@ -318,6 +421,16 @@ impl<'a> ProcessorsDiagnosticsApi<'a> {
     /// Note: This endpoint is subject to change as NiFi and it's REST API evolve.
     ///
     /// Calls `GET /nifi-api/processors/{id}/diagnostics`.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /processors/{uuid}`.
     pub async fn get_processor_diagnostics(
         &self,
     ) -> Result<crate::v2_7_2::types::ProcessorEntity, NifiError> {
@@ -343,6 +456,16 @@ impl<'a> ProcessorsRunStatusApi<'a> {
     ///
     /// # Parameters
     /// - `body`: The processor run status.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Write - /processors/{uuid} or /operation/processors/{uuid}`.
     pub async fn update_run_status_4(
         &self,
         body: &crate::v2_7_2::types::ProcessorRunStatusEntity,
@@ -366,6 +489,16 @@ impl<'a> ProcessorsStateApi<'a> {
     /// Gets the state for a processor
     ///
     /// Calls `GET /nifi-api/processors/{id}/state`.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Write - /processors/{uuid}`.
     pub async fn get_state_2(&self) -> Result<crate::v2_7_2::types::ComponentStateDto, NifiError> {
         let id = self.id;
         let e: crate::v2_7_2::types::ComponentStateEntity =
@@ -378,6 +511,16 @@ impl<'a> ProcessorsStateApi<'a> {
     ///
     /// # Parameters
     /// - `body`: Optional component state to perform a selective key removal. If omitted, clears all state.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Write - /processors/{uuid}`.
     pub async fn clear_state_3(
         &self,
         body: &crate::v2_7_2::types::ComponentStateEntity,
@@ -403,6 +546,16 @@ impl<'a> ProcessorsThreadsApi<'a> {
     /// Terminates a processor, essentially "deleting" its threads and any active tasks
     ///
     /// Calls `DELETE /nifi-api/processors/{id}/threads`.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Write - /processors/{uuid} or /operation/processors/{uuid}`.
     pub async fn terminate_processor(
         &self,
     ) -> Result<crate::v2_7_2::types::ProcessorEntity, NifiError> {

@@ -17,6 +17,18 @@ impl<'a> ProvenanceEventsApi<'a> {
     ///
     /// # Parameters
     /// - `body`: The replay request.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// - `Read Component Provenance Data - /provenance-data/{component-type}/{uuid}`
+    /// - `Read Component Data - /data/{component-type}/{uuid}`
+    /// - `Write Component Data - /data/{component-type}/{uuid}`
     pub async fn submit_replay_latest_event(
         &self,
         body: &crate::v2_8_0::types::ReplayLastEventRequestEntity,
@@ -32,6 +44,17 @@ impl<'a> ProvenanceEventsApi<'a> {
     /// # Parameters
     /// - `component_id`: The ID of the component to retrieve the latest Provenance Events for.
     /// - `limit`: The number of events to limit the response to. Defaults to 10.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// - `Read Component Provenance Data - /provenance-data/{component-type}/{uuid}`
+    /// - `Read Component Data - /data/{component-type}/{uuid}`
     pub async fn get_latest_provenance_events(
         &self,
         component_id: &str,
@@ -53,6 +76,18 @@ impl<'a> ProvenanceEventsApi<'a> {
     ///
     /// # Parameters
     /// - `body`: The replay request.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// - `Read Component Provenance Data - /provenance-data/{component-type}/{uuid}`
+    /// - `Read Component Data - /data/{component-type}/{uuid}`
+    /// - `Write Component Data - /data/{component-type}/{uuid}`
     pub async fn submit_replay(
         &self,
         body: &crate::v2_8_0::types::SubmitReplayRequestEntity,
@@ -68,6 +103,16 @@ impl<'a> ProvenanceEventsApi<'a> {
     /// # Parameters
     /// - `id`: The provenance event id.
     /// - `cluster_node_id`: The id of the node where this event exists if clustered.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read Component Provenance Data - /provenance-data/{component-type}/{uuid}`.
     pub async fn get_provenance_event(
         &self,
         id: &str,
@@ -109,6 +154,19 @@ impl<'a> ProvenanceEventsContentApi<'a> {
     ///
     /// # Parameters
     /// - `cluster_node_id`: The id of the node where the content exists if clustered.
+    ///
+    /// # Errors
+    /// - `206`: Partial Content with range of bytes requested
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    /// - `416`: Requested Range Not Satisfiable based on bytes requested
+    ///
+    /// # Permissions
+    /// - `Read Component Provenance Data - /provenance-data/{component-type}/{uuid}`
+    /// - `Read Component Data - /data/{component-type}/{uuid}`
     pub async fn get_input_content(&self, cluster_node_id: Option<&str>) -> Result<(), NifiError> {
         let id = self.id;
         let mut query: Vec<(&str, String)> = vec![];
@@ -125,6 +183,19 @@ impl<'a> ProvenanceEventsContentApi<'a> {
     ///
     /// # Parameters
     /// - `cluster_node_id`: The id of the node where the content exists if clustered.
+    ///
+    /// # Errors
+    /// - `206`: Partial Content with range of bytes requested
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    /// - `416`: Requested Range Not Satisfiable based on bytes requested
+    ///
+    /// # Permissions
+    /// - `Read Component Provenance Data - /provenance-data/{component-type}/{uuid}`
+    /// - `Read Component Data - /data/{component-type}/{uuid}`
     pub async fn get_output_content(&self, cluster_node_id: Option<&str>) -> Result<(), NifiError> {
         let id = self.id;
         let mut query: Vec<(&str, String)> = vec![];

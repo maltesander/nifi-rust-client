@@ -16,6 +16,10 @@ impl<'a> AccessApi<'a> {
     /// Note: This endpoint is subject to change as NiFi and it's REST API evolve.
     ///
     /// Calls `DELETE /nifi-api/access/logout`.
+    ///
+    /// # Errors
+    /// - `401`: Authentication token provided was empty or not in the correct JWT format.
+    /// - `500`: Client failed to log out.
     pub async fn log_out(&self) -> Result<(), NifiError> {
         self.client.delete("/access/logout").await
     }
@@ -24,6 +28,11 @@ impl<'a> AccessApi<'a> {
     /// Note: This endpoint is subject to change as NiFi and it's REST API evolve.
     ///
     /// Calls `GET /nifi-api/access/logout/complete`.
+    ///
+    /// # Errors
+    /// - `302`: User was logged out successfully.
+    /// - `401`: Authentication token provided was empty or not in the correct JWT format.
+    /// - `500`: Client failed to log out.
     pub async fn log_out_complete(&self) -> Result<(), NifiError> {
         self.client.get_void("/access/logout/complete").await
     }

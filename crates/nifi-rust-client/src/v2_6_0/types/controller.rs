@@ -9,7 +9,8 @@ use serde::{Deserialize, Serialize};
 #[serde(rename_all = "camelCase")]
 pub struct BulletinEntity {
     pub bulletin: Option<BulletinDto>,
-    /// Indicates whether the user can read a given resource.
+    /// Indicates whether the user can read a given resource. Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub can_read: Option<bool>,
     pub group_id: Option<String>,
     pub id: Option<i64>,
@@ -166,30 +167,42 @@ pub struct NarSummaryEntity {
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct NodeDto {
-    /// The active threads for the NiFi on the node.
+    /// The active threads for the NiFi on the node. Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub active_thread_count: Option<i32>,
-    /// The node's host/ip address.
+    /// The node's host/ip address. Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub address: Option<String>,
-    /// The port the node is listening for API requests.
+    /// The port the node is listening for API requests. Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub api_port: Option<i32>,
-    /// The total size of all FlowFiles that are queued up on the node
+    /// The total size of all FlowFiles that are queued up on the node Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub bytes_queued: Option<i64>,
-    /// The time of the node's last connection request.
+    /// The time of the node's last connection request. Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub connection_requested: Option<String>,
-    /// The node's events.
+    /// The node's events. Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub events: Option<Vec<NodeEventDto>>,
     pub flow_file_bytes: Option<i64>,
-    /// The number of FlowFiles that are queued up on the node
+    /// The number of FlowFiles that are queued up on the node Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub flow_files_queued: Option<i32>,
-    /// the time of the nodes's last heartbeat.
+    /// the time of the nodes's last heartbeat. Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub heartbeat: Option<String>,
-    /// The id of the node.
+    /// The id of the node. Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub node_id: Option<String>,
-    /// The time at which this Node was last refreshed.
+    /// The time at which this Node was last refreshed. Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub node_start_time: Option<String>,
-    /// The queue the NiFi on the node.
+    /// The queue the NiFi on the node. Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub queued: Option<String>,
-    /// The roles of this node.
+    /// The roles of this node. Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub roles: Option<Vec<String>>,
     /// The node's status.
     pub status: Option<String>,

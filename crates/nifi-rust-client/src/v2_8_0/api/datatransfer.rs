@@ -38,6 +38,17 @@ impl<'a> DataTransferTransactionsApi<'a> {
     /// # Parameters
     /// - `transaction_id`: The transaction id.
     /// - `response_code`: The response code. Available values are BAD_CHECKSUM(19), CONFIRM_TRANSACTION(12) or CANCEL_TRANSACTION(15).
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    /// - `503`: NiFi instance is not ready for serving request, or temporarily overloaded. Retrying the same request later may be successful
+    ///
+    /// # Permissions
+    /// Requires `Write - /data-transfer/input-ports/{uuid}`.
     pub async fn commit_input_port_transaction(
         &self,
         transaction_id: &str,
@@ -56,6 +67,16 @@ impl<'a> DataTransferTransactionsApi<'a> {
     /// Extend transaction TTL
     ///
     /// Calls `PUT /nifi-api/data-transfer/input-ports/{portId}/transactions/{transactionId}`.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Write - /data-transfer/input-ports/{uuid}`.
     pub async fn extend_input_port_transaction_t_t_l(
         &self,
         transaction_id: &str,
@@ -70,6 +91,17 @@ impl<'a> DataTransferTransactionsApi<'a> {
     /// Transfer flow files to the input port
     ///
     /// Calls `POST /nifi-api/data-transfer/input-ports/{portId}/transactions/{transactionId}/flow-files`.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    /// - `503`: NiFi instance is not ready for serving request, or temporarily overloaded. Retrying the same request later may be successful
+    ///
+    /// # Permissions
+    /// Requires `Write - /data-transfer/input-ports/{uuid}`.
     pub async fn receive_flow_files(
         &self,
         transaction_id: &str,
@@ -95,6 +127,17 @@ impl<'a> DataTransferTransactionsApi<'a> {
     /// - `transaction_id`: The transaction id.
     /// - `response_code`: The response code. Available values are CONFIRM_TRANSACTION(12) or CANCEL_TRANSACTION(15).
     /// - `checksum`: A checksum calculated at client side using CRC32 to check flow file content integrity. It must match with the value calculated at server side.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    /// - `503`: NiFi instance is not ready for serving request, or temporarily overloaded. Retrying the same request later may be successful
+    ///
+    /// # Permissions
+    /// Requires `Write - /data-transfer/output-ports/{uuid}`.
     pub async fn commit_output_port_transaction(
         &self,
         transaction_id: &str,
@@ -115,6 +158,17 @@ impl<'a> DataTransferTransactionsApi<'a> {
     /// Extend transaction TTL
     ///
     /// Calls `PUT /nifi-api/data-transfer/output-ports/{portId}/transactions/{transactionId}`.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    /// - `503`: NiFi instance is not ready for serving request, or temporarily overloaded. Retrying the same request later may be successful
+    ///
+    /// # Permissions
+    /// Requires `Write - /data-transfer/output-ports/{uuid}`.
     pub async fn extend_output_port_transaction_t_t_l(
         &self,
         transaction_id: &str,
@@ -129,6 +183,17 @@ impl<'a> DataTransferTransactionsApi<'a> {
     /// Transfer flow files from the output port
     ///
     /// Calls `GET /nifi-api/data-transfer/output-ports/{portId}/transactions/{transactionId}/flow-files`.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    /// - `503`: NiFi instance is not ready for serving request, or temporarily overloaded. Retrying the same request later may be successful
+    ///
+    /// # Permissions
+    /// Requires `Write - /data-transfer/output-ports/{uuid}`.
     pub async fn transfer_flow_files(&self, transaction_id: &str) -> Result<(), NifiError> {
         let port_id = self.port_id;
         self.client
@@ -143,6 +208,17 @@ impl<'a> DataTransferTransactionsApi<'a> {
     ///
     /// # Parameters
     /// - `port_type`: The port type.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    /// - `503`: NiFi instance is not ready for serving request, or temporarily overloaded. Retrying the same request later may be successful
+    ///
+    /// # Permissions
+    /// Requires `Write - /data-transfer/{component-type}/{uuid}`.
     pub async fn create_port_transaction(
         &self,
         port_type: &str,

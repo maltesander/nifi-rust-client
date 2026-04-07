@@ -19,6 +19,16 @@ impl<'a> ProvenanceApi<'a> {
     ///
     /// # Parameters
     /// - `body`: The provenance query details.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// - `Read - /provenance`
+    /// - `Read - /data/{component-type}/{uuid}`
     pub async fn submit_provenance_request(
         &self,
         body: &crate::v2_8_0::types::ProvenanceEntity,
@@ -35,6 +45,17 @@ impl<'a> ProvenanceApi<'a> {
     ///
     /// # Parameters
     /// - `body`: The lineage query details.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// - `Read - /provenance`
+    /// - `Read - /data/{component-type}/{uuid}`
     pub async fn submit_lineage_request(
         &self,
         body: &crate::v2_8_0::types::LineageEntity,
@@ -50,6 +71,16 @@ impl<'a> ProvenanceApi<'a> {
     /// # Parameters
     /// - `id`: The id of the lineage query.
     /// - `cluster_node_id`: The id of the node where this query exists if clustered.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /provenance`.
     pub async fn delete_lineage(
         &self,
         id: &str,
@@ -72,6 +103,17 @@ impl<'a> ProvenanceApi<'a> {
     /// # Parameters
     /// - `id`: The id of the lineage query.
     /// - `cluster_node_id`: The id of the node where this query exists if clustered.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// - `Read - /provenance`
+    /// - `Read - /data/{component-type}/{uuid}`
     pub async fn get_lineage(
         &self,
         id: &str,
@@ -90,6 +132,15 @@ impl<'a> ProvenanceApi<'a> {
     /// Gets the searchable attributes for provenance events
     ///
     /// Calls `GET /nifi-api/provenance/search-options`.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /provenance`.
     pub async fn get_search_options(
         &self,
     ) -> Result<crate::v2_8_0::types::ProvenanceOptionsDto, NifiError> {
@@ -104,6 +155,16 @@ impl<'a> ProvenanceApi<'a> {
     /// # Parameters
     /// - `id`: The id of the provenance query.
     /// - `cluster_node_id`: The id of the node where this query exists if clustered.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /provenance`.
     pub async fn delete_provenance(
         &self,
         id: &str,
@@ -128,6 +189,17 @@ impl<'a> ProvenanceApi<'a> {
     /// - `cluster_node_id`: The id of the node where this query exists if clustered.
     /// - `summarize`: Whether or not incremental results are returned. If false, provenance events are only returned once the query completes. This property is true by default.
     /// - `incremental_results`: Whether or not to summarize provenance events returned. This property is false by default.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// - `Read - /provenance`
+    /// - `Read - /data/{component-type}/{uuid}`
     pub async fn get_provenance(
         &self,
         id: &str,

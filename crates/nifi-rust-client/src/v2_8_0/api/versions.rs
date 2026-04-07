@@ -19,6 +19,16 @@ impl<'a> VersionsApi<'a> {
     ///
     /// # Parameters
     /// - `body`: The versioned flow details.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Write - /process-groups/{uuid}`.
     pub async fn create_version_control_request(
         &self,
         body: &crate::v2_8_0::types::CreateActiveRequestEntity,
@@ -36,6 +46,16 @@ impl<'a> VersionsApi<'a> {
     /// # Parameters
     /// - `id`: The request ID.
     /// - `disconnected_node_acknowledged`: Acknowledges that this node is disconnected to allow for mutable requests to proceed.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Only the user that submitted the request can remove it`.
     pub async fn delete_version_control_request(
         &self,
         id: &str,
@@ -58,6 +78,16 @@ impl<'a> VersionsApi<'a> {
     /// # Parameters
     /// - `id`: The request ID.
     /// - `body`: The version control component mapping.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Only the user that submitted the request can update it`.
     pub async fn update_version_control_request(
         &self,
         id: &str,
@@ -78,6 +108,17 @@ impl<'a> VersionsApi<'a> {
     /// - `version`: The version is used to verify the client is working with the latest version of the flow.
     /// - `client_id`: If the client id is not specified, a new one will be generated. This value (whether specified or generated) is included in the response.
     /// - `disconnected_node_acknowledged`: Acknowledges that this node is disconnected to allow for mutable requests to proceed.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// - `Read - /process-groups/{uuid}`
+    /// - `Write - /process-groups/{uuid}`
     pub async fn stop_version_control(
         &self,
         id: &str,
@@ -107,6 +148,16 @@ impl<'a> VersionsApi<'a> {
     ///
     /// # Parameters
     /// - `id`: The process group id.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /process-groups/{uuid}`.
     pub async fn get_version_information(
         &self,
         id: &str,
@@ -124,6 +175,19 @@ impl<'a> VersionsApi<'a> {
     /// # Parameters
     /// - `id`: The process group id.
     /// - `body`: The versioned flow details.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// - `Read - /process-groups/{uuid}`
+    /// - `Write - /process-groups/{uuid}`
+    /// - `Read - /{component-type}/{uuid} - For all encapsulated components`
+    /// - `Read - any referenced Controller Services by any encapsulated components - /controller-services/{uuid}`
     pub async fn save_to_flow_registry(
         &self,
         id: &str,
@@ -142,6 +206,17 @@ impl<'a> VersionsApi<'a> {
     /// # Parameters
     /// - `id`: The process group id.
     /// - `body`: The controller service configuration details.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// - `Read - /process-groups/{uuid}`
+    /// - `Write - /process-groups/{uuid}`
     pub async fn update_flow_version(
         &self,
         id: &str,
@@ -160,6 +235,21 @@ impl<'a> VersionsApi<'a> {
     /// # Parameters
     /// - `id`: The process group id.
     /// - `body`: The Version Control Information to revert to.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// - `Read - /process-groups/{uuid}`
+    /// - `Write - /process-groups/{uuid}`
+    /// - `Read - /{component-type}/{uuid} - For all encapsulated components`
+    /// - `Write - /{component-type}/{uuid} - For all encapsulated components`
+    /// - `Write - if the template contains any restricted components - /restricted-components`
+    /// - `Read - /parameter-contexts/{uuid} - For any Parameter Context that is referenced by a Property that is changed, added, or removed`
     pub async fn initiate_revert_flow_version(
         &self,
         id: &str,
@@ -181,6 +271,16 @@ impl<'a> VersionsApi<'a> {
     /// # Parameters
     /// - `id`: The ID of the Revert Request
     /// - `disconnected_node_acknowledged`: Acknowledges that this node is disconnected to allow for mutable requests to proceed.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Only the user that submitted the request can remove it`.
     pub async fn delete_revert_request(
         &self,
         id: &str,
@@ -202,6 +302,16 @@ impl<'a> VersionsApi<'a> {
     ///
     /// # Parameters
     /// - `id`: The ID of the Revert Request
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Only the user that submitted the request can get it`.
     pub async fn get_revert_request(
         &self,
         id: &str,
@@ -219,6 +329,21 @@ impl<'a> VersionsApi<'a> {
     /// # Parameters
     /// - `id`: The process group id.
     /// - `body`: The controller service configuration details.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// - `Read - /process-groups/{uuid}`
+    /// - `Write - /process-groups/{uuid}`
+    /// - `Read - /{component-type}/{uuid} - For all encapsulated components`
+    /// - `Write - /{component-type}/{uuid} - For all encapsulated components`
+    /// - `Write - if the template contains any restricted components - /restricted-components`
+    /// - `Read - /parameter-contexts/{uuid} - For any Parameter Context that is referenced by a Property that is changed, added, or removed`
     pub async fn initiate_version_control_update(
         &self,
         id: &str,
@@ -240,6 +365,16 @@ impl<'a> VersionsApi<'a> {
     /// # Parameters
     /// - `id`: The ID of the Update Request
     /// - `disconnected_node_acknowledged`: Acknowledges that this node is disconnected to allow for mutable requests to proceed.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Only the user that submitted the request can remove it`.
     pub async fn delete_update_request_1(
         &self,
         id: &str,
@@ -261,6 +396,16 @@ impl<'a> VersionsApi<'a> {
     ///
     /// # Parameters
     /// - `id`: The ID of the Update Request
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Only the user that submitted the request can get it`.
     pub async fn get_update_request(
         &self,
         id: &str,
@@ -292,6 +437,16 @@ impl<'a> VersionsDownloadApi<'a> {
     /// Gets the latest version of a Process Group for download
     ///
     /// Calls `GET /nifi-api/versions/process-groups/{id}/download`.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /process-groups/{uuid}`.
     pub async fn export_flow_version(&self) -> Result<(), NifiError> {
         let id = self.id;
         self.client

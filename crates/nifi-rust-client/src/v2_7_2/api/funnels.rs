@@ -20,6 +20,17 @@ impl<'a> FunnelsApi<'a> {
     /// - `version`: The revision is used to verify the client is working with the latest version of the flow.
     /// - `client_id`: If the client id is not specified, new one will be generated. This value (whether specified or generated) is included in the response.
     /// - `disconnected_node_acknowledged`: Acknowledges that this node is disconnected to allow for mutable requests to proceed.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// - `Write - /funnels/{uuid}`
+    /// - `Write - Parent Process Group - /process-groups/{uuid}`
     pub async fn remove_funnel(
         &self,
         id: &str,
@@ -47,6 +58,16 @@ impl<'a> FunnelsApi<'a> {
     ///
     /// # Parameters
     /// - `id`: The funnel id.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /funnels/{uuid}`.
     pub async fn get_funnel(
         &self,
         id: &str,
@@ -60,6 +81,16 @@ impl<'a> FunnelsApi<'a> {
     /// # Parameters
     /// - `id`: The funnel id.
     /// - `body`: The funnel configuration details.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Write - /funnels/{uuid}`.
     pub async fn update_funnel(
         &self,
         id: &str,

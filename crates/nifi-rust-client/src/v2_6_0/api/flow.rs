@@ -14,6 +14,15 @@ impl<'a> FlowApi<'a> {
     /// Retrieves details about this NiFi to put in the About dialog
     ///
     /// Calls `GET /nifi-api/flow/about`.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /flow`.
     pub async fn get_about_info(&self) -> Result<crate::v2_6_0::types::AboutDto, NifiError> {
         let e: crate::v2_6_0::types::AboutEntity = self.client.get("/flow/about").await?;
         Ok(e.about)
@@ -29,6 +38,15 @@ impl<'a> FlowApi<'a> {
     /// - `artifact`: The bundle artifact
     /// - `version`: The bundle version
     /// - `type`: The processor type
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The additional details for the coordinates could not be located.
+    ///
+    /// # Permissions
+    /// Requires `Read - /flow`.
     pub async fn get_additional_details(
         &self,
         group: &str,
@@ -45,6 +63,15 @@ impl<'a> FlowApi<'a> {
     /// Retrieves the banners for this NiFi
     ///
     /// Calls `GET /nifi-api/flow/banners`.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /flow`.
     pub async fn get_banners(&self) -> Result<crate::v2_6_0::types::BannerDto, NifiError> {
         let e: crate::v2_6_0::types::BannerEntity = self.client.get("/flow/banners").await?;
         Ok(e.banners)
@@ -60,6 +87,16 @@ impl<'a> FlowApi<'a> {
     /// - `source_id`: Includes bulletins originating from this sources whose id match this regular expression.
     /// - `group_id`: Includes bulletins originating from this sources whose group id match this regular expression.
     /// - `limit`: The number of bulletins to limit the response to.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// - `Read - /flow`
+    /// - `Read - /{component-type}/{uuid} - For component specific bulletins`
     pub async fn get_bulletin_board(
         &self,
         after: Option<&str>,
@@ -97,6 +134,15 @@ impl<'a> FlowApi<'a> {
     /// Generates a client id.
     ///
     /// Calls `GET /nifi-api/flow/client-id`.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /flow`.
     pub async fn generate_client_id(&self) -> Result<(), NifiError> {
         self.client.get_void("/flow/client-id").await
     }
@@ -108,6 +154,16 @@ impl<'a> FlowApi<'a> {
     ///
     /// # Parameters
     /// - `q`: Node address to search for.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /flow`.
     pub async fn search_cluster(
         &self,
         q: &str,
@@ -121,6 +177,15 @@ impl<'a> FlowApi<'a> {
     /// The cluster summary for this NiFi
     ///
     /// Calls `GET /nifi-api/flow/cluster/summary`.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /flow`.
     pub async fn get_cluster_summary(
         &self,
     ) -> Result<crate::v2_6_0::types::ClusterSummaryDto, NifiError> {
@@ -131,6 +196,15 @@ impl<'a> FlowApi<'a> {
     /// Retrieves the configuration for this NiFi flow
     ///
     /// Calls `GET /nifi-api/flow/config`.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /flow`.
     pub async fn get_flow_config(
         &self,
     ) -> Result<crate::v2_6_0::types::FlowConfigurationDto, NifiError> {
@@ -141,6 +215,15 @@ impl<'a> FlowApi<'a> {
     /// Retrieves the registered content viewers
     ///
     /// Calls `GET /nifi-api/flow/content-viewers`.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /flow`.
     pub async fn get_content_viewers(
         &self,
     ) -> Result<crate::v2_6_0::types::ContentViewerEntity, NifiError> {
@@ -157,6 +240,15 @@ impl<'a> FlowApi<'a> {
     /// - `artifact`: The bundle artifact
     /// - `version`: The bundle version
     /// - `type`: The controller service type
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The controller service definition for the coordinates could not be located.
+    ///
+    /// # Permissions
+    /// Requires `Read - /flow`.
     pub async fn get_controller_service_definition(
         &self,
         group: &str,
@@ -184,6 +276,15 @@ impl<'a> FlowApi<'a> {
     /// - `bundle_group_filter`: If specified, will only return types that are a member of this bundle group.
     /// - `bundle_artifact_filter`: If specified, will only return types that are a member of this bundle artifact.
     /// - `type_filter`: If specified, will only return types whose fully qualified classname matches.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /flow`.
     pub async fn get_controller_service_types(
         &self,
         service_type: Option<&str>,
@@ -223,6 +324,19 @@ impl<'a> FlowApi<'a> {
     /// Retrieves Controller level bulletins
     ///
     /// Calls `GET /nifi-api/flow/controller/bulletins`.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// - `Read - /flow`
+    /// - `Read - /controller - For controller bulletins`
+    /// - `Read - /controller-services/{uuid} - For controller service bulletins`
+    /// - `Read - /reporting-tasks/{uuid} - For reporting task bulletins`
     pub async fn get_bulletins(
         &self,
     ) -> Result<crate::v2_6_0::types::ControllerBulletinsEntity, NifiError> {
@@ -236,6 +350,15 @@ impl<'a> FlowApi<'a> {
     ///
     /// # Parameters
     /// - `include_referencing_components`: Whether or not to include services' referencing components in the response
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /flow`.
     pub async fn get_controller_services_from_controller(
         &self,
         ui_only: Option<bool>,
@@ -255,6 +378,9 @@ impl<'a> FlowApi<'a> {
     /// Retrieves the user identity of the user making the request
     ///
     /// Calls `GET /nifi-api/flow/current-user`.
+    ///
+    /// # Permissions
+    /// Requires `Read - /flow`.
     pub async fn get_current_user(
         &self,
     ) -> Result<crate::v2_6_0::types::CurrentUserEntity, NifiError> {
@@ -271,6 +397,15 @@ impl<'a> FlowApi<'a> {
     /// - `artifact`: The bundle artifact
     /// - `version`: The bundle version
     /// - `type`: The flow analysis rule type
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The flow analysis rule definition for the coordinates could not be located.
+    ///
+    /// # Permissions
+    /// Requires `Read - /flow`.
     pub async fn get_flow_analysis_rule_definition(
         &self,
         group: &str,
@@ -294,6 +429,15 @@ impl<'a> FlowApi<'a> {
     /// - `bundle_group_filter`: If specified, will only return types that are a member of this bundle group.
     /// - `bundle_artifact_filter`: If specified, will only return types that are a member of this bundle artifact.
     /// - `type`: If specified, will only return types whose fully qualified classname matches.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /flow`.
     pub async fn get_flow_analysis_rule_types(
         &self,
         bundle_group_filter: Option<&str>,
@@ -317,6 +461,16 @@ impl<'a> FlowApi<'a> {
     /// Returns all flow analysis results currently in effect
     ///
     /// Calls `GET /nifi-api/flow/flow-analysis/results`.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /flow`.
     pub async fn get_all_flow_analysis_results(
         &self,
     ) -> Result<crate::v2_6_0::types::FlowAnalysisResultEntity, NifiError> {
@@ -328,6 +482,16 @@ impl<'a> FlowApi<'a> {
     ///
     /// # Parameters
     /// - `process_group_id`: The id of the process group representing (a part of) the flow to be analyzed.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /flow`.
     pub async fn get_flow_analysis_results(
         &self,
         process_group_id: &str,
@@ -351,6 +515,15 @@ impl<'a> FlowApi<'a> {
     /// - `end_date`: Include actions before this date.
     /// - `user_identity`: Include actions performed by this user.
     /// - `source_id`: Include actions on this component.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /flow`.
     pub async fn query_history(
         &self,
         offset: &str,
@@ -395,6 +568,17 @@ impl<'a> FlowApi<'a> {
     ///
     /// # Parameters
     /// - `component_id`: The component id.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// - `Read - /flow`
+    /// - `Read underlying component - /{component-type}/{uuid}`
     pub async fn get_component_history(
         &self,
         component_id: &str,
@@ -413,6 +597,16 @@ impl<'a> FlowApi<'a> {
     ///
     /// # Parameters
     /// - `id`: The action id.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /flow`.
     pub async fn get_action(
         &self,
         id: &str,
@@ -429,6 +623,16 @@ impl<'a> FlowApi<'a> {
     /// - `sample_name`: Regular Expression Pattern to be applied against the sample name field
     /// - `sample_label_value`: Regular Expression Pattern to be applied against the sample label value field
     /// - `root_field_name`: Name of the first field of JSON object. Applicable for JSON producer only.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /flow`.
     pub async fn get_flow_metrics(
         &self,
         producer: &str,
@@ -457,6 +661,15 @@ impl<'a> FlowApi<'a> {
     /// Gets all Parameter Contexts
     ///
     /// Calls `GET /nifi-api/flow/parameter-contexts`.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /parameter-contexts/{id} for each Parameter Context`.
     pub async fn get_parameter_contexts(
         &self,
     ) -> Result<crate::v2_6_0::types::ParameterContextsEntity, NifiError> {
@@ -473,6 +686,15 @@ impl<'a> FlowApi<'a> {
     /// - `artifact`: The bundle artifact
     /// - `version`: The bundle version
     /// - `type`: The parameter provider type
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The reporting task definition for the coordinates could not be located.
+    ///
+    /// # Permissions
+    /// Requires `Read - /flow`.
     pub async fn get_parameter_provider_definition(
         &self,
         group: &str,
@@ -496,6 +718,15 @@ impl<'a> FlowApi<'a> {
     /// - `bundle_group_filter`: If specified, will only return types that are a member of this bundle group.
     /// - `bundle_artifact_filter`: If specified, will only return types that are a member of this bundle artifact.
     /// - `type`: If specified, will only return types whose fully qualified classname matches.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /flow`.
     pub async fn get_parameter_provider_types(
         &self,
         bundle_group_filter: Option<&str>,
@@ -519,6 +750,15 @@ impl<'a> FlowApi<'a> {
     /// Gets all parameter providers
     ///
     /// Calls `GET /nifi-api/flow/parameter-providers`.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /flow`.
     pub async fn get_parameter_providers(
         &self,
     ) -> Result<crate::v2_6_0::types::ParameterProvidersEntity, NifiError> {
@@ -529,6 +769,15 @@ impl<'a> FlowApi<'a> {
     /// Note: This endpoint is subject to change as NiFi and it's REST API evolve.
     ///
     /// Calls `GET /nifi-api/flow/prioritizers`.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /flow`.
     pub async fn get_prioritizers(
         &self,
     ) -> Result<crate::v2_6_0::types::PrioritizerTypesEntity, NifiError> {
@@ -542,6 +791,16 @@ impl<'a> FlowApi<'a> {
     ///
     /// # Parameters
     /// - `id`: The process group id.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /flow`.
     pub async fn get_flow(
         &self,
         id: &str,
@@ -562,6 +821,17 @@ impl<'a> FlowApi<'a> {
     /// # Parameters
     /// - `id`: The process group id.
     /// - `body`: The request to schedule or unschedule. If the components in the request are not specified, all authorized components will be considered.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// - `Read - /flow`
+    /// - `Write - /{component-type}/{uuid} or /operation/{component-type}/{uuid} - For every component being scheduled/unscheduled`
     pub async fn schedule_components(
         &self,
         id: &str,
@@ -582,6 +852,15 @@ impl<'a> FlowApi<'a> {
     /// - `artifact`: The bundle artifact
     /// - `version`: The bundle version
     /// - `type`: The processor type
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The processor definition for the coordinates could not be located.
+    ///
+    /// # Permissions
+    /// Requires `Read - /flow`.
     pub async fn get_processor_definition(
         &self,
         group: &str,
@@ -605,6 +884,15 @@ impl<'a> FlowApi<'a> {
     /// - `bundle_group_filter`: If specified, will only return types that are a member of this bundle group.
     /// - `bundle_artifact_filter`: If specified, will only return types that are a member of this bundle artifact.
     /// - `type`: If specified, will only return types whose fully qualified classname matches.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /flow`.
     pub async fn get_processor_types(
         &self,
         bundle_group_filter: Option<&str>,
@@ -628,6 +916,16 @@ impl<'a> FlowApi<'a> {
     /// Gets the listing of available flow registry clients
     ///
     /// Calls `GET /nifi-api/flow/registries`.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /flow`.
     pub async fn get_registry_clients(
         &self,
     ) -> Result<crate::v2_6_0::types::FlowRegistryClientsEntity, NifiError> {
@@ -644,6 +942,15 @@ impl<'a> FlowApi<'a> {
     /// - `artifact`: The bundle artifact
     /// - `version`: The bundle version
     /// - `type`: The reporting task type
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The reporting task definition for the coordinates could not be located.
+    ///
+    /// # Permissions
+    /// Requires `Read - /flow`.
     pub async fn get_reporting_task_definition(
         &self,
         group: &str,
@@ -667,6 +974,15 @@ impl<'a> FlowApi<'a> {
     /// - `bundle_group_filter`: If specified, will only return types that are a member of this bundle group.
     /// - `bundle_artifact_filter`: If specified, will only return types that are a member of this bundle artifact.
     /// - `type`: If specified, will only return types whose fully qualified classname matches.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /flow`.
     pub async fn get_reporting_task_types(
         &self,
         bundle_group_filter: Option<&str>,
@@ -690,6 +1006,15 @@ impl<'a> FlowApi<'a> {
     /// Gets all reporting tasks
     ///
     /// Calls `GET /nifi-api/flow/reporting-tasks`.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /flow`.
     pub async fn get_reporting_tasks(
         &self,
     ) -> Result<crate::v2_6_0::types::ReportingTasksEntity, NifiError> {
@@ -701,6 +1026,14 @@ impl<'a> FlowApi<'a> {
     ///
     /// # Parameters
     /// - `reporting_task_id`: Specifies a reporting task id to export. If not specified, all reporting tasks will be exported.
+    ///
+    /// # Errors
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /flow`.
     pub async fn download_reporting_task_snapshot(
         &self,
         reporting_task_id: Option<&str>,
@@ -719,6 +1052,14 @@ impl<'a> FlowApi<'a> {
     ///
     /// # Parameters
     /// - `reporting_task_id`: Specifies a reporting task id to export. If not specified, all reporting tasks will be exported.
+    ///
+    /// # Errors
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /flow`.
     pub async fn get_reporting_task_snapshot(
         &self,
         reporting_task_id: Option<&str>,
@@ -736,6 +1077,15 @@ impl<'a> FlowApi<'a> {
     /// Note: This endpoint is subject to change as NiFi and it's REST API evolve.
     ///
     /// Calls `GET /nifi-api/flow/runtime-manifest`.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /flow`.
     pub async fn get_runtime_manifest(
         &self,
     ) -> Result<crate::v2_6_0::types::RuntimeManifest, NifiError> {
@@ -748,6 +1098,15 @@ impl<'a> FlowApi<'a> {
     /// Only search results from authorized components will be returned.
     ///
     /// Calls `GET /nifi-api/flow/search-results`.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /flow`.
     pub async fn search_flow(
         &self,
         q: Option<&str>,
@@ -769,6 +1128,15 @@ impl<'a> FlowApi<'a> {
     /// Gets the current status of this NiFi
     ///
     /// Calls `GET /nifi-api/flow/status`.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /flow`.
     pub async fn get_controller_status(
         &self,
     ) -> Result<crate::v2_6_0::types::ControllerStatusDto, NifiError> {
@@ -844,6 +1212,16 @@ impl<'a> FlowBranchesApi<'a> {
     /// Gets the branches from the specified registry for the current user
     ///
     /// Calls `GET /nifi-api/flow/registries/{id}/branches`.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /flow`.
     pub async fn get_branches(
         &self,
     ) -> Result<crate::v2_6_0::types::FlowRegistryBranchesEntity, NifiError> {
@@ -868,6 +1246,16 @@ impl<'a> FlowBranchesApi<'a> {
     /// - `version_b`: The compared version.
     /// - `offset`: Must be a non-negative number. Specifies the starting point of the listing. 0 means start from the beginning.
     /// - `limit`: Limits the number of differences listed. This might lead to partial result. 0 means no limitation is applied.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /flow`.
     pub async fn get_version_differences(
         &self,
         registry_id: &str,
@@ -912,6 +1300,16 @@ impl<'a> FlowBreadcrumbsApi<'a> {
     /// Gets the breadcrumbs for a process group
     ///
     /// Calls `GET /nifi-api/flow/process-groups/{id}/breadcrumbs`.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /flow`.
     pub async fn get_breadcrumbs(
         &self,
     ) -> Result<crate::v2_6_0::types::FlowBreadcrumbEntity, NifiError> {
@@ -937,6 +1335,16 @@ impl<'a> FlowBucketsApi<'a> {
     ///
     /// # Parameters
     /// - `branch`: The name of a branch to get the buckets from. If not specified the default branch of the registry client will be used.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /flow`.
     pub async fn get_buckets(
         &self,
         branch: Option<&str>,
@@ -958,6 +1366,16 @@ impl<'a> FlowBucketsApi<'a> {
     /// - `registry_id`: The registry client id.
     /// - `bucket_id`: The bucket id.
     /// - `branch`: The name of a branch to get the flows from. If not specified the default branch of the registry client will be used.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /flow`.
     pub async fn get_flows(
         &self,
         registry_id: &str,
@@ -984,6 +1402,16 @@ impl<'a> FlowBucketsApi<'a> {
     /// - `bucket_id`: The bucket id.
     /// - `flow_id`: The flow id.
     /// - `branch`: The name of a branch to get the flow from. If not specified the default branch of the registry client will be used.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /flow`.
     pub async fn get_details(
         &self,
         registry_id: &str,
@@ -1015,6 +1443,16 @@ impl<'a> FlowBucketsApi<'a> {
     /// - `bucket_id`: The bucket id.
     /// - `flow_id`: The flow id.
     /// - `branch`: The name of a branch to get the flow versions from. If not specified the default branch of the registry client will be used.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /flow`.
     pub async fn get_versions(
         &self,
         registry_id: &str,
@@ -1056,6 +1494,15 @@ impl<'a> FlowControllerServicesApi<'a> {
     /// - `include_ancestor_groups`: Whether or not to include parent/ancestor process groups
     /// - `include_descendant_groups`: Whether or not to include descendant process groups
     /// - `include_referencing_components`: Whether or not to include services' referencing components in the response
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /flow`.
     pub async fn get_controller_services_from_group(
         &self,
         include_ancestor_groups: Option<bool>,
@@ -1090,6 +1537,17 @@ impl<'a> FlowControllerServicesApi<'a> {
     ///
     /// # Parameters
     /// - `body`: The request to schedule or unschedule. If the comopnents in the request are not specified, all authorized components will be considered.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// - `Read - /flow`
+    /// - `Write - /{component-type}/{uuid} or /operation/{component-type}/{uuid} - For every service being enabled/disabled`
     pub async fn activate_controller_services(
         &self,
         body: &crate::v2_6_0::types::ActivateControllerServicesEntity,
@@ -1120,6 +1578,16 @@ impl<'a> FlowStatisticsApi<'a> {
     /// # Parameters
     /// - `nodewise`: Whether or not to include the breakdown per node. Optional, defaults to false
     /// - `cluster_node_id`: The id of the node where to get the statistics.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /flow`.
     pub async fn get_connection_statistics(
         &self,
         nodewise: Option<bool>,
@@ -1155,6 +1623,16 @@ impl<'a> FlowStatusApi<'a> {
     /// # Parameters
     /// - `nodewise`: Whether or not to include the breakdown per node. Optional, defaults to false
     /// - `cluster_node_id`: The id of the node where to get the status.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /flow`.
     pub async fn get_connection_status(
         &self,
         nodewise: Option<bool>,
@@ -1175,6 +1653,16 @@ impl<'a> FlowStatusApi<'a> {
     /// Gets the status history for a connection
     ///
     /// Calls `GET /nifi-api/flow/connections/{id}/status/history`.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /flow`.
     pub async fn get_connection_status_history(
         &self,
     ) -> Result<crate::v2_6_0::types::StatusHistoryEntity, NifiError> {
@@ -1190,6 +1678,16 @@ impl<'a> FlowStatusApi<'a> {
     /// # Parameters
     /// - `nodewise`: Whether or not to include the breakdown per node. Optional, defaults to false
     /// - `cluster_node_id`: The id of the node where to get the status.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /flow`.
     pub async fn get_input_port_status(
         &self,
         nodewise: Option<bool>,
@@ -1214,6 +1712,16 @@ impl<'a> FlowStatusApi<'a> {
     /// # Parameters
     /// - `nodewise`: Whether or not to include the breakdown per node. Optional, defaults to false
     /// - `cluster_node_id`: The id of the node where to get the status.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /flow`.
     pub async fn get_output_port_status(
         &self,
         nodewise: Option<bool>,
@@ -1241,6 +1749,16 @@ impl<'a> FlowStatusApi<'a> {
     /// - `recursive`: Whether all descendant groups and the status of their content will be included. Optional, defaults to false
     /// - `nodewise`: Whether or not to include the breakdown per node. Optional, defaults to false
     /// - `cluster_node_id`: The id of the node where to get the status.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /flow`.
     pub async fn get_process_group_status(
         &self,
         recursive: Option<bool>,
@@ -1265,6 +1783,16 @@ impl<'a> FlowStatusApi<'a> {
     /// Gets status history for a remote process group
     ///
     /// Calls `GET /nifi-api/flow/process-groups/{id}/status/history`.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /flow`.
     pub async fn get_process_group_status_history(
         &self,
     ) -> Result<crate::v2_6_0::types::StatusHistoryEntity, NifiError> {
@@ -1280,6 +1808,16 @@ impl<'a> FlowStatusApi<'a> {
     /// # Parameters
     /// - `nodewise`: Whether or not to include the breakdown per node. Optional, defaults to false
     /// - `cluster_node_id`: The id of the node where to get the status.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /flow`.
     pub async fn get_processor_status(
         &self,
         nodewise: Option<bool>,
@@ -1300,6 +1838,16 @@ impl<'a> FlowStatusApi<'a> {
     /// Gets status history for a processor
     ///
     /// Calls `GET /nifi-api/flow/processors/{id}/status/history`.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /flow`.
     pub async fn get_processor_status_history(
         &self,
     ) -> Result<crate::v2_6_0::types::StatusHistoryEntity, NifiError> {
@@ -1315,6 +1863,16 @@ impl<'a> FlowStatusApi<'a> {
     /// # Parameters
     /// - `nodewise`: Whether or not to include the breakdown per node. Optional, defaults to false
     /// - `cluster_node_id`: The id of the node where to get the status.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /flow`.
     pub async fn get_remote_process_group_status(
         &self,
         nodewise: Option<bool>,
@@ -1335,6 +1893,16 @@ impl<'a> FlowStatusApi<'a> {
     /// Gets the status history
     ///
     /// Calls `GET /nifi-api/flow/remote-process-groups/{id}/status/history`.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /flow`.
     pub async fn get_remote_process_group_status_history(
         &self,
     ) -> Result<crate::v2_6_0::types::StatusHistoryEntity, NifiError> {

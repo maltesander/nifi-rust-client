@@ -20,6 +20,16 @@ impl<'a> ProcessGroupsApi<'a> {
     /// # Parameters
     /// - `id`: The ID of the Update Request
     /// - `disconnected_node_acknowledged`: Acknowledges that this node is disconnected to allow for mutable requests to proceed.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Only the user that submitted the request can remove it`.
     pub async fn delete_replace_process_group_request(
         &self,
         id: &str,
@@ -41,6 +51,16 @@ impl<'a> ProcessGroupsApi<'a> {
     ///
     /// # Parameters
     /// - `id`: The ID of the Replace Request
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Only the user that submitted the request can get it`.
     pub async fn get_replace_process_group_request(
         &self,
         id: &str,
@@ -58,6 +78,19 @@ impl<'a> ProcessGroupsApi<'a> {
     /// - `version`: The revision is used to verify the client is working with the latest version of the flow.
     /// - `client_id`: If the client id is not specified, new one will be generated. This value (whether specified or generated) is included in the response.
     /// - `disconnected_node_acknowledged`: Acknowledges that this node is disconnected to allow for mutable requests to proceed.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// - `Write - /process-groups/{uuid}`
+    /// - `Write - Parent Process Group - /process-groups/{uuid}`
+    /// - `Read - any referenced Controller Services by any encapsulated components - /controller-services/{uuid}`
+    /// - `Write - /{component-type}/{uuid} - For all encapsulated components`
     pub async fn remove_process_group(
         &self,
         id: &str,
@@ -85,6 +118,16 @@ impl<'a> ProcessGroupsApi<'a> {
     ///
     /// # Parameters
     /// - `id`: The process group id.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /process-groups/{uuid}`.
     pub async fn get_process_group(
         &self,
         id: &str,
@@ -98,6 +141,16 @@ impl<'a> ProcessGroupsApi<'a> {
     /// # Parameters
     /// - `id`: The process group id.
     /// - `body`: The process group configuration details.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Write - /process-groups/{uuid}`.
     pub async fn update_process_group(
         &self,
         id: &str,
@@ -286,6 +339,16 @@ impl<'a> ProcessGroupsConnectionsApi<'a> {
     /// Gets all connections
     ///
     /// Calls `GET /nifi-api/process-groups/{id}/connections`.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /process-groups/{uuid}`.
     pub async fn get_connections(
         &self,
     ) -> Result<crate::v2_8_0::types::ConnectionsEntity, NifiError> {
@@ -300,6 +363,18 @@ impl<'a> ProcessGroupsConnectionsApi<'a> {
     ///
     /// # Parameters
     /// - `body`: The connection configuration details.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// - `Write - /process-groups/{uuid}`
+    /// - `Write Source - /{component-type}/{uuid}`
+    /// - `Write Destination - /{component-type}/{uuid}`
     pub async fn create_connection(
         &self,
         body: &crate::v2_8_0::types::ConnectionEntity,
@@ -326,6 +401,17 @@ impl<'a> ProcessGroupsControllerServicesApi<'a> {
     ///
     /// # Parameters
     /// - `body`: The controller service configuration details.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// - `Write - /process-groups/{uuid}`
+    /// - `Read - any referenced Controller Services - /controller-services/{uuid}`
+    /// - `Write - if the Controller Service is restricted - /restricted-components`
     pub async fn create_controller_service_1(
         &self,
         body: &crate::v2_8_0::types::ControllerServiceEntity,
@@ -352,6 +438,16 @@ impl<'a> ProcessGroupsCopyApi<'a> {
     ///
     /// # Parameters
     /// - `body`: The request including the components to be copied from the specified Process Group.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /{component-type}/{uuid} - For all encapsulated components`.
     pub async fn copy(
         &self,
         body: &crate::v2_8_0::types::CopyRequestEntity,
@@ -378,6 +474,16 @@ impl<'a> ProcessGroupsDownloadApi<'a> {
     ///
     /// # Parameters
     /// - `include_referenced_services`: If referenced services from outside the target group should be included
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /process-groups/{uuid}`.
     pub async fn export_process_group(
         &self,
         include_referenced_services: Option<bool>,
@@ -405,6 +511,18 @@ impl<'a> ProcessGroupsEmptyAllConnectionsRequestsApi<'a> {
     /// Creates a request to drop all flowfiles of all connection queues in this process group.
     ///
     /// Calls `POST /nifi-api/process-groups/{id}/empty-all-connections-requests`.
+    ///
+    /// # Errors
+    /// - `202`: The request has been accepted. An HTTP response header will contain the URI where the status can be polled.
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// - `Read - /process-groups/{uuid} - For this and all encapsulated process groups`
+    /// - `Write Source Data - /data/{component-type}/{uuid} - For all encapsulated connections`
     pub async fn create_empty_all_connections_request(&self) -> Result<(), NifiError> {
         let id = self.id;
         self.client
@@ -419,6 +537,17 @@ impl<'a> ProcessGroupsEmptyAllConnectionsRequestsApi<'a> {
     ///
     /// # Parameters
     /// - `drop_request_id`: The drop request id.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// - `Read - /process-groups/{uuid} - For this and all encapsulated process groups`
+    /// - `Write Source Data - /data/{component-type}/{uuid} - For all encapsulated connections`
     pub async fn remove_drop_request_1(
         &self,
         drop_request_id: &str,
@@ -438,6 +567,17 @@ impl<'a> ProcessGroupsEmptyAllConnectionsRequestsApi<'a> {
     ///
     /// # Parameters
     /// - `drop_request_id`: The drop request id.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// - `Read - /process-groups/{uuid} - For this and all encapsulated process groups`
+    /// - `Write Source Data - /data/{component-type}/{uuid} - For all encapsulated connections`
     pub async fn get_drop_all_flowfiles_request(
         &self,
         drop_request_id: &str,
@@ -470,6 +610,17 @@ impl<'a> ProcessGroupsFlowContentsApi<'a> {
     ///
     /// # Parameters
     /// - `body`: The process group replace request entity.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// - `Read - /process-groups/{uuid}`
+    /// - `Write - /process-groups/{uuid}`
     pub async fn replace_process_group(
         &self,
         body: &crate::v2_8_0::types::ProcessGroupImportEntity,
@@ -493,6 +644,16 @@ impl<'a> ProcessGroupsFunnelsApi<'a> {
     /// Gets all funnels
     ///
     /// Calls `GET /nifi-api/process-groups/{id}/funnels`.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /process-groups/{uuid}`.
     pub async fn get_funnels(&self) -> Result<crate::v2_8_0::types::FunnelsEntity, NifiError> {
         let id = self.id;
         self.client
@@ -505,6 +666,16 @@ impl<'a> ProcessGroupsFunnelsApi<'a> {
     ///
     /// # Parameters
     /// - `body`: The funnel configuration details.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Write - /process-groups/{uuid}`.
     pub async fn create_funnel(
         &self,
         body: &crate::v2_8_0::types::FunnelEntity,
@@ -528,6 +699,16 @@ impl<'a> ProcessGroupsInputPortsApi<'a> {
     /// Gets all input ports
     ///
     /// Calls `GET /nifi-api/process-groups/{id}/input-ports`.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /process-groups/{uuid}`.
     pub async fn get_input_ports(
         &self,
     ) -> Result<crate::v2_8_0::types::InputPortsEntity, NifiError> {
@@ -542,6 +723,16 @@ impl<'a> ProcessGroupsInputPortsApi<'a> {
     ///
     /// # Parameters
     /// - `body`: The input port configuration details.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Write - /process-groups/{uuid}`.
     pub async fn create_input_port(
         &self,
         body: &crate::v2_8_0::types::PortEntity,
@@ -565,6 +756,16 @@ impl<'a> ProcessGroupsLabelsApi<'a> {
     /// Gets all labels
     ///
     /// Calls `GET /nifi-api/process-groups/{id}/labels`.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /process-groups/{uuid}`.
     pub async fn get_labels(&self) -> Result<crate::v2_8_0::types::LabelsEntity, NifiError> {
         let id = self.id;
         self.client
@@ -577,6 +778,16 @@ impl<'a> ProcessGroupsLabelsApi<'a> {
     ///
     /// # Parameters
     /// - `body`: The label configuration details.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Write - /process-groups/{uuid}`.
     pub async fn create_label(
         &self,
         body: &crate::v2_8_0::types::LabelEntity,
@@ -600,6 +811,17 @@ impl<'a> ProcessGroupsLocalModificationsApi<'a> {
     /// Gets a list of local modifications to the Process Group since it was last synchronized with the Flow Registry
     ///
     /// Calls `GET /nifi-api/process-groups/{id}/local-modifications`.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// - `Read - /process-groups/{uuid}`
+    /// - `Read - /{component-type}/{uuid} - For all encapsulated components`
     pub async fn get_local_modifications(
         &self,
     ) -> Result<crate::v2_8_0::types::FlowComparisonEntity, NifiError> {
@@ -622,6 +844,16 @@ impl<'a> ProcessGroupsOutputPortsApi<'a> {
     /// Gets all output ports
     ///
     /// Calls `GET /nifi-api/process-groups/{id}/output-ports`.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /process-groups/{uuid}`.
     pub async fn get_output_ports(
         &self,
     ) -> Result<crate::v2_8_0::types::OutputPortsEntity, NifiError> {
@@ -636,6 +868,16 @@ impl<'a> ProcessGroupsOutputPortsApi<'a> {
     ///
     /// # Parameters
     /// - `body`: The output port configuration.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Write - /process-groups/{uuid}`.
     pub async fn create_output_port(
         &self,
         body: &crate::v2_8_0::types::PortEntity,
@@ -662,6 +904,15 @@ impl<'a> ProcessGroupsPasteApi<'a> {
     ///
     /// # Parameters
     /// - `body`: The request including the components to be pasted into the specified Process Group.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Write - /process-groups/{uuid}`.
     pub async fn paste(
         &self,
         body: &crate::v2_8_0::types::PasteRequestEntity,
@@ -685,6 +936,16 @@ impl<'a> ProcessGroupsProcessGroupsApi<'a> {
     /// Gets all process groups
     ///
     /// Calls `GET /nifi-api/process-groups/{id}/process-groups`.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /process-groups/{uuid}`.
     pub async fn get_process_groups(
         &self,
     ) -> Result<crate::v2_8_0::types::ProcessGroupsEntity, NifiError> {
@@ -700,6 +961,16 @@ impl<'a> ProcessGroupsProcessGroupsApi<'a> {
     /// # Parameters
     /// - `parameter_context_handling_strategy`: Handling Strategy controls whether to keep or replace Parameter Contexts
     /// - `body`: The process group configuration details.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Write - /process-groups/{uuid}`.
     pub async fn create_process_group(
         &self,
         parameter_context_handling_strategy: Option<
@@ -723,6 +994,15 @@ impl<'a> ProcessGroupsProcessGroupsApi<'a> {
     /// Imports a specified process group
     ///
     /// Calls `POST /nifi-api/process-groups/{id}/process-groups/import`.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Write - /process-groups/{uuid}`.
     pub async fn import_process_group(
         &self,
         body: &crate::v2_8_0::types::ProcessGroupUploadEntity,
@@ -735,6 +1015,16 @@ impl<'a> ProcessGroupsProcessGroupsApi<'a> {
     /// Uploads a versioned flow definition and creates a process group
     ///
     /// Calls `POST /nifi-api/process-groups/{id}/process-groups/upload`.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Write - /process-groups/{uuid}`.
     pub async fn upload_process_group(
         &self,
     ) -> Result<crate::v2_8_0::types::ProcessGroupEntity, NifiError> {
@@ -760,6 +1050,16 @@ impl<'a> ProcessGroupsProcessorsApi<'a> {
     ///
     /// # Parameters
     /// - `include_descendant_groups`: Whether or not to include processors from descendant process groups
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /process-groups/{uuid}`.
     pub async fn get_processors(
         &self,
         include_descendant_groups: Option<bool>,
@@ -779,6 +1079,18 @@ impl<'a> ProcessGroupsProcessorsApi<'a> {
     ///
     /// # Parameters
     /// - `body`: The processor configuration details.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// - `Write - /process-groups/{uuid}`
+    /// - `Read - any referenced Controller Services - /controller-services/{uuid}`
+    /// - `Write - if the Processor is restricted - /restricted-components`
     pub async fn create_processor(
         &self,
         body: &crate::v2_8_0::types::ProcessorEntity,
@@ -802,6 +1114,16 @@ impl<'a> ProcessGroupsRemoteProcessGroupsApi<'a> {
     /// Gets all remote process groups
     ///
     /// Calls `GET /nifi-api/process-groups/{id}/remote-process-groups`.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /process-groups/{uuid}`.
     pub async fn get_remote_process_groups(
         &self,
     ) -> Result<crate::v2_8_0::types::RemoteProcessGroupsEntity, NifiError> {
@@ -816,6 +1138,16 @@ impl<'a> ProcessGroupsRemoteProcessGroupsApi<'a> {
     ///
     /// # Parameters
     /// - `body`: The remote process group configuration details.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Write - /process-groups/{uuid}`.
     pub async fn create_remote_process_group(
         &self,
         body: &crate::v2_8_0::types::RemoteProcessGroupEntity,
@@ -844,6 +1176,21 @@ impl<'a> ProcessGroupsReplaceRequestsApi<'a> {
     ///
     /// # Parameters
     /// - `body`: The process group replace request entity
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// - `Read - /process-groups/{uuid}`
+    /// - `Write - /process-groups/{uuid}`
+    /// - `Read - /{component-type}/{uuid} - For all encapsulated components`
+    /// - `Write - /{component-type}/{uuid} - For all encapsulated components`
+    /// - `Write - if the snapshot contains any restricted components - /restricted-components`
+    /// - `Read - /parameter-contexts/{uuid} - For any Parameter Context that is referenced by a Property that is changed, added, or removed`
     pub async fn initiate_replace_process_group(
         &self,
         body: &crate::v2_8_0::types::ProcessGroupImportEntity,
@@ -870,6 +1217,18 @@ impl<'a> ProcessGroupsSnippetInstanceApi<'a> {
     ///
     /// # Parameters
     /// - `body`: The copy snippet request.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// - `Write - /process-groups/{uuid}`
+    /// - `Read - /{component-type}/{uuid} - For each component in the snippet and their descendant components`
+    /// - `Write - if the snippet contains any restricted Processors - /restricted-components`
     pub async fn copy_snippet(
         &self,
         body: &crate::v2_8_0::types::CopySnippetRequestEntity,

@@ -52,6 +52,17 @@ impl<'a> FlowFileQueuesDropRequestsApi<'a> {
     /// Creates a request to drop the contents of the queue in this connection.
     ///
     /// Calls `POST /nifi-api/flowfile-queues/{id}/drop-requests`.
+    ///
+    /// # Errors
+    /// - `202`: The request has been accepted. A HTTP response header will contain the URI where the response can be polled.
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Write Source Data - /data/{component-type}/{uuid}`.
     pub async fn create_drop_request(&self) -> Result<(), NifiError> {
         let id = self.id;
         self.client
@@ -64,6 +75,16 @@ impl<'a> FlowFileQueuesDropRequestsApi<'a> {
     ///
     /// # Parameters
     /// - `drop_request_id`: The drop request id.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Write Source Data - /data/{component-type}/{uuid}`.
     pub async fn remove_drop_request(
         &self,
         drop_request_id: &str,
@@ -83,6 +104,16 @@ impl<'a> FlowFileQueuesDropRequestsApi<'a> {
     ///
     /// # Parameters
     /// - `drop_request_id`: The drop request id.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Write Source Data - /data/{component-type}/{uuid}`.
     pub async fn get_drop_request(
         &self,
         drop_request_id: &str,
@@ -114,6 +145,16 @@ impl<'a> FlowFileQueuesFlowfilesApi<'a> {
     /// # Parameters
     /// - `flowfile_uuid`: The flowfile uuid.
     /// - `cluster_node_id`: The id of the node where the content exists if clustered.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read Source Data - /data/{component-type}/{uuid}`.
     pub async fn get_flow_file(
         &self,
         flowfile_uuid: &str,
@@ -141,6 +182,18 @@ impl<'a> FlowFileQueuesFlowfilesApi<'a> {
     /// - `flowfile_uuid`: The flowfile uuid.
     /// - `client_id`: If the client id is not specified, new one will be generated. This value (whether specified or generated) is included in the response.
     /// - `cluster_node_id`: The id of the node where the content exists if clustered.
+    ///
+    /// # Errors
+    /// - `206`: Partial Content with range of bytes requested
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    /// - `416`: Requested Range Not Satisfiable based on bytes requested
+    ///
+    /// # Permissions
+    /// Requires `Read Source Data - /data/{component-type}/{uuid}`.
     pub async fn download_flow_file_content(
         &self,
         flowfile_uuid: &str,
@@ -176,6 +229,17 @@ impl<'a> FlowFileQueuesListingRequestsApi<'a> {
     /// Lists the contents of the queue in this connection.
     ///
     /// Calls `POST /nifi-api/flowfile-queues/{id}/listing-requests`.
+    ///
+    /// # Errors
+    /// - `202`: The request has been accepted. A HTTP response header will contain the URI where the response can be polled.
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read Source Data - /data/{component-type}/{uuid}`.
     pub async fn create_flow_file_listing(&self) -> Result<(), NifiError> {
         let id = self.id;
         self.client
@@ -188,6 +252,16 @@ impl<'a> FlowFileQueuesListingRequestsApi<'a> {
     ///
     /// # Parameters
     /// - `listing_request_id`: The listing request id.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read Source Data - /data/{component-type}/{uuid}`.
     pub async fn delete_listing_request(
         &self,
         listing_request_id: &str,
@@ -207,6 +281,16 @@ impl<'a> FlowFileQueuesListingRequestsApi<'a> {
     ///
     /// # Parameters
     /// - `listing_request_id`: The listing request id.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read Source Data - /data/{component-type}/{uuid}`.
     pub async fn get_listing_request(
         &self,
         listing_request_id: &str,

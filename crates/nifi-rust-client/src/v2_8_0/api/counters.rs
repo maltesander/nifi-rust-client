@@ -20,6 +20,15 @@ impl<'a> CountersApi<'a> {
     /// # Parameters
     /// - `nodewise`: Whether or not to include the breakdown per node. Optional, defaults to false
     /// - `cluster_node_id`: The id of the node where to get the status.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /counters`.
     pub async fn get_counters(
         &self,
         nodewise: Option<bool>,
@@ -41,6 +50,15 @@ impl<'a> CountersApi<'a> {
     /// Note: This endpoint is subject to change as NiFi and it's REST API evolve.
     ///
     /// Calls `PUT /nifi-api/counters`.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Write - /counters`.
     pub async fn update_all_counters(
         &self,
     ) -> Result<crate::v2_8_0::types::CountersDto, NifiError> {
@@ -55,6 +73,16 @@ impl<'a> CountersApi<'a> {
     ///
     /// # Parameters
     /// - `id`: The id of the counter.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Write - /counters`.
     pub async fn update_counter(
         &self,
         id: &str,

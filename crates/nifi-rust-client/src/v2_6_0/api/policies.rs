@@ -17,6 +17,16 @@ impl<'a> PoliciesApi<'a> {
     ///
     /// # Parameters
     /// - `body`: The access policy configuration details.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Write - /policies/{resource}`.
     pub async fn create_access_policy(
         &self,
         body: &crate::v2_6_0::types::AccessPolicyEntity,
@@ -32,6 +42,16 @@ impl<'a> PoliciesApi<'a> {
     /// # Parameters
     /// - `action`: The request action.
     /// - `resource`: The resource of the policy.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /policies/{resource}`.
     pub async fn get_access_policy_for_resource(
         &self,
         action: &str,
@@ -50,6 +70,17 @@ impl<'a> PoliciesApi<'a> {
     /// - `version`: The revision is used to verify the client is working with the latest version of the flow.
     /// - `client_id`: If the client id is not specified, new one will be generated. This value (whether specified or generated) is included in the response.
     /// - `disconnected_node_acknowledged`: Acknowledges that this node is disconnected to allow for mutable requests to proceed.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// - `Write - /policies/{resource}`
+    /// - `Write - Policy of the parent resource - /policies/{resource}`
     pub async fn remove_access_policy(
         &self,
         id: &str,
@@ -77,6 +108,16 @@ impl<'a> PoliciesApi<'a> {
     ///
     /// # Parameters
     /// - `id`: The access policy id.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /policies/{resource}`.
     pub async fn get_access_policy(
         &self,
         id: &str,
@@ -90,6 +131,16 @@ impl<'a> PoliciesApi<'a> {
     /// # Parameters
     /// - `id`: The access policy id.
     /// - `body`: The access policy configuration details.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Write - /policies/{resource}`.
     pub async fn update_access_policy(
         &self,
         id: &str,

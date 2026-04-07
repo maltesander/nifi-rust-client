@@ -188,7 +188,8 @@ pub struct AllowableValueDto {
 #[serde(rename_all = "camelCase")]
 pub struct AllowableValueEntity {
     pub allowable_value: Option<AllowableValueDto>,
-    /// Indicates whether the user can read a given resource.
+    /// Indicates whether the user can read a given resource. Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub can_read: Option<bool>,
 }
 /// A list of identifiers of the assets that are referenced by the parameter
@@ -197,7 +198,8 @@ pub struct AllowableValueEntity {
 pub struct AssetReferenceDto {
     /// The identifier of the referenced asset.
     pub id: Option<String>,
-    /// The name of the referenced asset.
+    /// The name of the referenced asset. Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub name: Option<String>,
 }
 /// The FlowFile attributes this processor writes/updates
@@ -642,7 +644,8 @@ pub struct ConnectableDto {
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ConnectionDto {
-    /// The relationships that the source of the connection currently supports.
+    /// The relationships that the source of the connection currently supports. Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub available_relationships: Option<Vec<String>>,
     /// The object data size threshold for determining when back pressure is applied. Updating this value is a passive change in the sense that it won't impact whether existing files over the limit are affected but it does help feeder processors to stop pushing too much into this work queue.
     pub back_pressure_data_size_threshold: Option<String>,
@@ -663,7 +666,8 @@ pub struct ConnectionDto {
     pub load_balance_compression: Option<String>,
     /// The FlowFile Attribute to use for determining which node a FlowFile will go to if the Load Balancing Strategy is set to PARTITION_BY_ATTRIBUTE
     pub load_balance_partition_attribute: Option<String>,
-    /// The current status of the Connection's Load Balancing Activities. Status can indicate that Load Balancing is not configured for the connection, that Load Balancing is configured but inactive (not currently transferring data to another node), or that Load Balancing is configured and actively transferring data to another node. Possible returned values: LOAD_BALANCE_NOT_CONFIGURED, LOAD_BALANCE_INACTIVE, LOAD_BALANCE_ACTIVE. See LoadBalanceStatus.class for more details.
+    /// The current status of the Connection's Load Balancing Activities. Status can indicate that Load Balancing is not configured for the connection, that Load Balancing is configured but inactive (not currently transferring data to another node), or that Load Balancing is configured and actively transferring data to another node. Possible returned values: LOAD_BALANCE_NOT_CONFIGURED, LOAD_BALANCE_INACTIVE, LOAD_BALANCE_ACTIVE. See LoadBalanceStatus.class for more details. Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub load_balance_status: Option<String>,
     /// How to load balance the data in this Connection across the nodes in the cluster. Possible returned values: DO_NOT_LOAD_BALANCE, PARTITION_BY_ATTRIBUTE, ROUND_ROBIN, SINGLE_NODE. See LoadBalanceStrategy.class for more details.
     pub load_balance_strategy: Option<String>,
@@ -674,7 +678,8 @@ pub struct ConnectionDto {
     pub position: Option<PositionDto>,
     /// The comparators used to prioritize the queue.
     pub prioritizers: Option<Vec<String>>,
-    /// The relationships from the source of the connection that are configured to be retried.
+    /// The relationships from the source of the connection that are configured to be retried. Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub retried_relationships: Option<Vec<String>>,
     /// The selected relationship that comprise the connection.
     pub selected_relationships: Option<Vec<String>>,
@@ -888,7 +893,8 @@ pub struct ConnectionStatusSnapshotDto {
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ConnectionStatusSnapshotEntity {
-    /// Indicates whether the user can read a given resource.
+    /// Indicates whether the user can read a given resource. Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub can_read: Option<bool>,
     pub connection_status_snapshot: Option<ConnectionStatusSnapshotDto>,
     /// The id of the connection.
@@ -898,11 +904,14 @@ pub struct ConnectionStatusSnapshotEntity {
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ContentViewerDto {
-    /// The display name of the Content Viewer.
+    /// The display name of the Content Viewer. Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub display_name: Option<String>,
-    /// The mime types this Content Viewer supports.
+    /// The mime types this Content Viewer supports. Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub supported_mime_types: Option<Vec<SupportedMimeTypesDto>>,
-    /// The uri of the Content Viewer.
+    /// The uri of the Content Viewer. Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub uri: Option<String>,
 }
 /// The controller configuration.
@@ -1000,8 +1009,10 @@ pub struct ControllerServiceDto {
     #[serde(rename = "type")]
     pub r#type: Option<String>,
     /// The validation errors from the controller service.
+    /// These validation errors represent the problems with the controller service that must be resolved before it can be enabled.
     pub validation_errors: Option<Vec<String>>,
-    /// Indicates whether the ControllerService is valid, invalid, or still in the process of validating (i.e., it is unknown whether or not the ControllerService is valid)
+    /// Indicates whether the ControllerService is valid, invalid, or still in the process of validating (i.e., it is unknown whether or not the ControllerService is valid) Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub validation_status: Option<ControllerServiceDtoValidationStatus>,
     /// The ID of the corresponding component that is under version control
     pub versioned_component_id: Option<String>,
@@ -1113,9 +1124,11 @@ pub enum ControllerServiceStatusDtoValidationStatus {
 pub struct ControllerServiceStatusDto {
     /// The number of active threads for the component.
     pub active_thread_count: Option<i32>,
-    /// The run status of this ControllerService
+    /// The run status of this ControllerService Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub run_status: Option<ControllerServiceStatusDtoRunStatus>,
-    /// Indicates whether the component is valid, invalid, or still in the process of validating (i.e., it is unknown whether or not the component is valid)
+    /// Indicates whether the component is valid, invalid, or still in the process of validating (i.e., it is unknown whether or not the component is valid) Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub validation_status: Option<ControllerServiceStatusDtoValidationStatus>,
 }
 /// The counters from the node.
@@ -1336,7 +1349,8 @@ pub struct FlowAnalysisRuleDto {
     pub r#type: Option<String>,
     /// Gets the validation errors from the flow analysis rule. These validation errors represent the problems with the flow analysis rule that must be resolved before it can be scheduled to run.
     pub validation_errors: Option<Vec<String>>,
-    /// Indicates whether the Flow Analysis Rule is valid, invalid, or still in the process of validating (i.e., it is unknown whether or not the Flow Analysis Rule is valid)
+    /// Indicates whether the Flow Analysis Rule is valid, invalid, or still in the process of validating (i.e., it is unknown whether or not the Flow Analysis Rule is valid) Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub validation_status: Option<FlowAnalysisRuleDtoValidationStatus>,
     /// The ID of the corresponding component that is under version control
     pub versioned_component_id: Option<String>,
@@ -1365,9 +1379,11 @@ pub enum FlowAnalysisRuleStatusDtoValidationStatus {
 pub struct FlowAnalysisRuleStatusDto {
     /// The number of active threads for the component.
     pub active_thread_count: Option<i32>,
-    /// The run status of this FlowAnalysisRule
+    /// The run status of this FlowAnalysisRule Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub run_status: Option<FlowAnalysisRuleStatusDtoRunStatus>,
-    /// Indicates whether the component is valid, invalid, or still in the process of validating (i.e., it is unknown whether or not the component is valid)
+    /// Indicates whether the component is valid, invalid, or still in the process of validating (i.e., it is unknown whether or not the component is valid) Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub validation_status: Option<FlowAnalysisRuleStatusDtoValidationStatus>,
 }
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -1514,7 +1530,8 @@ pub struct FlowRegistryClientDto {
     pub r#type: Option<String>,
     /// Gets the validation errors from the registry client. These validation errors represent the problems with the registry client that must be resolved before it can be used for interacting with the flow registry.
     pub validation_errors: Option<Vec<String>>,
-    /// Indicates whether the Registry Client is valid, invalid, or still in the process of validating (i.e., it is unknown whether or not the Registry Client is valid)
+    /// Indicates whether the Registry Client is valid, invalid, or still in the process of validating (i.e., it is unknown whether or not the Registry Client is valid) Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub validation_status: Option<FlowRegistryClientDtoValidationStatus>,
 }
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -1685,6 +1702,8 @@ pub struct LineageRequestDto {
     /// The id of the node where this lineage originated if clustered.
     pub cluster_node_id: Option<String>,
     /// The event id that was used to generate this lineage, if applicable.
+    /// The event id is allowed for any type of lineageRequestType.
+    /// If the lineageRequestType is FLOWFILE and the flowfile uuid is also included in the request, the event id will be ignored.
     pub event_id: Option<i64>,
     /// The type of lineage request. PARENTS will return the lineage for the flowfiles that are parents of the specified event. CHILDREN will return the lineage for the flowfiles that are children of the specified event. FLOWFILE will return the lineage for the specified flowfile.
     pub lineage_request_type: Option<LineageRequestDtoLineageRequestType>,
@@ -1900,11 +1919,13 @@ pub struct NodeSystemDiagnosticsSnapshotDto {
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ParameterContextDto {
-    /// The Process Groups that are bound to this Parameter Context
+    /// The Process Groups that are bound to this Parameter Context Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub bound_process_groups: Option<Vec<ProcessGroupEntity>>,
     /// The Description of the Parameter Context.
     pub description: Option<String>,
-    /// The ID the Parameter Context.
+    /// The ID the Parameter Context. Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub id: Option<String>,
     /// A list of references of Parameter Contexts from which this one inherits parameters
     pub inherited_parameter_contexts: Option<Vec<ParameterContextReferenceEntity>>,
@@ -1937,80 +1958,106 @@ pub struct ParameterContextReferenceEntity {
 pub struct ParameterContextUpdateEntity {
     pub parameter_context: Option<ParameterContextDto>,
     pub parameter_context_revision: Option<RevisionDto>,
-    /// The components that are referenced by the update.
+    /// The components that are referenced by the update. Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub referencing_components: Option<Vec<AffectedComponentEntity>>,
 }
 /// The Update Request
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ParameterContextUpdateRequestDto {
-    /// Whether or not the request is completed
+    /// Whether or not the request is completed Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub complete: Option<bool>,
-    /// The reason for the request failing, or null if the request has not failed
+    /// The reason for the request failing, or null if the request has not failed Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub failure_reason: Option<String>,
-    /// The timestamp of when the request was last updated
+    /// The timestamp of when the request was last updated Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub last_updated: Option<String>,
     pub parameter_context: Option<ParameterContextDto>,
-    /// A value between 0 and 100 (inclusive) indicating how close the request is to completion
+    /// A value between 0 and 100 (inclusive) indicating how close the request is to completion Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub percent_completed: Option<i32>,
-    /// The components that are referenced by the update.
+    /// The components that are referenced by the update. Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub referencing_components: Option<Vec<AffectedComponentEntity>>,
-    /// The ID of the request
+    /// The ID of the request Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub request_id: Option<String>,
-    /// A description of the current state of the request
+    /// A description of the current state of the request Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub state: Option<String>,
-    /// The timestamp of when the request was submitted
+    /// The timestamp of when the request was submitted Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub submission_time: Option<String>,
-    /// The steps that are required in order to complete the request, along with the status of each
+    /// The steps that are required in order to complete the request, along with the status of each Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub update_steps: Option<Vec<ParameterContextUpdateStepDto>>,
-    /// The URI for the request
+    /// The URI for the request Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub uri: Option<String>,
 }
 /// The steps that are required in order to complete the request, along with the status of each
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ParameterContextUpdateStepDto {
-    /// Whether or not this step has completed
+    /// Whether or not this step has completed Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub complete: Option<bool>,
-    /// Explanation of what happens in this step
+    /// Explanation of what happens in this step Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub description: Option<String>,
-    /// An explanation of why this step failed, or null if this step did not fail
+    /// An explanation of why this step failed, or null if this step did not fail Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub failure_reason: Option<String>,
 }
 /// The Update Request
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ParameterContextValidationRequestDto {
-    /// Whether or not the request is completed
+    /// Whether or not the request is completed Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub complete: Option<bool>,
     pub component_validation_results: Option<ComponentValidationResultsEntity>,
-    /// The reason for the request failing, or null if the request has not failed
+    /// The reason for the request failing, or null if the request has not failed Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub failure_reason: Option<String>,
-    /// The timestamp of when the request was last updated
+    /// The timestamp of when the request was last updated Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub last_updated: Option<String>,
     pub parameter_context: Option<ParameterContextDto>,
-    /// A value between 0 and 100 (inclusive) indicating how close the request is to completion
+    /// A value between 0 and 100 (inclusive) indicating how close the request is to completion Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub percent_completed: Option<i32>,
-    /// The ID of the request
+    /// The ID of the request Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub request_id: Option<String>,
-    /// A description of the current state of the request
+    /// A description of the current state of the request Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub state: Option<String>,
-    /// The timestamp of when the request was submitted
+    /// The timestamp of when the request was submitted Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub submission_time: Option<String>,
-    /// The steps that are required in order to complete the request, along with the status of each
+    /// The steps that are required in order to complete the request, along with the status of each Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub update_steps: Option<Vec<ParameterContextValidationStepDto>>,
-    /// The URI for the request
+    /// The URI for the request Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub uri: Option<String>,
 }
 /// The steps that are required in order to complete the request, along with the status of each
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ParameterContextValidationStepDto {
-    /// Whether or not this step has completed
+    /// Whether or not this step has completed Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub complete: Option<bool>,
-    /// Explanation of what happens in this step
+    /// Explanation of what happens in this step Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub description: Option<String>,
-    /// An explanation of why this step failed, or null if this step did not fail
+    /// An explanation of why this step failed, or null if this step did not fail Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub failure_reason: Option<String>,
 }
 /// The parameter information
@@ -2019,7 +2066,8 @@ pub struct ParameterContextValidationStepDto {
 pub struct ParameterDto {
     /// The description of the Parameter
     pub description: Option<String>,
-    /// Whether or not the Parameter is inherited from another context
+    /// Whether or not the Parameter is inherited from another context Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub inherited: Option<bool>,
     /// The name of the Parameter
     pub name: Option<String>,
@@ -2035,13 +2083,17 @@ pub struct ParameterDto {
     /// The value of the Parameter
     pub value: Option<String>,
     /// Whether or not the value of the Parameter was removed.
+    /// When a request is made to change a parameter, the value may be null.
+    /// The absence of the value may be used either to indicate that the value is not to be changed, or that the value is to be set to null (i.e., removed).
+    /// This denotes which of the two scenarios is being encountered.
     pub value_removed: Option<bool>,
 }
 /// The name of the Parameter
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ParameterEntity {
-    /// Indicates whether the user can write a given resource.
+    /// Indicates whether the user can write a given resource. Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub can_write: Option<bool>,
     pub parameter: Option<ParameterDto>,
 }
@@ -2075,11 +2127,14 @@ pub struct ParameterGroupConfigurationEntity {
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ParameterProviderApplyParametersUpdateStepDto {
-    /// Whether or not this step has completed
+    /// Whether or not this step has completed Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub complete: Option<bool>,
-    /// Explanation of what happens in this step
+    /// Explanation of what happens in this step Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub description: Option<String>,
-    /// An explanation of why this step failed, or null if this step did not fail
+    /// An explanation of why this step failed, or null if this step did not fail Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub failure_reason: Option<String>,
 }
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -2148,7 +2203,8 @@ pub struct ParameterProviderDto {
     pub position: Option<PositionDto>,
     /// The properties of the parameter provider.
     pub properties: Option<std::collections::HashMap<String, Option<String>>>,
-    /// The Parameter Contexts that reference this Parameter Provider
+    /// The Parameter Contexts that reference this Parameter Provider Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub referencing_parameter_contexts: Option<Vec<ParameterProviderReferencingComponentEntity>>,
     /// Whether the parameter provider requires elevated privileges.
     pub restricted: Option<bool>,
@@ -2157,7 +2213,8 @@ pub struct ParameterProviderDto {
     pub r#type: Option<String>,
     /// Gets the validation errors from the parameter provider. These validation errors represent the problems with the parameter provider that must be resolved before it can be scheduled to run.
     pub validation_errors: Option<Vec<String>>,
-    /// Indicates whether the Parameter Provider is valid, invalid, or still in the process of validating (i.e., it is unknown whether or not the Parameter Provider is valid)
+    /// Indicates whether the Parameter Provider is valid, invalid, or still in the process of validating (i.e., it is unknown whether or not the Parameter Provider is valid) Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub validation_status: Option<ParameterProviderDtoValidationStatus>,
     /// The ID of the corresponding component that is under version control
     pub versioned_component_id: Option<String>,
@@ -2253,9 +2310,11 @@ pub struct PeerDto {
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PermissionsDto {
-    /// Indicates whether the user can read a given resource.
+    /// Indicates whether the user can read a given resource. Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub can_read: Option<bool>,
-    /// Indicates whether the user can write a given resource.
+    /// Indicates whether the user can write a given resource. Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub can_write: Option<bool>,
 }
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -2436,7 +2495,8 @@ pub struct PortStatusSnapshotDto {
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PortStatusSnapshotEntity {
-    /// Indicates whether the user can read a given resource.
+    /// Indicates whether the user can read a given resource. Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub can_read: Option<bool>,
     /// The id of the port.
     pub id: Option<String>,
@@ -2533,7 +2593,8 @@ pub struct ProcessGroupDto {
     pub id: Option<String>,
     /// The number of inactive remote ports in the process group.
     pub inactive_remote_port_count: Option<i32>,
-    /// The number of input ports in the process group.
+    /// The number of input ports in the process group. Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub input_port_count: Option<i32>,
     /// The number of invalid components in the process group.
     pub invalid_count: Option<i32>,
@@ -2551,7 +2612,8 @@ pub struct ProcessGroupDto {
     pub max_concurrent_tasks: Option<i32>,
     /// The name of the process group.
     pub name: Option<String>,
-    /// The number of output ports in the process group.
+    /// The number of output ports in the process group. Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub output_port_count: Option<i32>,
     pub parameter_context: Option<ParameterContextReferenceEntity>,
     /// The id of parent process group of this component if applicable.
@@ -2607,21 +2669,28 @@ pub struct ProcessGroupNameDto {
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ProcessGroupReplaceRequestDto {
-    /// Whether or not this request has completed
+    /// Whether or not this request has completed Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub complete: Option<bool>,
-    /// An explanation of why this request failed, or null if this request has not failed
+    /// An explanation of why this request failed, or null if this request has not failed Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub failure_reason: Option<String>,
-    /// The last time this request was updated.
+    /// The last time this request was updated. Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub last_updated: Option<String>,
-    /// The percentage complete for the request, between 0 and 100
+    /// The percentage complete for the request, between 0 and 100 Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub percent_completed: Option<i32>,
     /// The unique ID of the Process Group being updated
     pub process_group_id: Option<String>,
-    /// The unique ID of this request.
+    /// The unique ID of this request. Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub request_id: Option<String>,
-    /// The state of the request
+    /// The state of the request Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub state: Option<String>,
-    /// The URI for future requests to this drop request.
+    /// The URI for future requests to this drop request. Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub uri: Option<String>,
 }
 /// The status of the process group.
@@ -2720,13 +2789,15 @@ pub struct ProcessGroupStatusSnapshotDto {
     pub remote_process_group_status_snapshots: Option<Vec<RemoteProcessGroupStatusSnapshotEntity>>,
     /// The count/size sent from this process group in the last 5 minutes.
     pub sent: Option<String>,
-    /// The current number of active threads for the Process Group, when running in Stateless mode.
+    /// The current number of active threads for the Process Group, when running in Stateless mode. Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub stateless_active_thread_count: Option<i32>,
     /// The number of threads currently terminated for the process group.
     pub terminated_thread_count: Option<i32>,
     /// The count/size transferred to/from queues in the process group in the last 5 minutes.
     pub transferred: Option<String>,
-    /// The current state of the Process Group, as it relates to the Versioned Flow
+    /// The current state of the Process Group, as it relates to the Versioned Flow Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub versioned_flow_state: Option<ProcessGroupStatusSnapshotDtoVersionedFlowState>,
     /// The number of bytes written in the last 5 minutes.
     pub written: Option<String>,
@@ -2735,7 +2806,8 @@ pub struct ProcessGroupStatusSnapshotDto {
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ProcessGroupStatusSnapshotEntity {
-    /// Indicates whether the user can read a given resource.
+    /// Indicates whether the user can read a given resource. Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub can_read: Option<bool>,
     /// The id of the process group.
     pub id: Option<String>,
@@ -2882,7 +2954,8 @@ pub struct ProcessorDto {
     /// The physical state of the processor, including transition states
     pub physical_state: Option<ProcessorDtoPhysicalState>,
     pub position: Option<PositionDto>,
-    /// The available relationships that the processor currently supports.
+    /// The available relationships that the processor currently supports. Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub relationships: Option<Vec<RelationshipDto>>,
     /// Whether the processor requires elevated privileges.
     pub restricted: Option<bool>,
@@ -2901,7 +2974,8 @@ pub struct ProcessorDto {
     pub r#type: Option<String>,
     /// The validation errors for the processor. These validation errors represent the problems with the processor that must be resolved before it can be started.
     pub validation_errors: Option<Vec<String>>,
-    /// Indicates whether the Processor is valid, invalid, or still in the process of validating (i.e., it is unknown whether or not the Processor is valid)
+    /// Indicates whether the Processor is valid, invalid, or still in the process of validating (i.e., it is unknown whether or not the Processor is valid) Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub validation_status: Option<ProcessorDtoValidationStatus>,
     /// The ID of the corresponding component that is under version control
     pub versioned_component_id: Option<String>,
@@ -3091,7 +3165,8 @@ pub struct ProcessorStatusSnapshotDto {
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ProcessorStatusSnapshotEntity {
-    /// Indicates whether the user can read a given resource.
+    /// Indicates whether the user can read a given resource. Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub can_read: Option<bool>,
     /// The id of the processor.
     pub id: Option<String>,
@@ -3156,7 +3231,8 @@ pub struct PropertyDescriptor {
     pub dynamic: Option<bool>,
     /// The scope of expression language supported by this property
     pub expression_language_scope: Option<PropertyDescriptorExpressionLanguageScope>,
-    /// The description of the expression language scope supported by this property
+    /// The description of the expression language scope supported by this property Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub expression_language_scope_description: Option<String>,
     pub listen_port_definition: Option<PropertyListenPortDefinition>,
     /// The name of the property key
@@ -3511,6 +3587,7 @@ pub struct RemoteProcessGroupDto {
     pub transmitting: Option<bool>,
     pub transport_protocol: Option<String>,
     /// The validation errors for the remote process group.
+    /// These validation errors represent the problems with the remote process group that must be resolved before it can transmit.
     pub validation_errors: Option<Vec<String>>,
     /// The ID of the corresponding component that is under version control
     pub versioned_component_id: Option<String>,
@@ -3598,7 +3675,8 @@ pub struct RemoteProcessGroupStatusDto {
     pub target_uri: Option<String>,
     /// The transmission status of the remote process group.
     pub transmission_status: Option<String>,
-    /// Indicates whether the component is valid, invalid, or still in the process of validating (i.e., it is unknown whether or not the component is valid)
+    /// Indicates whether the component is valid, invalid, or still in the process of validating (i.e., it is unknown whether or not the component is valid) Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub validation_status: Option<RemoteProcessGroupStatusDtoValidationStatus>,
 }
 /// The remote process group status snapshot from the node.
@@ -3634,7 +3712,8 @@ pub struct RemoteProcessGroupStatusSnapshotDto {
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RemoteProcessGroupStatusSnapshotEntity {
-    /// Indicates whether the user can read a given resource.
+    /// Indicates whether the user can read a given resource. Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub can_read: Option<bool>,
     /// The id of the remote process group.
     pub id: Option<String>,
@@ -3721,7 +3800,8 @@ pub struct ReportingTaskDto {
     pub r#type: Option<String>,
     /// Gets the validation errors from the reporting task. These validation errors represent the problems with the reporting task that must be resolved before it can be scheduled to run.
     pub validation_errors: Option<Vec<String>>,
-    /// Indicates whether the Reporting Task is valid, invalid, or still in the process of validating (i.e., it is unknown whether or not the Reporting Task is valid)
+    /// Indicates whether the Reporting Task is valid, invalid, or still in the process of validating (i.e., it is unknown whether or not the Reporting Task is valid) Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub validation_status: Option<ReportingTaskDtoValidationStatus>,
     /// The ID of the corresponding component that is under version control
     pub versioned_component_id: Option<String>,
@@ -3770,9 +3850,11 @@ pub enum ReportingTaskStatusDtoValidationStatus {
 pub struct ReportingTaskStatusDto {
     /// The number of active threads for the component.
     pub active_thread_count: Option<i32>,
-    /// The run status of this ReportingTask
+    /// The run status of this ReportingTask Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub run_status: Option<ReportingTaskStatusDtoRunStatus>,
-    /// Indicates whether the component is valid, invalid, or still in the process of validating (i.e., it is unknown whether or not the component is valid)
+    /// Indicates whether the component is valid, invalid, or still in the process of validating (i.e., it is unknown whether or not the component is valid) Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub validation_status: Option<ReportingTaskStatusDtoValidationStatus>,
 }
 /// The required permission necessary for this restriction.
@@ -3824,10 +3906,14 @@ pub struct Restriction {
 #[serde(rename_all = "camelCase")]
 pub struct RevisionDto {
     /// A client identifier used to make a request.
+    /// By including a client identifier, the API can allow multiple requests without needing the current revision.
+    /// Due to the asynchronous nature of requests/responses this was implemented to allow the client to make numerous requests without having to wait for the previous response to come back
     pub client_id: Option<String>,
-    /// The user that last modified the flow.
+    /// The user that last modified the flow. Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub last_modifier: Option<String>,
     /// NiFi employs an optimistic locking strategy where the client must include a revision in their request when performing an update.
+    /// In a response to a mutable flow request, this field represents the updated base version.
     pub version: Option<i64>,
 }
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -3893,6 +3979,9 @@ pub struct SnippetDto {
     /// The ids of the processors in this snippet. These ids will be populated within each response. They can be specified when creating a snippet. However, once a snippet has been created its contents cannot be modified (these ids are ignored during update requests).
     pub processors: Option<std::collections::HashMap<String, Option<RevisionDto>>>,
     /// The ids of the remote process groups in this snippet.
+    /// These ids will be populated within each response.
+    /// They can be specified when creating a snippet.
+    /// However, once a snippet has been created its contents cannot be modified (these ids are ignored during update requests).
     pub remote_process_groups: Option<std::collections::HashMap<String, Option<RevisionDto>>>,
     /// The URI of the snippet.
     pub uri: Option<String>,
@@ -4002,9 +4091,11 @@ pub struct StreamingOutput {}
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SupportedMimeTypesDto {
-    /// The display name of the mime types.
+    /// The display name of the mime types. Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub display_name: Option<String>,
-    /// The mime types this Content Viewer supports.
+    /// The mime types this Content Viewer supports. Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub mime_types: Option<Vec<String>>,
 }
 /// The System Diagnostics snapshot from the node.
@@ -4138,7 +4229,8 @@ pub struct UseCase {
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct UserDto {
-    /// The access policies this user belongs to.
+    /// The access policies this user belongs to. Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub access_policies: Option<Vec<AccessPolicySummaryEntity>>,
     /// Whether this tenant is configurable.
     pub configurable: Option<bool>,
@@ -4149,7 +4241,8 @@ pub struct UserDto {
     /// The id of parent process group of this component if applicable.
     pub parent_group_id: Option<String>,
     pub position: Option<PositionDto>,
-    /// The groups to which the user belongs. This field is read only and it provided for convenience.
+    /// The groups to which the user belongs. This field is read only and it provided for convenience. Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub user_groups: Option<Vec<TenantEntity>>,
     /// The ID of the corresponding component that is under version control
     pub versioned_component_id: Option<String>,
@@ -4157,7 +4250,8 @@ pub struct UserDto {
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct UserGroupDto {
-    /// The access policies this user group belongs to. This field was incorrectly defined as an AccessPolicyEntity. For compatibility reasons the field will remain of this type, however only the fields that are present in the AccessPolicySummaryEntity will be populated here.
+    /// The access policies this user group belongs to. This field was incorrectly defined as an AccessPolicyEntity. For compatibility reasons the field will remain of this type, however only the fields that are present in the AccessPolicySummaryEntity will be populated here. Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub access_policies: Option<Vec<AccessPolicyEntity>>,
     /// Whether this tenant is configurable.
     pub configurable: Option<bool>,
@@ -4179,29 +4273,39 @@ pub struct UserGroupDto {
 pub struct VerifyConfigRequestDto {
     /// FlowFile Attributes that should be used to evaluate Expression Language for resolving property values
     pub attributes: Option<std::collections::HashMap<String, Option<String>>>,
-    /// Whether or not the request is completed
+    /// Whether or not the request is completed Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub complete: Option<bool>,
     /// The ID of the component whose configuration was verified
     pub component_id: Option<String>,
-    /// The reason for the request failing, or null if the request has not failed
+    /// The reason for the request failing, or null if the request has not failed Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub failure_reason: Option<String>,
-    /// The timestamp of when the request was last updated
+    /// The timestamp of when the request was last updated Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub last_updated: Option<String>,
-    /// A value between 0 and 100 (inclusive) indicating how close the request is to completion
+    /// A value between 0 and 100 (inclusive) indicating how close the request is to completion Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub percent_completed: Option<i32>,
     /// The configured component properties
     pub properties: Option<std::collections::HashMap<String, Option<String>>>,
-    /// The ID of the request
+    /// The ID of the request Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub request_id: Option<String>,
-    /// The Results of the verification
+    /// The Results of the verification Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub results: Option<Vec<ConfigVerificationResultDto>>,
-    /// A description of the current state of the request
+    /// A description of the current state of the request Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub state: Option<String>,
-    /// The timestamp of when the request was submitted
+    /// The timestamp of when the request was submitted Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub submission_time: Option<String>,
-    /// The steps that are required in order to complete the request, along with the status of each
+    /// The steps that are required in order to complete the request, along with the status of each Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub update_steps: Option<Vec<VerifyConfigUpdateStepDto>>,
-    /// The URI for the request
+    /// The URI for the request Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub uri: Option<String>,
 }
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -4213,11 +4317,14 @@ pub struct VerifyConfigRequestEntity {
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct VerifyConfigUpdateStepDto {
-    /// Whether or not this step has completed
+    /// Whether or not this step has completed Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub complete: Option<bool>,
-    /// Explanation of what happens in this step
+    /// Explanation of what happens in this step Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub description: Option<String>,
-    /// An explanation of why this step failed, or null if this step did not fail
+    /// An explanation of why this step failed, or null if this step did not fail Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub failure_reason: Option<String>,
 }
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -4242,7 +4349,8 @@ pub struct VersionControlInformationDto {
     pub branch: Option<String>,
     /// The ID of the bucket that the flow is stored in
     pub bucket_id: Option<String>,
-    /// The name of the bucket that the flow is stored in
+    /// The name of the bucket that the flow is stored in Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub bucket_name: Option<String>,
     /// The description of the flow
     pub flow_description: Option<String>,
@@ -4254,11 +4362,14 @@ pub struct VersionControlInformationDto {
     pub group_id: Option<String>,
     /// The ID of the registry that the flow is stored in
     pub registry_id: Option<String>,
-    /// The name of the registry that the flow is stored in
+    /// The name of the registry that the flow is stored in Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub registry_name: Option<String>,
-    /// The current state of the Process Group, as it relates to the Versioned Flow
+    /// The current state of the Process Group, as it relates to the Versioned Flow Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub state: Option<VersionControlInformationDtoState>,
-    /// Explanation of why the group is in the specified state
+    /// Explanation of why the group is in the specified state Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub state_explanation: Option<String>,
     /// The storage location
     pub storage_location: Option<String>,
@@ -4486,21 +4597,28 @@ pub struct VersionedFlowSnapshotMetadataEntity {
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct VersionedFlowUpdateRequestDto {
-    /// Whether or not this request has completed
+    /// Whether or not this request has completed Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub complete: Option<bool>,
-    /// An explanation of why this request failed, or null if this request has not failed
+    /// An explanation of why this request failed, or null if this request has not failed Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub failure_reason: Option<String>,
-    /// The last time this request was updated.
+    /// The last time this request was updated. Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub last_updated: Option<String>,
-    /// The percentage complete for the request, between 0 and 100
+    /// The percentage complete for the request, between 0 and 100 Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub percent_completed: Option<i32>,
     /// The unique ID of the Process Group being updated
     pub process_group_id: Option<String>,
-    /// The unique ID of this request.
+    /// The unique ID of this request. Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub request_id: Option<String>,
-    /// The state of the request
+    /// The state of the request Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub state: Option<String>,
-    /// The URI for future requests to this drop request.
+    /// The URI for future requests to this drop request. Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub uri: Option<String>,
     pub version_control_information: Option<VersionControlInformationDto>,
 }

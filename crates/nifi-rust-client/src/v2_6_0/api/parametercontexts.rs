@@ -17,6 +17,17 @@ impl<'a> ParameterContextsApi<'a> {
     ///
     /// # Parameters
     /// - `body`: The Parameter Context.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// - `Write - /parameter-contexts`
+    /// - `Read - for every inherited parameter context`
     pub async fn create_parameter_context(
         &self,
         body: &crate::v2_6_0::types::ParameterContextEntity,
@@ -34,6 +45,19 @@ impl<'a> ParameterContextsApi<'a> {
     /// - `version`: The version is used to verify the client is working with the latest version of the flow.
     /// - `client_id`: If the client id is not specified, a new one will be generated. This value (whether specified or generated) is included in the response.
     /// - `disconnected_node_acknowledged`: Acknowledges that this node is disconnected to allow for mutable requests to proceed.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// - `Read - /parameter-contexts/{uuid}`
+    /// - `Write - /parameter-contexts/{uuid}`
+    /// - `Read - /process-groups/{uuid}, for any Process Group that is currently bound to the Parameter Context`
+    /// - `Write - /process-groups/{uuid}, for any Process Group that is currently bound to the Parameter Context`
     pub async fn delete_parameter_context(
         &self,
         id: &str,
@@ -64,6 +88,16 @@ impl<'a> ParameterContextsApi<'a> {
     /// # Parameters
     /// - `id`: The ID of the Parameter Context
     /// - `include_inherited_parameters`: Whether or not to include inherited parameters from other parameter contexts, and therefore also overridden values.  If true, the result will be the 'effective' parameter context.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /parameter-contexts/{id}`.
     pub async fn get_parameter_context(
         &self,
         id: &str,
@@ -85,6 +119,17 @@ impl<'a> ParameterContextsApi<'a> {
     ///
     /// # Parameters
     /// - `body`: The updated Parameter Context
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// - `Read - /parameter-contexts/{id}`
+    /// - `Write - /parameter-contexts/{id}`
     pub async fn update_parameter_context(
         &self,
         id: &str,
@@ -143,6 +188,16 @@ impl<'a> ParameterContextsAssetsApi<'a> {
     /// Lists the assets that belong to the Parameter Context with the given ID.
     ///
     /// Calls `GET /nifi-api/parameter-contexts/{contextId}/assets`.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /parameter-contexts/{id}`.
     pub async fn get_assets(&self) -> Result<crate::v2_6_0::types::AssetsEntity, NifiError> {
         let context_id = self.context_id;
         self.client
@@ -154,6 +209,20 @@ impl<'a> ParameterContextsAssetsApi<'a> {
     /// This endpoint will create a new Asset in the given Parameter Context. The Asset will be created with the given name and the contents of the file that is uploaded. The Asset will be created in the given Parameter Context, and will be available for use by any component that references the Parameter Context.
     ///
     /// Calls `POST /nifi-api/parameter-contexts/{contextId}/assets`.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// - `Read - /parameter-contexts/{parameterContextId}`
+    /// - `Write - /parameter-contexts/{parameterContextId}`
+    /// - `Read - for every component that is affected by the update`
+    /// - `Write - for every component that is affected by the update`
+    /// - `Read - for every currently inherited parameter context`
     pub async fn create_asset(
         &self,
         filename: Option<&str>,
@@ -178,6 +247,20 @@ impl<'a> ParameterContextsAssetsApi<'a> {
     ///
     /// # Parameters
     /// - `asset_id`: The ID of the Asset
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// - `Read - /parameter-contexts/{parameterContextId}`
+    /// - `Write - /parameter-contexts/{parameterContextId}`
+    /// - `Read - for every component that is affected by the update`
+    /// - `Write - for every component that is affected by the update`
+    /// - `Read - for every currently inherited parameter context`
     pub async fn delete_asset(
         &self,
         asset_id: &str,
@@ -203,6 +286,16 @@ impl<'a> ParameterContextsAssetsApi<'a> {
     ///
     /// # Parameters
     /// - `asset_id`: The ID of the Asset
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /parameter-contexts/{id}`.
     pub async fn get_asset_content(&self, asset_id: &str) -> Result<(), NifiError> {
         let context_id = self.context_id;
         self.client
@@ -230,6 +323,21 @@ impl<'a> ParameterContextsUpdateRequestsApi<'a> {
     ///
     /// # Parameters
     /// - `body`: The updated version of the parameter context.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// - `Read - /parameter-contexts/{parameterContextId}`
+    /// - `Write - /parameter-contexts/{parameterContextId}`
+    /// - `Read - for every component that is affected by the update`
+    /// - `Write - for every component that is affected by the update`
+    /// - `Read - for every currently inherited parameter context`
+    /// - `Read - for any new inherited parameter context`
     pub async fn submit_parameter_context_update(
         &self,
         body: &crate::v2_6_0::types::ParameterContextEntity,
@@ -251,6 +359,16 @@ impl<'a> ParameterContextsUpdateRequestsApi<'a> {
     /// # Parameters
     /// - `request_id`: The ID of the Update Request
     /// - `disconnected_node_acknowledged`: Acknowledges that this node is disconnected to allow for mutable requests to proceed.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Only the user that submitted the request can remove it`.
     pub async fn delete_update_request(
         &self,
         request_id: &str,
@@ -276,6 +394,16 @@ impl<'a> ParameterContextsUpdateRequestsApi<'a> {
     ///
     /// # Parameters
     /// - `request_id`: The ID of the Update Request
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Only the user that submitted the request can get it`.
     pub async fn get_parameter_context_update(
         &self,
         request_id: &str,
@@ -306,6 +434,16 @@ impl<'a> ParameterContextsValidationRequestsApi<'a> {
     ///
     /// # Parameters
     /// - `body`: The validation request
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /parameter-contexts/{parameterContextId}`.
     pub async fn submit_validation_request(
         &self,
         body: &crate::v2_6_0::types::ParameterContextValidationRequestEntity,
@@ -327,6 +465,16 @@ impl<'a> ParameterContextsValidationRequestsApi<'a> {
     /// # Parameters
     /// - `id`: The ID of the Update Request
     /// - `disconnected_node_acknowledged`: Acknowledges that this node is disconnected to allow for mutable requests to proceed.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Only the user that submitted the request can remove it`.
     pub async fn delete_validation_request(
         &self,
         id: &str,
@@ -352,6 +500,16 @@ impl<'a> ParameterContextsValidationRequestsApi<'a> {
     ///
     /// # Parameters
     /// - `id`: The ID of the Validation Request
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Only the user that submitted the request can get it`.
     pub async fn get_validation_request(
         &self,
         id: &str,

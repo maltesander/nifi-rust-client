@@ -20,6 +20,18 @@ impl<'a> ConnectionsApi<'a> {
     /// - `version`: The revision is used to verify the client is working with the latest version of the flow.
     /// - `client_id`: If the client id is not specified, new one will be generated. This value (whether specified or generated) is included in the response.
     /// - `disconnected_node_acknowledged`: Acknowledges that this node is disconnected to allow for mutable requests to proceed.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// - `Write Source - /{component-type}/{uuid}`
+    /// - `Write - Parent Process Group - /process-groups/{uuid}`
+    /// - `Write Destination - /{component-type}/{uuid}`
     pub async fn delete_connection(
         &self,
         id: &str,
@@ -47,6 +59,17 @@ impl<'a> ConnectionsApi<'a> {
     ///
     /// # Parameters
     /// - `id`: The connection id.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// - `Read Source - /{component-type}/{uuid}`
+    /// - `Read Destination - /{component-type}/{uuid}`
     pub async fn get_connection(
         &self,
         id: &str,
@@ -60,6 +83,19 @@ impl<'a> ConnectionsApi<'a> {
     /// # Parameters
     /// - `id`: The connection id.
     /// - `body`: The connection configuration details.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// - `Write Source - /{component-type}/{uuid}`
+    /// - `Write Destination - /{component-type}/{uuid}`
+    /// - `Write New Destination - /{component-type}/{uuid} - if updating Destination`
+    /// - `Write Process Group - /process-groups/{uuid} - if updating Destination`
     pub async fn update_connection(
         &self,
         id: &str,

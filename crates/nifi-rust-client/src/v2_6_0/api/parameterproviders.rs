@@ -20,6 +20,18 @@ impl<'a> ParameterProvidersApi<'a> {
     /// - `version`: The revision is used to verify the client is working with the latest version of the flow.
     /// - `client_id`: If the client id is not specified, new one will be generated. This value (whether specified or generated) is included in the response.
     /// - `disconnected_node_acknowledged`: Acknowledges that this node is disconnected to allow for mutable requests to proceed.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// - `Write - /parameter-providers/{uuid}`
+    /// - `Write - /controller`
+    /// - `Read - any referenced Controller Services - /controller-services/{uuid}`
     pub async fn remove_parameter_provider(
         &self,
         id: &str,
@@ -47,6 +59,16 @@ impl<'a> ParameterProvidersApi<'a> {
     ///
     /// # Parameters
     /// - `id`: The parameter provider id.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /parameter-providers/{uuid}`.
     pub async fn get_parameter_provider(
         &self,
         id: &str,
@@ -60,6 +82,17 @@ impl<'a> ParameterProvidersApi<'a> {
     /// # Parameters
     /// - `id`: The parameter provider id.
     /// - `body`: The parameter provider configuration details.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// - `Write - /parameter-providers/{uuid}`
+    /// - `Read - any referenced Controller Services if this request changes the reference - /controller-services/{uuid}`
     pub async fn update_parameter_provider(
         &self,
         id: &str,
@@ -145,6 +178,19 @@ impl<'a> ParameterProvidersApplyParametersRequestsApi<'a> {
     ///
     /// # Parameters
     /// - `body`: The apply parameters request.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// - `Read - /parameter-providers/{parameterProviderId}`
+    /// - `Write - /parameter-providers/{parameterProviderId}`
+    /// - `Read - for every component that is affected by the update`
+    /// - `Write - for every component that is affected by the update`
     pub async fn submit_apply_parameters(
         &self,
         body: &crate::v2_6_0::types::ParameterProviderParameterApplicationEntity,
@@ -168,6 +214,16 @@ impl<'a> ParameterProvidersApplyParametersRequestsApi<'a> {
     /// # Parameters
     /// - `request_id`: The ID of the Apply Parameters Request
     /// - `disconnected_node_acknowledged`: Acknowledges that this node is disconnected to allow for mutable requests to proceed.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Only the user that submitted the request can remove it`.
     pub async fn delete_apply_parameters_request(
         &self,
         request_id: &str,
@@ -197,6 +253,16 @@ impl<'a> ParameterProvidersApplyParametersRequestsApi<'a> {
     ///
     /// # Parameters
     /// - `request_id`: The ID of the Apply Parameters Request
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Only the user that submitted the request can get it`.
     pub async fn get_parameter_provider_apply_parameters_request(
         &self,
         request_id: &str,
@@ -227,6 +293,16 @@ impl<'a> ParameterProvidersConfigApi<'a> {
     ///
     /// # Parameters
     /// - `body`: The configuration analysis request.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /parameter-providers/{uuid}`.
     pub async fn analyze_configuration_1(
         &self,
         body: &crate::v2_6_0::types::ConfigurationAnalysisEntity,
@@ -246,6 +322,16 @@ impl<'a> ParameterProvidersConfigApi<'a> {
     ///
     /// # Parameters
     /// - `body`: The parameter provider configuration verification request.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /parameter-providers/{uuid}`.
     pub async fn submit_config_verification_request_1(
         &self,
         body: &crate::v2_6_0::types::VerifyConfigRequestEntity,
@@ -268,6 +354,16 @@ impl<'a> ParameterProvidersConfigApi<'a> {
     ///
     /// # Parameters
     /// - `request_id`: The ID of the Verification Request
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Only the user that submitted the request can remove it`.
     pub async fn delete_verification_request_1(
         &self,
         request_id: &str,
@@ -289,6 +385,16 @@ impl<'a> ParameterProvidersConfigApi<'a> {
     ///
     /// # Parameters
     /// - `request_id`: The ID of the Verification Request
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Only the user that submitted the request can get it`.
     pub async fn get_verification_request_1(
         &self,
         request_id: &str,
@@ -319,6 +425,16 @@ impl<'a> ParameterProvidersDescriptorsApi<'a> {
     ///
     /// # Parameters
     /// - `property_name`: The property name.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /parameter-providers/{uuid}`.
     pub async fn get_property_descriptor_2(
         &self,
         property_name: &str,
@@ -349,6 +465,16 @@ impl<'a> ParameterProvidersParametersApi<'a> {
     ///
     /// # Parameters
     /// - `body`: The parameter fetch request.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Write - /parameter-providers/{uuid} or  or /operation/parameter-providers/{uuid}`.
     pub async fn fetch_parameters(
         &self,
         body: &crate::v2_6_0::types::ParameterProviderParameterFetchEntity,
@@ -375,6 +501,16 @@ impl<'a> ParameterProvidersReferencesApi<'a> {
     /// Gets all references to a parameter provider
     ///
     /// Calls `GET /nifi-api/parameter-providers/{id}/references`.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /parameter-providers/{uuid}`.
     pub async fn get_parameter_provider_references(
         &self,
     ) -> Result<crate::v2_6_0::types::ParameterProviderReferencingComponentsEntity, NifiError> {
@@ -397,6 +533,16 @@ impl<'a> ParameterProvidersStateApi<'a> {
     /// Gets the state for a parameter provider
     ///
     /// Calls `GET /nifi-api/parameter-providers/{id}/state`.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Write - /parameter-providers/{uuid}`.
     pub async fn get_state_1(&self) -> Result<crate::v2_6_0::types::ComponentStateDto, NifiError> {
         let id = self.id;
         let e: crate::v2_6_0::types::ComponentStateEntity = self
@@ -411,6 +557,16 @@ impl<'a> ParameterProvidersStateApi<'a> {
     ///
     /// # Parameters
     /// - `body`: Optional component state to perform a selective key removal. If omitted, clears all state.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Write - /parameter-providers/{uuid}`.
     pub async fn clear_state_2(
         &self,
         body: &crate::v2_6_0::types::ComponentStateEntity,

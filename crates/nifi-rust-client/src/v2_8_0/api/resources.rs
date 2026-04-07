@@ -14,6 +14,13 @@ impl<'a> ResourcesApi<'a> {
     /// Gets the available resources that support access/authorization policies
     ///
     /// Calls `GET /nifi-api/resources`.
+    ///
+    /// # Errors
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    ///
+    /// # Permissions
+    /// Requires `Read - /resources`.
     pub async fn get_resources(&self) -> Result<crate::v2_8_0::types::ResourcesEntity, NifiError> {
         self.client.get("/resources").await
     }

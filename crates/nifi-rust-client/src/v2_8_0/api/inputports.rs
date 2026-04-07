@@ -20,6 +20,17 @@ impl<'a> InputPortsApi<'a> {
     /// - `version`: The revision is used to verify the client is working with the latest version of the flow.
     /// - `client_id`: If the client id is not specified, new one will be generated. This value (whether specified or generated) is included in the response.
     /// - `disconnected_node_acknowledged`: Acknowledges that this node is disconnected to allow for mutable requests to proceed.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// - `Write - /input-ports/{uuid}`
+    /// - `Write - Parent Process Group - /process-groups/{uuid}`
     pub async fn remove_input_port(
         &self,
         id: &str,
@@ -47,6 +58,16 @@ impl<'a> InputPortsApi<'a> {
     ///
     /// # Parameters
     /// - `id`: The input port id.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /input-ports/{uuid}`.
     pub async fn get_input_port(
         &self,
         id: &str,
@@ -60,6 +81,16 @@ impl<'a> InputPortsApi<'a> {
     /// # Parameters
     /// - `id`: The input port id.
     /// - `body`: The input port configuration details.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Write - /input-ports/{uuid}`.
     pub async fn update_input_port(
         &self,
         id: &str,
@@ -102,6 +133,16 @@ impl<'a> InputPortsBulletinsApi<'a> {
     ///
     /// # Parameters
     /// - `body`: The request to clear bulletins.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Write - /input-ports/{uuid}`.
     pub async fn clear_bulletins_2(
         &self,
         body: &crate::v2_8_0::types::ClearBulletinsRequestEntity,
@@ -128,6 +169,16 @@ impl<'a> InputPortsRunStatusApi<'a> {
     ///
     /// # Parameters
     /// - `body`: The port run status.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Write - /input-ports/{uuid} or /operation/input-ports/{uuid}`.
     pub async fn update_run_status_2(
         &self,
         body: &crate::v2_8_0::types::PortRunStatusEntity,

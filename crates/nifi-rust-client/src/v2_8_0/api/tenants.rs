@@ -19,6 +19,16 @@ impl<'a> TenantsApi<'a> {
     ///
     /// # Parameters
     /// - `q`: Identity to search for.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /tenants`.
     pub async fn search_tenants(
         &self,
         q: &str,
@@ -34,6 +44,16 @@ impl<'a> TenantsApi<'a> {
     /// Note: This endpoint is subject to change as NiFi and it's REST API evolve.
     ///
     /// Calls `GET /nifi-api/tenants/user-groups`.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /tenants`.
     pub async fn get_user_groups(
         &self,
     ) -> Result<crate::v2_8_0::types::UserGroupsEntity, NifiError> {
@@ -47,6 +67,16 @@ impl<'a> TenantsApi<'a> {
     ///
     /// # Parameters
     /// - `body`: The user group configuration details.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Write - /tenants`.
     pub async fn create_user_group(
         &self,
         body: &crate::v2_8_0::types::UserGroupEntity,
@@ -64,6 +94,16 @@ impl<'a> TenantsApi<'a> {
     /// - `version`: The revision is used to verify the client is working with the latest version of the flow.
     /// - `client_id`: If the client id is not specified, new one will be generated. This value (whether specified or generated) is included in the response.
     /// - `disconnected_node_acknowledged`: Acknowledges that this node is disconnected to allow for mutable requests to proceed.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Write - /tenants`.
     pub async fn remove_user_group(
         &self,
         id: &str,
@@ -93,6 +133,16 @@ impl<'a> TenantsApi<'a> {
     ///
     /// # Parameters
     /// - `id`: The user group id.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /tenants`.
     pub async fn get_user_group(
         &self,
         id: &str,
@@ -108,6 +158,16 @@ impl<'a> TenantsApi<'a> {
     /// # Parameters
     /// - `id`: The user group id.
     /// - `body`: The user group configuration details.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Write - /tenants`.
     pub async fn update_user_group(
         &self,
         id: &str,
@@ -122,6 +182,16 @@ impl<'a> TenantsApi<'a> {
     /// Note: This endpoint is subject to change as NiFi and it's REST API evolve.
     ///
     /// Calls `GET /nifi-api/tenants/users`.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /tenants`.
     pub async fn get_users(&self) -> Result<crate::v2_8_0::types::UsersEntity, NifiError> {
         self.client.get("/tenants/users").await
     }
@@ -133,6 +203,16 @@ impl<'a> TenantsApi<'a> {
     ///
     /// # Parameters
     /// - `body`: The user configuration details.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Write - /tenants`.
     pub async fn create_user(
         &self,
         body: &crate::v2_8_0::types::UserEntity,
@@ -150,6 +230,16 @@ impl<'a> TenantsApi<'a> {
     /// - `version`: The revision is used to verify the client is working with the latest version of the flow.
     /// - `client_id`: If the client id is not specified, new one will be generated. This value (whether specified or generated) is included in the response.
     /// - `disconnected_node_acknowledged`: Acknowledges that this node is disconnected to allow for mutable requests to proceed.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Write - /tenants`.
     pub async fn remove_user(
         &self,
         id: &str,
@@ -179,6 +269,16 @@ impl<'a> TenantsApi<'a> {
     ///
     /// # Parameters
     /// - `id`: The user id.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /tenants`.
     pub async fn get_user(&self, id: &str) -> Result<crate::v2_8_0::types::UserEntity, NifiError> {
         self.client.get(&format!("/tenants/users/{id}")).await
     }
@@ -191,6 +291,16 @@ impl<'a> TenantsApi<'a> {
     /// # Parameters
     /// - `id`: The user id.
     /// - `body`: The user configuration details.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Write - /tenants`.
     pub async fn update_user(
         &self,
         id: &str,

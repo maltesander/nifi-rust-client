@@ -20,6 +20,17 @@ impl<'a> RemoteProcessGroupsApi<'a> {
     /// - `version`: The revision is used to verify the client is working with the latest version of the flow.
     /// - `client_id`: If the client id is not specified, new one will be generated. This value (whether specified or generated) is included in the response.
     /// - `disconnected_node_acknowledged`: Acknowledges that this node is disconnected to allow for mutable requests to proceed.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// - `Write - /remote-process-groups/{uuid}`
+    /// - `Write - Parent Process Group - /process-groups/{uuid}`
     pub async fn remove_remote_process_group(
         &self,
         id: &str,
@@ -47,6 +58,16 @@ impl<'a> RemoteProcessGroupsApi<'a> {
     ///
     /// # Parameters
     /// - `id`: The remote process group id.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /remote-process-groups/{uuid}`.
     pub async fn get_remote_process_group(
         &self,
         id: &str,
@@ -62,6 +83,16 @@ impl<'a> RemoteProcessGroupsApi<'a> {
     /// # Parameters
     /// - `id`: The remote process group id.
     /// - `body`: The remote process group.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Write - /remote-process-groups/{uuid}`.
     pub async fn update_remote_process_group(
         &self,
         id: &str,
@@ -133,6 +164,16 @@ impl<'a> RemoteProcessGroupsBulletinsApi<'a> {
     ///
     /// # Parameters
     /// - `body`: The clear bulletin request.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Write - /remote-process-groups/{uuid}`.
     pub async fn clear_bulletins_6(
         &self,
         body: &crate::v2_7_2::types::ClearBulletinsRequestEntity,
@@ -165,6 +206,16 @@ impl<'a> RemoteProcessGroupsInputPortsApi<'a> {
     /// # Parameters
     /// - `port_id`: The remote process group port id.
     /// - `body`: The remote process group port.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Write - /remote-process-groups/{uuid}`.
     pub async fn update_remote_process_group_input_port(
         &self,
         port_id: &str,
@@ -187,6 +238,16 @@ impl<'a> RemoteProcessGroupsInputPortsApi<'a> {
     /// # Parameters
     /// - `port_id`: The remote process group port id.
     /// - `body`: The remote process group port.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Write - /remote-process-groups/{uuid} or /operation/remote-process-groups/{uuid}`.
     pub async fn update_remote_process_group_input_port_run_status(
         &self,
         port_id: &str,
@@ -220,6 +281,16 @@ impl<'a> RemoteProcessGroupsOutputPortsApi<'a> {
     /// # Parameters
     /// - `port_id`: The remote process group port id.
     /// - `body`: The remote process group port.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Write - /remote-process-groups/{uuid}`.
     pub async fn update_remote_process_group_output_port(
         &self,
         port_id: &str,
@@ -242,6 +313,16 @@ impl<'a> RemoteProcessGroupsOutputPortsApi<'a> {
     /// # Parameters
     /// - `port_id`: The remote process group port id.
     /// - `body`: The remote process group port.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Write - /remote-process-groups/{uuid} or /operation/remote-process-groups/{uuid}`.
     pub async fn update_remote_process_group_output_port_run_status(
         &self,
         port_id: &str,
@@ -272,6 +353,16 @@ impl<'a> RemoteProcessGroupsRunStatusApi<'a> {
     ///
     /// # Parameters
     /// - `body`: The remote process groups run status.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Write - /remote-process-groups/{uuid} or /operation/remote-process-groups/{uuid}`.
     pub async fn update_remote_process_group_run_statuses(
         &self,
         body: &crate::v2_7_2::types::RemotePortRunStatusEntity,
@@ -290,6 +381,16 @@ impl<'a> RemoteProcessGroupsRunStatusApi<'a> {
     ///
     /// # Parameters
     /// - `body`: The remote process group run status.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Write - /remote-process-groups/{uuid} or /operation/remote-process-groups/{uuid}`.
     pub async fn update_remote_process_group_run_status(
         &self,
         body: &crate::v2_7_2::types::RemotePortRunStatusEntity,
@@ -313,6 +414,16 @@ impl<'a> RemoteProcessGroupsStateApi<'a> {
     /// Gets the state for a RemoteProcessGroup
     ///
     /// Calls `GET /nifi-api/remote-process-groups/{id}/state`.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Write - /remote-process-groups/{uuid}`.
     pub async fn get_state_3(&self) -> Result<crate::v2_7_2::types::ComponentStateDto, NifiError> {
         let id = self.id;
         let e: crate::v2_7_2::types::ComponentStateEntity = self

@@ -8,28 +8,39 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ParameterProviderApplyParametersRequestDto {
-    /// Whether or not the request is completed
+    /// Whether or not the request is completed Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub complete: Option<bool>,
-    /// The reason for the request failing, or null if the request has not failed
+    /// The reason for the request failing, or null if the request has not failed Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub failure_reason: Option<String>,
-    /// The timestamp of when the request was last updated
+    /// The timestamp of when the request was last updated Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub last_updated: Option<String>,
-    /// The Parameter Contexts updated by this Parameter Provider. This may not be populated until the request has successfully completed.
+    /// The Parameter Contexts updated by this Parameter Provider. This may not be populated until the request has successfully completed. Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub parameter_context_updates: Option<Vec<ParameterContextUpdateEntity>>,
     pub parameter_provider: Option<ParameterProviderDto>,
-    /// A value between 0 and 100 (inclusive) indicating how close the request is to completion
+    /// A value between 0 and 100 (inclusive) indicating how close the request is to completion Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub percent_completed: Option<i32>,
-    /// The components that are referenced by the update.
+    /// The components that are referenced by the update. Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub referencing_components: Option<Vec<AffectedComponentEntity>>,
-    /// The ID of the request
+    /// The ID of the request Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub request_id: Option<String>,
-    /// A description of the current state of the request
+    /// A description of the current state of the request Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub state: Option<String>,
-    /// The timestamp of when the request was submitted
+    /// The timestamp of when the request was submitted Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub submission_time: Option<String>,
-    /// The steps that are required in order to complete the request, along with the status of each
+    /// The steps that are required in order to complete the request, along with the status of each Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub update_steps: Option<Vec<ParameterProviderApplyParametersUpdateStepDto>>,
-    /// The URI for the request
+    /// The URI for the request Read-only — this field is ignored when serializing requests to NiFi.
+    #[serde(skip_serializing)]
     pub uri: Option<String>,
 }
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]

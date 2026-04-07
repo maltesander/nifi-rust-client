@@ -19,6 +19,13 @@ impl<'a> SystemDiagnosticsApi<'a> {
     /// - `nodewise`: Whether or not to include the breakdown per node. Optional, defaults to false
     /// - `diagnostic_level`: Whether or not to include verbose details. Optional, defaults to false
     /// - `cluster_node_id`: The id of the node where to get the status.
+    ///
+    /// # Errors
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    ///
+    /// # Permissions
+    /// Requires `Read - /system`.
     pub async fn get_system_diagnostics(
         &self,
         nodewise: Option<bool>,
@@ -49,6 +56,16 @@ impl<'a> SystemDiagnosticsApi<'a> {
     ///
     /// # Parameters
     /// - `bean_name_filter`: Regular Expression Pattern to be applied against the ObjectName
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /system`.
     pub async fn get_jmx_metrics(
         &self,
         bean_name_filter: Option<&str>,

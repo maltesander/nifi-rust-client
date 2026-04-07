@@ -20,6 +20,19 @@ impl<'a> ControllerServicesApi<'a> {
     /// - `version`: The revision is used to verify the client is working with the latest version of the flow.
     /// - `client_id`: If the client id is not specified, new one will be generated. This value (whether specified or generated) is included in the response.
     /// - `disconnected_node_acknowledged`: Acknowledges that this node is disconnected to allow for mutable requests to proceed.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// - `Write - /controller-services/{uuid}`
+    /// - `Write - Parent Process Group if scoped by Process Group - /process-groups/{uuid}`
+    /// - `Write - Controller if scoped by Controller - /controller`
+    /// - `Read - any referenced Controller Services - /controller-services/{uuid}`
     pub async fn remove_controller_service(
         &self,
         id: &str,
@@ -49,6 +62,16 @@ impl<'a> ControllerServicesApi<'a> {
     ///
     /// # Parameters
     /// - `id`: The controller service id.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /controller-services/{uuid}`.
     pub async fn get_controller_service(
         &self,
         id: &str,
@@ -69,6 +92,17 @@ impl<'a> ControllerServicesApi<'a> {
     /// # Parameters
     /// - `id`: The controller service id.
     /// - `body`: The controller service configuration details.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// - `Write - /controller-services/{uuid}`
+    /// - `Read - any referenced Controller Services if this request changes the reference - /controller-services/{uuid}`
     pub async fn update_controller_service(
         &self,
         id: &str,
@@ -140,6 +174,16 @@ impl<'a> ControllerServicesConfigApi<'a> {
     ///
     /// # Parameters
     /// - `body`: The configuration analysis request.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /controller-services/{uuid}`.
     pub async fn analyze_configuration(
         &self,
         body: &crate::v2_6_0::types::ConfigurationAnalysisEntity,
@@ -159,6 +203,16 @@ impl<'a> ControllerServicesConfigApi<'a> {
     ///
     /// # Parameters
     /// - `body`: The controller service configuration verification request.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /controller-services/{uuid}`.
     pub async fn submit_config_verification_request(
         &self,
         body: &crate::v2_6_0::types::VerifyConfigRequestEntity,
@@ -181,6 +235,16 @@ impl<'a> ControllerServicesConfigApi<'a> {
     ///
     /// # Parameters
     /// - `request_id`: The ID of the Verification Request
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Only the user that submitted the request can remove it`.
     pub async fn delete_verification_request(
         &self,
         request_id: &str,
@@ -202,6 +266,16 @@ impl<'a> ControllerServicesConfigApi<'a> {
     ///
     /// # Parameters
     /// - `request_id`: The ID of the Verification Request
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Only the user that submitted the request can get it`.
     pub async fn get_verification_request(
         &self,
         request_id: &str,
@@ -233,6 +307,16 @@ impl<'a> ControllerServicesDescriptorsApi<'a> {
     /// # Parameters
     /// - `property_name`: The property name to return the descriptor for.
     /// - `sensitive`: Property Descriptor requested sensitive status
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /controller-services/{uuid}`.
     pub async fn get_property_descriptor_1(
         &self,
         property_name: &str,
@@ -264,6 +348,16 @@ impl<'a> ControllerServicesReferencesApi<'a> {
     /// Gets a controller service
     ///
     /// Calls `GET /nifi-api/controller-services/{id}/references`.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /controller-services/{uuid}`.
     pub async fn get_controller_service_references(
         &self,
     ) -> Result<crate::v2_6_0::types::ControllerServiceReferencingComponentsEntity, NifiError> {
@@ -278,6 +372,16 @@ impl<'a> ControllerServicesReferencesApi<'a> {
     ///
     /// # Parameters
     /// - `body`: The controller service request update request.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Write - /{component-type}/{uuid} or /operate/{component-type}/{uuid} - For each referencing component specified`.
     pub async fn update_controller_service_references(
         &self,
         body: &crate::v2_6_0::types::UpdateControllerServiceReferenceRequestEntity,
@@ -304,6 +408,16 @@ impl<'a> ControllerServicesRunStatusApi<'a> {
     ///
     /// # Parameters
     /// - `body`: The controller service run status.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Write - /controller-services/{uuid} or /operation/controller-services/{uuid}`.
     pub async fn update_run_status_1(
         &self,
         body: &crate::v2_6_0::types::ControllerServiceRunStatusEntity,
@@ -327,6 +441,16 @@ impl<'a> ControllerServicesStateApi<'a> {
     /// Gets the state for a controller service
     ///
     /// Calls `GET /nifi-api/controller-services/{id}/state`.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Write - /controller-services/{uuid}`.
     pub async fn get_state(&self) -> Result<crate::v2_6_0::types::ComponentStateDto, NifiError> {
         let id = self.id;
         let e: crate::v2_6_0::types::ComponentStateEntity = self
@@ -341,6 +465,16 @@ impl<'a> ControllerServicesStateApi<'a> {
     ///
     /// # Parameters
     /// - `body`: Optional component state to perform a selective key removal. If omitted, clears all state.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Write - /controller-services/{uuid}`.
     pub async fn clear_state_1(
         &self,
         body: &crate::v2_6_0::types::ComponentStateEntity,

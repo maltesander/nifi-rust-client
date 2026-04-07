@@ -14,6 +14,9 @@ impl<'a> AuthenticationApi<'a> {
     /// Retrieves the authentication configuration endpoint and status information
     ///
     /// Calls `GET /nifi-api/authentication/configuration`.
+    ///
+    /// # Permissions
+    /// No authentication required.
     pub async fn get_authentication_configuration(
         &self,
     ) -> Result<crate::v2_6_0::types::AuthenticationConfigurationDto, NifiError> {

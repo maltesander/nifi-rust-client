@@ -27,6 +27,8 @@ pub struct ControllerServiceRunStatusEntity {
     /// The run status of the ControllerService.
     pub state: Option<ControllerServiceRunStatusEntityState>,
     /// Indicates whether or not responses should only include fields necessary for rendering the NiFi User Interface.
+    /// As such, when this value is set to true, some fields may be returned as null values, and the selected fields may change at any time without notice.
+    /// As a result, this value should not be set to true by any client other than the UI.
     pub ui_only: Option<bool>,
 }
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -54,5 +56,7 @@ pub struct UpdateControllerServiceReferenceRequestEntity {
     /// The new state of the references for the controller service.
     pub state: Option<UpdateControllerServiceReferenceRequestEntityState>,
     /// Indicates whether or not the response should only include fields necessary for rendering the NiFi User Interface.
+    /// As such, when this value is set to true, some fields may be returned as null values, and the selected fields may change at any time without notice.
+    /// As a result, this value should not be set to true by any client other than the UI.
     pub ui_only: Option<bool>,
 }
