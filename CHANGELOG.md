@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-04-08
+
+### Added
+
+- Add provenance + flowfile-queue integration tests; fix generator for 202 responses and optional entity fields ([60985b3](https://github.com/maltesander/nifi-rust-client/commit/60985b3))
+
+### Changed
+
+- Remove redundant section about client modes ([e22fb43](https://github.com/maltesander/nifi-rust-client/commit/e22fb43))
+
+### Fixed
+
+- Clippy warnings and dynamic conversions for optional entity fields ([15da24e](https://github.com/maltesander/nifi-rust-client/commit/15da24e))
+
 ## [0.2.1] - 2026-04-07
 
 ### Added
@@ -114,7 +128,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Structured error handling** — `NifiError` via `snafu` with distinct variants for HTTP, auth, serialization, and network errors.
 - **Tracing** — all HTTP requests emit a `tracing::debug!` event with method and path before sending.
 
-[Unreleased]: https://github.com/maltesander/nifi-rust-client/compare/v0.2.1...HEAD
+[Unreleased]: https://github.com/maltesander/nifi-rust-client/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/maltesander/nifi-rust-client/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/maltesander/nifi-rust-client/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/maltesander/nifi-rust-client/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/maltesander/nifi-rust-client/compare/v0.1.0...v0.1.1

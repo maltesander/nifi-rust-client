@@ -27,7 +27,7 @@ Target a specific NiFi version with full type safety and autocompletion:
 
 ```toml
 [dependencies]
-nifi-rust-client = "0.2"  # defaults to the latest supported NiFi version
+nifi-rust-client = "0.3"  # defaults to the latest supported NiFi version
 ```
 
 ```rust
@@ -48,7 +48,7 @@ Talk to any supported NiFi version — auto-detected at connect time:
 
 ```toml
 [dependencies]
-nifi-rust-client = { version = "0.2", features = ["dynamic"] }
+nifi-rust-client = { version = "0.3", features = ["dynamic"] }
 ```
 
 ```rust
