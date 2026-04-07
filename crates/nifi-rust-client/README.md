@@ -2,7 +2,7 @@
 
 Idiomatic Rust client for the Apache NiFi 2.x REST API.
 
-All 237 NiFi 2.8.0 REST API endpoints are generated from the OpenAPI spec and exposed via typed resource accessor methods.
+All NiFi REST API endpoints are generated from the official OpenAPI spec and exposed via typed resource accessor methods.
 
 ## Modes
 
@@ -12,10 +12,12 @@ For applications built against a specific NiFi version. You get full type safety
 
 Use this when you're building a deployment pipeline, custom processor manager, or automation tool that targets a known NiFi cluster. You move in lock-step with your NiFi version — when you upgrade NiFi, you update the feature flag.
 
+<!-- STATIC_FEATURE_EXAMPLE_START -->
 ```toml
 [dependencies]
 nifi-rust-client = { version = "...", features = ["nifi-2-8-0"] }
 ```
+<!-- STATIC_FEATURE_EXAMPLE_END -->
 
 ```rust
 let mut client = NifiClientBuilder::new("https://nifi:8443")?.build()?;

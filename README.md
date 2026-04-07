@@ -34,7 +34,7 @@ Target a specific NiFi version with full type safety and autocompletion:
 
 ```toml
 [dependencies]
-nifi-rust-client = "0.2"  # defaults to latest (currently nifi-2-8-0)
+nifi-rust-client = "0.2"  # defaults to the latest supported NiFi version
 ```
 
 ```rust
@@ -75,11 +75,13 @@ See [`crates/nifi-rust-client/README.md`](crates/nifi-rust-client/README.md) for
 
 ## Supported NiFi Versions
 
-| NiFi Version | Feature Flag | Default |
-|---|---|---|
-| 2.8.0 | `nifi-2-8-0` | Yes |
-| 2.7.2 | `nifi-2-7-2` | |
-| 2.6.0 | `nifi-2-6-0` | |
+<!-- SUPPORTED_VERSIONS_START -->
+| NiFi Version | Feature flag | Endpoints | Types | Changes | Default |
+|---|---|---|---|---|---|
+| 2.8.0 | `nifi-2-8-0` | 317 | 405 | no API changes vs 2.7.2 | ✓ |
+| 2.7.2 | `nifi-2-7-2` | 317 | 405 | +17 endpoints, +10 types vs 2.6.0 |  |
+| 2.6.0 | `nifi-2-6-0` | 300 | 395 | — |  |
+<!-- SUPPORTED_VERSIONS_END -->
 
 The `dynamic` feature compiles all versions and enables runtime version detection.
 

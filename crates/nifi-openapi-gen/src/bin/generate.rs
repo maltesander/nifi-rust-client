@@ -9,6 +9,8 @@ use semver::Version;
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 
+// ─── Version utilities ────────────────────────────────────────────────────────
+
 fn version_to_mod_name(version: &str) -> String {
     format!("v{}", version.replace('.', "_"))
 }
@@ -24,6 +26,8 @@ fn sort_versions_semver(versions: &mut [String]) {
             .cmp(&Version::parse(b).unwrap_or_else(|_| Version::new(0, 0, 0)))
     });
 }
+
+// ─── Code generation (pure: spec data → Rust code string) ────────────────────
 
 fn generate_lib_rs_content(versions: &[&str]) -> String {
     let features: Vec<String> = versions.iter().map(|v| version_to_feature(v)).collect();
@@ -123,6 +127,8 @@ fn discover_versions(client_src: &Path) -> Vec<String> {
     sort_versions_semver(&mut versions);
     versions
 }
+
+// ─── Repo sync: generated Rust files ─────────────────────────────────────────
 
 fn update_lib_rs(client_src: &Path) {
     let versions = discover_versions(client_src);
@@ -272,6 +278,166 @@ fn discover_spec_versions(specs_dir: &Path) -> Vec<String> {
     versions
 }
 
+// ─── Repo sync: documentation and infrastructure ──────────────────────────────
+
+fn count_spec_endpoints(spec: &nifi_openapi_gen::ApiSpec) -> usize {
+    spec.tags
+        .iter()
+        .map(|t| {
+            t.root_endpoints.len()
+                + t.sub_groups
+                    .iter()
+                    .map(|sg| sg.endpoints.len())
+                    .sum::<usize>()
+        })
+        .sum()
+}
+
+fn count_spec_types(spec: &nifi_openapi_gen::ApiSpec) -> usize {
+    spec.all_types.len()
+}
+
+/// Generates the Markdown rows for the supported-versions table.
+/// `all_specs` must be sorted semver-ascending (oldest first).
+/// The table is rendered newest-first so users see the current default at a glance.
+fn generate_versions_table_content(
+    all_specs: &[(String, nifi_openapi_gen::ApiSpec)],
+    latest: &str,
+) -> String {
+    let mut rows: Vec<String> = Vec::new();
+    rows.push(
+        "| NiFi Version | Feature flag | Endpoints | Types | Changes | Default |".to_string(),
+    );
+    rows.push("|---|---|---|---|---|---|".to_string());
+
+    for (i, (version, spec)) in all_specs.iter().enumerate().rev() {
+        let endpoints = count_spec_endpoints(spec);
+        let types = count_spec_types(spec);
+        let feature = version_to_feature(version);
+        let default_mark = if version == latest { "✓" } else { "" };
+
+        let changes = if i == 0 {
+            "—".to_string()
+        } else {
+            let (prev_version, prev_spec) = &all_specs[i - 1];
+            let prev_ep = count_spec_endpoints(prev_spec);
+            let prev_ty = count_spec_types(prev_spec);
+            let ep_delta = endpoints as i64 - prev_ep as i64;
+            let ty_delta = types as i64 - prev_ty as i64;
+            if ep_delta == 0 && ty_delta == 0 {
+                format!("no API changes vs {prev_version}")
+            } else {
+                let mut parts: Vec<String> = Vec::new();
+                if ep_delta != 0 {
+                    parts.push(format!("{ep_delta:+} endpoints"));
+                }
+                if ty_delta != 0 {
+                    parts.push(format!("{ty_delta:+} types"));
+                }
+                format!("{} vs {prev_version}", parts.join(", "))
+            }
+        };
+
+        rows.push(format!(
+            "| {version} | `{feature}` | {endpoints} | {types} | {changes} | {default_mark} |"
+        ));
+    }
+
+    rows.join("\n")
+}
+
+/// Replaces the content between `start_marker` and `end_marker` (exclusive) with
+/// `\n{new_content}\n`.  Panics if either marker is absent.
+fn replace_between_markers(
+    content: &str,
+    start_marker: &str,
+    end_marker: &str,
+    new_content: &str,
+) -> String {
+    let start_pos = content.find(start_marker).unwrap_or_else(|| {
+        panic!("start marker '{start_marker}' not found");
+    });
+    let after_start = start_pos + start_marker.len();
+    let end_pos = content[after_start..]
+        .find(end_marker)
+        .map(|p| p + after_start)
+        .unwrap_or_else(|| {
+            panic!("end marker '{end_marker}' not found");
+        });
+    format!(
+        "{}{}\n{}\n{}{}",
+        &content[..start_pos],
+        start_marker,
+        new_content,
+        end_marker,
+        &content[end_pos + end_marker.len()..],
+    )
+}
+
+fn update_file_between_markers(
+    path: &Path,
+    start_marker: &str,
+    end_marker: &str,
+    new_content: &str,
+) {
+    let on_disk =
+        std::fs::read_to_string(path).unwrap_or_else(|_| panic!("read {}", path.display()));
+    let patched = replace_between_markers(&on_disk, start_marker, end_marker, new_content);
+    if on_disk != patched {
+        std::fs::write(path, &patched).unwrap_or_else(|_| panic!("write {}", path.display()));
+        println!("  wrote {}", path.display());
+    }
+}
+
+fn update_readme_versions_table(
+    workspace_root: &Path,
+    all_specs: &[(String, nifi_openapi_gen::ApiSpec)],
+    latest: &str,
+) {
+    const START: &str = "<!-- SUPPORTED_VERSIONS_START -->";
+    const END: &str = "<!-- SUPPORTED_VERSIONS_END -->";
+    let content = generate_versions_table_content(all_specs, latest);
+    update_file_between_markers(&workspace_root.join("README.md"), START, END, &content);
+}
+
+fn update_client_readme_static_example(workspace_root: &Path, latest: &str) {
+    const START: &str = "<!-- STATIC_FEATURE_EXAMPLE_START -->";
+    const END: &str = "<!-- STATIC_FEATURE_EXAMPLE_END -->";
+    let feature = version_to_feature(latest);
+    let content = format!(
+        "```toml\n[dependencies]\nnifi-rust-client = {{ version = \"...\", features = [\"{feature}\"] }}\n```"
+    );
+    update_file_between_markers(
+        &workspace_root.join("crates/nifi-rust-client/README.md"),
+        START,
+        END,
+        &content,
+    );
+}
+
+/// Replaces the `${NIFI_IMAGE_TAG:-<old>}` default tag in a docker-compose file content.
+fn replace_image_tag_default(content: &str, latest: &str) -> String {
+    const PREFIX: &str = "${NIFI_IMAGE_TAG:-";
+    if let Some(start) = content.find(PREFIX) {
+        let ver_start = start + PREFIX.len();
+        if let Some(end_offset) = content[ver_start..].find('}') {
+            let ver_end = ver_start + end_offset;
+            return format!("{}{}{}", &content[..ver_start], latest, &content[ver_end..]);
+        }
+    }
+    content.to_string()
+}
+
+fn update_docker_compose_default(path: &Path, latest: &str) {
+    let on_disk =
+        std::fs::read_to_string(path).unwrap_or_else(|_| panic!("read {}", path.display()));
+    let patched = replace_image_tag_default(&on_disk, latest);
+    if on_disk != patched {
+        std::fs::write(path, &patched).unwrap_or_else(|_| panic!("write {}", path.display()));
+        println!("  wrote {}", path.display());
+    }
+}
+
 fn main() {
     let codegen_dir = Path::new(env!("CARGO_MANIFEST_DIR"));
     let workspace_root = codegen_dir
@@ -282,7 +448,11 @@ fn main() {
     let client = workspace_root.join("crates/nifi-rust-client");
     let specs_dir = codegen_dir.join("specs");
 
-    // 1. Determine which specs to process
+    // Always discover the full set of spec versions — used for repo maintenance (README table,
+    // docker-compose default) regardless of which version(s) are being generated this run.
+    let all_spec_versions = discover_spec_versions(&specs_dir);
+
+    // 1. Determine which specs to generate code for (may be a subset of all_spec_versions)
     let spec_versions = if let Ok(version) = std::env::var("NIFI_VERSION") {
         vec![version]
     } else if let Ok(path) = std::env::var("NIFI_API_SPEC") {
@@ -295,7 +465,7 @@ fn main() {
             .to_string();
         vec![version]
     } else {
-        discover_spec_versions(&specs_dir)
+        all_spec_versions.clone()
     };
 
     // 2. Parse all specs
@@ -311,7 +481,7 @@ fn main() {
 
     let mut targets: Vec<(PathBuf, String)> = vec![];
 
-    // 3. Per-version generation
+    // 3. Per-version code generation
     for (version_str, spec) in &parsed_specs {
         let mod_name = version_to_mod_name(version_str);
         let feature_name = version_to_feature(version_str);
@@ -501,6 +671,27 @@ fn main() {
         std::process::exit(1);
     }
 
+    // 9. Repo maintenance: update the supported-versions table in README.md and the default
+    // docker-compose image tag.  Always uses all discovered spec versions so the table is
+    // complete even when only one version was generated in this run.
+    {
+        let latest_version = all_spec_versions.last().cloned().unwrap_or_default();
+        let all_parsed: Vec<(String, nifi_openapi_gen::ApiSpec)> = all_spec_versions
+            .iter()
+            .map(|v| {
+                let path = specs_dir.join(v).join("nifi-api.json");
+                let spec = nifi_openapi_gen::load(path.to_str().expect("UTF-8 path"));
+                (v.clone(), spec)
+            })
+            .collect();
+        update_readme_versions_table(workspace_root, &all_parsed, &latest_version);
+        update_client_readme_static_example(workspace_root, &latest_version);
+        update_docker_compose_default(
+            &workspace_root.join("tests/docker-compose.yml"),
+            &latest_version,
+        );
+    }
+
     println!("Done. {} file(s) updated.", written);
 }
 
@@ -644,5 +835,121 @@ mod tests {
         let toml = "[package]\nname = \"nifi-integration-tests\"\n";
         let result = patch_tests_cargo_features(toml, &["2.7.2", "2.8.0"]);
         assert!(result.contains("dynamic = [\"nifi-rust-client/dynamic\"]"));
+    }
+
+    // ─── Repo sync: documentation tests ──────────────────────────────────────
+
+    #[test]
+    fn test_replace_between_markers_replaces_content() {
+        let input = "before\n<!-- START -->\nold content\n<!-- END -->\nafter\n";
+        let result =
+            replace_between_markers(input, "<!-- START -->", "<!-- END -->", "new content");
+        assert_eq!(
+            result,
+            "before\n<!-- START -->\nnew content\n<!-- END -->\nafter\n"
+        );
+    }
+
+    #[test]
+    fn test_replace_between_markers_idempotent() {
+        let input = "before\n<!-- START -->\nnew content\n<!-- END -->\nafter\n";
+        let result =
+            replace_between_markers(input, "<!-- START -->", "<!-- END -->", "new content");
+        assert_eq!(result, input);
+    }
+
+    #[test]
+    fn test_replace_image_tag_default_updates_version() {
+        let input = "image: apache/nifi:${NIFI_IMAGE_TAG:-2.7.2}\n";
+        let result = replace_image_tag_default(input, "2.8.0");
+        assert_eq!(result, "image: apache/nifi:${NIFI_IMAGE_TAG:-2.8.0}\n");
+    }
+
+    #[test]
+    fn test_replace_image_tag_default_idempotent() {
+        let input = "image: apache/nifi:${NIFI_IMAGE_TAG:-2.8.0}\n";
+        let result = replace_image_tag_default(input, "2.8.0");
+        assert_eq!(result, input);
+    }
+
+    #[test]
+    fn test_generate_versions_table_latest_first_and_marked() {
+        let specs = vec![
+            (
+                "2.7.2".to_string(),
+                nifi_openapi_gen::ApiSpec {
+                    tags: vec![],
+                    all_types: vec![],
+                },
+            ),
+            (
+                "2.8.0".to_string(),
+                nifi_openapi_gen::ApiSpec {
+                    tags: vec![],
+                    all_types: vec![],
+                },
+            ),
+        ];
+        let table = generate_versions_table_content(&specs, "2.8.0");
+        // Latest version appears first in the rendered table
+        let pos_new = table.find("2.8.0").unwrap();
+        let pos_old = table.find("2.7.2").unwrap();
+        assert!(pos_new < pos_old, "latest version should appear first");
+        // Default mark only on the latest
+        assert!(table.contains("✓"), "default mark missing");
+        // Both versions have equal counts → no API changes message
+        assert!(
+            table.contains("no API changes vs 2.7.2"),
+            "expected no-changes message"
+        );
+        // Oldest shows em dash
+        assert!(table.contains("| — |"), "oldest version should show —");
+    }
+
+    #[test]
+    fn test_generate_versions_table_shows_delta() {
+        use nifi_openapi_gen::{ApiSpec, TagGroup};
+        fn make_spec(endpoint_count: usize) -> ApiSpec {
+            ApiSpec {
+                tags: vec![TagGroup {
+                    tag: "flow".to_string(),
+                    struct_name: "FlowApi".to_string(),
+                    module_name: "flow".to_string(),
+                    accessor_fn: "flow_api".to_string(),
+                    types: vec![],
+                    root_endpoints: (0..endpoint_count)
+                        .map(|_| nifi_openapi_gen::Endpoint {
+                            method: nifi_openapi_gen::HttpMethod::Get,
+                            path: "/nifi-api/flow/about".to_string(),
+                            fn_name: "get_about".to_string(),
+                            doc: None,
+                            description: None,
+                            path_params: vec![],
+                            request_type: None,
+                            body_kind: None,
+                            body_doc: None,
+                            response_type: None,
+                            response_inner: None,
+                            response_field: None,
+                            query_params: vec![],
+                            error_responses: vec![],
+                            security: None,
+                        })
+                        .collect(),
+                    sub_groups: vec![],
+                }],
+                all_types: vec![],
+            }
+        }
+
+        let specs = vec![
+            ("2.6.0".to_string(), make_spec(10)),
+            ("2.7.2".to_string(), make_spec(12)),
+        ];
+        let table = generate_versions_table_content(&specs, "2.7.2");
+        assert!(
+            table.contains("+2 endpoints vs 2.6.0"),
+            "expected +2 endpoints delta"
+        );
     }
 }

@@ -18,6 +18,12 @@ When the `dynamic` feature is present in `Cargo.toml`, the generator also writes
 
 These files are regenerated from scratch on every run, covering all supported versions.
 
+In addition to generating Rust code, the generator keeps three repo-level files in sync on every run (using all spec versions discovered in `specs/`, not just the one being generated):
+
+- `README.md` — rewrites the supported-versions table between `<!-- SUPPORTED_VERSIONS_START -->` / `<!-- SUPPORTED_VERSIONS_END -->` markers with live endpoint and type counts and per-version deltas
+- `crates/nifi-rust-client/README.md` — rewrites the static-mode feature flag example between `<!-- STATIC_FEATURE_EXAMPLE_START -->` / `<!-- STATIC_FEATURE_EXAMPLE_END -->` markers
+- `tests/docker-compose.yml` — updates the `${NIFI_IMAGE_TAG:-x.y.z}` default to match the semver-latest version
+
 ## Running the generator
 
 ```bash
@@ -25,7 +31,7 @@ These files are regenerated from scratch on every run, covering all supported ve
 cargo run -p nifi-openapi-gen
 
 # Generate for a specific version
-NIFI_VERSION=2.7.2 cargo run -p nifi-openapi-gen
+NIFI_VERSION=x.y.z cargo run -p nifi-openapi-gen
 ```
 
 ## Specs
@@ -52,22 +58,26 @@ The script reads the NiFi version from the running container and names the outpu
 
 ```bash
 # 1. Fetch spec from a running NiFi instance of the target version
-NIFI_VERSION=2.9.0 ./scripts/fetch-nifi-spec.sh
+NIFI_VERSION=x.y.z ./scripts/fetch-nifi-spec.sh
 
-# 2. Run the generator
-NIFI_VERSION=2.9.0 cargo run -p nifi-openapi-gen
+# 2. Run the generator — also updates the README versions table and
+#    docker-compose default tag automatically
+NIFI_VERSION=x.y.z cargo run -p nifi-openapi-gen
 
-# 3. Verify both versions compile
-cargo build --no-default-features --features nifi-2-9-0
-cargo build --no-default-features --features nifi-2-8-0
+# 3. Verify all versions compile
+cargo build --no-default-features --features nifi-x-y-z
+cargo build --features dynamic
 
 # 4. Commit the generated files
-git add specs/2.9.0/ \
-        ../nifi-rust-client/src/v2_9_0/ \
+git add specs/x.y.z/ \
+        ../nifi-rust-client/src/vx_y_z/ \
         ../nifi-rust-client/src/lib.rs \
         ../nifi-rust-client/Cargo.toml \
-        ../nifi-rust-client/tests/v2_9_0_generated_tests.rs \
-        ../../tests/Cargo.toml
+        ../nifi-rust-client/tests/vx_y_z_generated_tests.rs \
+        ../../tests/Cargo.toml \
+        ../../README.md \
+        ../../crates/nifi-rust-client/README.md \
+        ../../tests/docker-compose.yml
 ```
 
 The generator uses semver ordering (via the `semver` crate) to determine the latest version when setting the `default` Cargo feature.
@@ -77,11 +87,13 @@ The generator uses semver ordering (via the `semver` crate) to determine the lat
 The generator enriches every method and struct with documentation derived from the OpenAPI spec:
 
 **API methods** (`emit_api.rs`):
+
 - The OpenAPI `summary` becomes the one-line method doc; `description` (if present) is appended as additional paragraphs. Multi-line descriptions are emitted verbatim — blank lines become `///` separator lines.
 - A `# Errors` rustdoc section lists every documented non-2xx HTTP response code and its description, sorted by status code.
 - A `# Permissions` rustdoc section lists the NiFi policy expressions required to call the endpoint. Endpoints with no authentication requirement get "No authentication required."
 
 **DTO/entity structs** (`emit_types.rs`):
+
 - Struct and field docs are emitted as full multi-line rustdoc comments, preserving paragraph breaks from the spec.
 - Fields marked `readOnly` in the spec receive `#[serde(skip_serializing)]` so they are never sent in request bodies. Their doc comment is appended with "Read-only — this field is ignored when serializing requests to NiFi."
 
@@ -95,10 +107,12 @@ The generator is structured as:
 
 | Module | Responsibility |
 |--------|---------------|
-| `src/main.rs` | Entry point, version resolution, file orchestration |
-| `src/parser.rs` | Parse OpenAPI spec into `ParsedSpec` — paths, operations, schemas, query param enums |
+| `src/bin/generate.rs` | Entry point, version resolution, file orchestration, repo sync (README table, docker-compose) |
+| `src/parser.rs` | Parse OpenAPI spec into `ApiSpec` — paths, operations, schemas, query param enums |
 | `src/emit_types.rs` | Emit `types/<tag>.rs` — structs, enums, wrappers |
 | `src/emit_api.rs` | Emit `api/<tag>.rs` — resource structs with async methods |
 | `src/emit_tests.rs` | Emit wiremock test stubs |
 
-To add or change endpoints, update the spec parsing and emission logic in these modules rather than editing generated files directly.
+`generate.rs` is divided into four sections: *version utilities*, *code generation* (pure functions that produce Rust code strings), *repo sync: generated Rust files* (writes `.rs` files, `lib.rs`, `Cargo.toml` features), and *repo sync: documentation* (updates the README versions table and docker-compose default).
+
+To add or change endpoints, update the spec parsing and emission logic in the `src/` modules rather than editing generated files directly.

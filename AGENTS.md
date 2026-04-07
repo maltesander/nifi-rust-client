@@ -4,7 +4,7 @@
 
 `nifi-rust-client` is an idiomatic Rust client library for the Apache NiFi 2.x REST API.
 
-Supports multiple NiFi 2.x API versions via Cargo feature flags. Default (latest): **NiFi 2.8.0**
+Supports multiple NiFi 2.x API versions via Cargo feature flags. Default (latest): the semver-latest version present in `crates/nifi-openapi-gen/specs/`.
 
 ## Workspace Structure
 
@@ -15,18 +15,15 @@ crates/
     scripts/
       fetch-nifi-spec.sh  # Fetch OpenAPI spec from a running NiFi instance
     specs/
-      2.7.2/nifi-api.json
-      2.8.0/nifi-api.json   # OpenAPI 3.0.1 spec (237 paths)
+      x.y.z/nifi-api.json  # OpenAPI 3.0.1 spec per supported NiFi version
     tests/                # Unit tests for parser and emitters
   nifi-rust-client/       # Library crate — published to crates.io
     src/
-      v2_7_2/             # Generated: api/ + types/ + mod.rs for NiFi 2.7.2
-      v2_8_0/             # Generated: api/ + types/ + mod.rs for NiFi 2.8.0
+      vx_y_z/             # Generated per version: api/ + types/ + mod.rs
       dynamic/            # Generated: DynamicClient, common types, conversions (dynamic feature)
       lib.rs              # Generated: cfg-gated re-exports, auto-managed by generator
     tests/
-      v2_7_2_generated_tests.rs  # Generated: wiremock stubs for NiFi 2.7.2
-      v2_8_0_generated_tests.rs  # Generated: wiremock stubs for NiFi 2.8.0
+      vx_y_z_generated_tests.rs  # Generated: wiremock stubs per NiFi version
       *.rs                        # Hand-written wiremock tests per API group
 tests/                    # Integration test crate (not published, needs Docker)
   Cargo.toml
@@ -198,16 +195,16 @@ Naming conventions:
 
 | Artifact | Example |
 |---|---|
-| Version string (spec path dir) | `2.8.0` |
-| Rust module name | `v2_8_0` |
-| Cargo feature flag | `nifi-2-8-0` |
+| Version string (spec path dir) | `x.y.z` |
+| Rust module name | `vx_y_z` |
+| Cargo feature flag | `nifi-x-y-z` |
 
 ### Selecting a version
 
 Users add the feature flag to their `Cargo.toml`:
 
 ```toml
-nifi-rust-client = { version = "...", default-features = false, features = ["nifi-2-8-0"] }
+nifi-rust-client = { version = "...", default-features = false, features = ["nifi-x-y-z"] }
 ```
 
 The default feature is always the semver-latest version present in the repo. IDE autocompletion
@@ -236,25 +233,25 @@ let about = client.flow_api().get_about_info().await?;
 
 ```bash
 # 1. Fetch spec from a running NiFi instance of the target version
-NIFI_VERSION=2.9.0 ./crates/nifi-openapi-gen/scripts/fetch-nifi-spec.sh
+NIFI_VERSION=x.y.z ./crates/nifi-openapi-gen/scripts/fetch-nifi-spec.sh
 
-# 2. Run generator — writes src/v2_9_0/, updates lib.rs and both Cargo.tomls
-# The generator also regenerates the dynamic module (common types, dispatch, conversions).
-NIFI_VERSION=2.9.0 cargo run -p nifi-openapi-gen
+# 2. Run generator — writes src/vx_y_z/, updates lib.rs, both Cargo.tomls,
+#    the README versions table, and the docker-compose default tag.
+NIFI_VERSION=x.y.z cargo run -p nifi-openapi-gen
 
 # 3. Verify all versions compile
 cargo build --features dynamic
-cargo build --no-default-features --features nifi-2-9-0
-cargo build --no-default-features --features nifi-2-8-0
-cargo build --no-default-features --features nifi-2-7-2
+cargo build --no-default-features --features nifi-x-y-z
 
 # 4. Commit
-git add crates/nifi-openapi-gen/specs/2.9.0/ \
-        crates/nifi-rust-client/src/v2_9_0/ \
+git add crates/nifi-openapi-gen/specs/x.y.z/ \
+        crates/nifi-rust-client/src/vx_y_z/ \
         crates/nifi-rust-client/src/lib.rs \
         crates/nifi-rust-client/Cargo.toml \
-        crates/nifi-rust-client/tests/v2_9_0_generated_tests.rs \
-        tests/Cargo.toml
+        crates/nifi-rust-client/tests/vx_y_z_generated_tests.rs \
+        tests/Cargo.toml \
+        README.md \
+        tests/docker-compose.yml
 ```
 
 The generator uses **semver ordering** (via the `semver` crate) to determine the latest version
@@ -265,10 +262,10 @@ when setting the `default` feature and when auto-detecting which spec to use.
 Gate tests for endpoints that only exist in a specific NiFi version with `#[cfg(feature)]`:
 
 ```rust
-#[cfg(feature = "nifi-2-8-0")]
+#[cfg(feature = "nifi-x-y-z")]
 #[tokio::test]
 #[ignore]
-async fn test_endpoint_only_in_2_8() { ... }
+async fn test_endpoint_only_in_x_y_z() { ... }
 ```
 
 ## References
