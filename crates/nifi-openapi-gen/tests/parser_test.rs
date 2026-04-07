@@ -22,7 +22,10 @@ fn parse_scalar_fields() {
     assert!(
         matches!(title.ty, FieldType::Opt(ref inner) if matches!(inner.as_ref(), FieldType::Str))
     );
-    assert_eq!(title.doc.as_deref(), Some("The title of this NiFi instance.\nThis is configurable in nifi.properties."));
+    assert_eq!(
+        title.doc.as_deref(),
+        Some("The title of this NiFi instance.\nThis is configurable in nifi.properties.")
+    );
 
     let count = about
         .fields
@@ -191,12 +194,24 @@ fn parse_endpoints_grouped_by_tag() {
 #[test]
 fn parse_read_only_field() {
     let spec = load(&fixture("simple_dto.json"));
-    let about = spec.all_types.iter().find(|t| t.name == "AboutDto").unwrap();
+    let about = spec
+        .all_types
+        .iter()
+        .find(|t| t.name == "AboutDto")
+        .unwrap();
 
-    let build_tag = about.fields.iter().find(|f| f.rust_name == "build_tag").unwrap();
+    let build_tag = about
+        .fields
+        .iter()
+        .find(|f| f.rust_name == "build_tag")
+        .unwrap();
     assert!(build_tag.read_only, "build_tag should be read_only");
 
-    let title = about.fields.iter().find(|f| f.rust_name == "title").unwrap();
+    let title = about
+        .fields
+        .iter()
+        .find(|f| f.rust_name == "title")
+        .unwrap();
     assert!(!title.read_only, "title should not be read_only");
 }
 
@@ -381,7 +396,11 @@ fn parse_error_responses() {
         .unwrap();
 
     assert_eq!(delete_ep.error_responses.len(), 5);
-    let codes: Vec<&str> = delete_ep.error_responses.iter().map(|(c, _)| c.as_str()).collect();
+    let codes: Vec<&str> = delete_ep
+        .error_responses
+        .iter()
+        .map(|(c, _)| c.as_str())
+        .collect();
     assert!(codes.contains(&"400"), "expected 400: {codes:?}");
     assert!(codes.contains(&"401"));
     assert!(codes.contains(&"403"));
@@ -392,14 +411,22 @@ fn parse_error_responses() {
         .iter()
         .find(|(c, _)| c == "400")
         .unwrap();
-    assert!(bad_req.1.contains("invalid"), "unexpected desc: {}", bad_req.1);
+    assert!(
+        bad_req.1.contains("invalid"),
+        "unexpected desc: {}",
+        bad_req.1
+    );
 }
 
 #[test]
 fn parse_security_single() {
     let spec = load(&fixture("endpoints.json"));
     let flow = spec.tags.iter().find(|t| t.tag == "Flow").unwrap();
-    let about_ep = flow.root_endpoints.iter().find(|e| e.fn_name == "get_about_info").unwrap();
+    let about_ep = flow
+        .root_endpoints
+        .iter()
+        .find(|e| e.fn_name == "get_about_info")
+        .unwrap();
 
     let sec = about_ep.security.as_ref().expect("security should be Some");
     assert_eq!(sec, &["Read - /flow"]);
@@ -415,10 +442,19 @@ fn parse_security_multiple() {
         .find(|e| e.fn_name == "delete_processor")
         .unwrap();
 
-    let sec = delete_ep.security.as_ref().expect("security should be Some");
+    let sec = delete_ep
+        .security
+        .as_ref()
+        .expect("security should be Some");
     assert_eq!(sec.len(), 2);
-    assert!(sec.iter().any(|s| s.contains("processors")), "missing processor policy: {sec:?}");
-    assert!(sec.iter().any(|s| s.contains("process-groups")), "missing pg policy: {sec:?}");
+    assert!(
+        sec.iter().any(|s| s.contains("processors")),
+        "missing processor policy: {sec:?}"
+    );
+    assert!(
+        sec.iter().any(|s| s.contains("process-groups")),
+        "missing pg policy: {sec:?}"
+    );
 }
 
 #[test]
@@ -431,6 +467,12 @@ fn parse_security_no_auth_required() {
         .find(|e| e.fn_name == "create_access_token")
         .unwrap();
 
-    let sec = token_ep.security.as_ref().expect("security should be Some([])");
-    assert!(sec.is_empty(), "expected empty vec for no-auth, got: {sec:?}");
+    let sec = token_ep
+        .security
+        .as_ref()
+        .expect("security should be Some([])");
+    assert!(
+        sec.is_empty(),
+        "expected empty vec for no-auth, got: {sec:?}"
+    );
 }

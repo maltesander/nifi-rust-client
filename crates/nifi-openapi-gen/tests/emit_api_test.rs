@@ -551,7 +551,10 @@ fn spec_with_errors_and_security() -> ApiSpec {
                 query_params: vec![],
                 error_responses: vec![
                     ("401".into(), "Client could not be authenticated.".into()),
-                    ("403".into(), "Client is not authorized to make this request.".into()),
+                    (
+                        "403".into(),
+                        "Client is not authorized to make this request.".into(),
+                    ),
                 ],
                 security: Some(vec!["Read - /flow".into()]),
             }],
@@ -575,7 +578,10 @@ fn spec_with_multi_security() -> ApiSpec {
                 fn_name: "delete_processor".into(),
                 doc: Some("Deletes a processor".into()),
                 description: None,
-                path_params: vec![PathParam { name: "id".into(), doc: None }],
+                path_params: vec![PathParam {
+                    name: "id".into(),
+                    doc: None,
+                }],
                 request_type: None,
                 body_doc: None,
                 body_kind: None,
@@ -630,15 +636,24 @@ fn emit_errors_section() {
     let spec = spec_with_errors_and_security();
     let out = all_output(&spec);
     assert!(out.contains("# Errors"), "missing # Errors section: {out}");
-    assert!(out.contains("- `401`: Client could not be authenticated."), "missing 401: {out}");
-    assert!(out.contains("- `403`: Client is not authorized"), "missing 403: {out}");
+    assert!(
+        out.contains("- `401`: Client could not be authenticated."),
+        "missing 401: {out}"
+    );
+    assert!(
+        out.contains("- `403`: Client is not authorized"),
+        "missing 403: {out}"
+    );
 }
 
 #[test]
 fn emit_permissions_single() {
     let spec = spec_with_errors_and_security();
     let out = all_output(&spec);
-    assert!(out.contains("# Permissions"), "missing # Permissions section: {out}");
+    assert!(
+        out.contains("# Permissions"),
+        "missing # Permissions section: {out}"
+    );
     assert!(
         out.contains("Requires `Read - /flow`."),
         "missing single permission: {out}"
@@ -649,16 +664,28 @@ fn emit_permissions_single() {
 fn emit_permissions_multiple() {
     let spec = spec_with_multi_security();
     let out = all_output(&spec);
-    assert!(out.contains("# Permissions"), "missing # Permissions: {out}");
-    assert!(out.contains("- `Write - /processors/{uuid}`"), "missing processor perm: {out}");
-    assert!(out.contains("- `Write - Parent Process Group"), "missing pg perm: {out}");
+    assert!(
+        out.contains("# Permissions"),
+        "missing # Permissions: {out}"
+    );
+    assert!(
+        out.contains("- `Write - /processors/{uuid}`"),
+        "missing processor perm: {out}"
+    );
+    assert!(
+        out.contains("- `Write - Parent Process Group"),
+        "missing pg perm: {out}"
+    );
 }
 
 #[test]
 fn emit_permissions_no_auth() {
     let spec = spec_with_no_auth();
     let out = all_output(&spec);
-    assert!(out.contains("# Permissions"), "missing # Permissions: {out}");
+    assert!(
+        out.contains("# Permissions"),
+        "missing # Permissions: {out}"
+    );
     assert!(
         out.contains("No authentication required."),
         "missing no-auth text: {out}"
@@ -697,5 +724,8 @@ fn no_permissions_section_when_security_absent() {
         }],
     };
     let out = all_output(&spec);
-    assert!(!out.contains("# Permissions"), "should not emit Permissions when security absent: {out}");
+    assert!(
+        !out.contains("# Permissions"),
+        "should not emit Permissions when security absent: {out}"
+    );
 }

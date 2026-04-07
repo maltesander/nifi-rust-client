@@ -361,10 +361,14 @@ fn emit_multiline_field_doc() {
             rust_name: "title".into(),
             serde_name: "title".into(),
             ty: FieldType::Opt(Box::new(FieldType::Str)),
-            doc: Some("The title of this NiFi instance.\nThis is configurable in nifi.properties.".into()),
+            doc: Some(
+                "The title of this NiFi instance.\nThis is configurable in nifi.properties.".into(),
+            ),
             read_only: false,
         }],
-        doc: Some("Information about this NiFi instance.\nProvides version and build details.".into()),
+        doc: Some(
+            "Information about this NiFi instance.\nProvides version and build details.".into(),
+        ),
     }]);
     let out = all_output(&spec);
     assert!(

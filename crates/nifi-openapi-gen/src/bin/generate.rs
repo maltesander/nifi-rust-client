@@ -453,8 +453,8 @@ fn main() {
     // that exist on disk but are no longer in the spec list. Only applies when running in
     // full-discovery mode (no NIFI_VERSION / NIFI_API_SPEC override), so a single-version
     // regeneration run doesn't accidentally wipe sibling versions.
-    let is_full_discovery = std::env::var("NIFI_VERSION").is_err()
-        && std::env::var("NIFI_API_SPEC").is_err();
+    let is_full_discovery =
+        std::env::var("NIFI_VERSION").is_err() && std::env::var("NIFI_API_SPEC").is_err();
     if is_full_discovery {
         let on_disk_versions = discover_versions(&client.join("src"));
         let active: HashSet<&str> = spec_versions.iter().map(String::as_str).collect();
