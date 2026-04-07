@@ -2,22 +2,15 @@
 
 Apache NiFi 2.x REST API client library written in Rust.
 
-## Why nifi-rust-client?
+## Supported NiFi Versions
 
-**Full API coverage, generated directly from NiFi's own OpenAPI spec.**
-Every endpoint NiFi exposes is available as a typed Rust method — nothing hand-written, nothing missing. When a new NiFi version ships, a single `cargo run -p nifi-openapi-gen` regenerates the entire client from the live spec in minutes.
-
-**Two modes for different needs.**
-Use **static mode** for full type safety and IDE autocompletion when you target a known NiFi version. Use **dynamic mode** when your tool needs to talk to multiple NiFi clusters running different versions — the client auto-detects the API version at connect time and dispatches to the right generated code.
-
-**Multi-version support with zero ceremony.**
-Pin to specific NiFi version via a Cargo feature flag, or enable `dynamic` to compile all versions and let the client pick at runtime. Adding a new NiFi version is one command — the generator handles features, types, dispatch, and tests automatically.
-
-**Tested against real NiFi instances.**
-Every generated endpoint gets an auto-generated wiremock stub. Integration tests run against a Docker-hosted NiFi and cover the full request/response cycle — not just serialization. Both static and dynamic modes have dedicated test suites.
-
-**Low-level by design: you stay in control.**
-The client does not hide HTTP details behind opinionated abstractions. Token lifecycle, retry logic on expiry, and connection tuning are your responsibility — which means you can implement them exactly the way your application requires, without fighting the library.
+<!-- SUPPORTED_VERSIONS_START -->
+| NiFi Version | Feature flag | Endpoints | Types | Changes | Default |
+|---|---|---|---|---|---|
+| 2.8.0 | `nifi-2-8-0` | 317 | 405 | no API changes vs 2.7.2 | ✓ |
+| 2.7.2 | `nifi-2-7-2` | 317 | 405 | +17 endpoints, +10 types vs 2.6.0 |  |
+| 2.6.0 | `nifi-2-6-0` | 300 | 395 | — |  |
+<!-- SUPPORTED_VERSIONS_END -->
 
 ## Workspace
 
@@ -73,33 +66,22 @@ println!("NiFi title: {:?}", about.title);
 
 See [`crates/nifi-rust-client/README.md`](crates/nifi-rust-client/README.md) for the full API reference, builder options, token management, and error handling.
 
-## Supported NiFi Versions
+## Why nifi-rust-client?
 
-<!-- SUPPORTED_VERSIONS_START -->
-| NiFi Version | Feature flag | Endpoints | Types | Changes | Default |
-|---|---|---|---|---|---|
-| 2.8.0 | `nifi-2-8-0` | 317 | 405 | no API changes vs 2.7.2 | ✓ |
-| 2.7.2 | `nifi-2-7-2` | 317 | 405 | +17 endpoints, +10 types vs 2.6.0 |  |
-| 2.6.0 | `nifi-2-6-0` | 300 | 395 | — |  |
-<!-- SUPPORTED_VERSIONS_END -->
+**Full API coverage, generated directly from NiFi's own OpenAPI spec.**
+Every endpoint NiFi exposes is available as a typed Rust method — nothing hand-written, nothing missing. When a new NiFi version ships, a single `cargo run -p nifi-openapi-gen` regenerates the entire client from the live spec in minutes.
 
-The `dynamic` feature compiles all versions and enables runtime version detection.
+**Two modes for different needs.**
+Use **static mode** for full type safety and IDE autocompletion when you target a known NiFi version. Use **dynamic mode** when your tool needs to talk to multiple NiFi clusters running different versions — the client auto-detects the API version at connect time and dispatches to the right generated code.
 
-Adding a new version requires only a running NiFi instance and two commands:
+**Multi-version support with zero ceremony.**
+Pin to specific NiFi version via a Cargo feature flag, or enable `dynamic` to compile all versions and let the client pick at runtime. Adding a new NiFi version is one command — the generator handles features, types, dispatch, and tests automatically.
 
-```bash
-NIFI_IMAGE_TAG=2.9.0 docker compose -f tests/docker-compose.yml up -d  # start NiFi
-./crates/nifi-openapi-gen/scripts/fetch-nifi-spec.sh                    # fetch spec
-cargo run -p nifi-openapi-gen                                           # generate everything
-```
+**Tested against real NiFi instances.**
+Every generated endpoint gets an auto-generated wiremock stub. Integration tests run against a Docker-hosted NiFi and cover the full request/response cycle — not just serialization. Both static and dynamic modes have dedicated test suites.
 
-The generator creates the version module, updates feature flags, regenerates the dynamic dispatch layer, and produces wiremock tests — no manual edits needed.
-
-## Prerequisites
-
-- Rust (version pinned in `rust-toolchain.toml`)
-- Docker (for integration tests)
-- `pre-commit` (for commit hooks)
+**Low-level by design: you stay in control.**
+The client does not hide HTTP details behind opinionated abstractions. Token lifecycle, retry logic on expiry, and connection tuning are your responsibility — which means you can implement them exactly the way your application requires, without fighting the library.
 
 ## Build
 
@@ -126,6 +108,12 @@ Integration tests (requires Docker):
 
 Default credentials used by the test container: `admin` / `adminpassword123`.
 Override with `NIFI_URL`, `NIFI_USERNAME`, `NIFI_PASSWORD` env vars.
+
+## Prerequisites
+
+- Rust (version pinned in `rust-toolchain.toml`)
+- Docker (for integration tests)
+- `pre-commit` (for commit hooks)
 
 ## Before committing
 
