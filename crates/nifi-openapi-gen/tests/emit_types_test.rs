@@ -415,7 +415,10 @@ fn emit_read_only_field_has_doc_annotation() {
     let out = all_output(&spec);
 
     // read-only field gets "Read-only" annotation in doc
-    assert!(out.contains("Read-only"), "missing Read-only annotation: {out}");
+    assert!(
+        out.contains("Read-only"),
+        "missing Read-only annotation: {out}"
+    );
     // read-only fields are NOT skip_serializing (NiFi requires them in update requests)
     assert!(
         !out.contains("#[serde(skip_serializing)]"),
