@@ -223,6 +223,7 @@ mod tests {
             serde_name: name.to_string(),
             ty,
             doc: None,
+            read_only: false,
         }
     }
 

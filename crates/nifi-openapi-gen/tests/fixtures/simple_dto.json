@@ -5,13 +5,22 @@
     "schemas": {
       "AboutDTO": {
         "type": "object",
+        "description": "Information about this NiFi instance.\nProvides version and build details.",
         "properties": {
-          "title": { "type": "string", "description": "The title" },
+          "title": {
+            "type": "string",
+            "description": "The title of this NiFi instance.\nThis is configurable in nifi.properties."
+          },
           "version": { "type": "string" },
           "count": { "type": "integer", "format": "int32" },
           "size": { "type": "integer", "format": "int64" },
           "ratio": { "type": "number", "format": "double" },
-          "active": { "type": "boolean" }
+          "active": { "type": "boolean" },
+          "buildTag": {
+            "type": "string",
+            "description": "The build tag of this NiFi release.",
+            "readOnly": true
+          }
         }
       }
     }

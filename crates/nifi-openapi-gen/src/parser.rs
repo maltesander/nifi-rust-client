@@ -48,6 +48,7 @@ pub struct Field {
     pub serde_name: String,
     pub ty: FieldType,
     pub doc: Option<String>,
+    pub read_only: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -269,6 +270,10 @@ fn parse_type_def(
                     .get("description")
                     .and_then(|d| d.as_str())
                     .map(String::from),
+                read_only: prop_val
+                    .get("readOnly")
+                    .and_then(|v| v.as_bool())
+                    .unwrap_or(false),
             }
         })
         .collect();

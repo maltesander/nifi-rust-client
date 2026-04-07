@@ -18,6 +18,7 @@ fn can_construct_internal_model() {
                     serde_name: "title".into(),
                     ty: FieldType::Opt(Box::new(FieldType::Str)),
                     doc: Some("The title".into()),
+                    read_only: false,
                 }],
                 doc: None,
             }],

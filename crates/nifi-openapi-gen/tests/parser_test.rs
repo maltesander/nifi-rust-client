@@ -22,7 +22,7 @@ fn parse_scalar_fields() {
     assert!(
         matches!(title.ty, FieldType::Opt(ref inner) if matches!(inner.as_ref(), FieldType::Str))
     );
-    assert_eq!(title.doc.as_deref(), Some("The title"));
+    assert_eq!(title.doc.as_deref(), Some("The title of this NiFi instance.\nThis is configurable in nifi.properties."));
 
     let count = about
         .fields
@@ -186,6 +186,18 @@ fn parse_endpoints_grouped_by_tag() {
         vec!["id"]
     );
     assert_eq!(del.response_inner.as_deref(), Some("ProcessorDto"));
+}
+
+#[test]
+fn parse_read_only_field() {
+    let spec = load(&fixture("simple_dto.json"));
+    let about = spec.all_types.iter().find(|t| t.name == "AboutDto").unwrap();
+
+    let build_tag = about.fields.iter().find(|f| f.rust_name == "build_tag").unwrap();
+    assert!(build_tag.read_only, "build_tag should be read_only");
+
+    let title = about.fields.iter().find(|f| f.rust_name == "title").unwrap();
+    assert!(!title.read_only, "title should not be read_only");
 }
 
 #[test]
