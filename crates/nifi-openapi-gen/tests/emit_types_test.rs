@@ -351,3 +351,79 @@ fn emit_string_enum_generates_enum_and_display() {
         common.1
     );
 }
+
+#[test]
+fn emit_multiline_field_doc() {
+    let spec = spec_with_types(vec![TypeDef {
+        name: "AboutDto".into(),
+        kind: TypeKind::Dto,
+        fields: vec![Field {
+            rust_name: "title".into(),
+            serde_name: "title".into(),
+            ty: FieldType::Opt(Box::new(FieldType::Str)),
+            doc: Some("The title of this NiFi instance.\nThis is configurable in nifi.properties.".into()),
+            read_only: false,
+        }],
+        doc: Some("Information about this NiFi instance.\nProvides version and build details.".into()),
+    }]);
+    let out = all_output(&spec);
+    assert!(
+        out.contains("/// The title of this NiFi instance."),
+        "missing first doc line: {out}"
+    );
+    assert!(
+        out.contains("/// This is configurable in nifi.properties."),
+        "missing second field doc line: {out}"
+    );
+    assert!(
+        out.contains("/// Information about this NiFi instance."),
+        "missing first struct doc line: {out}"
+    );
+    assert!(
+        out.contains("/// Provides version and build details."),
+        "missing second struct doc line: {out}"
+    );
+}
+
+#[test]
+fn emit_read_only_field_has_skip_serializing_and_doc() {
+    let spec = spec_with_types(vec![TypeDef {
+        name: "AboutDto".into(),
+        kind: TypeKind::Dto,
+        fields: vec![
+            Field {
+                rust_name: "build_tag".into(),
+                serde_name: "buildTag".into(),
+                ty: FieldType::Opt(Box::new(FieldType::Str)),
+                doc: Some("The build tag.".into()),
+                read_only: true,
+            },
+            Field {
+                rust_name: "version".into(),
+                serde_name: "version".into(),
+                ty: FieldType::Opt(Box::new(FieldType::Str)),
+                doc: None,
+                read_only: false,
+            },
+        ],
+        doc: None,
+    }]);
+    let out = all_output(&spec);
+
+    // read-only field gets skip_serializing
+    assert!(
+        out.contains("#[serde(skip_serializing)]"),
+        "missing skip_serializing: {out}"
+    );
+    // read-only field gets annotation in doc
+    assert!(
+        out.contains("Read-only"),
+        "missing Read-only annotation: {out}"
+    );
+    // non-read-only field does NOT get skip_serializing
+    let version_section = out.split("pub version").nth(1).unwrap_or("");
+    assert!(
+        !version_section.contains("#[serde(skip_serializing)]"),
+        "version should not have skip_serializing"
+    );
+}

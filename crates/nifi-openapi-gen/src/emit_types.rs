@@ -110,8 +110,15 @@ fn emit_type(t: &TypeDef) -> String {
     }
 }
 
-fn single_line_doc(doc: &str) -> String {
-    doc.lines().next().unwrap_or("").trim().to_string()
+fn emit_doc_comment(out: &mut String, doc: &str, indent: &str) {
+    for line in doc.lines() {
+        let line = line.trim();
+        if line.is_empty() {
+            out.push_str(&format!("{indent}///\n"));
+        } else {
+            out.push_str(&format!("{indent}/// {line}\n"));
+        }
+    }
 }
 
 fn emit_dto(t: &TypeDef) -> String {
@@ -124,20 +131,29 @@ fn emit_dto(t: &TypeDef) -> String {
         }
     }
     if let Some(doc) = &t.doc {
-        let doc = single_line_doc(doc);
-        if !doc.is_empty() {
-            out.push_str(&format!("/// {doc}\n"));
-        }
+        emit_doc_comment(&mut out, doc, "");
     }
     out.push_str("#[derive(Debug, Clone, Default, Deserialize, Serialize)]\n");
     out.push_str("#[serde(rename_all = \"camelCase\")]\n");
     out.push_str(&format!("pub struct {} {{\n", t.name));
     for field in &t.fields {
         if let Some(doc) = &field.doc {
-            let doc = single_line_doc(doc);
-            if !doc.is_empty() {
-                out.push_str(&format!("    /// {doc}\n"));
+            if field.read_only {
+                let mut full_doc = doc.clone();
+                full_doc.push_str(
+                    " Read-only — this field is ignored when serializing requests to NiFi.",
+                );
+                emit_doc_comment(&mut out, &full_doc, "    ");
+            } else {
+                emit_doc_comment(&mut out, doc, "    ");
             }
+        } else if field.read_only {
+            out.push_str(
+                "    /// Read-only — this field is ignored when serializing requests to NiFi.\n",
+            );
+        }
+        if field.read_only {
+            out.push_str("    #[serde(skip_serializing)]\n");
         }
         let ty_str = field_type_to_rust(&field.ty, &t.name, &field.rust_name);
         let field_ident = escape_keyword(&field.rust_name);
@@ -156,7 +172,7 @@ fn emit_dto(t: &TypeDef) -> String {
 fn emit_entity(t: &TypeDef, field: &str, inner: &str) -> String {
     let mut out = String::new();
     if let Some(doc) = &t.doc {
-        out.push_str(&format!("/// {doc}\n"));
+        emit_doc_comment(&mut out, doc, "");
     }
     out.push_str("#[derive(Debug, Clone, Default, Deserialize, Serialize)]\n");
     out.push_str("#[serde(rename_all = \"camelCase\")]\n");
