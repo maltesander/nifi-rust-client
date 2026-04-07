@@ -68,7 +68,7 @@ impl<'a> ProvenanceEventsApi<'a> {
             .client
             .get_with_query(&format!("/provenance-events/latest/{component_id}"), &query)
             .await?;
-        Ok(e.latest_provenance_events)
+        Ok(e.latest_provenance_events.unwrap_or_default())
     }
     /// Replays content from a provenance event
     ///
@@ -94,7 +94,7 @@ impl<'a> ProvenanceEventsApi<'a> {
     ) -> Result<crate::v2_6_0::types::ProvenanceEventDto, NifiError> {
         let e: crate::v2_6_0::types::ProvenanceEventEntity =
             self.client.post("/provenance-events/replays", body).await?;
-        Ok(e.provenance_event)
+        Ok(e.provenance_event.unwrap_or_default())
     }
     /// Gets a provenance event
     ///
@@ -126,7 +126,7 @@ impl<'a> ProvenanceEventsApi<'a> {
             .client
             .get_with_query(&format!("/provenance-events/{id}"), &query)
             .await?;
-        Ok(e.provenance_event)
+        Ok(e.provenance_event.unwrap_or_default())
     }
     /// Scope operations to the `content` sub-resource of a specific process group.
     ///

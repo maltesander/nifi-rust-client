@@ -237,7 +237,7 @@ impl<'a> ParameterContextsAssetsApi<'a> {
                 data,
             )
             .await?;
-        Ok(e.asset)
+        Ok(e.asset.unwrap_or_default())
     }
     /// Deletes an Asset from the given Parameter Context
     ///
@@ -278,7 +278,7 @@ impl<'a> ParameterContextsAssetsApi<'a> {
                 &query,
             )
             .await?;
-        Ok(e.asset)
+        Ok(e.asset.unwrap_or_default())
     }
     /// Retrieves the content of the asset with the given id
     ///

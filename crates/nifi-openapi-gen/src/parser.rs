@@ -547,6 +547,7 @@ fn parse_tags(
                 .and_then(|r| {
                     r.get("200")
                         .or_else(|| r.get("201"))
+                        .or_else(|| r.get("202"))
                         .or_else(|| r.get("default"))
                 })
                 .and_then(|r| r["content"]["application/json"]["schema"]["$ref"].as_str())
@@ -578,7 +579,9 @@ fn parse_tags(
                 .and_then(|r| r.as_object())
                 .map(|map| {
                     map.iter()
-                        .filter(|(code, _)| !matches!(code.as_str(), "200" | "201" | "default"))
+                        .filter(|(code, _)| {
+                            !matches!(code.as_str(), "200" | "201" | "202" | "default")
+                        })
                         .filter_map(|(code, resp)| {
                             let desc = resp.get("description")?.as_str()?;
                             Some((code.clone(), desc.to_string()))

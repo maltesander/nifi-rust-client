@@ -214,7 +214,7 @@ impl<'a> ProcessorsConfigApi<'a> {
             .client
             .post(&format!("/processors/{id}/config/analysis"), body)
             .await?;
-        Ok(e.configuration_analysis)
+        Ok(e.configuration_analysis.unwrap_or_default())
     }
     /// Performs verification of the Processor's configuration
     ///
@@ -246,7 +246,7 @@ impl<'a> ProcessorsConfigApi<'a> {
                 body,
             )
             .await?;
-        Ok(e.request)
+        Ok(e.request.unwrap_or_default())
     }
     /// Deletes the Verification Request with the given ID
     ///
@@ -277,7 +277,7 @@ impl<'a> ProcessorsConfigApi<'a> {
                 "/processors/{id}/config/verification-requests/{request_id}"
             ))
             .await?;
-        Ok(e.request)
+        Ok(e.request.unwrap_or_default())
     }
     /// Returns the Verification Request with the given ID
     ///
@@ -308,7 +308,7 @@ impl<'a> ProcessorsConfigApi<'a> {
                 "/processors/{id}/config/verification-requests/{request_id}"
             ))
             .await?;
-        Ok(e.request)
+        Ok(e.request.unwrap_or_default())
     }
 }
 pub struct ProcessorsDescriptorsApi<'a> {
@@ -358,7 +358,7 @@ impl<'a> ProcessorsDescriptorsApi<'a> {
             .client
             .get_with_query(&format!("/processors/{id}/descriptors"), &query)
             .await?;
-        Ok(e.property_descriptor)
+        Ok(e.property_descriptor.unwrap_or_default())
     }
 }
 pub struct ProcessorsDiagnosticsApi<'a> {
@@ -458,7 +458,7 @@ impl<'a> ProcessorsStateApi<'a> {
         let id = self.id;
         let e: crate::v2_6_0::types::ComponentStateEntity =
             self.client.get(&format!("/processors/{id}/state")).await?;
-        Ok(e.component_state)
+        Ok(e.component_state.unwrap_or_default())
     }
     /// Clears the state for a processor
     ///
@@ -485,7 +485,7 @@ impl<'a> ProcessorsStateApi<'a> {
             .client
             .post(&format!("/processors/{id}/state/clear-requests"), body)
             .await?;
-        Ok(e.component_state)
+        Ok(e.component_state.unwrap_or_default())
     }
 }
 pub struct ProcessorsThreadsApi<'a> {

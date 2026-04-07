@@ -25,7 +25,7 @@ impl<'a> FlowApi<'a> {
     /// Requires `Read - /flow`.
     pub async fn get_about_info(&self) -> Result<crate::v2_6_0::types::AboutDto, NifiError> {
         let e: crate::v2_6_0::types::AboutEntity = self.client.get("/flow/about").await?;
-        Ok(e.about)
+        Ok(e.about.unwrap_or_default())
     }
     /// Retrieves the additional details for the specified component type.
     ///
@@ -74,7 +74,7 @@ impl<'a> FlowApi<'a> {
     /// Requires `Read - /flow`.
     pub async fn get_banners(&self) -> Result<crate::v2_6_0::types::BannerDto, NifiError> {
         let e: crate::v2_6_0::types::BannerEntity = self.client.get("/flow/banners").await?;
-        Ok(e.banners)
+        Ok(e.banners.unwrap_or_default())
     }
     /// Gets current bulletins
     ///
@@ -129,7 +129,7 @@ impl<'a> FlowApi<'a> {
             .client
             .get_with_query("/flow/bulletin-board", &query)
             .await?;
-        Ok(e.bulletin_board)
+        Ok(e.bulletin_board.unwrap_or_default())
     }
     /// Generates a client id.
     ///
@@ -191,7 +191,7 @@ impl<'a> FlowApi<'a> {
     ) -> Result<crate::v2_6_0::types::ClusterSummaryDto, NifiError> {
         let e: crate::v2_6_0::types::ClusterSummaryEntity =
             self.client.get("/flow/cluster/summary").await?;
-        Ok(e.cluster_summary)
+        Ok(e.cluster_summary.unwrap_or_default())
     }
     /// Retrieves the configuration for this NiFi flow
     ///
@@ -210,7 +210,7 @@ impl<'a> FlowApi<'a> {
     ) -> Result<crate::v2_6_0::types::FlowConfigurationDto, NifiError> {
         let e: crate::v2_6_0::types::FlowConfigurationEntity =
             self.client.get("/flow/config").await?;
-        Ok(e.flow_configuration)
+        Ok(e.flow_configuration.unwrap_or_default())
     }
     /// Retrieves the registered content viewers
     ///
@@ -558,7 +558,7 @@ impl<'a> FlowApi<'a> {
         }
         let e: crate::v2_6_0::types::HistoryEntity =
             self.client.get_with_query("/flow/history", &query).await?;
-        Ok(e.history)
+        Ok(e.history.unwrap_or_default())
     }
     /// Gets configuration history for a component
     ///
@@ -587,7 +587,7 @@ impl<'a> FlowApi<'a> {
             .client
             .get(&format!("/flow/history/components/{component_id}"))
             .await?;
-        Ok(e.component_history)
+        Ok(e.component_history.unwrap_or_default())
     }
     /// Gets an action
     ///
@@ -1091,7 +1091,7 @@ impl<'a> FlowApi<'a> {
     ) -> Result<crate::v2_6_0::types::RuntimeManifest, NifiError> {
         let e: crate::v2_6_0::types::RuntimeManifestEntity =
             self.client.get("/flow/runtime-manifest").await?;
-        Ok(e.runtime_manifest)
+        Ok(e.runtime_manifest.unwrap_or_default())
     }
     /// Performs a search against this NiFi using the specified search term
     ///
@@ -1123,7 +1123,7 @@ impl<'a> FlowApi<'a> {
             .client
             .get_with_query("/flow/search-results", &query)
             .await?;
-        Ok(e.search_results_d_t_o)
+        Ok(e.search_results_d_t_o.unwrap_or_default())
     }
     /// Gets the current status of this NiFi
     ///
@@ -1142,7 +1142,7 @@ impl<'a> FlowApi<'a> {
     ) -> Result<crate::v2_6_0::types::ControllerStatusDto, NifiError> {
         let e: crate::v2_6_0::types::ControllerStatusEntity =
             self.client.get("/flow/status").await?;
-        Ok(e.controller_status)
+        Ok(e.controller_status.unwrap_or_default())
     }
     /// Scope operations to the `branches` sub-resource of a specific process group.
     ///
@@ -1432,7 +1432,7 @@ impl<'a> FlowBucketsApi<'a> {
                 &query,
             )
             .await?;
-        Ok(e.versioned_flow)
+        Ok(e.versioned_flow.unwrap_or_default())
     }
     /// Gets the flow versions from the specified registry and bucket for the specified flow for the current user
     ///

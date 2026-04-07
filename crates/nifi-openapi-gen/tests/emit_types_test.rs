@@ -86,7 +86,10 @@ fn emit_entity_wrapper() {
         out.contains("pub struct AboutEntity"),
         "missing entity: {out}"
     );
-    assert!(out.contains("pub about: AboutDto"), "missing field: {out}");
+    assert!(
+        out.contains("pub about: Option<AboutDto>"),
+        "missing field: {out}"
+    );
 }
 
 #[test]

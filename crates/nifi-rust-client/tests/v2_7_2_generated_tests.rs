@@ -3545,7 +3545,12 @@ mod flowfilequeues_generated_tests {
         let mock_server = MockServer::start().await;
         Mock::given(method("POST"))
             .and(path("/nifi-api/flowfile-queues/test-id/drop-requests"))
-            .respond_with(ResponseTemplate::new(200))
+            .respond_with(
+                ResponseTemplate::new(200).set_body_json(
+                    serde_json::to_value(nifi_rust_client::types::DropRequestEntity::default())
+                        .unwrap(),
+                ),
+            )
             .mount(&mock_server)
             .await;
         let client = NifiClientBuilder::new(&mock_server.uri())
@@ -3660,7 +3665,12 @@ mod flowfilequeues_generated_tests {
         let mock_server = MockServer::start().await;
         Mock::given(method("POST"))
             .and(path("/nifi-api/flowfile-queues/test-id/listing-requests"))
-            .respond_with(ResponseTemplate::new(200))
+            .respond_with(
+                ResponseTemplate::new(200).set_body_json(
+                    serde_json::to_value(nifi_rust_client::types::ListingRequestEntity::default())
+                        .unwrap(),
+                ),
+            )
             .mount(&mock_server)
             .await;
         let client = NifiClientBuilder::new(&mock_server.uri())
@@ -5303,7 +5313,12 @@ mod processgroups_generated_tests {
             .and(path(
                 "/nifi-api/process-groups/test-id/empty-all-connections-requests",
             ))
-            .respond_with(ResponseTemplate::new(200))
+            .respond_with(
+                ResponseTemplate::new(200).set_body_json(
+                    serde_json::to_value(nifi_rust_client::types::DropRequestEntity::default())
+                        .unwrap(),
+                ),
+            )
             .mount(&mock_server)
             .await;
         let client = NifiClientBuilder::new(&mock_server.uri())

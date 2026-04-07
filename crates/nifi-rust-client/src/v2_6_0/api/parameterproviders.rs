@@ -203,7 +203,7 @@ impl<'a> ParameterProvidersApplyParametersRequestsApi<'a> {
                 body,
             )
             .await?;
-        Ok(e.request)
+        Ok(e.request.unwrap_or_default())
     }
     /// Deletes the Apply Parameters Request with the given ID
     ///
@@ -243,7 +243,7 @@ impl<'a> ParameterProvidersApplyParametersRequestsApi<'a> {
                 &query,
             )
             .await?;
-        Ok(e.request)
+        Ok(e.request.unwrap_or_default())
     }
     /// Returns the Apply Parameters Request with the given ID
     ///
@@ -274,7 +274,7 @@ impl<'a> ParameterProvidersApplyParametersRequestsApi<'a> {
                 "/parameter-providers/{provider_id}/apply-parameters-requests/{request_id}"
             ))
             .await?;
-        Ok(e.request)
+        Ok(e.request.unwrap_or_default())
     }
 }
 pub struct ParameterProvidersConfigApi<'a> {
@@ -312,7 +312,7 @@ impl<'a> ParameterProvidersConfigApi<'a> {
             .client
             .post(&format!("/parameter-providers/{id}/config/analysis"), body)
             .await?;
-        Ok(e.configuration_analysis)
+        Ok(e.configuration_analysis.unwrap_or_default())
     }
     /// Performs verification of the Parameter Provider's configuration
     ///
@@ -344,7 +344,7 @@ impl<'a> ParameterProvidersConfigApi<'a> {
                 body,
             )
             .await?;
-        Ok(e.request)
+        Ok(e.request.unwrap_or_default())
     }
     /// Deletes the Verification Request with the given ID
     ///
@@ -375,7 +375,7 @@ impl<'a> ParameterProvidersConfigApi<'a> {
                 "/parameter-providers/{id}/config/verification-requests/{request_id}"
             ))
             .await?;
-        Ok(e.request)
+        Ok(e.request.unwrap_or_default())
     }
     /// Returns the Verification Request with the given ID
     ///
@@ -406,7 +406,7 @@ impl<'a> ParameterProvidersConfigApi<'a> {
                 "/parameter-providers/{id}/config/verification-requests/{request_id}"
             ))
             .await?;
-        Ok(e.request)
+        Ok(e.request.unwrap_or_default())
     }
 }
 pub struct ParameterProvidersDescriptorsApi<'a> {
@@ -446,7 +446,7 @@ impl<'a> ParameterProvidersDescriptorsApi<'a> {
             .client
             .get_with_query(&format!("/parameter-providers/{id}/descriptors"), &query)
             .await?;
-        Ok(e.property_descriptor)
+        Ok(e.property_descriptor.unwrap_or_default())
     }
 }
 pub struct ParameterProvidersParametersApi<'a> {
@@ -549,7 +549,7 @@ impl<'a> ParameterProvidersStateApi<'a> {
             .client
             .get(&format!("/parameter-providers/{id}/state"))
             .await?;
-        Ok(e.component_state)
+        Ok(e.component_state.unwrap_or_default())
     }
     /// Clears the state for a parameter provider
     ///
@@ -579,6 +579,6 @@ impl<'a> ParameterProvidersStateApi<'a> {
                 body,
             )
             .await?;
-        Ok(e.component_state)
+        Ok(e.component_state.unwrap_or_default())
     }
 }

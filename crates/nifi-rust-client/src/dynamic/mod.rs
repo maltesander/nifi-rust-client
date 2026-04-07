@@ -6009,54 +6009,57 @@ pub struct DynamicFlowFileQueuesApi<'a> {
 #[allow(clippy::too_many_arguments, clippy::vec_init_then_push)]
 impl<'a> DynamicFlowFileQueuesApi<'a> {
     /// Creates a request to drop the contents of the queue in this connection.
-    pub async fn create_drop_request(&self, id: &str) -> Result<(), NifiError> {
+    pub async fn create_drop_request(&self, id: &str) -> Result<types::DropRequestDto, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::flowfilequeues::FlowFileQueuesDropRequestsApi {
                     client: self.client,
                     id,
                 };
-                api.create_drop_request().await
+                Ok(api.create_drop_request().await?.into())
             }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::flowfilequeues::FlowFileQueuesDropRequestsApi {
                     client: self.client,
                     id,
                 };
-                api.create_drop_request().await
+                Ok(api.create_drop_request().await?.into())
             }
             DetectedVersion::V2_8_0 => {
                 let api = crate::v2_8_0::api::flowfilequeues::FlowFileQueuesDropRequestsApi {
                     client: self.client,
                     id,
                 };
-                api.create_drop_request().await
+                Ok(api.create_drop_request().await?.into())
             }
         }
     }
     /// Lists the contents of the queue in this connection.
-    pub async fn create_flow_file_listing(&self, id: &str) -> Result<(), NifiError> {
+    pub async fn create_flow_file_listing(
+        &self,
+        id: &str,
+    ) -> Result<types::ListingRequestDto, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::flowfilequeues::FlowFileQueuesListingRequestsApi {
                     client: self.client,
                     id,
                 };
-                api.create_flow_file_listing().await
+                Ok(api.create_flow_file_listing().await?.into())
             }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::flowfilequeues::FlowFileQueuesListingRequestsApi {
                     client: self.client,
                     id,
                 };
-                api.create_flow_file_listing().await
+                Ok(api.create_flow_file_listing().await?.into())
             }
             DetectedVersion::V2_8_0 => {
                 let api = crate::v2_8_0::api::flowfilequeues::FlowFileQueuesListingRequestsApi {
                     client: self.client,
                     id,
                 };
-                api.create_flow_file_listing().await
+                Ok(api.create_flow_file_listing().await?.into())
             }
         }
     }
@@ -8998,28 +9001,31 @@ impl<'a> DynamicProcessGroupsApi<'a> {
         }
     }
     /// Creates a request to drop all flowfiles of all connection queues in this process group.
-    pub async fn create_empty_all_connections_request(&self, id: &str) -> Result<(), NifiError> {
+    pub async fn create_empty_all_connections_request(
+        &self,
+        id: &str,
+    ) -> Result<types::DropRequestDto, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::processgroups::ProcessGroupsEmptyAllConnectionsRequestsApi {
                     client: self.client,
                     id,
                 };
-                api.create_empty_all_connections_request().await
+                Ok(api.create_empty_all_connections_request().await?.into())
             }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::processgroups::ProcessGroupsEmptyAllConnectionsRequestsApi {
                     client: self.client,
                     id,
                 };
-                api.create_empty_all_connections_request().await
+                Ok(api.create_empty_all_connections_request().await?.into())
             }
             DetectedVersion::V2_8_0 => {
                 let api = crate::v2_8_0::api::processgroups::ProcessGroupsEmptyAllConnectionsRequestsApi {
                     client: self.client,
                     id,
                 };
-                api.create_empty_all_connections_request().await
+                Ok(api.create_empty_all_connections_request().await?.into())
             }
         }
     }

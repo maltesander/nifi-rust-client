@@ -9,7 +9,7 @@ publish = false
 
 [dev-dependencies]
 nifi-rust-client = { workspace = true, default-features = false }
-tokio = { workspace = true, features = ["rt", "rt-multi-thread", "macros"] }
+tokio = { workspace = true, features = ["rt", "rt-multi-thread", "macros", "time"] }
 
 [lints]
 workspace = true

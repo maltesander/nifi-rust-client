@@ -1,6 +1,9 @@
 mod helpers;
 
-use nifi_rust_client::types::{ControllerServiceDto, ControllerServiceEntity};
+use nifi_rust_client::types::{
+    ComponentStateEntity, ControllerServiceDto, ControllerServiceEntity,
+    ControllerServiceRunStatusEntity, ControllerServiceRunStatusEntityState,
+};
 
 /// Discover the first available controller service type from the NiFi instance.
 async fn first_controller_service_type(client: &nifi_rust_client::NifiClient) -> String {
@@ -98,4 +101,135 @@ async fn controller_service_crud_lifecycle() {
             .is_err(),
         "expected error fetching deleted controller service"
     );
+}
+
+#[tokio::test]
+#[ignore = "requires a running NiFi instance (use tests/run.sh)"]
+async fn controller_service_run_status_and_state() {
+    let client = helpers::logged_in_client().await;
+    let svc_type = first_controller_service_type(&client).await;
+
+    // ── create ────────────────────────────────────────────────────────────────
+    let body = ControllerServiceEntity {
+        component: Some(ControllerServiceDto {
+            name: Some("test-cs-run-status".to_string()),
+            r#type: Some(svc_type),
+            ..Default::default()
+        }),
+        revision: Some(helpers::revision(0)),
+        ..Default::default()
+    };
+    let created = client
+        .controller_api()
+        .create_controller_service(&body)
+        .await
+        .expect("failed to create controller service");
+    let svc_id = created.id.clone().expect("created service has no id");
+    let version = created
+        .revision
+        .as_ref()
+        .and_then(|r| r.version)
+        .expect("created service has no revision version");
+
+    // ── enable / disable ─────────────────────────────────────────────────────
+    client
+        .controller_services_api()
+        .run_status(&svc_id)
+        .update_run_status_1(&ControllerServiceRunStatusEntity {
+            state: Some(ControllerServiceRunStatusEntityState::Enabled),
+            revision: Some(helpers::revision(version)),
+            ..Default::default()
+        })
+        .await
+        .expect("failed to enable controller service");
+
+    // Re-fetch to get the current revision — the service may still be in ENABLING transition.
+    let after_enable = client
+        .controller_services_api()
+        .get_controller_service(&svc_id, None)
+        .await
+        .expect("failed to re-fetch controller service after enable");
+    let version_after_enable = after_enable
+        .revision
+        .as_ref()
+        .and_then(|r| r.version)
+        .expect("re-fetched service has no revision version");
+    assert!(
+        matches!(
+            after_enable
+                .component
+                .as_ref()
+                .and_then(|c| c.state.as_ref()),
+            Some(
+                nifi_rust_client::types::ControllerServiceDtoState::Enabled
+                    | nifi_rust_client::types::ControllerServiceDtoState::Enabling
+            )
+        ),
+        "expected controller service state ENABLED or ENABLING after enable"
+    );
+
+    client
+        .controller_services_api()
+        .run_status(&svc_id)
+        .update_run_status_1(&ControllerServiceRunStatusEntity {
+            state: Some(ControllerServiceRunStatusEntityState::Disabled),
+            revision: Some(helpers::revision(version_after_enable)),
+            ..Default::default()
+        })
+        .await
+        .expect("failed to disable controller service");
+
+    // Re-fetch to get the final revision after disable.
+    let after_disable = client
+        .controller_services_api()
+        .get_controller_service(&svc_id, None)
+        .await
+        .expect("failed to re-fetch controller service after disable");
+    let version_after_disable = after_disable
+        .revision
+        .as_ref()
+        .and_then(|r| r.version)
+        .expect("re-fetched service has no revision version");
+    assert!(
+        matches!(
+            after_disable
+                .component
+                .as_ref()
+                .and_then(|c| c.state.as_ref()),
+            Some(
+                nifi_rust_client::types::ControllerServiceDtoState::Disabled
+                    | nifi_rust_client::types::ControllerServiceDtoState::Disabling
+            )
+        ),
+        "expected controller service state DISABLED or DISABLING after disable"
+    );
+
+    // ── state operations ─────────────────────────────────────────────────────
+    client
+        .controller_services_api()
+        .state(&svc_id)
+        .get_state()
+        .await
+        .expect("failed to get controller service state");
+
+    client
+        .controller_services_api()
+        .state(&svc_id)
+        .clear_state_1(&ComponentStateEntity {
+            ..Default::default()
+        })
+        .await
+        .expect("failed to clear controller service state");
+
+    // ── delete ────────────────────────────────────────────────────────────────
+    client
+        .controller_services_api()
+        .remove_controller_service(
+            &svc_id,
+            Some(&version_after_disable.to_string()),
+            None,
+            None,
+        )
+        .await
+        .expect("failed to delete controller service");
 }

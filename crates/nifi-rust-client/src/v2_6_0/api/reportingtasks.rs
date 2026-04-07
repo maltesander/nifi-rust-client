@@ -174,7 +174,7 @@ impl<'a> ReportingTasksConfigApi<'a> {
             .client
             .post(&format!("/reporting-tasks/{id}/config/analysis"), body)
             .await?;
-        Ok(e.configuration_analysis)
+        Ok(e.configuration_analysis.unwrap_or_default())
     }
     /// Performs verification of the Reporting Task's configuration
     ///
@@ -206,7 +206,7 @@ impl<'a> ReportingTasksConfigApi<'a> {
                 body,
             )
             .await?;
-        Ok(e.request)
+        Ok(e.request.unwrap_or_default())
     }
     /// Deletes the Verification Request with the given ID
     ///
@@ -237,7 +237,7 @@ impl<'a> ReportingTasksConfigApi<'a> {
                 "/reporting-tasks/{id}/config/verification-requests/{request_id}"
             ))
             .await?;
-        Ok(e.request)
+        Ok(e.request.unwrap_or_default())
     }
     /// Returns the Verification Request with the given ID
     ///
@@ -268,7 +268,7 @@ impl<'a> ReportingTasksConfigApi<'a> {
                 "/reporting-tasks/{id}/config/verification-requests/{request_id}"
             ))
             .await?;
-        Ok(e.request)
+        Ok(e.request.unwrap_or_default())
     }
 }
 pub struct ReportingTasksDescriptorsApi<'a> {
@@ -313,7 +313,7 @@ impl<'a> ReportingTasksDescriptorsApi<'a> {
             .client
             .get_with_query(&format!("/reporting-tasks/{id}/descriptors"), &query)
             .await?;
-        Ok(e.property_descriptor)
+        Ok(e.property_descriptor.unwrap_or_default())
     }
 }
 pub struct ReportingTasksRunStatusApi<'a> {
@@ -381,7 +381,7 @@ impl<'a> ReportingTasksStateApi<'a> {
             .client
             .get(&format!("/reporting-tasks/{id}/state"))
             .await?;
-        Ok(e.component_state)
+        Ok(e.component_state.unwrap_or_default())
     }
     /// Clears the state for a reporting task
     ///
@@ -408,6 +408,6 @@ impl<'a> ReportingTasksStateApi<'a> {
             .client
             .post(&format!("/reporting-tasks/{id}/state/clear-requests"), body)
             .await?;
-        Ok(e.component_state)
+        Ok(e.component_state.unwrap_or_default())
     }
 }

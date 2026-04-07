@@ -46,7 +46,7 @@ impl<'a> SystemDiagnosticsApi<'a> {
             .client
             .get_with_query("/system-diagnostics", &query)
             .await?;
-        Ok(e.system_diagnostics)
+        Ok(e.system_diagnostics.unwrap_or_default())
     }
     /// Retrieve available JMX metrics
     ///

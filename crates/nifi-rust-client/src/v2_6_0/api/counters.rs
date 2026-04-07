@@ -43,7 +43,7 @@ impl<'a> CountersApi<'a> {
         }
         let e: crate::v2_6_0::types::CountersEntity =
             self.client.get_with_query("/counters", &query).await?;
-        Ok(e.counters)
+        Ok(e.counters.unwrap_or_default())
     }
     /// Updates all counters. This will reset all counter values to 0
     ///
@@ -63,7 +63,7 @@ impl<'a> CountersApi<'a> {
         &self,
     ) -> Result<crate::v2_6_0::types::CountersDto, NifiError> {
         let e: crate::v2_6_0::types::CountersEntity = self.client.put_no_body("/counters").await?;
-        Ok(e.counters)
+        Ok(e.counters.unwrap_or_default())
     }
     /// Updates the specified counter. This will reset the counter value to 0
     ///
@@ -89,6 +89,6 @@ impl<'a> CountersApi<'a> {
     ) -> Result<crate::v2_6_0::types::CounterDto, NifiError> {
         let e: crate::v2_6_0::types::CounterEntity =
             self.client.put_no_body(&format!("/counters/{id}")).await?;
-        Ok(e.counter)
+        Ok(e.counter.unwrap_or_default())
     }
 }

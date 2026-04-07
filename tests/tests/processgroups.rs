@@ -8,10 +8,13 @@
 use nifi_rust_client::{
     NifiClient, NifiClientBuilder,
     types::{
-        PositionDto, ProcessGroupDto, ProcessGroupEntity, ProcessorConfigDto, ProcessorDto,
-        ProcessorEntity, RevisionDto,
+        ComponentStateEntity, PositionDto, ProcessGroupDto, ProcessGroupEntity, ProcessorConfigDto,
+        ProcessorDto, ProcessorEntity, ProcessorRunStatusEntity, ProcessorRunStatusEntityState,
+        RevisionDto,
     },
 };
+
+mod helpers;
 
 fn nifi_url() -> String {
     std::env::var("NIFI_URL").unwrap_or_else(|_| "https://localhost:8443".to_string())
@@ -252,4 +255,209 @@ async fn processor_crud_lifecycle() {
         "expected error fetching deleted processor, got {:?}",
         fetch_after_delete
     );
+}
+
+// ── Processor run-status lifecycle ───────────────────────────────────────────
+
+#[tokio::test]
+#[ignore = "requires a running NiFi instance (use tests/run.sh)"]
+async fn processor_run_status_lifecycle() {
+    let client = logged_in_client().await;
+
+    // ── setup ──────────────────────────────────────────────────────────────────
+    let (pg_id, pg_version) =
+        helpers::create_temp_process_group(&client, "test-proc-run-status-pg").await;
+
+    let proc_body = ProcessorEntity {
+        component: Some(ProcessorDto {
+            name: Some("test-run-status-generate".to_string()),
+            r#type: Some("org.apache.nifi.processors.standard.GenerateFlowFile".to_string()),
+            position: Some(PositionDto {
+                x: Some(0.0),
+                y: Some(0.0),
+            }),
+            config: Some(ProcessorConfigDto {
+                scheduling_period: Some("10 sec".to_string()),
+                // Auto-terminate the success relationship so the processor is valid and startable.
+                auto_terminated_relationships: Some(vec!["success".to_string()]),
+                ..Default::default()
+            }),
+            ..Default::default()
+        }),
+        revision: Some(RevisionDto {
+            version: Some(0),
+            ..Default::default()
+        }),
+        ..Default::default()
+    };
+    let created_proc = client
+        .processgroups_api()
+        .processors(&pg_id)
+        .create_processor(&proc_body)
+        .await
+        .expect("failed to create processor");
+    let proc_id = created_proc.id.clone().expect("processor has no id");
+    let proc_version = created_proc
+        .revision
+        .as_ref()
+        .and_then(|r| r.version)
+        .expect("processor has no revision version");
+
+    // ── property descriptor (works on a stopped processor) ───────────────────
+    let descriptor = client
+        .processors_api()
+        .descriptors(&proc_id)
+        .get_property_descriptor_3(None, "File Size", None)
+        .await
+        .expect("failed to get property descriptor");
+    assert!(
+        descriptor.name.is_some(),
+        "expected property descriptor to have a name"
+    );
+
+    // ── processor state read + clear (processor is freshly created = stopped) ─
+    client
+        .processors_api()
+        .state(&proc_id)
+        .get_state_2()
+        .await
+        .expect("failed to get processor state");
+
+    client
+        .processors_api()
+        .state(&proc_id)
+        .clear_state_3(&ComponentStateEntity {
+            ..Default::default()
+        })
+        .await
+        .expect("failed to clear processor state");
+
+    // ── start / stop ──────────────────────────────────────────────────────────
+    let started = client
+        .processors_api()
+        .run_status(&proc_id)
+        .update_run_status_4(&ProcessorRunStatusEntity {
+            state: Some(ProcessorRunStatusEntityState::Running),
+            revision: Some(helpers::revision(proc_version)),
+            ..Default::default()
+        })
+        .await
+        .expect("failed to start processor");
+    assert!(
+        matches!(
+            started.component.as_ref().and_then(|c| c.state.as_ref()),
+            Some(nifi_rust_client::types::ProcessorDtoState::Running)
+        ),
+        "expected processor state RUNNING after start"
+    );
+    let running_version = started
+        .revision
+        .as_ref()
+        .and_then(|r| r.version)
+        .expect("started entity has no revision version");
+
+    // ── diagnostics (requires running processor) ──────────────────────────────
+    client
+        .processors_api()
+        .diagnostics(&proc_id)
+        .get_processor_diagnostics()
+        .await
+        .expect("failed to get processor diagnostics");
+
+    let stopped = client
+        .processors_api()
+        .run_status(&proc_id)
+        .update_run_status_4(&ProcessorRunStatusEntity {
+            state: Some(ProcessorRunStatusEntityState::Stopped),
+            revision: Some(helpers::revision(running_version)),
+            ..Default::default()
+        })
+        .await
+        .expect("failed to stop processor");
+    assert!(
+        matches!(
+            stopped.component.as_ref().and_then(|c| c.state.as_ref()),
+            Some(nifi_rust_client::types::ProcessorDtoState::Stopped)
+        ),
+        "expected processor state STOPPED after stop"
+    );
+
+    // ── cleanup ───────────────────────────────────────────────────────────────
+    let final_version = stopped
+        .revision
+        .as_ref()
+        .and_then(|r| r.version)
+        .expect("stopped entity has no revision version");
+
+    client
+        .processors_api()
+        .delete_processor(&proc_id, Some(&final_version.to_string()), None, None)
+        .await
+        .expect("failed to delete processor");
+
+    helpers::delete_temp_process_group(&client, &pg_id, pg_version).await;
+}
+
+// ── Processor terminate ───────────────────────────────────────────────────────
+
+#[tokio::test]
+#[ignore = "requires a running NiFi instance (use tests/run.sh)"]
+async fn processor_terminate_clears_threads() {
+    // terminate_processor (DELETE /processors/{id}/threads) clears any residual threads
+    // on a stopped processor — it is most useful for processors stuck in STOPPING state,
+    // but also succeeds on a freshly-stopped processor with no active threads.
+    let client = logged_in_client().await;
+
+    let (pg_id, pg_version) =
+        helpers::create_temp_process_group(&client, "test-proc-terminate-pg").await;
+
+    let proc_body = ProcessorEntity {
+        component: Some(ProcessorDto {
+            name: Some("test-terminate-generate".to_string()),
+            r#type: Some("org.apache.nifi.processors.standard.GenerateFlowFile".to_string()),
+            position: Some(PositionDto {
+                x: Some(0.0),
+                y: Some(0.0),
+            }),
+            config: Some(ProcessorConfigDto {
+                scheduling_period: Some("10 sec".to_string()),
+                auto_terminated_relationships: Some(vec!["success".to_string()]),
+                ..Default::default()
+            }),
+            ..Default::default()
+        }),
+        revision: Some(RevisionDto {
+            version: Some(0),
+            ..Default::default()
+        }),
+        ..Default::default()
+    };
+    let created_proc = client
+        .processgroups_api()
+        .processors(&pg_id)
+        .create_processor(&proc_body)
+        .await
+        .expect("failed to create processor");
+    let proc_id = created_proc.id.clone().expect("processor has no id");
+    let proc_version = created_proc
+        .revision
+        .as_ref()
+        .and_then(|r| r.version)
+        .expect("processor has no revision version");
+
+    // Terminate on a stopped processor clears any residual threads and returns the entity.
+    client
+        .processors_api()
+        .threads(&proc_id)
+        .terminate_processor()
+        .await
+        .expect("failed to terminate processor threads");
+
+    client
+        .processors_api()
+        .delete_processor(&proc_id, Some(&proc_version.to_string()), None, None)
+        .await
+        .expect("failed to delete processor");
+
+    helpers::delete_temp_process_group(&client, &pg_id, pg_version).await;
 }

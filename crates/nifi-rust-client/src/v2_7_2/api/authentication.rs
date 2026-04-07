@@ -22,6 +22,6 @@ impl<'a> AuthenticationApi<'a> {
     ) -> Result<crate::v2_7_2::types::AuthenticationConfigurationDto, NifiError> {
         let e: crate::v2_7_2::types::AuthenticationConfigurationEntity =
             self.client.get("/authentication/configuration").await?;
-        Ok(e.authentication_configuration)
+        Ok(e.authentication_configuration.unwrap_or_default())
     }
 }

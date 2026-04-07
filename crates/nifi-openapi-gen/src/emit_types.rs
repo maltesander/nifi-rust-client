@@ -150,11 +150,19 @@ fn emit_dto(t: &TypeDef) -> String {
         }
         let ty_str = field_type_to_rust(&field.ty, &t.name, &field.rust_name);
         let field_ident = escape_keyword(&field.rust_name);
-        if field_ident != field.rust_name {
+        let is_option = matches!(&field.ty, crate::parser::FieldType::Opt(_));
+        if field_ident != field.rust_name && is_option {
+            out.push_str(&format!(
+                "    #[serde(rename = \"{}\", skip_serializing_if = \"Option::is_none\")]\n",
+                field.serde_name
+            ));
+        } else if field_ident != field.rust_name {
             out.push_str(&format!(
                 "    #[serde(rename = \"{}\")]\n",
                 field.serde_name
             ));
+        } else if is_option {
+            out.push_str("    #[serde(skip_serializing_if = \"Option::is_none\")]\n");
         }
         out.push_str(&format!("    pub {field_ident}: {ty_str},\n"));
     }
@@ -170,7 +178,10 @@ fn emit_entity(t: &TypeDef, field: &str, inner: &str) -> String {
     out.push_str("#[derive(Debug, Clone, Default, Deserialize, Serialize)]\n");
     out.push_str("#[serde(rename_all = \"camelCase\")]\n");
     out.push_str(&format!("pub struct {} {{\n", t.name));
-    out.push_str(&format!("    pub {field}: {inner},\n"));
+    // The inner field is `Option<T>` so that NiFi responses which omit the field
+    // (e.g. empty-body 200/202 replies) deserialize without error.
+    out.push_str("    #[serde(skip_serializing_if = \"Option::is_none\")]\n");
+    out.push_str(&format!("    pub {field}: Option<{inner}>,\n"));
     out.push_str("}\n");
     out
 }

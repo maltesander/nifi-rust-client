@@ -27,7 +27,7 @@ impl<'a> SiteToSiteApi<'a> {
         &self,
     ) -> Result<crate::v2_7_2::types::ControllerDto, NifiError> {
         let e: crate::v2_7_2::types::ControllerEntity = self.client.get("/site-to-site").await?;
-        Ok(e.controller)
+        Ok(e.controller.unwrap_or_default())
     }
     /// Returns the available Peers and its status of this NiFi
     ///

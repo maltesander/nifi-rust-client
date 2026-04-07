@@ -100,7 +100,7 @@ fn emit_get_with_entity_unwrap() {
     assert!(out.contains("pub async fn get_about_info"), "{out}");
     assert!(out.contains("Result<crate::types::AboutDto"), "{out}");
     assert!(out.contains(".get(\"/flow/about\")"), "{out}");
-    assert!(out.contains("Ok(e.about)"), "{out}");
+    assert!(out.contains("Ok(e.about.unwrap_or_default())"), "{out}");
 }
 
 #[test]
@@ -112,7 +112,7 @@ fn emit_delete_with_path_param_and_unwrap() {
         out.contains("format!(\"/processors/{id}\"") || out.contains("/processors/{id}"),
         "{out}"
     );
-    assert!(out.contains("Ok(e.component)"), "{out}");
+    assert!(out.contains("Ok(e.component.unwrap_or_default())"), "{out}");
 }
 
 #[test]

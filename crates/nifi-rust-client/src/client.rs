@@ -269,6 +269,9 @@ impl NifiClient {
     }
 
     /// POST with no request body; ignores the response body.
+    // Used by the code generator for void no-body POST endpoints without query params.
+    // No current NiFi 2.x endpoint triggers this path, but keep it for forward compatibility.
+    #[allow(dead_code)]
     pub(crate) async fn post_void_no_body(&self, path: &str) -> Result<(), NifiError> {
         tracing::debug!(method = "POST", path, "NiFi API request");
         let url = self.api_url(path);

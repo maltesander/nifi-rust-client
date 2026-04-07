@@ -513,7 +513,6 @@ impl<'a> ProcessGroupsEmptyAllConnectionsRequestsApi<'a> {
     /// Calls `POST /nifi-api/process-groups/{id}/empty-all-connections-requests`.
     ///
     /// # Errors
-    /// - `202`: The request has been accepted. An HTTP response header will contain the URI where the status can be polled.
     /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
     /// - `401`: Client could not be authenticated.
     /// - `403`: Client is not authorized to make this request.
@@ -523,13 +522,17 @@ impl<'a> ProcessGroupsEmptyAllConnectionsRequestsApi<'a> {
     /// # Permissions
     /// - `Read - /process-groups/{uuid} - For this and all encapsulated process groups`
     /// - `Write Source Data - /data/{component-type}/{uuid} - For all encapsulated connections`
-    pub async fn create_empty_all_connections_request(&self) -> Result<(), NifiError> {
+    pub async fn create_empty_all_connections_request(
+        &self,
+    ) -> Result<crate::v2_8_0::types::DropRequestDto, NifiError> {
         let id = self.id;
-        self.client
-            .post_void_no_body(&format!(
+        let e: crate::v2_8_0::types::DropRequestEntity = self
+            .client
+            .post_no_body(&format!(
                 "/process-groups/{id}/empty-all-connections-requests"
             ))
-            .await
+            .await?;
+        Ok(e.drop_request.unwrap_or_default())
     }
     /// Cancels and/or removes a request to drop all flowfiles.
     ///
@@ -559,7 +562,7 @@ impl<'a> ProcessGroupsEmptyAllConnectionsRequestsApi<'a> {
                 "/process-groups/{id}/empty-all-connections-requests/{drop_request_id}"
             ))
             .await?;
-        Ok(e.drop_request)
+        Ok(e.drop_request.unwrap_or_default())
     }
     /// Gets the current status of a drop all flowfiles request.
     ///
@@ -589,7 +592,7 @@ impl<'a> ProcessGroupsEmptyAllConnectionsRequestsApi<'a> {
                 "/process-groups/{id}/empty-all-connections-requests/{drop_request_id}"
             ))
             .await?;
-        Ok(e.drop_request)
+        Ok(e.drop_request.unwrap_or_default())
     }
 }
 pub struct ProcessGroupsFlowContentsApi<'a> {
@@ -1238,6 +1241,6 @@ impl<'a> ProcessGroupsSnippetInstanceApi<'a> {
             .client
             .post(&format!("/process-groups/{id}/snippet-instance"), body)
             .await?;
-        Ok(e.flow)
+        Ok(e.flow.unwrap_or_default())
     }
 }

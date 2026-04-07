@@ -76,10 +76,6 @@ create_policy "/counters" "write"
 create_policy "/provenance" "read"
 create_policy "/provenance" "write"
 
-# Data access — required by data-related tests.
-create_policy "/data" "read"
-create_policy "/data" "write"
-
 # Root process group — required by all component CRUD tests (funnels, processors, etc.).
 # The root PG UUID is random, so we resolve it here at runtime.
 ROOT_PG_ID=$(curl -sk \
@@ -89,6 +85,11 @@ ROOT_PG_ID=$(curl -sk \
 echo "    Root process group: ${ROOT_PG_ID}"
 create_policy "/process-groups/${ROOT_PG_ID}" "read"
 create_policy "/process-groups/${ROOT_PG_ID}" "write"
+
+# Data access (queue listing/drop, provenance event content) — cascades to all components
+# inside the root process group, including any nested PGs created during tests.
+create_policy "/data/process-groups/${ROOT_PG_ID}" "read"
+create_policy "/data/process-groups/${ROOT_PG_ID}" "write"
 
 # Parameter contexts — required by parameter context tests.
 create_policy "/parameter-contexts" "read"

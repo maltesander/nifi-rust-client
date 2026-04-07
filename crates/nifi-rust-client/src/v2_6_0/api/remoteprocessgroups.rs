@@ -382,6 +382,6 @@ impl<'a> RemoteProcessGroupsStateApi<'a> {
             .client
             .get(&format!("/remote-process-groups/{id}/state"))
             .await?;
-        Ok(e.component_state)
+        Ok(e.component_state.unwrap_or_default())
     }
 }

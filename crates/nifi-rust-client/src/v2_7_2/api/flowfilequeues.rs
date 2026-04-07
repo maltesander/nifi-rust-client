@@ -54,7 +54,6 @@ impl<'a> FlowFileQueuesDropRequestsApi<'a> {
     /// Calls `POST /nifi-api/flowfile-queues/{id}/drop-requests`.
     ///
     /// # Errors
-    /// - `202`: The request has been accepted. A HTTP response header will contain the URI where the response can be polled.
     /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
     /// - `401`: Client could not be authenticated.
     /// - `403`: Client is not authorized to make this request.
@@ -63,11 +62,15 @@ impl<'a> FlowFileQueuesDropRequestsApi<'a> {
     ///
     /// # Permissions
     /// Requires `Write Source Data - /data/{component-type}/{uuid}`.
-    pub async fn create_drop_request(&self) -> Result<(), NifiError> {
+    pub async fn create_drop_request(
+        &self,
+    ) -> Result<crate::v2_7_2::types::DropRequestDto, NifiError> {
         let id = self.id;
-        self.client
-            .post_void_no_body(&format!("/flowfile-queues/{id}/drop-requests"))
-            .await
+        let e: crate::v2_7_2::types::DropRequestEntity = self
+            .client
+            .post_no_body(&format!("/flowfile-queues/{id}/drop-requests"))
+            .await?;
+        Ok(e.drop_request.unwrap_or_default())
     }
     /// Cancels and/or removes a request to drop the contents of this connection.
     ///
@@ -96,7 +99,7 @@ impl<'a> FlowFileQueuesDropRequestsApi<'a> {
                 "/flowfile-queues/{id}/drop-requests/{drop_request_id}"
             ))
             .await?;
-        Ok(e.drop_request)
+        Ok(e.drop_request.unwrap_or_default())
     }
     /// Gets the current status of a drop request for the specified connection.
     ///
@@ -125,7 +128,7 @@ impl<'a> FlowFileQueuesDropRequestsApi<'a> {
                 "/flowfile-queues/{id}/drop-requests/{drop_request_id}"
             ))
             .await?;
-        Ok(e.drop_request)
+        Ok(e.drop_request.unwrap_or_default())
     }
 }
 pub struct FlowFileQueuesFlowfilesApi<'a> {
@@ -172,7 +175,7 @@ impl<'a> FlowFileQueuesFlowfilesApi<'a> {
                 &query,
             )
             .await?;
-        Ok(e.flow_file)
+        Ok(e.flow_file.unwrap_or_default())
     }
     /// Gets the content for a FlowFile in a Connection.
     ///
@@ -231,7 +234,6 @@ impl<'a> FlowFileQueuesListingRequestsApi<'a> {
     /// Calls `POST /nifi-api/flowfile-queues/{id}/listing-requests`.
     ///
     /// # Errors
-    /// - `202`: The request has been accepted. A HTTP response header will contain the URI where the response can be polled.
     /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
     /// - `401`: Client could not be authenticated.
     /// - `403`: Client is not authorized to make this request.
@@ -240,11 +242,15 @@ impl<'a> FlowFileQueuesListingRequestsApi<'a> {
     ///
     /// # Permissions
     /// Requires `Read Source Data - /data/{component-type}/{uuid}`.
-    pub async fn create_flow_file_listing(&self) -> Result<(), NifiError> {
+    pub async fn create_flow_file_listing(
+        &self,
+    ) -> Result<crate::v2_7_2::types::ListingRequestDto, NifiError> {
         let id = self.id;
-        self.client
-            .post_void_no_body(&format!("/flowfile-queues/{id}/listing-requests"))
-            .await
+        let e: crate::v2_7_2::types::ListingRequestEntity = self
+            .client
+            .post_no_body(&format!("/flowfile-queues/{id}/listing-requests"))
+            .await?;
+        Ok(e.listing_request.unwrap_or_default())
     }
     /// Cancels and/or removes a request to list the contents of this connection.
     ///
@@ -273,7 +279,7 @@ impl<'a> FlowFileQueuesListingRequestsApi<'a> {
                 "/flowfile-queues/{id}/listing-requests/{listing_request_id}"
             ))
             .await?;
-        Ok(e.listing_request)
+        Ok(e.listing_request.unwrap_or_default())
     }
     /// Gets the current status of a listing request for the specified connection.
     ///
@@ -302,6 +308,6 @@ impl<'a> FlowFileQueuesListingRequestsApi<'a> {
                 "/flowfile-queues/{id}/listing-requests/{listing_request_id}"
             ))
             .await?;
-        Ok(e.listing_request)
+        Ok(e.listing_request.unwrap_or_default())
     }
 }

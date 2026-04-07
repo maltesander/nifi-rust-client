@@ -241,7 +241,7 @@ impl<'a> ControllerServicesConfigApi<'a> {
             .client
             .post(&format!("/controller-services/{id}/config/analysis"), body)
             .await?;
-        Ok(e.configuration_analysis)
+        Ok(e.configuration_analysis.unwrap_or_default())
     }
     /// Performs verification of the Controller Service's configuration
     ///
@@ -273,7 +273,7 @@ impl<'a> ControllerServicesConfigApi<'a> {
                 body,
             )
             .await?;
-        Ok(e.request)
+        Ok(e.request.unwrap_or_default())
     }
     /// Deletes the Verification Request with the given ID
     ///
@@ -304,7 +304,7 @@ impl<'a> ControllerServicesConfigApi<'a> {
                 "/controller-services/{id}/config/verification-requests/{request_id}"
             ))
             .await?;
-        Ok(e.request)
+        Ok(e.request.unwrap_or_default())
     }
     /// Returns the Verification Request with the given ID
     ///
@@ -335,7 +335,7 @@ impl<'a> ControllerServicesConfigApi<'a> {
                 "/controller-services/{id}/config/verification-requests/{request_id}"
             ))
             .await?;
-        Ok(e.request)
+        Ok(e.request.unwrap_or_default())
     }
 }
 pub struct ControllerServicesDescriptorsApi<'a> {
@@ -380,7 +380,7 @@ impl<'a> ControllerServicesDescriptorsApi<'a> {
             .client
             .get_with_query(&format!("/controller-services/{id}/descriptors"), &query)
             .await?;
-        Ok(e.property_descriptor)
+        Ok(e.property_descriptor.unwrap_or_default())
     }
 }
 pub struct ControllerServicesReferencesApi<'a> {
@@ -505,7 +505,7 @@ impl<'a> ControllerServicesStateApi<'a> {
             .client
             .get(&format!("/controller-services/{id}/state"))
             .await?;
-        Ok(e.component_state)
+        Ok(e.component_state.unwrap_or_default())
     }
     /// Clears the state for a controller service
     ///
@@ -535,6 +535,6 @@ impl<'a> ControllerServicesStateApi<'a> {
                 body,
             )
             .await?;
-        Ok(e.component_state)
+        Ok(e.component_state.unwrap_or_default())
     }
 }

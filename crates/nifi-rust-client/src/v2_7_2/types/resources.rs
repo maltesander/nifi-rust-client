@@ -7,5 +7,6 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ResourcesEntity {
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub resources: Option<Vec<ResourceDto>>,
 }

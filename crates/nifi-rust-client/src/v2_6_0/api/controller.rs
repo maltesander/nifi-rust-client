@@ -48,7 +48,7 @@ impl<'a> ControllerApi<'a> {
     /// Requires `Read - /controller`.
     pub async fn get_cluster(&self) -> Result<crate::v2_6_0::types::ClusterDto, NifiError> {
         let e: crate::v2_6_0::types::ClusterEntity = self.client.get("/controller/cluster").await?;
-        Ok(e.cluster)
+        Ok(e.cluster.unwrap_or_default())
     }
     /// Removes a node from the cluster
     ///
@@ -71,7 +71,7 @@ impl<'a> ControllerApi<'a> {
             .client
             .delete_returning(&format!("/controller/cluster/nodes/{id}"))
             .await?;
-        Ok(e.node)
+        Ok(e.node.unwrap_or_default())
     }
     /// Gets a node in the cluster
     ///
@@ -94,7 +94,7 @@ impl<'a> ControllerApi<'a> {
             .client
             .get(&format!("/controller/cluster/nodes/{id}"))
             .await?;
-        Ok(e.node)
+        Ok(e.node.unwrap_or_default())
     }
     /// Updates a node in the cluster
     ///
@@ -122,7 +122,7 @@ impl<'a> ControllerApi<'a> {
             .client
             .put(&format!("/controller/cluster/nodes/{id}"), body)
             .await?;
-        Ok(e.node)
+        Ok(e.node.unwrap_or_default())
     }
     /// Retrieves the configuration for this NiFi Controller
     ///
@@ -347,7 +347,7 @@ impl<'a> ControllerApi<'a> {
             .client
             .delete_returning_with_query("/controller/history", &query)
             .await?;
-        Ok(e.history)
+        Ok(e.history.unwrap_or_default())
     }
     /// Retrieves summary information for installed NARs
     ///
@@ -387,7 +387,7 @@ impl<'a> ControllerApi<'a> {
             .client
             .post_octet_stream("/controller/nar-manager/nars/content", filename, data)
             .await?;
-        Ok(e.nar_summary)
+        Ok(e.nar_summary.unwrap_or_default())
     }
     /// Deletes an installed NAR
     ///
@@ -422,7 +422,7 @@ impl<'a> ControllerApi<'a> {
             .client
             .delete_returning_with_query(&format!("/controller/nar-manager/nars/{id}"), &query)
             .await?;
-        Ok(e.nar_summary)
+        Ok(e.nar_summary.unwrap_or_default())
     }
     /// Retrieves the summary information for the NAR with the given identifier
     ///
@@ -687,7 +687,7 @@ impl<'a> ControllerApi<'a> {
     ) -> Result<crate::v2_6_0::types::ComponentHistoryDto, NifiError> {
         let e: crate::v2_6_0::types::ComponentHistoryEntity =
             self.client.get("/controller/status/history").await?;
-        Ok(e.component_history)
+        Ok(e.component_history.unwrap_or_default())
     }
     /// Scope operations to the `config` sub-resource of a specific process group.
     ///
@@ -782,7 +782,7 @@ impl<'a> ControllerConfigApi<'a> {
                 body,
             )
             .await?;
-        Ok(e.configuration_analysis)
+        Ok(e.configuration_analysis.unwrap_or_default())
     }
     /// Performs verification of the Flow Analysis Rule's configuration
     ///
@@ -814,7 +814,7 @@ impl<'a> ControllerConfigApi<'a> {
                 body,
             )
             .await?;
-        Ok(e.request)
+        Ok(e.request.unwrap_or_default())
     }
     /// Deletes the Verification Request with the given ID
     ///
@@ -845,7 +845,7 @@ impl<'a> ControllerConfigApi<'a> {
                 "/controller/flow-analysis-rules/{id}/config/verification-requests/{request_id}"
             ))
             .await?;
-        Ok(e.request)
+        Ok(e.request.unwrap_or_default())
     }
     /// Returns the Verification Request with the given ID
     ///
@@ -876,7 +876,7 @@ impl<'a> ControllerConfigApi<'a> {
                 "/controller/flow-analysis-rules/{id}/config/verification-requests/{request_id}"
             ))
             .await?;
-        Ok(e.request)
+        Ok(e.request.unwrap_or_default())
     }
 }
 pub struct ControllerContentApi<'a> {
@@ -953,7 +953,7 @@ impl<'a> ControllerDescriptorsApi<'a> {
                 &query,
             )
             .await?;
-        Ok(e.property_descriptor)
+        Ok(e.property_descriptor.unwrap_or_default())
     }
     /// Gets a flow registry client property descriptor
     ///
@@ -990,7 +990,7 @@ impl<'a> ControllerDescriptorsApi<'a> {
                 &query,
             )
             .await?;
-        Ok(e.property_descriptor)
+        Ok(e.property_descriptor.unwrap_or_default())
     }
 }
 pub struct ControllerDetailsApi<'a> {
@@ -1094,7 +1094,7 @@ impl<'a> ControllerStateApi<'a> {
             .client
             .get(&format!("/controller/flow-analysis-rules/{id}/state"))
             .await?;
-        Ok(e.component_state)
+        Ok(e.component_state.unwrap_or_default())
     }
     /// Clears the state for a flow analysis rule
     ///
@@ -1124,6 +1124,6 @@ impl<'a> ControllerStateApi<'a> {
                 body,
             )
             .await?;
-        Ok(e.component_state)
+        Ok(e.component_state.unwrap_or_default())
     }
 }

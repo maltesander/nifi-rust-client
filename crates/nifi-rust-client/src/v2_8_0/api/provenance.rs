@@ -35,7 +35,7 @@ impl<'a> ProvenanceApi<'a> {
     ) -> Result<crate::v2_8_0::types::ProvenanceDto, NifiError> {
         let e: crate::v2_8_0::types::ProvenanceEntity =
             self.client.post("/provenance", body).await?;
-        Ok(e.provenance)
+        Ok(e.provenance.unwrap_or_default())
     }
     /// Submits a lineage query
     ///
@@ -62,7 +62,7 @@ impl<'a> ProvenanceApi<'a> {
     ) -> Result<crate::v2_8_0::types::LineageDto, NifiError> {
         let e: crate::v2_8_0::types::LineageEntity =
             self.client.post("/provenance/lineage", body).await?;
-        Ok(e.lineage)
+        Ok(e.lineage.unwrap_or_default())
     }
     /// Deletes a lineage query
     ///
@@ -94,7 +94,7 @@ impl<'a> ProvenanceApi<'a> {
             .client
             .delete_returning_with_query(&format!("/provenance/lineage/{id}"), &query)
             .await?;
-        Ok(e.lineage)
+        Ok(e.lineage.unwrap_or_default())
     }
     /// Gets a lineage query
     ///
@@ -127,7 +127,7 @@ impl<'a> ProvenanceApi<'a> {
             .client
             .get_with_query(&format!("/provenance/lineage/{id}"), &query)
             .await?;
-        Ok(e.lineage)
+        Ok(e.lineage.unwrap_or_default())
     }
     /// Gets the searchable attributes for provenance events
     ///
@@ -146,7 +146,7 @@ impl<'a> ProvenanceApi<'a> {
     ) -> Result<crate::v2_8_0::types::ProvenanceOptionsDto, NifiError> {
         let e: crate::v2_8_0::types::ProvenanceOptionsEntity =
             self.client.get("/provenance/search-options").await?;
-        Ok(e.provenance_options)
+        Ok(e.provenance_options.unwrap_or_default())
     }
     /// Deletes a provenance query
     ///
@@ -178,7 +178,7 @@ impl<'a> ProvenanceApi<'a> {
             .client
             .delete_returning_with_query(&format!("/provenance/{id}"), &query)
             .await?;
-        Ok(e.provenance)
+        Ok(e.provenance.unwrap_or_default())
     }
     /// Gets a provenance query
     ///
@@ -221,6 +221,6 @@ impl<'a> ProvenanceApi<'a> {
             .client
             .get_with_query(&format!("/provenance/{id}"), &query)
             .await?;
-        Ok(e.provenance)
+        Ok(e.provenance.unwrap_or_default())
     }
 }

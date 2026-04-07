@@ -8,6 +8,8 @@ use serde::{Deserialize, Serialize};
 #[serde(rename_all = "camelCase")]
 pub struct SnippetEntity {
     /// Acknowledges that this node is disconnected to allow for mutable requests to proceed.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub disconnected_node_acknowledged: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub snippet: Option<SnippetDto>,
 }

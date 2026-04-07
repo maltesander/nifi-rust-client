@@ -445,7 +445,7 @@ fn emit_method_body(ep: &Endpoint) -> String {
         HttpMethod::Get => {
             if has_inner {
                 format!(
-                    "{query_setup}\n        let e: crate::types::{entity_ty} = self.client.get_with_query({path_expr}, &query).await?;\n        Ok(e.{inner_field})\n"
+                    "{query_setup}\n        let e: crate::types::{entity_ty} = self.client.get_with_query({path_expr}, &query).await?;\n        Ok(e.{inner_field}.unwrap_or_default())\n"
                 )
             } else if ep.response_type.is_some() {
                 format!(
@@ -460,7 +460,7 @@ fn emit_method_body(ep: &Endpoint) -> String {
         HttpMethod::Delete => {
             if has_inner {
                 format!(
-                    "{query_setup}\n        let e: crate::types::{entity_ty} = self.client.delete_returning_with_query({path_expr}, &query).await?;\n        Ok(e.{inner_field})\n"
+                    "{query_setup}\n        let e: crate::types::{entity_ty} = self.client.delete_returning_with_query({path_expr}, &query).await?;\n        Ok(e.{inner_field}.unwrap_or_default())\n"
                 )
             } else if ep.response_type.is_some() {
                 format!(
@@ -480,7 +480,7 @@ fn emit_method_body(ep: &Endpoint) -> String {
             };
             if has_inner {
                 format!(
-                    "{query_setup}\n        let e: crate::types::{entity_ty} = self.client.post_with_query({path_expr}, {body_expr}, &query).await?;\n        Ok(e.{inner_field})\n"
+                    "{query_setup}\n        let e: crate::types::{entity_ty} = self.client.post_with_query({path_expr}, {body_expr}, &query).await?;\n        Ok(e.{inner_field}.unwrap_or_default())\n"
                 )
             } else if ep.response_type.is_some() {
                 format!(
@@ -512,7 +512,7 @@ fn emit_simple_method_body(
         HttpMethod::Get => {
             if has_inner {
                 format!(
-                    "        let e: crate::types::{entity_ty} = self.client.get({path_expr}).await?;\n        Ok(e.{inner_field})\n"
+                    "        let e: crate::types::{entity_ty} = self.client.get({path_expr}).await?;\n        Ok(e.{inner_field}.unwrap_or_default())\n"
                 )
             } else if ep.response_type.is_some() {
                 format!("        self.client.get({path_expr}).await\n")
@@ -523,7 +523,7 @@ fn emit_simple_method_body(
         HttpMethod::Delete => {
             if has_inner {
                 format!(
-                    "        let e: crate::types::{entity_ty} = self.client.delete_returning({path_expr}).await?;\n        Ok(e.{inner_field})\n"
+                    "        let e: crate::types::{entity_ty} = self.client.delete_returning({path_expr}).await?;\n        Ok(e.{inner_field}.unwrap_or_default())\n"
                 )
             } else if ep.response_type.is_some() {
                 format!("        self.client.delete_returning({path_expr}).await\n")
@@ -537,7 +537,7 @@ fn emit_simple_method_body(
                 Some(RequestBodyKind::Json) => {
                     if has_inner {
                         format!(
-                            "        let e: crate::types::{entity_ty} = self.client.post({path_expr}, body).await?;\n        Ok(e.{inner_field})\n"
+                            "        let e: crate::types::{entity_ty} = self.client.post({path_expr}, body).await?;\n        Ok(e.{inner_field}.unwrap_or_default())\n"
                         )
                     } else if ep.response_type.is_some() {
                         format!("        self.client.post({path_expr}, body).await\n")
@@ -548,7 +548,7 @@ fn emit_simple_method_body(
                 Some(RequestBodyKind::OctetStream) => {
                     if has_inner {
                         format!(
-                            "        let e: crate::types::{entity_ty} = self.client.post_octet_stream({path_expr}, filename, data).await?;\n        Ok(e.{inner_field})\n"
+                            "        let e: crate::types::{entity_ty} = self.client.post_octet_stream({path_expr}, filename, data).await?;\n        Ok(e.{inner_field}.unwrap_or_default())\n"
                         )
                     } else if ep.response_type.is_some() {
                         format!(
@@ -563,7 +563,7 @@ fn emit_simple_method_body(
                 Some(RequestBodyKind::FormEncoded) | None => {
                     if has_inner {
                         format!(
-                            "        let e: crate::types::{entity_ty} = self.client.post_no_body({path_expr}).await?;\n        Ok(e.{inner_field})\n"
+                            "        let e: crate::types::{entity_ty} = self.client.post_no_body({path_expr}).await?;\n        Ok(e.{inner_field}.unwrap_or_default())\n"
                         )
                     } else if ep.response_type.is_some() {
                         format!("        self.client.post_no_body({path_expr}).await\n")
@@ -579,7 +579,7 @@ fn emit_simple_method_body(
                 Some(RequestBodyKind::Json) => {
                     if has_inner {
                         format!(
-                            "        let e: crate::types::{entity_ty} = self.client.put({path_expr}, body).await?;\n        Ok(e.{inner_field})\n"
+                            "        let e: crate::types::{entity_ty} = self.client.put({path_expr}, body).await?;\n        Ok(e.{inner_field}.unwrap_or_default())\n"
                         )
                     } else if ep.response_type.is_some() {
                         format!("        self.client.put({path_expr}, body).await\n")
@@ -590,7 +590,7 @@ fn emit_simple_method_body(
                 Some(RequestBodyKind::OctetStream) | Some(RequestBodyKind::FormEncoded) | None => {
                     if has_inner {
                         format!(
-                            "        let e: crate::types::{entity_ty} = self.client.put_no_body({path_expr}).await?;\n        Ok(e.{inner_field})\n"
+                            "        let e: crate::types::{entity_ty} = self.client.put_no_body({path_expr}).await?;\n        Ok(e.{inner_field}.unwrap_or_default())\n"
                         )
                     } else if ep.response_type.is_some() {
                         format!("        self.client.put_no_body({path_expr}).await\n")
