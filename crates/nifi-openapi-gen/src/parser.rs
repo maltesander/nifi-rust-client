@@ -138,6 +138,13 @@ pub struct Endpoint {
     /// If response_type is an Entity, the field name to unwrap.
     pub response_field: Option<String>,
     pub query_params: Vec<QueryParam>,
+    /// Non-2xx responses: (status_code, description), e.g. ("400", "NiFi was unable to...").
+    pub error_responses: Vec<(String, String)>,
+    /// Security requirements from the spec.
+    /// `None` = `security` key absent in spec.
+    /// `Some([])` = no auth required (empty array in spec).
+    /// `Some([...])` = list of policy strings, e.g. `["Read - /controller-services/{uuid}"]`.
+    pub security: Option<Vec<String>>,
 }
 
 pub fn load(path: &str) -> ApiSpec {
@@ -562,6 +569,35 @@ fn parse_tags(
                 }
             };
 
+            let error_responses: Vec<(String, String)> = responses
+                .and_then(|r| r.as_object())
+                .map(|map| {
+                    map.iter()
+                        .filter(|(code, _)| {
+                            !matches!(code.as_str(), "200" | "201" | "default")
+                        })
+                        .filter_map(|(code, resp)| {
+                            let desc = resp.get("description")?.as_str()?;
+                            Some((code.clone(), desc.to_string()))
+                        })
+                        .collect()
+                })
+                .unwrap_or_default();
+
+            let security: Option<Vec<String>> = op.get("security").map(|sec| {
+                sec.as_array()
+                    .map(|a| a.as_slice())
+                    .unwrap_or(&[])
+                    .iter()
+                    .flat_map(|entry| {
+                        entry
+                            .as_object()
+                            .map(|obj| obj.keys().cloned().collect::<Vec<_>>())
+                            .unwrap_or_default()
+                    })
+                    .collect()
+            });
+
             let endpoint = Endpoint {
                 method,
                 path: raw_path.clone(),
@@ -576,6 +612,8 @@ fn parse_tags(
                 response_inner,
                 response_field,
                 query_params,
+                error_responses,
+                security,
             };
             tag_map.entry(tag).or_default().push(endpoint);
         }

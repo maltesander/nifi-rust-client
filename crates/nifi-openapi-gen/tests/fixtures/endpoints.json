@@ -7,6 +7,7 @@
         "summary": "Retrieves details about this NiFi",
         "tags": ["Flow"],
         "parameters": [],
+        "security": [{ "Read - /flow": [] }],
         "responses": {
           "200": {
             "content": {
@@ -14,7 +15,23 @@
                 "schema": { "$ref": "#/components/schemas/AboutEntity" }
               }
             }
-          }
+          },
+          "401": { "description": "Client could not be authenticated." },
+          "403": { "description": "Client is not authorized to make this request." }
+        }
+      }
+    },
+    "/access/token": {
+      "post": {
+        "operationId": "createAccessToken",
+        "summary": "Creates a token for accessing the REST API",
+        "tags": ["Access"],
+        "parameters": [],
+        "security": [],
+        "responses": {
+          "200": { "description": "successful operation" },
+          "400": { "description": "NiFi was unable to complete the request because it was invalid. The request should not be retried without modification." },
+          "401": { "description": "Authentication token provided was empty or not in the correct JWT format." }
         }
       }
     },
@@ -26,6 +43,10 @@
         "parameters": [
           { "in": "path", "name": "id", "required": true, "schema": { "type": "string" } }
         ],
+        "security": [
+          { "Write - /processors/{uuid}": [] },
+          { "Write - Parent Process Group - /process-groups/{uuid}": [] }
+        ],
         "responses": {
           "200": {
             "content": {
@@ -33,7 +54,12 @@
                 "schema": { "$ref": "#/components/schemas/ProcessorEntity" }
               }
             }
-          }
+          },
+          "400": { "description": "NiFi was unable to complete the request because it was invalid. The request should not be retried without modification." },
+          "401": { "description": "Client could not be authenticated." },
+          "403": { "description": "Client is not authorized to make this request." },
+          "404": { "description": "The specified resource could not be found." },
+          "409": { "description": "The request was valid but NiFi was not in the appropriate state to process it." }
         }
       }
     }

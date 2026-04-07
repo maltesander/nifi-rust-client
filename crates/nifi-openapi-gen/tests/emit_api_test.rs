@@ -29,6 +29,8 @@ fn flow_spec() -> ApiSpec {
                     response_inner: Some("AboutDto".into()),
                     response_field: Some("about".into()),
                     query_params: vec![],
+                    error_responses: vec![],
+                    security: None,
                 },
                 Endpoint {
                     method: HttpMethod::Delete,
@@ -48,6 +50,8 @@ fn flow_spec() -> ApiSpec {
                     response_inner: Some("ProcessorDto".into()),
                     response_field: Some("component".into()),
                     query_params: vec![],
+                    error_responses: vec![],
+                    security: None,
                 },
                 Endpoint {
                     method: HttpMethod::Post,
@@ -63,6 +67,8 @@ fn flow_spec() -> ApiSpec {
                     response_inner: Some("ProcessorDto".into()),
                     response_field: Some("component".into()),
                     query_params: vec![],
+                    error_responses: vec![],
+                    security: None,
                 },
             ],
             sub_groups: vec![],
@@ -184,6 +190,8 @@ fn services_spec() -> ApiSpec {
                 response_inner: Some("ServiceDto".into()),
                 response_field: Some("service".into()),
                 query_params: vec![],
+                error_responses: vec![],
+                security: None,
             }],
             sub_groups: vec![SubGroup {
                 name: "config".into(),
@@ -215,6 +223,8 @@ fn services_spec() -> ApiSpec {
                     response_inner: Some("ServiceDto".into()),
                     response_field: Some("service".into()),
                     query_params: vec![],
+                    error_responses: vec![],
+                    security: None,
                 }],
             }],
         }],
@@ -307,6 +317,8 @@ fn spec_with_enum_query_param() -> ApiSpec {
                     doc: None,
                     enum_type_name: Some("ParameterContextHandlingStrategy".into()),
                 }],
+                error_responses: vec![],
+                security: None,
             }],
             sub_groups: vec![],
         }],
@@ -366,6 +378,8 @@ fn spec_with_query_params() -> ApiSpec {
                         doc: None,
                         enum_type_name: None,
                     }],
+                    error_responses: vec![],
+                    security: None,
                 },
                 // Required integer query params
                 Endpoint {
@@ -400,6 +414,8 @@ fn spec_with_query_params() -> ApiSpec {
                             enum_type_name: None,
                         },
                     ],
+                    error_responses: vec![],
+                    security: None,
                 },
                 // DELETE with required query params (version/clientId pattern)
                 Endpoint {
@@ -437,6 +453,8 @@ fn spec_with_query_params() -> ApiSpec {
                             enum_type_name: None,
                         },
                     ],
+                    error_responses: vec![],
+                    security: None,
                 },
             ],
             sub_groups: vec![],

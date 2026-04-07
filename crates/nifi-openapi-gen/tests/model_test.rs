@@ -36,6 +36,8 @@ fn can_construct_internal_model() {
                 response_inner: Some("AboutDto".into()),
                 response_field: Some("about".into()),
                 query_params: vec![],
+                error_responses: vec![],
+                security: None,
             }],
             sub_groups: vec![],
         }],

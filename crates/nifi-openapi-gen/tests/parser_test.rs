@@ -149,7 +149,7 @@ fn parse_inline_enum() {
 #[test]
 fn parse_endpoints_grouped_by_tag() {
     let spec = load(&fixture("endpoints.json"));
-    assert_eq!(spec.tags.len(), 2);
+    assert_eq!(spec.tags.len(), 3);
 
     let flow = spec
         .tags
@@ -355,4 +355,70 @@ fn query_param_enum_produces_typedef_and_type_name() {
     if let TypeKind::StringEnum(variants) = &typedef.kind {
         assert_eq!(variants, &["KEEP_EXISTING", "REPLACE"]);
     }
+}
+
+#[test]
+fn parse_error_responses() {
+    let spec = load(&fixture("endpoints.json"));
+    let tags = &spec.tags;
+    let processors = tags.iter().find(|t| t.tag == "Processors").unwrap();
+    let delete_ep = processors
+        .root_endpoints
+        .iter()
+        .find(|e| e.fn_name == "delete_processor")
+        .unwrap();
+
+    assert_eq!(delete_ep.error_responses.len(), 5);
+    let codes: Vec<&str> = delete_ep.error_responses.iter().map(|(c, _)| c.as_str()).collect();
+    assert!(codes.contains(&"400"), "expected 400: {codes:?}");
+    assert!(codes.contains(&"401"));
+    assert!(codes.contains(&"403"));
+    assert!(codes.contains(&"404"));
+    assert!(codes.contains(&"409"));
+    let bad_req = delete_ep
+        .error_responses
+        .iter()
+        .find(|(c, _)| c == "400")
+        .unwrap();
+    assert!(bad_req.1.contains("invalid"), "unexpected desc: {}", bad_req.1);
+}
+
+#[test]
+fn parse_security_single() {
+    let spec = load(&fixture("endpoints.json"));
+    let flow = spec.tags.iter().find(|t| t.tag == "Flow").unwrap();
+    let about_ep = flow.root_endpoints.iter().find(|e| e.fn_name == "get_about_info").unwrap();
+
+    let sec = about_ep.security.as_ref().expect("security should be Some");
+    assert_eq!(sec, &["Read - /flow"]);
+}
+
+#[test]
+fn parse_security_multiple() {
+    let spec = load(&fixture("endpoints.json"));
+    let processors = spec.tags.iter().find(|t| t.tag == "Processors").unwrap();
+    let delete_ep = processors
+        .root_endpoints
+        .iter()
+        .find(|e| e.fn_name == "delete_processor")
+        .unwrap();
+
+    let sec = delete_ep.security.as_ref().expect("security should be Some");
+    assert_eq!(sec.len(), 2);
+    assert!(sec.iter().any(|s| s.contains("processors")), "missing processor policy: {sec:?}");
+    assert!(sec.iter().any(|s| s.contains("process-groups")), "missing pg policy: {sec:?}");
+}
+
+#[test]
+fn parse_security_no_auth_required() {
+    let spec = load(&fixture("endpoints.json"));
+    let access = spec.tags.iter().find(|t| t.tag == "Access").unwrap();
+    let token_ep = access
+        .root_endpoints
+        .iter()
+        .find(|e| e.fn_name == "create_access_token")
+        .unwrap();
+
+    let sec = token_ep.security.as_ref().expect("security should be Some([])");
+    assert!(sec.is_empty(), "expected empty vec for no-auth, got: {sec:?}");
 }
