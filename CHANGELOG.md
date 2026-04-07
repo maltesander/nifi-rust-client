@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-04-07
+
+### Added
+
+- Multi-line docs, skip_serializing for readOnly DTO fields ([40ed6c8](https://github.com/maltesander/nifi-rust-client/commit/40ed6c8))
+- Parse readOnly field flag from OpenAPI spec ([2e7e54b](https://github.com/maltesander/nifi-rust-client/commit/2e7e54b))
+- Emit # Errors and # Permissions doc sections ([77e6146](https://github.com/maltesander/nifi-rust-client/commit/77e6146))
+- Parse error_responses and security from OpenAPI spec ([be95660](https://github.com/maltesander/nifi-rust-client/commit/be95660))
+
+### Changed
+
+- Auto-sync versions table, client README, and docker-compose default ([29cd40c](https://github.com/maltesander/nifi-rust-client/commit/29cd40c))
+- Fix format ([6b266b5](https://github.com/maltesander/nifi-rust-client/commit/6b266b5))
+- Fix formatting ([9508670](https://github.com/maltesander/nifi-rust-client/commit/9508670))
+- Regenerate with enriched doc comments and readOnly support ([7e8d9f5](https://github.com/maltesander/nifi-rust-client/commit/7e8d9f5))
+
+### Fixed
+
+- Remove skip_serializing from readOnly DTO fields ([0dbe851](https://github.com/maltesander/nifi-rust-client/commit/0dbe851))
+- Remove stale version dirs when a NiFi version is dropped ([2b04aa2](https://github.com/maltesander/nifi-rust-client/commit/2b04aa2))
+
+### Documentation
+
+- Reorder README sections for better first-impression flow ([96e0304](https://github.com/maltesander/nifi-rust-client/commit/96e0304))
+- Update READMEs for error variants, test coverage, and codegen features ([3081482](https://github.com/maltesander/nifi-rust-client/commit/3081482))
+
 ## [0.2.0] - 2026-04-07
 
 ### Added
@@ -88,7 +114,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Structured error handling** — `NifiError` via `snafu` with distinct variants for HTTP, auth, serialization, and network errors.
 - **Tracing** — all HTTP requests emit a `tracing::debug!` event with method and path before sending.
 
-[Unreleased]: https://github.com/maltesander/nifi-rust-client/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/maltesander/nifi-rust-client/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/maltesander/nifi-rust-client/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/maltesander/nifi-rust-client/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/maltesander/nifi-rust-client/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/maltesander/nifi-rust-client/releases/tag/v0.1.0
