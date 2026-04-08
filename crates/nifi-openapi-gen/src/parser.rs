@@ -582,7 +582,7 @@ fn parse_tags(
                 .map(|map| {
                     let mut v: Vec<(String, String)> = map
                         .iter()
-                        .filter(|(code, _)| code.starts_with('2'))
+                        .filter(|(code, _)| code.starts_with('2') || code.starts_with('3'))
                         .filter_map(|(code, resp)| {
                             let desc = resp.get("description")?.as_str()?;
                             Some((code.clone(), desc.to_string()))
@@ -599,8 +599,8 @@ fn parse_tags(
                     let mut v: Vec<(String, String)> = map
                         .iter()
                         .filter(|(code, _)| {
-                            let is_2xx = code.starts_with('2');
-                            !is_2xx && code.as_str() != "default"
+                            let is_success = code.starts_with('2') || code.starts_with('3');
+                            !is_success && code.as_str() != "default"
                         })
                         .filter_map(|(code, resp)| {
                             let desc = resp.get("description")?.as_str()?;

@@ -89,7 +89,8 @@ The generator enriches every method and struct with documentation derived from t
 **API methods** (`emit_api.rs`):
 
 - The OpenAPI `summary` becomes the one-line method doc; `description` (if present) is appended as additional paragraphs. Multi-line descriptions are emitted verbatim — blank lines become `///` separator lines.
-- A `# Errors` rustdoc section lists every documented non-2xx HTTP response code and its description, sorted by status code.
+- A `# Returns` rustdoc section lists every documented 2xx and 3xx HTTP response code and its description, sorted by status code.
+- A `# Errors` rustdoc section lists every documented 4xx/5xx HTTP response code and its description, sorted by status code.
 - A `# Permissions` rustdoc section lists the NiFi policy expressions required to call the endpoint. Endpoints with no authentication requirement get "No authentication required."
 
 **DTO/entity structs** (`emit_types.rs`):
@@ -112,6 +113,10 @@ The generator is structured as:
 | `src/emit_types.rs` | Emit `types/<tag>.rs` — structs, enums, wrappers |
 | `src/emit_api.rs` | Emit `api/<tag>.rs` — resource structs with async methods |
 | `src/emit_tests.rs` | Emit wiremock test stubs |
+| `src/emit_dynamic.rs` | Emit `dynamic/api.rs` — `DynamicClient` with version-dispatching methods |
+| `src/emit_dynamic_types.rs` | Emit `dynamic/types.rs` — common union types with all fields as `Option<T>` |
+| `src/emit_dynamic_conversions.rs` | Emit `dynamic/conversions.rs` — `From` impls per version → common types |
+| `src/emit_dynamic_tests.rs` | Emit `dynamic_tests.rs` — wiremock stubs for the dynamic client |
 
 `generate.rs` is divided into four sections: *version utilities*, *code generation* (pure functions that produce Rust code strings), *repo sync: generated Rust files* (writes `.rs` files, `lib.rs`, `Cargo.toml` features), and *repo sync: documentation* (updates the README versions table and docker-compose default).
 

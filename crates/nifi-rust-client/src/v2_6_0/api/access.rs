@@ -32,8 +32,10 @@ impl<'a> AccessApi<'a> {
     ///
     /// Calls `GET /nifi-api/access/logout/complete`.
     ///
-    /// # Errors
+    /// # Returns
     /// - `302`: User was logged out successfully.
+    ///
+    /// # Errors
     /// - `401`: Authentication token provided was empty or not in the correct JWT format.
     /// - `500`: Client failed to log out.
     pub async fn log_out_complete(&self) -> Result<(), NifiError> {
