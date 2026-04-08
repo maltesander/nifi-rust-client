@@ -11,7 +11,7 @@ use std::time::Duration;
 ///
 /// ```
 /// use std::time::Duration;
-/// use nifi_rust_client::RetryPolicy;
+/// use nifi_rust_client::retry::RetryPolicy;
 ///
 /// let policy = RetryPolicy::default();
 /// assert_eq!(policy.max_retries, 3);

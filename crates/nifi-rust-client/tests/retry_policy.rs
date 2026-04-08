@@ -3,7 +3,8 @@
 use std::time::Duration;
 
 use nifi_rust_client::credentials::StaticCredentials;
-use nifi_rust_client::{NifiClientBuilder, NifiError, RetryPolicy};
+use nifi_rust_client::retry::RetryPolicy;
+use nifi_rust_client::{NifiClientBuilder, NifiError};
 use wiremock::matchers::{method, path};
 use wiremock::{Mock, MockServer, ResponseTemplate};
 
