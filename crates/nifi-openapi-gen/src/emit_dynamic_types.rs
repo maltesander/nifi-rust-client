@@ -10,6 +10,8 @@ enum MergedType {
         /// Fields that exist in every version with the same Rust type string.
         /// These can be emitted without extra Option wrapping.
         universal_fields: BTreeSet<String>,
+        /// Doc comment from the first version's TypeDef, if present.
+        doc: Option<String>,
     },
     Entity {
         field: String,
@@ -34,7 +36,14 @@ pub fn emit_dynamic_types(specs: &[(&str, &ApiSpec)]) -> String {
             MergedType::Dto {
                 fields,
                 universal_fields,
+                doc,
             } => {
+                if let Some(d) = doc {
+                    for line in d.lines() {
+                        out.push_str(&format!("/// {line}\n"));
+                    }
+                }
+                out.push_str("#[non_exhaustive]\n");
                 out.push_str("#[derive(Debug, Clone, Default, Deserialize, Serialize)]\n");
                 out.push_str("#[serde(rename_all = \"camelCase\")]\n");
                 out.push_str(&format!("pub struct {name} {{\n"));
@@ -48,6 +57,11 @@ pub fn emit_dynamic_types(specs: &[(&str, &ApiSpec)]) -> String {
                         // Field missing in some version or type differs — wrap in Option
                         wrap_in_option(&field.ty, &rust_ty)
                     };
+                    if let Some(field_doc) = &field.doc {
+                        for line in field_doc.lines() {
+                            out.push_str(&format!("    /// {line}\n"));
+                        }
+                    }
                     // Use serde rename if it differs from rust_name
                     if field.serde_name != field.rust_name {
                         out.push_str(&format!(
@@ -58,6 +72,12 @@ pub fn emit_dynamic_types(specs: &[(&str, &ApiSpec)]) -> String {
                     // Non-universal fields need default on deserialization for missing keys
                     if !is_universal {
                         out.push_str("    #[serde(default)]\n");
+                    }
+                    // Add skip_serializing_if for Option fields
+                    if final_ty.starts_with("Option<") {
+                        out.push_str(
+                            "    #[serde(skip_serializing_if = \"Option::is_none\")]\n",
+                        );
                     }
                     out.push_str(&format!(
                         "    pub {}: {final_ty},\n",
@@ -77,6 +97,7 @@ pub fn emit_dynamic_types(specs: &[(&str, &ApiSpec)]) -> String {
                 out.push_str("}\n\n");
             }
             MergedType::StringEnum { variants } => {
+                out.push_str("#[non_exhaustive]\n");
                 out.push_str(
                     "#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]\n",
                 );
@@ -169,6 +190,7 @@ fn merge_all_types(specs: &[(&str, &ApiSpec)]) -> BTreeMap<String, MergedType> {
                         .or_insert_with(|| MergedType::Dto {
                             fields: BTreeMap::new(),
                             universal_fields: BTreeSet::new(),
+                            doc: td.doc.clone(),
                         });
                     if let MergedType::Dto { fields, .. } = entry {
                         for field in &td.fields {
@@ -435,5 +457,52 @@ mod tests {
             result.get("Dto").unwrap(),
             &vec!["a".to_string(), "b".to_string()]
         );
+    }
+
+    fn make_field_with_doc(name: &str, ty: FieldType, doc: &str) -> Field {
+        Field {
+            rust_name: name.to_string(),
+            serde_name: name.to_string(),
+            ty,
+            doc: Some(doc.to_string()),
+            read_only: false,
+        }
+    }
+
+    #[test]
+    fn dynamic_types_emit_non_exhaustive_on_struct() {
+        let td = TypeDef {
+            name: "AboutDto".to_string(),
+            kind: TypeKind::Dto,
+            fields: vec![
+                make_field_with_doc("version", FieldType::Opt(Box::new(FieldType::Str)), "The NiFi version"),
+                make_field("title", FieldType::Str),
+            ],
+            doc: Some("Information about the NiFi instance".to_string()),
+        };
+        let spec = make_spec(vec![td]);
+        let output = emit_dynamic_types(&[("2.8.0", &spec)]);
+        // non_exhaustive attribute on struct
+        assert!(output.contains("#[non_exhaustive]"), "missing #[non_exhaustive] on struct");
+        // struct-level doc comment
+        assert!(output.contains("/// Information about the NiFi instance"), "missing struct doc comment");
+        // field-level doc comment
+        assert!(output.contains("/// The NiFi version"), "missing field doc comment");
+        // skip_serializing_if on Option fields
+        assert!(output.contains("#[serde(skip_serializing_if = \"Option::is_none\")]"), "missing skip_serializing_if");
+    }
+
+    #[test]
+    fn dynamic_types_emit_non_exhaustive_on_enum() {
+        let td = TypeDef {
+            name: "DiagnosticLevel".to_string(),
+            kind: TypeKind::StringEnum(vec!["BASIC".into(), "VERBOSE".into()]),
+            fields: vec![],
+            doc: None,
+        };
+        let spec = make_spec(vec![td]);
+        let output = emit_dynamic_types(&[("2.8.0", &spec)]);
+        assert!(output.contains("pub enum DiagnosticLevel"), "missing enum declaration");
+        assert!(output.contains("#[non_exhaustive]"), "missing #[non_exhaustive] on enum");
     }
 }
