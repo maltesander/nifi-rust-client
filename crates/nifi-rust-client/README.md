@@ -53,20 +53,27 @@ nifi-rust-client = { version = "0.3", features = ["dynamic"] }
 <!-- DYNAMIC_FEATURE_EXAMPLE_END -->
 
 ```rust
+use nifi_rust_client::dynamic::types::DiagnosticLevel;
+
 let client = NifiClientBuilder::new("https://nifi:8443")?
     .build_dynamic()
     .await?;
 client.login("admin", "password").await?;
 
-// Returns common union types — fields are Option<T>
+// Fields present in all versions are non-optional; version-specific fields are Option<T>
 let about = client.flow_api().get_about_info().await?;
 println!("NiFi version: {:?}", about.version);
 
-// Check what was detected
+// Enum query params are typed — IDE autocomplete works
+let diag = client.system_diagnostics_api()
+    .get_system_diagnostics(Some(DiagnosticLevel::Verbose))
+    .await?;
+
+// Request bodies use typed dynamic union structs (not serde_json::Value)
 println!("Connected to NiFi {}", client.detected_version());
 ```
 
-Trade-offs: all fields are `Option<T>` since not every NiFi version populates every field. Endpoints that don't exist in the connected version return `NifiError::UnsupportedEndpoint`.
+Fields present in all supported versions use their natural type (e.g., `String`); fields that only exist in some versions are `Option<T>`. Endpoints that don't exist in the connected version return `NifiError::UnsupportedEndpoint`. Enum query params and request bodies are fully typed.
 
 ### When to use which
 
@@ -278,6 +285,8 @@ All methods return `Result<T, NifiError>`. Variants:
 - `NifiError::InvalidCertificate { source }` — invalid CA certificate
 - `NifiError::UnsupportedVersion { detected }` — dynamic mode: unsupported NiFi version
 - `NifiError::UnsupportedEndpoint { endpoint, version }` — dynamic mode: endpoint not available
+- `NifiError::UnsupportedEnumVariant { variant, type_name, version }` — dynamic mode: enum variant not in target version
+- `NifiError::MissingRequiredField { field, type_name, version }` — dynamic mode: required field is `None` in request body
 
 Helper methods:
 

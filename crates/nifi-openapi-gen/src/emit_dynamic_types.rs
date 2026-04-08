@@ -7,6 +7,9 @@ enum MergedType {
     Dto {
         /// Union of all fields across versions, preserving insertion order via BTreeMap on rust_name.
         fields: BTreeMap<String, Field>,
+        /// Fields that exist in every version with the same Rust type string.
+        /// These can be emitted without extra Option wrapping.
+        universal_fields: BTreeSet<String>,
     },
     Entity {
         field: String,
@@ -28,13 +31,23 @@ pub fn emit_dynamic_types(specs: &[(&str, &ApiSpec)]) -> String {
 
     for (name, mt) in &merged {
         match mt {
-            MergedType::Dto { fields } => {
+            MergedType::Dto {
+                fields,
+                universal_fields,
+            } => {
                 out.push_str("#[derive(Debug, Clone, Default, Deserialize, Serialize)]\n");
                 out.push_str("#[serde(rename_all = \"camelCase\")]\n");
                 out.push_str(&format!("pub struct {name} {{\n"));
                 for field in fields.values() {
                     let rust_ty = field_type_to_rust(&field.ty, name);
-                    let wrapped = wrap_in_option(&field.ty, &rust_ty);
+                    let is_universal = universal_fields.contains(&field.rust_name);
+                    let final_ty = if is_universal {
+                        // Field exists in all versions with the same type — emit as-is
+                        rust_ty
+                    } else {
+                        // Field missing in some version or type differs — wrap in Option
+                        wrap_in_option(&field.ty, &rust_ty)
+                    };
                     // Use serde rename if it differs from rust_name
                     if field.serde_name != field.rust_name {
                         out.push_str(&format!(
@@ -42,8 +55,12 @@ pub fn emit_dynamic_types(specs: &[(&str, &ApiSpec)]) -> String {
                             field.serde_name
                         ));
                     }
+                    // Non-universal fields need default on deserialization for missing keys
+                    if !is_universal {
+                        out.push_str("    #[serde(default)]\n");
+                    }
                     out.push_str(&format!(
-                        "    pub {}: {wrapped},\n",
+                        "    pub {}: {final_ty},\n",
                         escape_keyword(&field.rust_name)
                     ));
                 }
@@ -52,7 +69,7 @@ pub fn emit_dynamic_types(specs: &[(&str, &ApiSpec)]) -> String {
             MergedType::Entity { field, inner } => {
                 out.push_str("#[derive(Debug, Clone, Default, Deserialize, Serialize)]\n");
                 out.push_str("#[serde(rename_all = \"camelCase\")]\n");
-                out.push_str(&format!("pub(crate) struct {name} {{\n"));
+                out.push_str(&format!("pub struct {name} {{\n"));
                 out.push_str(&format!(
                     "    pub {}: Option<{inner}>,\n",
                     escape_keyword(field)
@@ -60,13 +77,31 @@ pub fn emit_dynamic_types(specs: &[(&str, &ApiSpec)]) -> String {
                 out.push_str("}\n\n");
             }
             MergedType::StringEnum { variants } => {
-                out.push_str("#[derive(Debug, Clone, Deserialize, Serialize)]\n");
+                out.push_str(
+                    "#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]\n",
+                );
                 out.push_str(&format!("pub enum {name} {{\n"));
                 for wire in variants {
                     let pascal = wire_to_pascal(wire);
                     out.push_str(&format!("    #[serde(rename = \"{wire}\")]\n"));
                     out.push_str(&format!("    {pascal},\n"));
                 }
+                out.push_str("}\n\n");
+
+                // Display impl — outputs the wire value
+                out.push_str(&format!("impl std::fmt::Display for {name} {{\n"));
+                out.push_str(
+                    "    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {\n",
+                );
+                out.push_str("        match self {\n");
+                for wire in variants {
+                    let pascal = wire_to_pascal(wire);
+                    out.push_str(&format!(
+                        "            {name}::{pascal} => write!(f, \"{wire}\"),\n"
+                    ));
+                }
+                out.push_str("        }\n");
+                out.push_str("    }\n");
                 out.push_str("}\n\n");
             }
         }
@@ -83,7 +118,7 @@ pub fn collect_merged_field_names(specs: &[(&str, &ApiSpec)]) -> BTreeMap<String
     let mut result = BTreeMap::new();
     for (name, mt) in merged {
         match mt {
-            MergedType::Dto { fields } => {
+            MergedType::Dto { fields, .. } => {
                 result.insert(name, fields.keys().cloned().collect());
             }
             MergedType::Entity { .. } | MergedType::StringEnum { .. } => {
@@ -94,23 +129,65 @@ pub fn collect_merged_field_names(specs: &[(&str, &ApiSpec)]) -> BTreeMap<String
     result
 }
 
+/// Returns the set of field names that are "universal" for a given type:
+/// present in every version with the same Rust type string.
+pub fn collect_universal_fields(specs: &[(&str, &ApiSpec)]) -> BTreeMap<String, BTreeSet<String>> {
+    let merged = merge_all_types(specs);
+    let mut result = BTreeMap::new();
+    for (name, mt) in merged {
+        if let MergedType::Dto {
+            universal_fields, ..
+        } = mt
+        {
+            result.insert(name, universal_fields);
+        }
+    }
+    result
+}
+
 fn merge_all_types(specs: &[(&str, &ApiSpec)]) -> BTreeMap<String, MergedType> {
     let mut merged: BTreeMap<String, MergedType> = BTreeMap::new();
+
+    // Pass 1: collect all fields from all versions (union)
+    // Also track per-type: which versions contain this type, and per-field: presence count + type string
+    let num_versions = specs.len();
+
+    // Track: type_name -> (field_name -> (presence_count, rust_type_string, consistent))
+    let mut field_presence: BTreeMap<String, BTreeMap<String, (usize, String, bool)>> =
+        BTreeMap::new();
+    // Track: type_name -> number of versions this type appears in
+    let mut type_version_count: BTreeMap<String, usize> = BTreeMap::new();
 
     for (_version, spec) in specs {
         for td in &spec.all_types {
             match &td.kind {
                 TypeKind::Dto => {
+                    *type_version_count.entry(td.name.clone()).or_default() += 1;
+
                     let entry = merged
                         .entry(td.name.clone())
                         .or_insert_with(|| MergedType::Dto {
                             fields: BTreeMap::new(),
+                            universal_fields: BTreeSet::new(),
                         });
-                    if let MergedType::Dto { fields } = entry {
+                    if let MergedType::Dto { fields, .. } = entry {
                         for field in &td.fields {
                             fields
                                 .entry(field.rust_name.clone())
                                 .or_insert_with(|| field.clone());
+                        }
+                    }
+
+                    // Track field presence and type consistency
+                    let type_fields = field_presence.entry(td.name.clone()).or_default();
+                    for field in &td.fields {
+                        let rust_ty = field_type_to_rust(&field.ty, &td.name);
+                        let entry = type_fields
+                            .entry(field.rust_name.clone())
+                            .or_insert_with(|| (0, rust_ty.clone(), true));
+                        entry.0 += 1;
+                        if entry.1 != rust_ty {
+                            entry.2 = false; // type mismatch
                         }
                     }
                 }
@@ -133,6 +210,31 @@ fn merge_all_types(specs: &[(&str, &ApiSpec)]) -> BTreeMap<String, MergedType> {
                         for v in variants {
                             existing.insert(v.clone());
                         }
+                    }
+                }
+            }
+        }
+    }
+
+    // Pass 2: compute universal_fields for each Dto type.
+    // A field is universal if:
+    // 1. The type itself exists in all versions (type_version_count == num_versions)
+    // 2. The field appears in every version where the type exists
+    // 3. The Rust type string is consistent across all versions
+    for (type_name, mt) in merged.iter_mut() {
+        if let MergedType::Dto {
+            universal_fields, ..
+        } = mt
+        {
+            let versions_with_type = type_version_count.get(type_name).copied().unwrap_or(0);
+            if versions_with_type < num_versions {
+                // Type doesn't exist in all versions — no fields can be universal
+                continue;
+            }
+            if let Some(fields_info) = field_presence.get(type_name) {
+                for (field_name, (count, _ty, consistent)) in fields_info {
+                    if *count == versions_with_type && *consistent {
+                        universal_fields.insert(field_name.clone());
                     }
                 }
             }

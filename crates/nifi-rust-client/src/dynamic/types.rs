@@ -25,7 +25,7 @@ pub struct AboutDto {
 
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub(crate) struct AboutEntity {
+pub struct AboutEntity {
     pub about: Option<AboutDto>,
 }
 
@@ -210,7 +210,7 @@ pub struct AssetDto {
 
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub(crate) struct AssetEntity {
+pub struct AssetEntity {
     pub asset: Option<AssetDto>,
 }
 
@@ -258,7 +258,7 @@ pub struct AuthenticationConfigurationDto {
 
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub(crate) struct AuthenticationConfigurationEntity {
+pub struct AuthenticationConfigurationEntity {
     pub authentication_configuration: Option<AuthenticationConfigurationDto>,
 }
 
@@ -273,7 +273,7 @@ pub struct BannerDto {
 
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub(crate) struct BannerEntity {
+pub struct BannerEntity {
     pub banners: Option<BannerDto>,
 }
 
@@ -315,7 +315,7 @@ pub struct BulletinBoardDto {
 
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub(crate) struct BulletinBoardEntity {
+pub struct BulletinBoardEntity {
     pub bulletin_board: Option<BulletinBoardDto>,
 }
 
@@ -345,9 +345,11 @@ pub struct BulletinDto {
     #[serde(rename = "sourceType")]
     pub source_type: Option<String>,
     #[serde(rename = "stackTrace")]
+    #[serde(default)]
     pub stack_trace: Option<String>,
     pub timestamp: Option<String>,
     #[serde(rename = "timestampIso")]
+    #[serde(default)]
     pub timestamp_iso: Option<String>,
 }
 
@@ -366,6 +368,7 @@ pub struct BulletinEntity {
     pub source_id: Option<String>,
     pub timestamp: Option<String>,
     #[serde(rename = "timestampIso")]
+    #[serde(default)]
     pub timestamp_iso: Option<String>,
 }
 
@@ -388,9 +391,12 @@ pub struct BundleDto {
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ClearBulletinsForGroupRequestEntity {
+    #[serde(default)]
     pub components: Option<Vec<String>>,
     #[serde(rename = "fromTimestamp")]
+    #[serde(default)]
     pub from_timestamp: Option<String>,
+    #[serde(default)]
     pub id: Option<String>,
 }
 
@@ -398,6 +404,7 @@ pub struct ClearBulletinsForGroupRequestEntity {
 #[serde(rename_all = "camelCase")]
 pub struct ClearBulletinsForGroupResultsEntity {
     #[serde(rename = "bulletinsCleared")]
+    #[serde(default)]
     pub bulletins_cleared: Option<i32>,
 }
 
@@ -405,16 +412,20 @@ pub struct ClearBulletinsForGroupResultsEntity {
 #[serde(rename_all = "camelCase")]
 pub struct ClearBulletinsRequestEntity {
     #[serde(rename = "fromTimestamp")]
+    #[serde(default)]
     pub from_timestamp: Option<String>,
 }
 
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ClearBulletinsResultEntity {
+    #[serde(default)]
     pub bulletins: Option<Vec<BulletinEntity>>,
     #[serde(rename = "bulletinsCleared")]
+    #[serde(default)]
     pub bulletins_cleared: Option<i32>,
     #[serde(rename = "componentId")]
+    #[serde(default)]
     pub component_id: Option<String>,
 }
 
@@ -434,7 +445,7 @@ pub struct ClusterDto {
 
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub(crate) struct ClusterEntity {
+pub struct ClusterEntity {
     pub cluster: Option<ClusterDto>,
 }
 
@@ -461,7 +472,7 @@ pub struct ClusterSummaryDto {
 
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub(crate) struct ClusterSummaryEntity {
+pub struct ClusterSummaryEntity {
     pub cluster_summary: Option<ClusterSummaryDto>,
 }
 
@@ -494,7 +505,7 @@ pub struct ComponentHistoryDto {
 
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub(crate) struct ComponentHistoryEntity {
+pub struct ComponentHistoryEntity {
     pub component_history: Option<ComponentHistoryDto>,
 }
 
@@ -507,6 +518,7 @@ pub struct ComponentManifest {
     #[serde(rename = "flowAnalysisRules")]
     pub flow_analysis_rules: Option<Vec<FlowAnalysisRuleDefinition>>,
     #[serde(rename = "flowRegistryClients")]
+    #[serde(default)]
     pub flow_registry_clients: Option<Vec<FlowRegistryClientDefinition>>,
     #[serde(rename = "parameterProviders")]
     pub parameter_providers: Option<Vec<ParameterProviderDefinition>>,
@@ -582,7 +594,7 @@ pub struct ComponentStateDto {
 
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub(crate) struct ComponentStateEntity {
+pub struct ComponentStateEntity {
     pub component_state: Option<ComponentStateDto>,
 }
 
@@ -652,7 +664,7 @@ pub struct ConfigurationAnalysisDto {
 
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub(crate) struct ConfigurationAnalysisEntity {
+pub struct ConfigurationAnalysisEntity {
     pub configuration_analysis: Option<ConfigurationAnalysisDto>,
 }
 
@@ -675,12 +687,12 @@ pub struct ConnectableDto {
     pub comments: Option<String>,
     pub exists: Option<bool>,
     #[serde(rename = "groupId")]
-    pub group_id: Option<String>,
-    pub id: Option<String>,
+    pub group_id: String,
+    pub id: String,
     pub name: Option<String>,
     pub running: Option<bool>,
     pub transmitting: Option<bool>,
-    pub r#type: Option<String>,
+    pub r#type: String,
     #[serde(rename = "versionedComponentId")]
     pub versioned_component_id: Option<String>,
 }
@@ -736,7 +748,7 @@ pub struct ConnectionEntity {
     #[serde(rename = "destinationId")]
     pub destination_id: Option<String>,
     #[serde(rename = "destinationType")]
-    pub destination_type: Option<String>,
+    pub destination_type: String,
     #[serde(rename = "disconnectedNodeAcknowledged")]
     pub disconnected_node_acknowledged: Option<bool>,
     #[serde(rename = "getzIndex")]
@@ -752,7 +764,7 @@ pub struct ConnectionEntity {
     #[serde(rename = "sourceId")]
     pub source_id: Option<String>,
     #[serde(rename = "sourceType")]
-    pub source_type: Option<String>,
+    pub source_type: String,
     pub status: Option<ConnectionStatusDto>,
     pub uri: Option<String>,
 }
@@ -998,7 +1010,7 @@ pub struct ControllerDto {
 
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub(crate) struct ControllerEntity {
+pub struct ControllerEntity {
     pub controller: Option<ControllerDto>,
 }
 
@@ -1243,7 +1255,7 @@ pub struct ControllerStatusDto {
 
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub(crate) struct ControllerStatusEntity {
+pub struct ControllerStatusEntity {
     pub controller_status: Option<ControllerStatusDto>,
 }
 
@@ -1317,7 +1329,7 @@ pub struct CounterDto {
 
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub(crate) struct CounterEntity {
+pub struct CounterEntity {
     pub counter: Option<CounterDto>,
 }
 
@@ -1332,7 +1344,7 @@ pub struct CountersDto {
 
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub(crate) struct CountersEntity {
+pub struct CountersEntity {
     pub counters: Option<CountersDto>,
 }
 
@@ -1399,12 +1411,21 @@ pub struct DefinedType {
     pub version: Option<String>,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
 pub enum DiagnosticLevel {
     #[serde(rename = "BASIC")]
     Basic,
     #[serde(rename = "VERBOSE")]
     Verbose,
+}
+
+impl std::fmt::Display for DiagnosticLevel {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            DiagnosticLevel::Basic => write!(f, "BASIC"),
+            DiagnosticLevel::Verbose => write!(f, "VERBOSE"),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -1474,7 +1495,7 @@ pub struct DropRequestDto {
 
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub(crate) struct DropRequestEntity {
+pub struct DropRequestEntity {
     pub drop_request: Option<DropRequestDto>,
 }
 
@@ -1724,7 +1745,7 @@ pub struct FlowConfigurationDto {
 
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub(crate) struct FlowConfigurationEntity {
+pub struct FlowConfigurationEntity {
     pub flow_configuration: Option<FlowConfigurationDto>,
 }
 
@@ -1747,7 +1768,7 @@ pub struct FlowDto {
 
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub(crate) struct FlowEntity {
+pub struct FlowEntity {
     pub flow: Option<FlowDto>,
 }
 
@@ -1789,7 +1810,7 @@ pub struct FlowFileDto {
 
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub(crate) struct FlowFileEntity {
+pub struct FlowFileEntity {
     pub flow_file: Option<FlowFileDto>,
 }
 
@@ -1816,12 +1837,21 @@ pub struct FlowFileSummaryDto {
     pub uuid: Option<String>,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
 pub enum FlowMetricsReportingStrategy {
     #[serde(rename = "ALL_COMPONENTS")]
     AllComponents,
     #[serde(rename = "ALL_PROCESS_GROUPS")]
     AllProcessGroups,
+}
+
+impl std::fmt::Display for FlowMetricsReportingStrategy {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            FlowMetricsReportingStrategy::AllComponents => write!(f, "ALL_COMPONENTS"),
+            FlowMetricsReportingStrategy::AllProcessGroups => write!(f, "ALL_PROCESS_GROUPS"),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -1832,7 +1862,7 @@ pub struct FlowRegistryBranchDto {
 
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub(crate) struct FlowRegistryBranchEntity {
+pub struct FlowRegistryBranchEntity {
     pub branch: Option<FlowRegistryBranchDto>,
 }
 
@@ -1880,40 +1910,62 @@ pub struct FlowRegistryBucketsEntity {
 #[serde(rename_all = "camelCase")]
 pub struct FlowRegistryClientDefinition {
     #[serde(rename = "additionalDetails")]
+    #[serde(default)]
     pub additional_details: Option<bool>,
+    #[serde(default)]
     pub artifact: Option<String>,
     #[serde(rename = "buildInfo")]
+    #[serde(default)]
     pub build_info: Option<BuildInfo>,
+    #[serde(default)]
     pub deprecated: Option<bool>,
     #[serde(rename = "deprecationAlternatives")]
+    #[serde(default)]
     pub deprecation_alternatives: Option<Vec<String>>,
     #[serde(rename = "deprecationReason")]
+    #[serde(default)]
     pub deprecation_reason: Option<String>,
     #[serde(rename = "dynamicProperties")]
+    #[serde(default)]
     pub dynamic_properties: Option<Vec<DynamicProperty>>,
     #[serde(rename = "explicitRestrictions")]
+    #[serde(default)]
     pub explicit_restrictions: Option<Vec<Restriction>>,
+    #[serde(default)]
     pub group: Option<String>,
     #[serde(rename = "propertyDescriptors")]
+    #[serde(default)]
     pub property_descriptors: Option<std::collections::HashMap<String, Option<PropertyDescriptor>>>,
     #[serde(rename = "providedApiImplementations")]
+    #[serde(default)]
     pub provided_api_implementations: Option<Vec<DefinedType>>,
+    #[serde(default)]
     pub restricted: Option<bool>,
     #[serde(rename = "restrictedExplanation")]
+    #[serde(default)]
     pub restricted_explanation: Option<String>,
     #[serde(rename = "seeAlso")]
+    #[serde(default)]
     pub see_also: Option<Vec<String>>,
+    #[serde(default)]
     pub stateful: Option<Stateful>,
     #[serde(rename = "supportsDynamicProperties")]
+    #[serde(default)]
     pub supports_dynamic_properties: Option<bool>,
     #[serde(rename = "supportsSensitiveDynamicProperties")]
+    #[serde(default)]
     pub supports_sensitive_dynamic_properties: Option<bool>,
     #[serde(rename = "systemResourceConsiderations")]
+    #[serde(default)]
     pub system_resource_considerations: Option<Vec<SystemResourceConsideration>>,
+    #[serde(default)]
     pub tags: Option<Vec<String>>,
+    #[serde(default)]
     pub r#type: Option<String>,
     #[serde(rename = "typeDescription")]
+    #[serde(default)]
     pub type_description: Option<String>,
+    #[serde(default)]
     pub version: Option<String>,
 }
 
@@ -2062,11 +2114,11 @@ pub struct HistoryDto {
 
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub(crate) struct HistoryEntity {
+pub struct HistoryEntity {
     pub history: Option<HistoryDto>,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
 pub enum IncludedRegistries {
     #[serde(rename = "BULLETIN")]
     Bulletin,
@@ -2080,6 +2132,19 @@ pub enum IncludedRegistries {
     Nifi,
     #[serde(rename = "VERSION_INFO")]
     VersionInfo,
+}
+
+impl std::fmt::Display for IncludedRegistries {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            IncludedRegistries::Bulletin => write!(f, "BULLETIN"),
+            IncludedRegistries::Cluster => write!(f, "CLUSTER"),
+            IncludedRegistries::Connection => write!(f, "CONNECTION"),
+            IncludedRegistries::Jvm => write!(f, "JVM"),
+            IncludedRegistries::Nifi => write!(f, "NIFI"),
+            IncludedRegistries::VersionInfo => write!(f, "VERSION_INFO"),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -2164,7 +2229,7 @@ pub struct LatestProvenanceEventsDto {
 
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub(crate) struct LatestProvenanceEventsEntity {
+pub struct LatestProvenanceEventsEntity {
     pub latest_provenance_events: Option<LatestProvenanceEventsDto>,
 }
 
@@ -2185,7 +2250,7 @@ pub struct LineageDto {
 
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub(crate) struct LineageEntity {
+pub struct LineageEntity {
     pub lineage: Option<LineageDto>,
 }
 
@@ -2213,24 +2278,34 @@ pub struct LineageResultsDto {
 #[serde(rename_all = "camelCase")]
 pub struct ListenPortDto {
     #[serde(rename = "applicationProtocols")]
+    #[serde(default)]
     pub application_protocols: Option<Vec<String>>,
     #[serde(rename = "componentClass")]
+    #[serde(default)]
     pub component_class: Option<String>,
     #[serde(rename = "componentId")]
+    #[serde(default)]
     pub component_id: Option<String>,
     #[serde(rename = "componentName")]
+    #[serde(default)]
     pub component_name: Option<String>,
     #[serde(rename = "componentType")]
+    #[serde(default)]
     pub component_type: Option<String>,
     #[serde(rename = "parentGroupId")]
+    #[serde(default)]
     pub parent_group_id: Option<String>,
     #[serde(rename = "parentGroupName")]
+    #[serde(default)]
     pub parent_group_name: Option<String>,
     #[serde(rename = "portName")]
+    #[serde(default)]
     pub port_name: Option<String>,
     #[serde(rename = "portNumber")]
+    #[serde(default)]
     pub port_number: Option<i32>,
     #[serde(rename = "transportProtocol")]
+    #[serde(default)]
     pub transport_protocol: Option<String>,
 }
 
@@ -2238,6 +2313,7 @@ pub struct ListenPortDto {
 #[serde(rename_all = "camelCase")]
 pub struct ListenPortsEntity {
     #[serde(rename = "listenPorts")]
+    #[serde(default)]
     pub listen_ports: Option<Vec<ListenPortDto>>,
 }
 
@@ -2270,7 +2346,7 @@ pub struct ListingRequestDto {
 
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub(crate) struct ListingRequestEntity {
+pub struct ListingRequestEntity {
     pub listing_request: Option<ListingRequestDto>,
 }
 
@@ -2354,7 +2430,7 @@ pub struct NarSummaryDto {
 
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub(crate) struct NarSummaryEntity {
+pub struct NarSummaryEntity {
     pub nar_summary: Option<NarSummaryDto>,
 }
 
@@ -2422,7 +2498,7 @@ pub struct NodeDto {
 
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub(crate) struct NodeEntity {
+pub struct NodeEntity {
     pub node: Option<NodeDto>,
 }
 
@@ -2559,12 +2635,21 @@ pub struct ParameterContextEntity {
     pub uri: Option<String>,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
 pub enum ParameterContextHandlingStrategy {
     #[serde(rename = "KEEP_EXISTING")]
     KeepExisting,
     #[serde(rename = "REPLACE")]
     Replace,
+}
+
+impl std::fmt::Display for ParameterContextHandlingStrategy {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ParameterContextHandlingStrategy::KeepExisting => write!(f, "KEEP_EXISTING"),
+            ParameterContextHandlingStrategy::Replace => write!(f, "REPLACE"),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -2751,7 +2836,7 @@ pub struct ParameterProviderApplyParametersRequestDto {
 
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub(crate) struct ParameterProviderApplyParametersRequestEntity {
+pub struct ParameterProviderApplyParametersRequestEntity {
     pub request: Option<ParameterProviderApplyParametersRequestDto>,
 }
 
@@ -3652,6 +3737,7 @@ pub struct ProcessorDto {
     #[serde(rename = "persistsState")]
     pub persists_state: Option<bool>,
     #[serde(rename = "physicalState")]
+    #[serde(default)]
     pub physical_state: Option<String>,
     pub position: Option<PositionDto>,
     pub relationships: Option<Vec<RelationshipDto>>,
@@ -3687,6 +3773,7 @@ pub struct ProcessorEntity {
     pub operate_permissions: Option<PermissionsDto>,
     pub permissions: Option<PermissionsDto>,
     #[serde(rename = "physicalState")]
+    #[serde(default)]
     pub physical_state: Option<String>,
     pub position: Option<PositionDto>,
     pub revision: Option<RevisionDto>,
@@ -3871,6 +3958,7 @@ pub struct PropertyDescriptor {
     #[serde(rename = "expressionLanguageScopeDescription")]
     pub expression_language_scope_description: Option<String>,
     #[serde(rename = "listenPortDefinition")]
+    #[serde(default)]
     pub listen_port_definition: Option<PropertyListenPortDefinition>,
     pub name: Option<String>,
     pub required: Option<bool>,
@@ -3911,7 +3999,7 @@ pub struct PropertyDescriptorDto {
 
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub(crate) struct PropertyDescriptorEntity {
+pub struct PropertyDescriptorEntity {
     pub property_descriptor: Option<PropertyDescriptorDto>,
 }
 
@@ -3926,8 +4014,10 @@ pub struct PropertyHistoryDto {
 #[serde(rename_all = "camelCase")]
 pub struct PropertyListenPortDefinition {
     #[serde(rename = "applicationProtocols")]
+    #[serde(default)]
     pub application_protocols: Option<Vec<String>>,
     #[serde(rename = "transportProtocol")]
+    #[serde(default)]
     pub transport_protocol: Option<String>,
 }
 
@@ -3956,7 +4046,7 @@ pub struct ProvenanceDto {
 
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub(crate) struct ProvenanceEntity {
+pub struct ProvenanceEntity {
     pub provenance: Option<ProvenanceDto>,
 }
 
@@ -3988,6 +4078,7 @@ pub struct ProvenanceEventDto {
     #[serde(rename = "eventTime")]
     pub event_time: Option<String>,
     #[serde(rename = "eventTimestamp")]
+    #[serde(default)]
     pub event_timestamp: Option<String>,
     #[serde(rename = "eventType")]
     pub event_type: Option<String>,
@@ -4047,7 +4138,7 @@ pub struct ProvenanceEventDto {
 
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub(crate) struct ProvenanceEventEntity {
+pub struct ProvenanceEventEntity {
     pub provenance_event: Option<ProvenanceEventDto>,
 }
 
@@ -4072,6 +4163,7 @@ pub struct ProvenanceNodeDto {
     #[serde(rename = "clusterNodeIdentifier")]
     pub cluster_node_identifier: Option<String>,
     #[serde(rename = "componentType")]
+    #[serde(default)]
     pub component_type: Option<String>,
     #[serde(rename = "eventType")]
     pub event_type: Option<String>,
@@ -4094,7 +4186,7 @@ pub struct ProvenanceOptionsDto {
 
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub(crate) struct ProvenanceOptionsEntity {
+pub struct ProvenanceOptionsEntity {
     pub provenance_options: Option<ProvenanceOptionsDto>,
 }
 
@@ -4711,7 +4803,7 @@ pub struct RuntimeManifest {
 
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub(crate) struct RuntimeManifestEntity {
+pub struct RuntimeManifestEntity {
     pub runtime_manifest: Option<RuntimeManifest>,
 }
 
@@ -4751,7 +4843,7 @@ pub struct SchedulingDefaults {
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SearchResultGroupDto {
-    pub id: Option<String>,
+    pub id: String,
     pub name: Option<String>,
 }
 
@@ -4786,7 +4878,7 @@ pub struct SearchResultsDto {
 
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub(crate) struct SearchResultsEntity {
+pub struct SearchResultsEntity {
     pub search_results_d_t_o: Option<SearchResultsDto>,
 }
 
@@ -4949,7 +5041,7 @@ pub struct SystemDiagnosticsDto {
 
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub(crate) struct SystemDiagnosticsEntity {
+pub struct SystemDiagnosticsEntity {
     pub system_diagnostics: Option<SystemDiagnosticsDto>,
 }
 
@@ -5196,7 +5288,7 @@ pub struct VerifyConfigRequestDto {
 
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub(crate) struct VerifyConfigRequestEntity {
+pub struct VerifyConfigRequestEntity {
     pub request: Option<VerifyConfigRequestDto>,
 }
 
@@ -5395,7 +5487,7 @@ pub struct VersionedFlowDto {
 
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub(crate) struct VersionedFlowEntity {
+pub struct VersionedFlowEntity {
     pub versioned_flow: Option<VersionedFlowDto>,
 }
 
@@ -5507,8 +5599,10 @@ pub struct VersionedLabel {
 #[serde(rename_all = "camelCase")]
 pub struct VersionedListenPortDefinition {
     #[serde(rename = "applicationProtocols")]
+    #[serde(default)]
     pub application_protocols: Option<Vec<String>>,
     #[serde(rename = "transportProtocol")]
+    #[serde(default)]
     pub transport_protocol: Option<String>,
 }
 
@@ -5686,6 +5780,7 @@ pub struct VersionedPropertyDescriptor {
     #[serde(rename = "identifiesControllerService")]
     pub identifies_controller_service: Option<bool>,
     #[serde(rename = "listenPortDefinition")]
+    #[serde(default)]
     pub listen_port_definition: Option<VersionedListenPortDefinition>,
     pub name: Option<String>,
     #[serde(rename = "resourceDefinition")]

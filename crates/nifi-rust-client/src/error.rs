@@ -35,6 +35,24 @@ pub enum NifiError {
 
     #[snafu(display("Endpoint {endpoint} is not available in NiFi {version}"))]
     UnsupportedEndpoint { endpoint: String, version: String },
+
+    #[snafu(display(
+        "Enum variant '{variant}' of type '{type_name}' is not supported in NiFi {version}"
+    ))]
+    UnsupportedEnumVariant {
+        variant: String,
+        type_name: String,
+        version: String,
+    },
+
+    #[snafu(display(
+        "Required field '{field}' of type '{type_name}' is missing for NiFi {version}"
+    ))]
+    MissingRequiredField {
+        field: String,
+        type_name: String,
+        version: String,
+    },
 }
 
 impl NifiError {

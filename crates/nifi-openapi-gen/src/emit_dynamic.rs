@@ -144,12 +144,6 @@ fn emit_dynamic_client(out: &mut String, versions: &[(&str, &str, &str, &ApiSpec
     out.push_str("        &self.client\n");
     out.push_str("    }\n\n");
 
-    // inner_mut()
-    out.push_str("    /// Returns a mutable reference to the underlying `NifiClient`.\n");
-    out.push_str("    pub fn inner_mut(&mut self) -> &mut NifiClient {\n");
-    out.push_str("        &mut self.client\n");
-    out.push_str("    }\n\n");
-
     // login()
     out.push_str("    /// Authenticate with the NiFi instance.\n");
     out.push_str("    pub async fn login(&self, username: &str, password: &str) -> Result<(), NifiError> {\n");
@@ -352,12 +346,15 @@ fn emit_dynamic_method(
         })
         .collect();
 
-    // Body param — use &serde_json::Value for JSON bodies
+    // Body param — use typed dynamic union struct for JSON bodies
     let body_arg = if ep.method == HttpMethod::Delete {
         String::new()
     } else {
         match &ep.body_kind {
-            Some(RequestBodyKind::Json) => ", body: &serde_json::Value".to_string(),
+            Some(RequestBodyKind::Json) => {
+                let req_type = ep.request_type.as_deref().unwrap_or("serde_json::Value");
+                format!(", body: &types::{req_type}")
+            }
             Some(RequestBodyKind::OctetStream) => {
                 ", filename: Option<&str>, data: Vec<u8>".to_string()
             }
@@ -467,27 +464,25 @@ fn emit_version_arm(
             .unwrap_or(false);
 
         if qp.enum_type_name.is_some() {
-            // Convert &str to the version-specific enum type
+            // Convert dynamic union enum to version-specific enum via TryFrom
             let type_name = qp.enum_type_name.as_deref().unwrap();
             if qp.required && !forced_option {
                 call_args.push(format!(
-                    "serde_json::from_value::<crate::{mod_name}::types::{type_name}>(serde_json::Value::String({name}.to_string())).map_err(|_| NifiError::UnsupportedEndpoint {{ endpoint: \"{fn_name}\".to_string(), version: \"{ver}\".to_string() }})?",
+                    "crate::{mod_name}::types::{type_name}::try_from({name})?",
                     name = escape_keyword(&qp.rust_name),
-                    fn_name = ep.fn_name,
                 ));
             } else if qp.required && forced_option {
                 // Required in this version but Option in the signature — unwrap with error
                 call_args.push(format!(
-                    "serde_json::from_value::<crate::{mod_name}::types::{type_name}>(serde_json::Value::String({name}.ok_or_else(|| NifiError::UnsupportedEndpoint {{ endpoint: \"{fn_name} (missing required param {raw_name})\".to_string(), version: \"{ver}\".to_string() }})?.to_string())).map_err(|_| NifiError::UnsupportedEndpoint {{ endpoint: \"{fn_name}\".to_string(), version: \"{ver}\".to_string() }})?",
+                    "crate::{mod_name}::types::{type_name}::try_from({name}.ok_or_else(|| NifiError::UnsupportedEndpoint {{ endpoint: \"{fn_name} (missing required param {raw_name})\".to_string(), version: \"{ver}\".to_string() }})?)?",
                     name = escape_keyword(&qp.rust_name),
                     fn_name = ep.fn_name,
                     raw_name = qp.rust_name,
                 ));
             } else {
                 call_args.push(format!(
-                    "{name}.map(|v| serde_json::from_value::<crate::{mod_name}::types::{type_name}>(serde_json::Value::String(v.to_string()))).transpose().map_err(|_| NifiError::UnsupportedEndpoint {{ endpoint: \"{fn_name}\".to_string(), version: \"{ver}\".to_string() }})?",
+                    "{name}.map(crate::{mod_name}::types::{type_name}::try_from).transpose()?",
                     name = escape_keyword(&qp.rust_name),
-                    fn_name = ep.fn_name,
                 ));
             }
         } else if qp.required && forced_option {
@@ -508,8 +503,7 @@ fn emit_version_arm(
             Some(RequestBodyKind::Json) => {
                 let req_type = ep.request_type.as_deref().unwrap_or("serde_json::Value");
                 call_args.push(format!(
-                    "&serde_json::from_value::<crate::{mod_name}::types::{req_type}>(body.clone()).map_err(|e| NifiError::UnsupportedEndpoint {{ endpoint: format!(\"{{}} (body deserialize: {{}})\", \"{fn_name}\", e), version: \"{ver}\".to_string() }})?",
-                    fn_name = ep.fn_name,
+                    "&crate::{mod_name}::types::{req_type}::try_from(body.clone())?",
                 ));
             }
             Some(RequestBodyKind::OctetStream) => {
@@ -562,7 +556,7 @@ fn merge_query_params(
     result
 }
 
-/// For dynamic mode, all query params use simple types (strings for enums).
+/// For dynamic mode, enum query params use the dynamic union enum type.
 fn dynamic_query_param_type(qp: &QueryParam) -> String {
     match &qp.ty {
         crate::parser::QueryParamType::Str => "&str".to_string(),
@@ -570,7 +564,10 @@ fn dynamic_query_param_type(qp: &QueryParam) -> String {
         crate::parser::QueryParamType::I32 => "i32".to_string(),
         crate::parser::QueryParamType::I64 => "i64".to_string(),
         crate::parser::QueryParamType::F64 => "f64".to_string(),
-        crate::parser::QueryParamType::Enum(_) => "&str".to_string(),
+        crate::parser::QueryParamType::Enum(_) => {
+            let type_name = qp.enum_type_name.as_deref().unwrap_or("String");
+            format!("types::{type_name}")
+        }
     }
 }
 

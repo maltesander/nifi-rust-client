@@ -566,6 +566,7 @@ fn main() {
         ));
 
         let merged_field_names = nifi_openapi_gen::collect_merged_field_names(&type_specs);
+        let universal_fields = nifi_openapi_gen::collect_universal_fields(&type_specs);
 
         let mod_names: Vec<String> = parsed_specs
             .iter()
@@ -579,7 +580,11 @@ fn main() {
 
         targets.push((
             client.join("src/dynamic/conversions.rs"),
-            nifi_openapi_gen::emit_dynamic_conversions(&conv_specs, &merged_field_names),
+            nifi_openapi_gen::emit_dynamic_conversions(
+                &conv_specs,
+                &merged_field_names,
+                &universal_fields,
+            ),
         ));
 
         let feature_names: Vec<String> = parsed_specs

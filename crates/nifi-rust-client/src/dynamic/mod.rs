@@ -69,10 +69,6 @@ impl DynamicClient {
     pub fn inner(&self) -> &NifiClient {
         &self.client
     }
-    /// Returns a mutable reference to the underlying `NifiClient`.
-    pub fn inner_mut(&mut self) -> &mut NifiClient {
-        &mut self.client
-    }
     /// Authenticate with the NiFi instance.
     pub async fn login(&self, username: &str, password: &str) -> Result<(), NifiError> {
         self.client.login(username, password).await
@@ -437,7 +433,7 @@ impl<'a> DynamicConnectionsApi<'a> {
     pub async fn update_connection(
         &self,
         id: &str,
-        body: &serde_json::Value,
+        body: &types::ConnectionEntity,
     ) -> Result<types::ConnectionEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -447,13 +443,7 @@ impl<'a> DynamicConnectionsApi<'a> {
                 Ok(api
                     .update_connection(
                         id,
-                        &serde_json::from_value::<crate::v2_6_0::types::ConnectionEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!("{} (body deserialize: {})", "update_connection", e),
-                            version: "2.6.0".to_string(),
-                        })?,
+                        &crate::v2_6_0::types::ConnectionEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -465,13 +455,7 @@ impl<'a> DynamicConnectionsApi<'a> {
                 Ok(api
                     .update_connection(
                         id,
-                        &serde_json::from_value::<crate::v2_7_2::types::ConnectionEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!("{} (body deserialize: {})", "update_connection", e),
-                            version: "2.7.2".to_string(),
-                        })?,
+                        &crate::v2_7_2::types::ConnectionEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -483,13 +467,7 @@ impl<'a> DynamicConnectionsApi<'a> {
                 Ok(api
                     .update_connection(
                         id,
-                        &serde_json::from_value::<crate::v2_8_0::types::ConnectionEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!("{} (body deserialize: {})", "update_connection", e),
-                            version: "2.8.0".to_string(),
-                        })?,
+                        &crate::v2_8_0::types::ConnectionEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -508,7 +486,7 @@ impl<'a> DynamicControllerApi<'a> {
     pub async fn analyze_flow_analysis_rule_configuration(
         &self,
         id: &str,
-        body: &serde_json::Value,
+        body: &types::ConfigurationAnalysisEntity,
     ) -> Result<types::ConfigurationAnalysisDto, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -516,69 +494,36 @@ impl<'a> DynamicControllerApi<'a> {
                     client: self.client,
                     id,
                 };
-                Ok(
-                    api
-                        .analyze_flow_analysis_rule_configuration(
-                            &serde_json::from_value::<
-                                crate::v2_6_0::types::ConfigurationAnalysisEntity,
-                            >(body.clone())
-                            .map_err(|e| NifiError::UnsupportedEndpoint {
-                                endpoint: format!(
-                                    "{} (body deserialize: {})",
-                                    "analyze_flow_analysis_rule_configuration", e
-                                ),
-                                version: "2.6.0".to_string(),
-                            })?,
-                        )
-                        .await?
-                        .into(),
-                )
+                Ok(api
+                    .analyze_flow_analysis_rule_configuration(
+                        &crate::v2_6_0::types::ConfigurationAnalysisEntity::try_from(body.clone())?,
+                    )
+                    .await?
+                    .into())
             }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::controller::ControllerConfigApi {
                     client: self.client,
                     id,
                 };
-                Ok(
-                    api
-                        .analyze_flow_analysis_rule_configuration(
-                            &serde_json::from_value::<
-                                crate::v2_7_2::types::ConfigurationAnalysisEntity,
-                            >(body.clone())
-                            .map_err(|e| NifiError::UnsupportedEndpoint {
-                                endpoint: format!(
-                                    "{} (body deserialize: {})",
-                                    "analyze_flow_analysis_rule_configuration", e
-                                ),
-                                version: "2.7.2".to_string(),
-                            })?,
-                        )
-                        .await?
-                        .into(),
-                )
+                Ok(api
+                    .analyze_flow_analysis_rule_configuration(
+                        &crate::v2_7_2::types::ConfigurationAnalysisEntity::try_from(body.clone())?,
+                    )
+                    .await?
+                    .into())
             }
             DetectedVersion::V2_8_0 => {
                 let api = crate::v2_8_0::api::controller::ControllerConfigApi {
                     client: self.client,
                     id,
                 };
-                Ok(
-                    api
-                        .analyze_flow_analysis_rule_configuration(
-                            &serde_json::from_value::<
-                                crate::v2_8_0::types::ConfigurationAnalysisEntity,
-                            >(body.clone())
-                            .map_err(|e| NifiError::UnsupportedEndpoint {
-                                endpoint: format!(
-                                    "{} (body deserialize: {})",
-                                    "analyze_flow_analysis_rule_configuration", e
-                                ),
-                                version: "2.8.0".to_string(),
-                            })?,
-                        )
-                        .await?
-                        .into(),
-                )
+                Ok(api
+                    .analyze_flow_analysis_rule_configuration(
+                        &crate::v2_8_0::types::ConfigurationAnalysisEntity::try_from(body.clone())?,
+                    )
+                    .await?
+                    .into())
             }
         }
     }
@@ -586,7 +531,7 @@ impl<'a> DynamicControllerApi<'a> {
     pub async fn analyze_flow_registry_client_configuration(
         &self,
         id: &str,
-        body: &serde_json::Value,
+        body: &types::ConfigurationAnalysisEntity,
     ) -> Result<types::ConfigurationAnalysisDto, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => Err(NifiError::UnsupportedEndpoint {
@@ -598,46 +543,24 @@ impl<'a> DynamicControllerApi<'a> {
                     client: self.client,
                     id,
                 };
-                Ok(
-                    api
-                        .analyze_flow_registry_client_configuration(
-                            &serde_json::from_value::<
-                                crate::v2_7_2::types::ConfigurationAnalysisEntity,
-                            >(body.clone())
-                            .map_err(|e| NifiError::UnsupportedEndpoint {
-                                endpoint: format!(
-                                    "{} (body deserialize: {})",
-                                    "analyze_flow_registry_client_configuration", e
-                                ),
-                                version: "2.7.2".to_string(),
-                            })?,
-                        )
-                        .await?
-                        .into(),
-                )
+                Ok(api
+                    .analyze_flow_registry_client_configuration(
+                        &crate::v2_7_2::types::ConfigurationAnalysisEntity::try_from(body.clone())?,
+                    )
+                    .await?
+                    .into())
             }
             DetectedVersion::V2_8_0 => {
                 let api = crate::v2_8_0::api::controller::ControllerConfigApi {
                     client: self.client,
                     id,
                 };
-                Ok(
-                    api
-                        .analyze_flow_registry_client_configuration(
-                            &serde_json::from_value::<
-                                crate::v2_8_0::types::ConfigurationAnalysisEntity,
-                            >(body.clone())
-                            .map_err(|e| NifiError::UnsupportedEndpoint {
-                                endpoint: format!(
-                                    "{} (body deserialize: {})",
-                                    "analyze_flow_registry_client_configuration", e
-                                ),
-                                version: "2.8.0".to_string(),
-                            })?,
-                        )
-                        .await?
-                        .into(),
-                )
+                Ok(api
+                    .analyze_flow_registry_client_configuration(
+                        &crate::v2_8_0::types::ConfigurationAnalysisEntity::try_from(body.clone())?,
+                    )
+                    .await?
+                    .into())
             }
         }
     }
@@ -645,7 +568,7 @@ impl<'a> DynamicControllerApi<'a> {
     pub async fn clear_flow_analysis_rule_bulletins(
         &self,
         id: &str,
-        body: &serde_json::Value,
+        body: &types::ClearBulletinsRequestEntity,
     ) -> Result<types::ClearBulletinsResultEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => Err(NifiError::UnsupportedEndpoint {
@@ -657,46 +580,24 @@ impl<'a> DynamicControllerApi<'a> {
                     client: self.client,
                     id,
                 };
-                Ok(
-                    api
-                        .clear_flow_analysis_rule_bulletins(
-                            &serde_json::from_value::<
-                                crate::v2_7_2::types::ClearBulletinsRequestEntity,
-                            >(body.clone())
-                            .map_err(|e| NifiError::UnsupportedEndpoint {
-                                endpoint: format!(
-                                    "{} (body deserialize: {})",
-                                    "clear_flow_analysis_rule_bulletins", e
-                                ),
-                                version: "2.7.2".to_string(),
-                            })?,
-                        )
-                        .await?
-                        .into(),
-                )
+                Ok(api
+                    .clear_flow_analysis_rule_bulletins(
+                        &crate::v2_7_2::types::ClearBulletinsRequestEntity::try_from(body.clone())?,
+                    )
+                    .await?
+                    .into())
             }
             DetectedVersion::V2_8_0 => {
                 let api = crate::v2_8_0::api::controller::ControllerBulletinsApi {
                     client: self.client,
                     id,
                 };
-                Ok(
-                    api
-                        .clear_flow_analysis_rule_bulletins(
-                            &serde_json::from_value::<
-                                crate::v2_8_0::types::ClearBulletinsRequestEntity,
-                            >(body.clone())
-                            .map_err(|e| NifiError::UnsupportedEndpoint {
-                                endpoint: format!(
-                                    "{} (body deserialize: {})",
-                                    "clear_flow_analysis_rule_bulletins", e
-                                ),
-                                version: "2.8.0".to_string(),
-                            })?,
-                        )
-                        .await?
-                        .into(),
-                )
+                Ok(api
+                    .clear_flow_analysis_rule_bulletins(
+                        &crate::v2_8_0::types::ClearBulletinsRequestEntity::try_from(body.clone())?,
+                    )
+                    .await?
+                    .into())
             }
         }
     }
@@ -704,7 +605,7 @@ impl<'a> DynamicControllerApi<'a> {
     pub async fn clear_parameter_provider_bulletins(
         &self,
         id: &str,
-        body: &serde_json::Value,
+        body: &types::ClearBulletinsRequestEntity,
     ) -> Result<types::ClearBulletinsResultEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => Err(NifiError::UnsupportedEndpoint {
@@ -716,46 +617,24 @@ impl<'a> DynamicControllerApi<'a> {
                     client: self.client,
                     id,
                 };
-                Ok(
-                    api
-                        .clear_parameter_provider_bulletins(
-                            &serde_json::from_value::<
-                                crate::v2_7_2::types::ClearBulletinsRequestEntity,
-                            >(body.clone())
-                            .map_err(|e| NifiError::UnsupportedEndpoint {
-                                endpoint: format!(
-                                    "{} (body deserialize: {})",
-                                    "clear_parameter_provider_bulletins", e
-                                ),
-                                version: "2.7.2".to_string(),
-                            })?,
-                        )
-                        .await?
-                        .into(),
-                )
+                Ok(api
+                    .clear_parameter_provider_bulletins(
+                        &crate::v2_7_2::types::ClearBulletinsRequestEntity::try_from(body.clone())?,
+                    )
+                    .await?
+                    .into())
             }
             DetectedVersion::V2_8_0 => {
                 let api = crate::v2_8_0::api::controller::ControllerBulletinsApi {
                     client: self.client,
                     id,
                 };
-                Ok(
-                    api
-                        .clear_parameter_provider_bulletins(
-                            &serde_json::from_value::<
-                                crate::v2_8_0::types::ClearBulletinsRequestEntity,
-                            >(body.clone())
-                            .map_err(|e| NifiError::UnsupportedEndpoint {
-                                endpoint: format!(
-                                    "{} (body deserialize: {})",
-                                    "clear_parameter_provider_bulletins", e
-                                ),
-                                version: "2.8.0".to_string(),
-                            })?,
-                        )
-                        .await?
-                        .into(),
-                )
+                Ok(api
+                    .clear_parameter_provider_bulletins(
+                        &crate::v2_8_0::types::ClearBulletinsRequestEntity::try_from(body.clone())?,
+                    )
+                    .await?
+                    .into())
             }
         }
     }
@@ -763,7 +642,7 @@ impl<'a> DynamicControllerApi<'a> {
     pub async fn clear_registry_client_bulletins(
         &self,
         id: &str,
-        body: &serde_json::Value,
+        body: &types::ClearBulletinsRequestEntity,
     ) -> Result<types::ClearBulletinsResultEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => Err(NifiError::UnsupportedEndpoint {
@@ -775,46 +654,24 @@ impl<'a> DynamicControllerApi<'a> {
                     client: self.client,
                     id,
                 };
-                Ok(
-                    api
-                        .clear_registry_client_bulletins(
-                            &serde_json::from_value::<
-                                crate::v2_7_2::types::ClearBulletinsRequestEntity,
-                            >(body.clone())
-                            .map_err(|e| NifiError::UnsupportedEndpoint {
-                                endpoint: format!(
-                                    "{} (body deserialize: {})",
-                                    "clear_registry_client_bulletins", e
-                                ),
-                                version: "2.7.2".to_string(),
-                            })?,
-                        )
-                        .await?
-                        .into(),
-                )
+                Ok(api
+                    .clear_registry_client_bulletins(
+                        &crate::v2_7_2::types::ClearBulletinsRequestEntity::try_from(body.clone())?,
+                    )
+                    .await?
+                    .into())
             }
             DetectedVersion::V2_8_0 => {
                 let api = crate::v2_8_0::api::controller::ControllerBulletinsApi {
                     client: self.client,
                     id,
                 };
-                Ok(
-                    api
-                        .clear_registry_client_bulletins(
-                            &serde_json::from_value::<
-                                crate::v2_8_0::types::ClearBulletinsRequestEntity,
-                            >(body.clone())
-                            .map_err(|e| NifiError::UnsupportedEndpoint {
-                                endpoint: format!(
-                                    "{} (body deserialize: {})",
-                                    "clear_registry_client_bulletins", e
-                                ),
-                                version: "2.8.0".to_string(),
-                            })?,
-                        )
-                        .await?
-                        .into(),
-                )
+                Ok(api
+                    .clear_registry_client_bulletins(
+                        &crate::v2_8_0::types::ClearBulletinsRequestEntity::try_from(body.clone())?,
+                    )
+                    .await?
+                    .into())
             }
         }
     }
@@ -822,7 +679,7 @@ impl<'a> DynamicControllerApi<'a> {
     pub async fn clear_state(
         &self,
         id: &str,
-        body: &serde_json::Value,
+        body: &types::ComponentStateEntity,
     ) -> Result<types::ComponentStateDto, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -831,15 +688,9 @@ impl<'a> DynamicControllerApi<'a> {
                     id,
                 };
                 Ok(api
-                    .clear_state(
-                        &serde_json::from_value::<crate::v2_6_0::types::ComponentStateEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!("{} (body deserialize: {})", "clear_state", e),
-                            version: "2.6.0".to_string(),
-                        })?,
-                    )
+                    .clear_state(&crate::v2_6_0::types::ComponentStateEntity::try_from(
+                        body.clone(),
+                    )?)
                     .await?
                     .into())
             }
@@ -849,15 +700,9 @@ impl<'a> DynamicControllerApi<'a> {
                     id,
                 };
                 Ok(api
-                    .clear_state(
-                        &serde_json::from_value::<crate::v2_7_2::types::ComponentStateEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!("{} (body deserialize: {})", "clear_state", e),
-                            version: "2.7.2".to_string(),
-                        })?,
-                    )
+                    .clear_state(&crate::v2_7_2::types::ComponentStateEntity::try_from(
+                        body.clone(),
+                    )?)
                     .await?
                     .into())
             }
@@ -867,15 +712,9 @@ impl<'a> DynamicControllerApi<'a> {
                     id,
                 };
                 Ok(api
-                    .clear_state(
-                        &serde_json::from_value::<crate::v2_8_0::types::ComponentStateEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!("{} (body deserialize: {})", "clear_state", e),
-                            version: "2.8.0".to_string(),
-                        })?,
-                    )
+                    .clear_state(&crate::v2_8_0::types::ComponentStateEntity::try_from(
+                        body.clone(),
+                    )?)
                     .await?
                     .into())
             }
@@ -884,7 +723,7 @@ impl<'a> DynamicControllerApi<'a> {
     /// Creates a new bulletin
     pub async fn create_bulletin(
         &self,
-        body: &serde_json::Value,
+        body: &types::BulletinEntity,
     ) -> Result<types::BulletinEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -892,15 +731,9 @@ impl<'a> DynamicControllerApi<'a> {
                     client: self.client,
                 };
                 Ok(api
-                    .create_bulletin(
-                        &serde_json::from_value::<crate::v2_6_0::types::BulletinEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!("{} (body deserialize: {})", "create_bulletin", e),
-                            version: "2.6.0".to_string(),
-                        })?,
-                    )
+                    .create_bulletin(&crate::v2_6_0::types::BulletinEntity::try_from(
+                        body.clone(),
+                    )?)
                     .await?
                     .into())
             }
@@ -909,15 +742,9 @@ impl<'a> DynamicControllerApi<'a> {
                     client: self.client,
                 };
                 Ok(api
-                    .create_bulletin(
-                        &serde_json::from_value::<crate::v2_7_2::types::BulletinEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!("{} (body deserialize: {})", "create_bulletin", e),
-                            version: "2.7.2".to_string(),
-                        })?,
-                    )
+                    .create_bulletin(&crate::v2_7_2::types::BulletinEntity::try_from(
+                        body.clone(),
+                    )?)
                     .await?
                     .into())
             }
@@ -926,15 +753,9 @@ impl<'a> DynamicControllerApi<'a> {
                     client: self.client,
                 };
                 Ok(api
-                    .create_bulletin(
-                        &serde_json::from_value::<crate::v2_8_0::types::BulletinEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!("{} (body deserialize: {})", "create_bulletin", e),
-                            version: "2.8.0".to_string(),
-                        })?,
-                    )
+                    .create_bulletin(&crate::v2_8_0::types::BulletinEntity::try_from(
+                        body.clone(),
+                    )?)
                     .await?
                     .into())
             }
@@ -943,7 +764,7 @@ impl<'a> DynamicControllerApi<'a> {
     /// Creates a new controller service
     pub async fn create_controller_service(
         &self,
-        body: &serde_json::Value,
+        body: &types::ControllerServiceEntity,
     ) -> Result<types::ControllerServiceEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -952,16 +773,7 @@ impl<'a> DynamicControllerApi<'a> {
                 };
                 Ok(api
                     .create_controller_service(
-                        &serde_json::from_value::<crate::v2_6_0::types::ControllerServiceEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "create_controller_service", e
-                            ),
-                            version: "2.6.0".to_string(),
-                        })?,
+                        &crate::v2_6_0::types::ControllerServiceEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -972,16 +784,7 @@ impl<'a> DynamicControllerApi<'a> {
                 };
                 Ok(api
                     .create_controller_service(
-                        &serde_json::from_value::<crate::v2_7_2::types::ControllerServiceEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "create_controller_service", e
-                            ),
-                            version: "2.7.2".to_string(),
-                        })?,
+                        &crate::v2_7_2::types::ControllerServiceEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -992,16 +795,7 @@ impl<'a> DynamicControllerApi<'a> {
                 };
                 Ok(api
                     .create_controller_service(
-                        &serde_json::from_value::<crate::v2_8_0::types::ControllerServiceEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "create_controller_service", e
-                            ),
-                            version: "2.8.0".to_string(),
-                        })?,
+                        &crate::v2_8_0::types::ControllerServiceEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -1011,7 +805,7 @@ impl<'a> DynamicControllerApi<'a> {
     /// Creates a new flow analysis rule
     pub async fn create_flow_analysis_rule(
         &self,
-        body: &serde_json::Value,
+        body: &types::FlowAnalysisRuleEntity,
     ) -> Result<types::FlowAnalysisRuleEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -1020,16 +814,7 @@ impl<'a> DynamicControllerApi<'a> {
                 };
                 Ok(api
                     .create_flow_analysis_rule(
-                        &serde_json::from_value::<crate::v2_6_0::types::FlowAnalysisRuleEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "create_flow_analysis_rule", e
-                            ),
-                            version: "2.6.0".to_string(),
-                        })?,
+                        &crate::v2_6_0::types::FlowAnalysisRuleEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -1040,16 +825,7 @@ impl<'a> DynamicControllerApi<'a> {
                 };
                 Ok(api
                     .create_flow_analysis_rule(
-                        &serde_json::from_value::<crate::v2_7_2::types::FlowAnalysisRuleEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "create_flow_analysis_rule", e
-                            ),
-                            version: "2.7.2".to_string(),
-                        })?,
+                        &crate::v2_7_2::types::FlowAnalysisRuleEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -1060,16 +836,7 @@ impl<'a> DynamicControllerApi<'a> {
                 };
                 Ok(api
                     .create_flow_analysis_rule(
-                        &serde_json::from_value::<crate::v2_8_0::types::FlowAnalysisRuleEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "create_flow_analysis_rule", e
-                            ),
-                            version: "2.8.0".to_string(),
-                        })?,
+                        &crate::v2_8_0::types::FlowAnalysisRuleEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -1079,7 +846,7 @@ impl<'a> DynamicControllerApi<'a> {
     /// Creates a new flow registry client
     pub async fn create_flow_registry_client(
         &self,
-        body: &serde_json::Value,
+        body: &types::FlowRegistryClientEntity,
     ) -> Result<types::FlowRegistryClientEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -1088,16 +855,7 @@ impl<'a> DynamicControllerApi<'a> {
                 };
                 Ok(api
                     .create_flow_registry_client(
-                        &serde_json::from_value::<crate::v2_6_0::types::FlowRegistryClientEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "create_flow_registry_client", e
-                            ),
-                            version: "2.6.0".to_string(),
-                        })?,
+                        &crate::v2_6_0::types::FlowRegistryClientEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -1108,16 +866,7 @@ impl<'a> DynamicControllerApi<'a> {
                 };
                 Ok(api
                     .create_flow_registry_client(
-                        &serde_json::from_value::<crate::v2_7_2::types::FlowRegistryClientEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "create_flow_registry_client", e
-                            ),
-                            version: "2.7.2".to_string(),
-                        })?,
+                        &crate::v2_7_2::types::FlowRegistryClientEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -1128,16 +877,7 @@ impl<'a> DynamicControllerApi<'a> {
                 };
                 Ok(api
                     .create_flow_registry_client(
-                        &serde_json::from_value::<crate::v2_8_0::types::FlowRegistryClientEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "create_flow_registry_client", e
-                            ),
-                            version: "2.8.0".to_string(),
-                        })?,
+                        &crate::v2_8_0::types::FlowRegistryClientEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -1147,7 +887,7 @@ impl<'a> DynamicControllerApi<'a> {
     /// Creates a new parameter provider
     pub async fn create_parameter_provider(
         &self,
-        body: &serde_json::Value,
+        body: &types::ParameterProviderEntity,
     ) -> Result<types::ParameterProviderEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -1156,16 +896,7 @@ impl<'a> DynamicControllerApi<'a> {
                 };
                 Ok(api
                     .create_parameter_provider(
-                        &serde_json::from_value::<crate::v2_6_0::types::ParameterProviderEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "create_parameter_provider", e
-                            ),
-                            version: "2.6.0".to_string(),
-                        })?,
+                        &crate::v2_6_0::types::ParameterProviderEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -1176,16 +907,7 @@ impl<'a> DynamicControllerApi<'a> {
                 };
                 Ok(api
                     .create_parameter_provider(
-                        &serde_json::from_value::<crate::v2_7_2::types::ParameterProviderEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "create_parameter_provider", e
-                            ),
-                            version: "2.7.2".to_string(),
-                        })?,
+                        &crate::v2_7_2::types::ParameterProviderEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -1196,16 +918,7 @@ impl<'a> DynamicControllerApi<'a> {
                 };
                 Ok(api
                     .create_parameter_provider(
-                        &serde_json::from_value::<crate::v2_8_0::types::ParameterProviderEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "create_parameter_provider", e
-                            ),
-                            version: "2.8.0".to_string(),
-                        })?,
+                        &crate::v2_8_0::types::ParameterProviderEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -1215,7 +928,7 @@ impl<'a> DynamicControllerApi<'a> {
     /// Creates a new reporting task
     pub async fn create_reporting_task(
         &self,
-        body: &serde_json::Value,
+        body: &types::ReportingTaskEntity,
     ) -> Result<types::ReportingTaskEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -1223,18 +936,9 @@ impl<'a> DynamicControllerApi<'a> {
                     client: self.client,
                 };
                 Ok(api
-                    .create_reporting_task(
-                        &serde_json::from_value::<crate::v2_6_0::types::ReportingTaskEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "create_reporting_task", e
-                            ),
-                            version: "2.6.0".to_string(),
-                        })?,
-                    )
+                    .create_reporting_task(&crate::v2_6_0::types::ReportingTaskEntity::try_from(
+                        body.clone(),
+                    )?)
                     .await?
                     .into())
             }
@@ -1243,18 +947,9 @@ impl<'a> DynamicControllerApi<'a> {
                     client: self.client,
                 };
                 Ok(api
-                    .create_reporting_task(
-                        &serde_json::from_value::<crate::v2_7_2::types::ReportingTaskEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "create_reporting_task", e
-                            ),
-                            version: "2.7.2".to_string(),
-                        })?,
-                    )
+                    .create_reporting_task(&crate::v2_7_2::types::ReportingTaskEntity::try_from(
+                        body.clone(),
+                    )?)
                     .await?
                     .into())
             }
@@ -1263,18 +958,9 @@ impl<'a> DynamicControllerApi<'a> {
                     client: self.client,
                 };
                 Ok(api
-                    .create_reporting_task(
-                        &serde_json::from_value::<crate::v2_8_0::types::ReportingTaskEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "create_reporting_task", e
-                            ),
-                            version: "2.8.0".to_string(),
-                        })?,
-                    )
+                    .create_reporting_task(&crate::v2_8_0::types::ReportingTaskEntity::try_from(
+                        body.clone(),
+                    )?)
                     .await?
                     .into())
             }
@@ -1991,7 +1677,7 @@ impl<'a> DynamicControllerApi<'a> {
     /// Imports a reporting task snapshot
     pub async fn import_reporting_task_snapshot(
         &self,
-        body: &serde_json::Value,
+        body: &types::VersionedReportingTaskImportRequestEntity,
     ) -> Result<types::VersionedReportingTaskImportResponseEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -2000,16 +1686,9 @@ impl<'a> DynamicControllerApi<'a> {
                 };
                 Ok(api
                     .import_reporting_task_snapshot(
-                        &serde_json::from_value::<
-                            crate::v2_6_0::types::VersionedReportingTaskImportRequestEntity,
-                        >(body.clone())
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "import_reporting_task_snapshot", e
-                            ),
-                            version: "2.6.0".to_string(),
-                        })?,
+                        &crate::v2_6_0::types::VersionedReportingTaskImportRequestEntity::try_from(
+                            body.clone(),
+                        )?,
                     )
                     .await?
                     .into())
@@ -2020,16 +1699,9 @@ impl<'a> DynamicControllerApi<'a> {
                 };
                 Ok(api
                     .import_reporting_task_snapshot(
-                        &serde_json::from_value::<
-                            crate::v2_7_2::types::VersionedReportingTaskImportRequestEntity,
-                        >(body.clone())
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "import_reporting_task_snapshot", e
-                            ),
-                            version: "2.7.2".to_string(),
-                        })?,
+                        &crate::v2_7_2::types::VersionedReportingTaskImportRequestEntity::try_from(
+                            body.clone(),
+                        )?,
                     )
                     .await?
                     .into())
@@ -2040,16 +1712,9 @@ impl<'a> DynamicControllerApi<'a> {
                 };
                 Ok(api
                     .import_reporting_task_snapshot(
-                        &serde_json::from_value::<
-                            crate::v2_8_0::types::VersionedReportingTaskImportRequestEntity,
-                        >(body.clone())
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "import_reporting_task_snapshot", e
-                            ),
-                            version: "2.8.0".to_string(),
-                        })?,
+                        &crate::v2_8_0::types::VersionedReportingTaskImportRequestEntity::try_from(
+                            body.clone(),
+                        )?,
                     )
                     .await?
                     .into())
@@ -2113,7 +1778,7 @@ impl<'a> DynamicControllerApi<'a> {
     pub async fn submit_flow_analysis_rule_config_verification_request(
         &self,
         id: &str,
-        body: &serde_json::Value,
+        body: &types::VerifyConfigRequestEntity,
     ) -> Result<types::VerifyConfigRequestDto, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -2123,16 +1788,7 @@ impl<'a> DynamicControllerApi<'a> {
                 };
                 Ok(api
                     .submit_flow_analysis_rule_config_verification_request(
-                        &serde_json::from_value::<crate::v2_6_0::types::VerifyConfigRequestEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "submit_flow_analysis_rule_config_verification_request", e
-                            ),
-                            version: "2.6.0".to_string(),
-                        })?,
+                        &crate::v2_6_0::types::VerifyConfigRequestEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -2144,16 +1800,7 @@ impl<'a> DynamicControllerApi<'a> {
                 };
                 Ok(api
                     .submit_flow_analysis_rule_config_verification_request(
-                        &serde_json::from_value::<crate::v2_7_2::types::VerifyConfigRequestEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "submit_flow_analysis_rule_config_verification_request", e
-                            ),
-                            version: "2.7.2".to_string(),
-                        })?,
+                        &crate::v2_7_2::types::VerifyConfigRequestEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -2165,16 +1812,7 @@ impl<'a> DynamicControllerApi<'a> {
                 };
                 Ok(api
                     .submit_flow_analysis_rule_config_verification_request(
-                        &serde_json::from_value::<crate::v2_8_0::types::VerifyConfigRequestEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "submit_flow_analysis_rule_config_verification_request", e
-                            ),
-                            version: "2.8.0".to_string(),
-                        })?,
+                        &crate::v2_8_0::types::VerifyConfigRequestEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -2185,7 +1823,7 @@ impl<'a> DynamicControllerApi<'a> {
     pub async fn submit_registry_client_config_verification_request(
         &self,
         id: &str,
-        body: &serde_json::Value,
+        body: &types::VerifyConfigRequestEntity,
     ) -> Result<types::VerifyConfigRequestDto, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => Err(NifiError::UnsupportedEndpoint {
@@ -2199,16 +1837,7 @@ impl<'a> DynamicControllerApi<'a> {
                 };
                 Ok(api
                     .submit_registry_client_config_verification_request(
-                        &serde_json::from_value::<crate::v2_7_2::types::VerifyConfigRequestEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "submit_registry_client_config_verification_request", e
-                            ),
-                            version: "2.7.2".to_string(),
-                        })?,
+                        &crate::v2_7_2::types::VerifyConfigRequestEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -2220,16 +1849,7 @@ impl<'a> DynamicControllerApi<'a> {
                 };
                 Ok(api
                     .submit_registry_client_config_verification_request(
-                        &serde_json::from_value::<crate::v2_8_0::types::VerifyConfigRequestEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "submit_registry_client_config_verification_request", e
-                            ),
-                            version: "2.8.0".to_string(),
-                        })?,
+                        &crate::v2_8_0::types::VerifyConfigRequestEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -2239,7 +1859,7 @@ impl<'a> DynamicControllerApi<'a> {
     /// Retrieves the configuration for this NiFi
     pub async fn update_controller_config(
         &self,
-        body: &serde_json::Value,
+        body: &types::ControllerConfigurationEntity,
     ) -> Result<types::ControllerConfigurationEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -2248,16 +1868,9 @@ impl<'a> DynamicControllerApi<'a> {
                 };
                 Ok(api
                     .update_controller_config(
-                        &serde_json::from_value::<
-                            crate::v2_6_0::types::ControllerConfigurationEntity,
-                        >(body.clone())
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "update_controller_config", e
-                            ),
-                            version: "2.6.0".to_string(),
-                        })?,
+                        &crate::v2_6_0::types::ControllerConfigurationEntity::try_from(
+                            body.clone(),
+                        )?,
                     )
                     .await?
                     .into())
@@ -2268,16 +1881,9 @@ impl<'a> DynamicControllerApi<'a> {
                 };
                 Ok(api
                     .update_controller_config(
-                        &serde_json::from_value::<
-                            crate::v2_7_2::types::ControllerConfigurationEntity,
-                        >(body.clone())
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "update_controller_config", e
-                            ),
-                            version: "2.7.2".to_string(),
-                        })?,
+                        &crate::v2_7_2::types::ControllerConfigurationEntity::try_from(
+                            body.clone(),
+                        )?,
                     )
                     .await?
                     .into())
@@ -2288,16 +1894,9 @@ impl<'a> DynamicControllerApi<'a> {
                 };
                 Ok(api
                     .update_controller_config(
-                        &serde_json::from_value::<
-                            crate::v2_8_0::types::ControllerConfigurationEntity,
-                        >(body.clone())
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "update_controller_config", e
-                            ),
-                            version: "2.8.0".to_string(),
-                        })?,
+                        &crate::v2_8_0::types::ControllerConfigurationEntity::try_from(
+                            body.clone(),
+                        )?,
                     )
                     .await?
                     .into())
@@ -2308,7 +1907,7 @@ impl<'a> DynamicControllerApi<'a> {
     pub async fn update_flow_analysis_rule(
         &self,
         id: &str,
-        body: &serde_json::Value,
+        body: &types::FlowAnalysisRuleEntity,
     ) -> Result<types::FlowAnalysisRuleEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -2318,16 +1917,7 @@ impl<'a> DynamicControllerApi<'a> {
                 Ok(api
                     .update_flow_analysis_rule(
                         id,
-                        &serde_json::from_value::<crate::v2_6_0::types::FlowAnalysisRuleEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "update_flow_analysis_rule", e
-                            ),
-                            version: "2.6.0".to_string(),
-                        })?,
+                        &crate::v2_6_0::types::FlowAnalysisRuleEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -2339,16 +1929,7 @@ impl<'a> DynamicControllerApi<'a> {
                 Ok(api
                     .update_flow_analysis_rule(
                         id,
-                        &serde_json::from_value::<crate::v2_7_2::types::FlowAnalysisRuleEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "update_flow_analysis_rule", e
-                            ),
-                            version: "2.7.2".to_string(),
-                        })?,
+                        &crate::v2_7_2::types::FlowAnalysisRuleEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -2360,16 +1941,7 @@ impl<'a> DynamicControllerApi<'a> {
                 Ok(api
                     .update_flow_analysis_rule(
                         id,
-                        &serde_json::from_value::<crate::v2_8_0::types::FlowAnalysisRuleEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "update_flow_analysis_rule", e
-                            ),
-                            version: "2.8.0".to_string(),
-                        })?,
+                        &crate::v2_8_0::types::FlowAnalysisRuleEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -2380,7 +1952,7 @@ impl<'a> DynamicControllerApi<'a> {
     pub async fn update_flow_registry_client(
         &self,
         id: &str,
-        body: &serde_json::Value,
+        body: &types::FlowRegistryClientEntity,
     ) -> Result<types::FlowRegistryClientEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -2390,16 +1962,7 @@ impl<'a> DynamicControllerApi<'a> {
                 Ok(api
                     .update_flow_registry_client(
                         id,
-                        &serde_json::from_value::<crate::v2_6_0::types::FlowRegistryClientEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "update_flow_registry_client", e
-                            ),
-                            version: "2.6.0".to_string(),
-                        })?,
+                        &crate::v2_6_0::types::FlowRegistryClientEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -2411,16 +1974,7 @@ impl<'a> DynamicControllerApi<'a> {
                 Ok(api
                     .update_flow_registry_client(
                         id,
-                        &serde_json::from_value::<crate::v2_7_2::types::FlowRegistryClientEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "update_flow_registry_client", e
-                            ),
-                            version: "2.7.2".to_string(),
-                        })?,
+                        &crate::v2_7_2::types::FlowRegistryClientEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -2432,16 +1986,7 @@ impl<'a> DynamicControllerApi<'a> {
                 Ok(api
                     .update_flow_registry_client(
                         id,
-                        &serde_json::from_value::<crate::v2_8_0::types::FlowRegistryClientEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "update_flow_registry_client", e
-                            ),
-                            version: "2.8.0".to_string(),
-                        })?,
+                        &crate::v2_8_0::types::FlowRegistryClientEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -2452,7 +1997,7 @@ impl<'a> DynamicControllerApi<'a> {
     pub async fn update_node(
         &self,
         id: &str,
-        body: &serde_json::Value,
+        body: &types::NodeEntity,
     ) -> Result<types::NodeDto, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -2462,11 +2007,7 @@ impl<'a> DynamicControllerApi<'a> {
                 Ok(api
                     .update_node(
                         id,
-                        &serde_json::from_value::<crate::v2_6_0::types::NodeEntity>(body.clone())
-                            .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!("{} (body deserialize: {})", "update_node", e),
-                            version: "2.6.0".to_string(),
-                        })?,
+                        &crate::v2_6_0::types::NodeEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -2478,11 +2019,7 @@ impl<'a> DynamicControllerApi<'a> {
                 Ok(api
                     .update_node(
                         id,
-                        &serde_json::from_value::<crate::v2_7_2::types::NodeEntity>(body.clone())
-                            .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!("{} (body deserialize: {})", "update_node", e),
-                            version: "2.7.2".to_string(),
-                        })?,
+                        &crate::v2_7_2::types::NodeEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -2494,11 +2031,7 @@ impl<'a> DynamicControllerApi<'a> {
                 Ok(api
                     .update_node(
                         id,
-                        &serde_json::from_value::<crate::v2_8_0::types::NodeEntity>(body.clone())
-                            .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!("{} (body deserialize: {})", "update_node", e),
-                            version: "2.8.0".to_string(),
-                        })?,
+                        &crate::v2_8_0::types::NodeEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -2509,7 +2042,7 @@ impl<'a> DynamicControllerApi<'a> {
     pub async fn update_run_status(
         &self,
         id: &str,
-        body: &serde_json::Value,
+        body: &types::FlowAnalysisRuleRunStatusEntity,
     ) -> Result<types::FlowAnalysisRuleEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -2519,13 +2052,9 @@ impl<'a> DynamicControllerApi<'a> {
                 };
                 Ok(api
                     .update_run_status(
-                        &serde_json::from_value::<
-                            crate::v2_6_0::types::FlowAnalysisRuleRunStatusEntity,
-                        >(body.clone())
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!("{} (body deserialize: {})", "update_run_status", e),
-                            version: "2.6.0".to_string(),
-                        })?,
+                        &crate::v2_6_0::types::FlowAnalysisRuleRunStatusEntity::try_from(
+                            body.clone(),
+                        )?,
                     )
                     .await?
                     .into())
@@ -2537,13 +2066,9 @@ impl<'a> DynamicControllerApi<'a> {
                 };
                 Ok(api
                     .update_run_status(
-                        &serde_json::from_value::<
-                            crate::v2_7_2::types::FlowAnalysisRuleRunStatusEntity,
-                        >(body.clone())
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!("{} (body deserialize: {})", "update_run_status", e),
-                            version: "2.7.2".to_string(),
-                        })?,
+                        &crate::v2_7_2::types::FlowAnalysisRuleRunStatusEntity::try_from(
+                            body.clone(),
+                        )?,
                     )
                     .await?
                     .into())
@@ -2555,13 +2080,9 @@ impl<'a> DynamicControllerApi<'a> {
                 };
                 Ok(api
                     .update_run_status(
-                        &serde_json::from_value::<
-                            crate::v2_8_0::types::FlowAnalysisRuleRunStatusEntity,
-                        >(body.clone())
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!("{} (body deserialize: {})", "update_run_status", e),
-                            version: "2.8.0".to_string(),
-                        })?,
+                        &crate::v2_8_0::types::FlowAnalysisRuleRunStatusEntity::try_from(
+                            body.clone(),
+                        )?,
                     )
                     .await?
                     .into())
@@ -2607,7 +2128,7 @@ impl<'a> DynamicControllerServicesApi<'a> {
     pub async fn analyze_configuration(
         &self,
         id: &str,
-        body: &serde_json::Value,
+        body: &types::ConfigurationAnalysisEntity,
     ) -> Result<types::ConfigurationAnalysisDto, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -2615,69 +2136,36 @@ impl<'a> DynamicControllerServicesApi<'a> {
                     client: self.client,
                     id,
                 };
-                Ok(
-                    api
-                        .analyze_configuration(
-                            &serde_json::from_value::<
-                                crate::v2_6_0::types::ConfigurationAnalysisEntity,
-                            >(body.clone())
-                            .map_err(|e| NifiError::UnsupportedEndpoint {
-                                endpoint: format!(
-                                    "{} (body deserialize: {})",
-                                    "analyze_configuration", e
-                                ),
-                                version: "2.6.0".to_string(),
-                            })?,
-                        )
-                        .await?
-                        .into(),
-                )
+                Ok(api
+                    .analyze_configuration(
+                        &crate::v2_6_0::types::ConfigurationAnalysisEntity::try_from(body.clone())?,
+                    )
+                    .await?
+                    .into())
             }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::controller_services::ControllerServicesConfigApi {
                     client: self.client,
                     id,
                 };
-                Ok(
-                    api
-                        .analyze_configuration(
-                            &serde_json::from_value::<
-                                crate::v2_7_2::types::ConfigurationAnalysisEntity,
-                            >(body.clone())
-                            .map_err(|e| NifiError::UnsupportedEndpoint {
-                                endpoint: format!(
-                                    "{} (body deserialize: {})",
-                                    "analyze_configuration", e
-                                ),
-                                version: "2.7.2".to_string(),
-                            })?,
-                        )
-                        .await?
-                        .into(),
-                )
+                Ok(api
+                    .analyze_configuration(
+                        &crate::v2_7_2::types::ConfigurationAnalysisEntity::try_from(body.clone())?,
+                    )
+                    .await?
+                    .into())
             }
             DetectedVersion::V2_8_0 => {
                 let api = crate::v2_8_0::api::controller_services::ControllerServicesConfigApi {
                     client: self.client,
                     id,
                 };
-                Ok(
-                    api
-                        .analyze_configuration(
-                            &serde_json::from_value::<
-                                crate::v2_8_0::types::ConfigurationAnalysisEntity,
-                            >(body.clone())
-                            .map_err(|e| NifiError::UnsupportedEndpoint {
-                                endpoint: format!(
-                                    "{} (body deserialize: {})",
-                                    "analyze_configuration", e
-                                ),
-                                version: "2.8.0".to_string(),
-                            })?,
-                        )
-                        .await?
-                        .into(),
-                )
+                Ok(api
+                    .analyze_configuration(
+                        &crate::v2_8_0::types::ConfigurationAnalysisEntity::try_from(body.clone())?,
+                    )
+                    .await?
+                    .into())
             }
         }
     }
@@ -2685,7 +2173,7 @@ impl<'a> DynamicControllerServicesApi<'a> {
     pub async fn clear_bulletins(
         &self,
         id: &str,
-        body: &serde_json::Value,
+        body: &types::ClearBulletinsRequestEntity,
     ) -> Result<types::ClearBulletinsResultEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => Err(NifiError::UnsupportedEndpoint {
@@ -2697,46 +2185,24 @@ impl<'a> DynamicControllerServicesApi<'a> {
                     client: self.client,
                     id,
                 };
-                Ok(
-                    api
-                        .clear_bulletins(
-                            &serde_json::from_value::<
-                                crate::v2_7_2::types::ClearBulletinsRequestEntity,
-                            >(body.clone())
-                            .map_err(|e| NifiError::UnsupportedEndpoint {
-                                endpoint: format!(
-                                    "{} (body deserialize: {})",
-                                    "clear_bulletins", e
-                                ),
-                                version: "2.7.2".to_string(),
-                            })?,
-                        )
-                        .await?
-                        .into(),
-                )
+                Ok(api
+                    .clear_bulletins(
+                        &crate::v2_7_2::types::ClearBulletinsRequestEntity::try_from(body.clone())?,
+                    )
+                    .await?
+                    .into())
             }
             DetectedVersion::V2_8_0 => {
                 let api = crate::v2_8_0::api::controller_services::ControllerServicesBulletinsApi {
                     client: self.client,
                     id,
                 };
-                Ok(
-                    api
-                        .clear_bulletins(
-                            &serde_json::from_value::<
-                                crate::v2_8_0::types::ClearBulletinsRequestEntity,
-                            >(body.clone())
-                            .map_err(|e| NifiError::UnsupportedEndpoint {
-                                endpoint: format!(
-                                    "{} (body deserialize: {})",
-                                    "clear_bulletins", e
-                                ),
-                                version: "2.8.0".to_string(),
-                            })?,
-                        )
-                        .await?
-                        .into(),
-                )
+                Ok(api
+                    .clear_bulletins(
+                        &crate::v2_8_0::types::ClearBulletinsRequestEntity::try_from(body.clone())?,
+                    )
+                    .await?
+                    .into())
             }
         }
     }
@@ -2744,7 +2210,7 @@ impl<'a> DynamicControllerServicesApi<'a> {
     pub async fn clear_state_1(
         &self,
         id: &str,
-        body: &serde_json::Value,
+        body: &types::ComponentStateEntity,
     ) -> Result<types::ComponentStateDto, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -2753,15 +2219,9 @@ impl<'a> DynamicControllerServicesApi<'a> {
                     id,
                 };
                 Ok(api
-                    .clear_state_1(
-                        &serde_json::from_value::<crate::v2_6_0::types::ComponentStateEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!("{} (body deserialize: {})", "clear_state_1", e),
-                            version: "2.6.0".to_string(),
-                        })?,
-                    )
+                    .clear_state_1(&crate::v2_6_0::types::ComponentStateEntity::try_from(
+                        body.clone(),
+                    )?)
                     .await?
                     .into())
             }
@@ -2771,15 +2231,9 @@ impl<'a> DynamicControllerServicesApi<'a> {
                     id,
                 };
                 Ok(api
-                    .clear_state_1(
-                        &serde_json::from_value::<crate::v2_7_2::types::ComponentStateEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!("{} (body deserialize: {})", "clear_state_1", e),
-                            version: "2.7.2".to_string(),
-                        })?,
-                    )
+                    .clear_state_1(&crate::v2_7_2::types::ComponentStateEntity::try_from(
+                        body.clone(),
+                    )?)
                     .await?
                     .into())
             }
@@ -2789,15 +2243,9 @@ impl<'a> DynamicControllerServicesApi<'a> {
                     id,
                 };
                 Ok(api
-                    .clear_state_1(
-                        &serde_json::from_value::<crate::v2_8_0::types::ComponentStateEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!("{} (body deserialize: {})", "clear_state_1", e),
-                            version: "2.8.0".to_string(),
-                        })?,
-                    )
+                    .clear_state_1(&crate::v2_8_0::types::ComponentStateEntity::try_from(
+                        body.clone(),
+                    )?)
                     .await?
                     .into())
             }
@@ -3048,7 +2496,7 @@ impl<'a> DynamicControllerServicesApi<'a> {
     pub async fn submit_config_verification_request(
         &self,
         id: &str,
-        body: &serde_json::Value,
+        body: &types::VerifyConfigRequestEntity,
     ) -> Result<types::VerifyConfigRequestDto, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -3058,16 +2506,7 @@ impl<'a> DynamicControllerServicesApi<'a> {
                 };
                 Ok(api
                     .submit_config_verification_request(
-                        &serde_json::from_value::<crate::v2_6_0::types::VerifyConfigRequestEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "submit_config_verification_request", e
-                            ),
-                            version: "2.6.0".to_string(),
-                        })?,
+                        &crate::v2_6_0::types::VerifyConfigRequestEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -3079,16 +2518,7 @@ impl<'a> DynamicControllerServicesApi<'a> {
                 };
                 Ok(api
                     .submit_config_verification_request(
-                        &serde_json::from_value::<crate::v2_7_2::types::VerifyConfigRequestEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "submit_config_verification_request", e
-                            ),
-                            version: "2.7.2".to_string(),
-                        })?,
+                        &crate::v2_7_2::types::VerifyConfigRequestEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -3100,16 +2530,7 @@ impl<'a> DynamicControllerServicesApi<'a> {
                 };
                 Ok(api
                     .submit_config_verification_request(
-                        &serde_json::from_value::<crate::v2_8_0::types::VerifyConfigRequestEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "submit_config_verification_request", e
-                            ),
-                            version: "2.8.0".to_string(),
-                        })?,
+                        &crate::v2_8_0::types::VerifyConfigRequestEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -3120,7 +2541,7 @@ impl<'a> DynamicControllerServicesApi<'a> {
     pub async fn update_controller_service(
         &self,
         id: &str,
-        body: &serde_json::Value,
+        body: &types::ControllerServiceEntity,
     ) -> Result<types::ControllerServiceEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -3130,16 +2551,7 @@ impl<'a> DynamicControllerServicesApi<'a> {
                 Ok(api
                     .update_controller_service(
                         id,
-                        &serde_json::from_value::<crate::v2_6_0::types::ControllerServiceEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "update_controller_service", e
-                            ),
-                            version: "2.6.0".to_string(),
-                        })?,
+                        &crate::v2_6_0::types::ControllerServiceEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -3151,16 +2563,7 @@ impl<'a> DynamicControllerServicesApi<'a> {
                 Ok(api
                     .update_controller_service(
                         id,
-                        &serde_json::from_value::<crate::v2_7_2::types::ControllerServiceEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "update_controller_service", e
-                            ),
-                            version: "2.7.2".to_string(),
-                        })?,
+                        &crate::v2_7_2::types::ControllerServiceEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -3172,16 +2575,7 @@ impl<'a> DynamicControllerServicesApi<'a> {
                 Ok(api
                     .update_controller_service(
                         id,
-                        &serde_json::from_value::<crate::v2_8_0::types::ControllerServiceEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "update_controller_service", e
-                            ),
-                            version: "2.8.0".to_string(),
-                        })?,
+                        &crate::v2_8_0::types::ControllerServiceEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -3192,7 +2586,7 @@ impl<'a> DynamicControllerServicesApi<'a> {
     pub async fn update_controller_service_references(
         &self,
         id: &str,
-        body: &serde_json::Value,
+        body: &types::UpdateControllerServiceReferenceRequestEntity,
     ) -> Result<types::ControllerServiceReferencingComponentsEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -3201,21 +2595,16 @@ impl<'a> DynamicControllerServicesApi<'a> {
                         client: self.client,
                         id,
                     };
-                Ok(api
-                    .update_controller_service_references(
-                        &serde_json::from_value::<
-                            crate::v2_6_0::types::UpdateControllerServiceReferenceRequestEntity,
-                        >(body.clone())
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "update_controller_service_references", e
-                            ),
-                            version: "2.6.0".to_string(),
-                        })?,
-                    )
-                    .await?
-                    .into())
+                Ok(
+                    api
+                        .update_controller_service_references(
+                            &crate::v2_6_0::types::UpdateControllerServiceReferenceRequestEntity::try_from(
+                                body.clone(),
+                            )?,
+                        )
+                        .await?
+                        .into(),
+                )
             }
             DetectedVersion::V2_7_2 => {
                 let api =
@@ -3223,21 +2612,16 @@ impl<'a> DynamicControllerServicesApi<'a> {
                         client: self.client,
                         id,
                     };
-                Ok(api
-                    .update_controller_service_references(
-                        &serde_json::from_value::<
-                            crate::v2_7_2::types::UpdateControllerServiceReferenceRequestEntity,
-                        >(body.clone())
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "update_controller_service_references", e
-                            ),
-                            version: "2.7.2".to_string(),
-                        })?,
-                    )
-                    .await?
-                    .into())
+                Ok(
+                    api
+                        .update_controller_service_references(
+                            &crate::v2_7_2::types::UpdateControllerServiceReferenceRequestEntity::try_from(
+                                body.clone(),
+                            )?,
+                        )
+                        .await?
+                        .into(),
+                )
             }
             DetectedVersion::V2_8_0 => {
                 let api =
@@ -3245,21 +2629,16 @@ impl<'a> DynamicControllerServicesApi<'a> {
                         client: self.client,
                         id,
                     };
-                Ok(api
-                    .update_controller_service_references(
-                        &serde_json::from_value::<
-                            crate::v2_8_0::types::UpdateControllerServiceReferenceRequestEntity,
-                        >(body.clone())
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "update_controller_service_references", e
-                            ),
-                            version: "2.8.0".to_string(),
-                        })?,
-                    )
-                    .await?
-                    .into())
+                Ok(
+                    api
+                        .update_controller_service_references(
+                            &crate::v2_8_0::types::UpdateControllerServiceReferenceRequestEntity::try_from(
+                                body.clone(),
+                            )?,
+                        )
+                        .await?
+                        .into(),
+                )
             }
         }
     }
@@ -3267,7 +2646,7 @@ impl<'a> DynamicControllerServicesApi<'a> {
     pub async fn update_run_status_1(
         &self,
         id: &str,
-        body: &serde_json::Value,
+        body: &types::ControllerServiceRunStatusEntity,
     ) -> Result<types::ControllerServiceEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -3277,16 +2656,9 @@ impl<'a> DynamicControllerServicesApi<'a> {
                 };
                 Ok(api
                     .update_run_status_1(
-                        &serde_json::from_value::<
-                            crate::v2_6_0::types::ControllerServiceRunStatusEntity,
-                        >(body.clone())
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "update_run_status_1", e
-                            ),
-                            version: "2.6.0".to_string(),
-                        })?,
+                        &crate::v2_6_0::types::ControllerServiceRunStatusEntity::try_from(
+                            body.clone(),
+                        )?,
                     )
                     .await?
                     .into())
@@ -3298,16 +2670,9 @@ impl<'a> DynamicControllerServicesApi<'a> {
                 };
                 Ok(api
                     .update_run_status_1(
-                        &serde_json::from_value::<
-                            crate::v2_7_2::types::ControllerServiceRunStatusEntity,
-                        >(body.clone())
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "update_run_status_1", e
-                            ),
-                            version: "2.7.2".to_string(),
-                        })?,
+                        &crate::v2_7_2::types::ControllerServiceRunStatusEntity::try_from(
+                            body.clone(),
+                        )?,
                     )
                     .await?
                     .into())
@@ -3319,16 +2684,9 @@ impl<'a> DynamicControllerServicesApi<'a> {
                 };
                 Ok(api
                     .update_run_status_1(
-                        &serde_json::from_value::<
-                            crate::v2_8_0::types::ControllerServiceRunStatusEntity,
-                        >(body.clone())
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "update_run_status_1", e
-                            ),
-                            version: "2.8.0".to_string(),
-                        })?,
+                        &crate::v2_8_0::types::ControllerServiceRunStatusEntity::try_from(
+                            body.clone(),
+                        )?,
                     )
                     .await?
                     .into())
@@ -3687,7 +3045,7 @@ impl<'a> DynamicFlowApi<'a> {
     pub async fn activate_controller_services(
         &self,
         id: &str,
-        body: &serde_json::Value,
+        body: &types::ActivateControllerServicesEntity,
     ) -> Result<types::ActivateControllerServicesEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -3697,16 +3055,9 @@ impl<'a> DynamicFlowApi<'a> {
                 };
                 Ok(api
                     .activate_controller_services(
-                        &serde_json::from_value::<
-                            crate::v2_6_0::types::ActivateControllerServicesEntity,
-                        >(body.clone())
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "activate_controller_services", e
-                            ),
-                            version: "2.6.0".to_string(),
-                        })?,
+                        &crate::v2_6_0::types::ActivateControllerServicesEntity::try_from(
+                            body.clone(),
+                        )?,
                     )
                     .await?
                     .into())
@@ -3718,16 +3069,9 @@ impl<'a> DynamicFlowApi<'a> {
                 };
                 Ok(api
                     .activate_controller_services(
-                        &serde_json::from_value::<
-                            crate::v2_7_2::types::ActivateControllerServicesEntity,
-                        >(body.clone())
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "activate_controller_services", e
-                            ),
-                            version: "2.7.2".to_string(),
-                        })?,
+                        &crate::v2_7_2::types::ActivateControllerServicesEntity::try_from(
+                            body.clone(),
+                        )?,
                     )
                     .await?
                     .into())
@@ -3739,16 +3083,9 @@ impl<'a> DynamicFlowApi<'a> {
                 };
                 Ok(api
                     .activate_controller_services(
-                        &serde_json::from_value::<
-                            crate::v2_8_0::types::ActivateControllerServicesEntity,
-                        >(body.clone())
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "activate_controller_services", e
-                            ),
-                            version: "2.8.0".to_string(),
-                        })?,
+                        &crate::v2_8_0::types::ActivateControllerServicesEntity::try_from(
+                            body.clone(),
+                        )?,
                     )
                     .await?
                     .into())
@@ -3759,7 +3096,7 @@ impl<'a> DynamicFlowApi<'a> {
     pub async fn clear_bulletins_1(
         &self,
         id: &str,
-        body: &serde_json::Value,
+        body: &types::ClearBulletinsForGroupRequestEntity,
     ) -> Result<types::ClearBulletinsForGroupResultsEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => Err(NifiError::UnsupportedEndpoint {
@@ -3773,13 +3110,9 @@ impl<'a> DynamicFlowApi<'a> {
                 };
                 Ok(api
                     .clear_bulletins_1(
-                        &serde_json::from_value::<
-                            crate::v2_7_2::types::ClearBulletinsForGroupRequestEntity,
-                        >(body.clone())
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!("{} (body deserialize: {})", "clear_bulletins_1", e),
-                            version: "2.7.2".to_string(),
-                        })?,
+                        &crate::v2_7_2::types::ClearBulletinsForGroupRequestEntity::try_from(
+                            body.clone(),
+                        )?,
                     )
                     .await?
                     .into())
@@ -3791,13 +3124,9 @@ impl<'a> DynamicFlowApi<'a> {
                 };
                 Ok(api
                     .clear_bulletins_1(
-                        &serde_json::from_value::<
-                            crate::v2_8_0::types::ClearBulletinsForGroupRequestEntity,
-                        >(body.clone())
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!("{} (body deserialize: {})", "clear_bulletins_1", e),
-                            version: "2.8.0".to_string(),
-                        })?,
+                        &crate::v2_8_0::types::ClearBulletinsForGroupRequestEntity::try_from(
+                            body.clone(),
+                        )?,
                     )
                     .await?
                     .into())
@@ -4789,11 +4118,11 @@ impl<'a> DynamicFlowApi<'a> {
     pub async fn get_flow_metrics(
         &self,
         producer: &str,
-        included_registries: Option<&str>,
+        included_registries: Option<types::IncludedRegistries>,
         sample_name: Option<&str>,
         sample_label_value: Option<&str>,
         root_field_name: Option<&str>,
-        flow_metrics_reporting_strategy: Option<&str>,
+        flow_metrics_reporting_strategy: Option<types::FlowMetricsReportingStrategy>,
     ) -> Result<(), NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -4803,16 +4132,8 @@ impl<'a> DynamicFlowApi<'a> {
                 api.get_flow_metrics(
                     producer,
                     included_registries
-                        .map(|v| {
-                            serde_json::from_value::<crate::v2_6_0::types::IncludedRegistries>(
-                                serde_json::Value::String(v.to_string()),
-                            )
-                        })
-                        .transpose()
-                        .map_err(|_| NifiError::UnsupportedEndpoint {
-                            endpoint: "get_flow_metrics".to_string(),
-                            version: "2.6.0".to_string(),
-                        })?,
+                        .map(crate::v2_6_0::types::IncludedRegistries::try_from)
+                        .transpose()?,
                     sample_name,
                     sample_label_value,
                     root_field_name,
@@ -4826,30 +4147,14 @@ impl<'a> DynamicFlowApi<'a> {
                 api.get_flow_metrics(
                     producer,
                     included_registries
-                        .map(|v| {
-                            serde_json::from_value::<crate::v2_7_2::types::IncludedRegistries>(
-                                serde_json::Value::String(v.to_string()),
-                            )
-                        })
-                        .transpose()
-                        .map_err(|_| NifiError::UnsupportedEndpoint {
-                            endpoint: "get_flow_metrics".to_string(),
-                            version: "2.7.2".to_string(),
-                        })?,
+                        .map(crate::v2_7_2::types::IncludedRegistries::try_from)
+                        .transpose()?,
                     sample_name,
                     sample_label_value,
                     root_field_name,
                     flow_metrics_reporting_strategy
-                        .map(|v| {
-                            serde_json::from_value::<
-                                crate::v2_7_2::types::FlowMetricsReportingStrategy,
-                            >(serde_json::Value::String(v.to_string()))
-                        })
-                        .transpose()
-                        .map_err(|_| NifiError::UnsupportedEndpoint {
-                            endpoint: "get_flow_metrics".to_string(),
-                            version: "2.7.2".to_string(),
-                        })?,
+                        .map(crate::v2_7_2::types::FlowMetricsReportingStrategy::try_from)
+                        .transpose()?,
                 )
                 .await
             }
@@ -4860,30 +4165,14 @@ impl<'a> DynamicFlowApi<'a> {
                 api.get_flow_metrics(
                     producer,
                     included_registries
-                        .map(|v| {
-                            serde_json::from_value::<crate::v2_8_0::types::IncludedRegistries>(
-                                serde_json::Value::String(v.to_string()),
-                            )
-                        })
-                        .transpose()
-                        .map_err(|_| NifiError::UnsupportedEndpoint {
-                            endpoint: "get_flow_metrics".to_string(),
-                            version: "2.8.0".to_string(),
-                        })?,
+                        .map(crate::v2_8_0::types::IncludedRegistries::try_from)
+                        .transpose()?,
                     sample_name,
                     sample_label_value,
                     root_field_name,
                     flow_metrics_reporting_strategy
-                        .map(|v| {
-                            serde_json::from_value::<
-                                crate::v2_8_0::types::FlowMetricsReportingStrategy,
-                            >(serde_json::Value::String(v.to_string()))
-                        })
-                        .transpose()
-                        .map_err(|_| NifiError::UnsupportedEndpoint {
-                            endpoint: "get_flow_metrics".to_string(),
-                            version: "2.8.0".to_string(),
-                        })?,
+                        .map(crate::v2_8_0::types::FlowMetricsReportingStrategy::try_from)
+                        .transpose()?,
                 )
                 .await
             }
@@ -5879,7 +5168,7 @@ impl<'a> DynamicFlowApi<'a> {
     pub async fn schedule_components(
         &self,
         id: &str,
-        body: &serde_json::Value,
+        body: &types::ScheduleComponentsEntity,
     ) -> Result<types::ScheduleComponentsEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -5889,16 +5178,7 @@ impl<'a> DynamicFlowApi<'a> {
                 Ok(api
                     .schedule_components(
                         id,
-                        &serde_json::from_value::<crate::v2_6_0::types::ScheduleComponentsEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "schedule_components", e
-                            ),
-                            version: "2.6.0".to_string(),
-                        })?,
+                        &crate::v2_6_0::types::ScheduleComponentsEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -5910,16 +5190,7 @@ impl<'a> DynamicFlowApi<'a> {
                 Ok(api
                     .schedule_components(
                         id,
-                        &serde_json::from_value::<crate::v2_7_2::types::ScheduleComponentsEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "schedule_components", e
-                            ),
-                            version: "2.7.2".to_string(),
-                        })?,
+                        &crate::v2_7_2::types::ScheduleComponentsEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -5931,16 +5202,7 @@ impl<'a> DynamicFlowApi<'a> {
                 Ok(api
                     .schedule_components(
                         id,
-                        &serde_json::from_value::<crate::v2_8_0::types::ScheduleComponentsEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "schedule_components", e
-                            ),
-                            version: "2.8.0".to_string(),
-                        })?,
+                        &crate::v2_8_0::types::ScheduleComponentsEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -6331,7 +5593,7 @@ impl<'a> DynamicFunnelsApi<'a> {
     pub async fn update_funnel(
         &self,
         id: &str,
-        body: &serde_json::Value,
+        body: &types::FunnelEntity,
     ) -> Result<types::FunnelEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -6341,11 +5603,7 @@ impl<'a> DynamicFunnelsApi<'a> {
                 Ok(api
                     .update_funnel(
                         id,
-                        &serde_json::from_value::<crate::v2_6_0::types::FunnelEntity>(body.clone())
-                            .map_err(|e| NifiError::UnsupportedEndpoint {
-                                endpoint: format!("{} (body deserialize: {})", "update_funnel", e),
-                                version: "2.6.0".to_string(),
-                            })?,
+                        &crate::v2_6_0::types::FunnelEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -6357,11 +5615,7 @@ impl<'a> DynamicFunnelsApi<'a> {
                 Ok(api
                     .update_funnel(
                         id,
-                        &serde_json::from_value::<crate::v2_7_2::types::FunnelEntity>(body.clone())
-                            .map_err(|e| NifiError::UnsupportedEndpoint {
-                                endpoint: format!("{} (body deserialize: {})", "update_funnel", e),
-                                version: "2.7.2".to_string(),
-                            })?,
+                        &crate::v2_7_2::types::FunnelEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -6373,11 +5627,7 @@ impl<'a> DynamicFunnelsApi<'a> {
                 Ok(api
                     .update_funnel(
                         id,
-                        &serde_json::from_value::<crate::v2_8_0::types::FunnelEntity>(body.clone())
-                            .map_err(|e| NifiError::UnsupportedEndpoint {
-                                endpoint: format!("{} (body deserialize: {})", "update_funnel", e),
-                                version: "2.8.0".to_string(),
-                            })?,
+                        &crate::v2_8_0::types::FunnelEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -6396,7 +5646,7 @@ impl<'a> DynamicInputPortsApi<'a> {
     pub async fn clear_bulletins_2(
         &self,
         id: &str,
-        body: &serde_json::Value,
+        body: &types::ClearBulletinsRequestEntity,
     ) -> Result<types::ClearBulletinsResultEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => Err(NifiError::UnsupportedEndpoint {
@@ -6408,46 +5658,24 @@ impl<'a> DynamicInputPortsApi<'a> {
                     client: self.client,
                     id,
                 };
-                Ok(
-                    api
-                        .clear_bulletins_2(
-                            &serde_json::from_value::<
-                                crate::v2_7_2::types::ClearBulletinsRequestEntity,
-                            >(body.clone())
-                            .map_err(|e| NifiError::UnsupportedEndpoint {
-                                endpoint: format!(
-                                    "{} (body deserialize: {})",
-                                    "clear_bulletins_2", e
-                                ),
-                                version: "2.7.2".to_string(),
-                            })?,
-                        )
-                        .await?
-                        .into(),
-                )
+                Ok(api
+                    .clear_bulletins_2(
+                        &crate::v2_7_2::types::ClearBulletinsRequestEntity::try_from(body.clone())?,
+                    )
+                    .await?
+                    .into())
             }
             DetectedVersion::V2_8_0 => {
                 let api = crate::v2_8_0::api::inputports::InputPortsBulletinsApi {
                     client: self.client,
                     id,
                 };
-                Ok(
-                    api
-                        .clear_bulletins_2(
-                            &serde_json::from_value::<
-                                crate::v2_8_0::types::ClearBulletinsRequestEntity,
-                            >(body.clone())
-                            .map_err(|e| NifiError::UnsupportedEndpoint {
-                                endpoint: format!(
-                                    "{} (body deserialize: {})",
-                                    "clear_bulletins_2", e
-                                ),
-                                version: "2.8.0".to_string(),
-                            })?,
-                        )
-                        .await?
-                        .into(),
-                )
+                Ok(api
+                    .clear_bulletins_2(
+                        &crate::v2_8_0::types::ClearBulletinsRequestEntity::try_from(body.clone())?,
+                    )
+                    .await?
+                    .into())
             }
         }
     }
@@ -6516,7 +5744,7 @@ impl<'a> DynamicInputPortsApi<'a> {
     pub async fn update_input_port(
         &self,
         id: &str,
-        body: &serde_json::Value,
+        body: &types::PortEntity,
     ) -> Result<types::PortEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -6526,11 +5754,7 @@ impl<'a> DynamicInputPortsApi<'a> {
                 Ok(api
                     .update_input_port(
                         id,
-                        &serde_json::from_value::<crate::v2_6_0::types::PortEntity>(body.clone())
-                            .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!("{} (body deserialize: {})", "update_input_port", e),
-                            version: "2.6.0".to_string(),
-                        })?,
+                        &crate::v2_6_0::types::PortEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -6542,11 +5766,7 @@ impl<'a> DynamicInputPortsApi<'a> {
                 Ok(api
                     .update_input_port(
                         id,
-                        &serde_json::from_value::<crate::v2_7_2::types::PortEntity>(body.clone())
-                            .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!("{} (body deserialize: {})", "update_input_port", e),
-                            version: "2.7.2".to_string(),
-                        })?,
+                        &crate::v2_7_2::types::PortEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -6558,11 +5778,7 @@ impl<'a> DynamicInputPortsApi<'a> {
                 Ok(api
                     .update_input_port(
                         id,
-                        &serde_json::from_value::<crate::v2_8_0::types::PortEntity>(body.clone())
-                            .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!("{} (body deserialize: {})", "update_input_port", e),
-                            version: "2.8.0".to_string(),
-                        })?,
+                        &crate::v2_8_0::types::PortEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -6573,7 +5789,7 @@ impl<'a> DynamicInputPortsApi<'a> {
     pub async fn update_run_status_2(
         &self,
         id: &str,
-        body: &serde_json::Value,
+        body: &types::PortRunStatusEntity,
     ) -> Result<types::ProcessorEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -6582,18 +5798,9 @@ impl<'a> DynamicInputPortsApi<'a> {
                     id,
                 };
                 Ok(api
-                    .update_run_status_2(
-                        &serde_json::from_value::<crate::v2_6_0::types::PortRunStatusEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "update_run_status_2", e
-                            ),
-                            version: "2.6.0".to_string(),
-                        })?,
-                    )
+                    .update_run_status_2(&crate::v2_6_0::types::PortRunStatusEntity::try_from(
+                        body.clone(),
+                    )?)
                     .await?
                     .into())
             }
@@ -6603,18 +5810,9 @@ impl<'a> DynamicInputPortsApi<'a> {
                     id,
                 };
                 Ok(api
-                    .update_run_status_2(
-                        &serde_json::from_value::<crate::v2_7_2::types::PortRunStatusEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "update_run_status_2", e
-                            ),
-                            version: "2.7.2".to_string(),
-                        })?,
-                    )
+                    .update_run_status_2(&crate::v2_7_2::types::PortRunStatusEntity::try_from(
+                        body.clone(),
+                    )?)
                     .await?
                     .into())
             }
@@ -6624,18 +5822,9 @@ impl<'a> DynamicInputPortsApi<'a> {
                     id,
                 };
                 Ok(api
-                    .update_run_status_2(
-                        &serde_json::from_value::<crate::v2_8_0::types::PortRunStatusEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "update_run_status_2", e
-                            ),
-                            version: "2.8.0".to_string(),
-                        })?,
-                    )
+                    .update_run_status_2(&crate::v2_8_0::types::PortRunStatusEntity::try_from(
+                        body.clone(),
+                    )?)
                     .await?
                     .into())
             }
@@ -6714,7 +5903,7 @@ impl<'a> DynamicLabelsApi<'a> {
     pub async fn update_label(
         &self,
         id: &str,
-        body: &serde_json::Value,
+        body: &types::LabelEntity,
     ) -> Result<types::LabelEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -6724,11 +5913,7 @@ impl<'a> DynamicLabelsApi<'a> {
                 Ok(api
                     .update_label(
                         id,
-                        &serde_json::from_value::<crate::v2_6_0::types::LabelEntity>(body.clone())
-                            .map_err(|e| NifiError::UnsupportedEndpoint {
-                                endpoint: format!("{} (body deserialize: {})", "update_label", e),
-                                version: "2.6.0".to_string(),
-                            })?,
+                        &crate::v2_6_0::types::LabelEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -6740,11 +5925,7 @@ impl<'a> DynamicLabelsApi<'a> {
                 Ok(api
                     .update_label(
                         id,
-                        &serde_json::from_value::<crate::v2_7_2::types::LabelEntity>(body.clone())
-                            .map_err(|e| NifiError::UnsupportedEndpoint {
-                                endpoint: format!("{} (body deserialize: {})", "update_label", e),
-                                version: "2.7.2".to_string(),
-                            })?,
+                        &crate::v2_7_2::types::LabelEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -6756,11 +5937,7 @@ impl<'a> DynamicLabelsApi<'a> {
                 Ok(api
                     .update_label(
                         id,
-                        &serde_json::from_value::<crate::v2_8_0::types::LabelEntity>(body.clone())
-                            .map_err(|e| NifiError::UnsupportedEndpoint {
-                                endpoint: format!("{} (body deserialize: {})", "update_label", e),
-                                version: "2.8.0".to_string(),
-                            })?,
+                        &crate::v2_8_0::types::LabelEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -6779,7 +5956,7 @@ impl<'a> DynamicOutputPortsApi<'a> {
     pub async fn clear_bulletins_3(
         &self,
         id: &str,
-        body: &serde_json::Value,
+        body: &types::ClearBulletinsRequestEntity,
     ) -> Result<types::ClearBulletinsResultEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => Err(NifiError::UnsupportedEndpoint {
@@ -6791,46 +5968,24 @@ impl<'a> DynamicOutputPortsApi<'a> {
                     client: self.client,
                     id,
                 };
-                Ok(
-                    api
-                        .clear_bulletins_3(
-                            &serde_json::from_value::<
-                                crate::v2_7_2::types::ClearBulletinsRequestEntity,
-                            >(body.clone())
-                            .map_err(|e| NifiError::UnsupportedEndpoint {
-                                endpoint: format!(
-                                    "{} (body deserialize: {})",
-                                    "clear_bulletins_3", e
-                                ),
-                                version: "2.7.2".to_string(),
-                            })?,
-                        )
-                        .await?
-                        .into(),
-                )
+                Ok(api
+                    .clear_bulletins_3(
+                        &crate::v2_7_2::types::ClearBulletinsRequestEntity::try_from(body.clone())?,
+                    )
+                    .await?
+                    .into())
             }
             DetectedVersion::V2_8_0 => {
                 let api = crate::v2_8_0::api::outputports::OutputPortsBulletinsApi {
                     client: self.client,
                     id,
                 };
-                Ok(
-                    api
-                        .clear_bulletins_3(
-                            &serde_json::from_value::<
-                                crate::v2_8_0::types::ClearBulletinsRequestEntity,
-                            >(body.clone())
-                            .map_err(|e| NifiError::UnsupportedEndpoint {
-                                endpoint: format!(
-                                    "{} (body deserialize: {})",
-                                    "clear_bulletins_3", e
-                                ),
-                                version: "2.8.0".to_string(),
-                            })?,
-                        )
-                        .await?
-                        .into(),
-                )
+                Ok(api
+                    .clear_bulletins_3(
+                        &crate::v2_8_0::types::ClearBulletinsRequestEntity::try_from(body.clone())?,
+                    )
+                    .await?
+                    .into())
             }
         }
     }
@@ -6899,7 +6054,7 @@ impl<'a> DynamicOutputPortsApi<'a> {
     pub async fn update_output_port(
         &self,
         id: &str,
-        body: &serde_json::Value,
+        body: &types::PortEntity,
     ) -> Result<types::PortEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -6909,11 +6064,7 @@ impl<'a> DynamicOutputPortsApi<'a> {
                 Ok(api
                     .update_output_port(
                         id,
-                        &serde_json::from_value::<crate::v2_6_0::types::PortEntity>(body.clone())
-                            .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!("{} (body deserialize: {})", "update_output_port", e),
-                            version: "2.6.0".to_string(),
-                        })?,
+                        &crate::v2_6_0::types::PortEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -6925,11 +6076,7 @@ impl<'a> DynamicOutputPortsApi<'a> {
                 Ok(api
                     .update_output_port(
                         id,
-                        &serde_json::from_value::<crate::v2_7_2::types::PortEntity>(body.clone())
-                            .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!("{} (body deserialize: {})", "update_output_port", e),
-                            version: "2.7.2".to_string(),
-                        })?,
+                        &crate::v2_7_2::types::PortEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -6941,11 +6088,7 @@ impl<'a> DynamicOutputPortsApi<'a> {
                 Ok(api
                     .update_output_port(
                         id,
-                        &serde_json::from_value::<crate::v2_8_0::types::PortEntity>(body.clone())
-                            .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!("{} (body deserialize: {})", "update_output_port", e),
-                            version: "2.8.0".to_string(),
-                        })?,
+                        &crate::v2_8_0::types::PortEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -6956,7 +6099,7 @@ impl<'a> DynamicOutputPortsApi<'a> {
     pub async fn update_run_status_3(
         &self,
         id: &str,
-        body: &serde_json::Value,
+        body: &types::PortRunStatusEntity,
     ) -> Result<types::ProcessorEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -6965,18 +6108,9 @@ impl<'a> DynamicOutputPortsApi<'a> {
                     id,
                 };
                 Ok(api
-                    .update_run_status_3(
-                        &serde_json::from_value::<crate::v2_6_0::types::PortRunStatusEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "update_run_status_3", e
-                            ),
-                            version: "2.6.0".to_string(),
-                        })?,
-                    )
+                    .update_run_status_3(&crate::v2_6_0::types::PortRunStatusEntity::try_from(
+                        body.clone(),
+                    )?)
                     .await?
                     .into())
             }
@@ -6986,18 +6120,9 @@ impl<'a> DynamicOutputPortsApi<'a> {
                     id,
                 };
                 Ok(api
-                    .update_run_status_3(
-                        &serde_json::from_value::<crate::v2_7_2::types::PortRunStatusEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "update_run_status_3", e
-                            ),
-                            version: "2.7.2".to_string(),
-                        })?,
-                    )
+                    .update_run_status_3(&crate::v2_7_2::types::PortRunStatusEntity::try_from(
+                        body.clone(),
+                    )?)
                     .await?
                     .into())
             }
@@ -7007,18 +6132,9 @@ impl<'a> DynamicOutputPortsApi<'a> {
                     id,
                 };
                 Ok(api
-                    .update_run_status_3(
-                        &serde_json::from_value::<crate::v2_8_0::types::PortRunStatusEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "update_run_status_3", e
-                            ),
-                            version: "2.8.0".to_string(),
-                        })?,
-                    )
+                    .update_run_status_3(&crate::v2_8_0::types::PortRunStatusEntity::try_from(
+                        body.clone(),
+                    )?)
                     .await?
                     .into())
             }
@@ -7066,7 +6182,7 @@ impl<'a> DynamicParameterContextsApi<'a> {
     /// Create a Parameter Context
     pub async fn create_parameter_context(
         &self,
-        body: &serde_json::Value,
+        body: &types::ParameterContextEntity,
     ) -> Result<types::ParameterContextEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -7075,16 +6191,7 @@ impl<'a> DynamicParameterContextsApi<'a> {
                 };
                 Ok(api
                     .create_parameter_context(
-                        &serde_json::from_value::<crate::v2_6_0::types::ParameterContextEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "create_parameter_context", e
-                            ),
-                            version: "2.6.0".to_string(),
-                        })?,
+                        &crate::v2_6_0::types::ParameterContextEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -7095,16 +6202,7 @@ impl<'a> DynamicParameterContextsApi<'a> {
                 };
                 Ok(api
                     .create_parameter_context(
-                        &serde_json::from_value::<crate::v2_7_2::types::ParameterContextEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "create_parameter_context", e
-                            ),
-                            version: "2.7.2".to_string(),
-                        })?,
+                        &crate::v2_7_2::types::ParameterContextEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -7115,16 +6213,7 @@ impl<'a> DynamicParameterContextsApi<'a> {
                 };
                 Ok(api
                     .create_parameter_context(
-                        &serde_json::from_value::<crate::v2_8_0::types::ParameterContextEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "create_parameter_context", e
-                            ),
-                            version: "2.8.0".to_string(),
-                        })?,
+                        &crate::v2_8_0::types::ParameterContextEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -7472,7 +6561,7 @@ impl<'a> DynamicParameterContextsApi<'a> {
     pub async fn submit_parameter_context_update(
         &self,
         context_id: &str,
-        body: &serde_json::Value,
+        body: &types::ParameterContextEntity,
     ) -> Result<types::ParameterContextUpdateRequestEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -7483,16 +6572,7 @@ impl<'a> DynamicParameterContextsApi<'a> {
                     };
                 Ok(api
                     .submit_parameter_context_update(
-                        &serde_json::from_value::<crate::v2_6_0::types::ParameterContextEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "submit_parameter_context_update", e
-                            ),
-                            version: "2.6.0".to_string(),
-                        })?,
+                        &crate::v2_6_0::types::ParameterContextEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -7505,16 +6585,7 @@ impl<'a> DynamicParameterContextsApi<'a> {
                     };
                 Ok(api
                     .submit_parameter_context_update(
-                        &serde_json::from_value::<crate::v2_7_2::types::ParameterContextEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "submit_parameter_context_update", e
-                            ),
-                            version: "2.7.2".to_string(),
-                        })?,
+                        &crate::v2_7_2::types::ParameterContextEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -7527,16 +6598,7 @@ impl<'a> DynamicParameterContextsApi<'a> {
                     };
                 Ok(api
                     .submit_parameter_context_update(
-                        &serde_json::from_value::<crate::v2_8_0::types::ParameterContextEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "submit_parameter_context_update", e
-                            ),
-                            version: "2.8.0".to_string(),
-                        })?,
+                        &crate::v2_8_0::types::ParameterContextEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -7547,7 +6609,7 @@ impl<'a> DynamicParameterContextsApi<'a> {
     pub async fn submit_validation_request(
         &self,
         context_id: &str,
-        body: &serde_json::Value,
+        body: &types::ParameterContextValidationRequestEntity,
     ) -> Result<types::ParameterContextValidationRequestEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -7558,16 +6620,9 @@ impl<'a> DynamicParameterContextsApi<'a> {
                     };
                 Ok(api
                     .submit_validation_request(
-                        &serde_json::from_value::<
-                            crate::v2_6_0::types::ParameterContextValidationRequestEntity,
-                        >(body.clone())
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "submit_validation_request", e
-                            ),
-                            version: "2.6.0".to_string(),
-                        })?,
+                        &crate::v2_6_0::types::ParameterContextValidationRequestEntity::try_from(
+                            body.clone(),
+                        )?,
                     )
                     .await?
                     .into())
@@ -7580,16 +6635,9 @@ impl<'a> DynamicParameterContextsApi<'a> {
                     };
                 Ok(api
                     .submit_validation_request(
-                        &serde_json::from_value::<
-                            crate::v2_7_2::types::ParameterContextValidationRequestEntity,
-                        >(body.clone())
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "submit_validation_request", e
-                            ),
-                            version: "2.7.2".to_string(),
-                        })?,
+                        &crate::v2_7_2::types::ParameterContextValidationRequestEntity::try_from(
+                            body.clone(),
+                        )?,
                     )
                     .await?
                     .into())
@@ -7602,16 +6650,9 @@ impl<'a> DynamicParameterContextsApi<'a> {
                     };
                 Ok(api
                     .submit_validation_request(
-                        &serde_json::from_value::<
-                            crate::v2_8_0::types::ParameterContextValidationRequestEntity,
-                        >(body.clone())
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "submit_validation_request", e
-                            ),
-                            version: "2.8.0".to_string(),
-                        })?,
+                        &crate::v2_8_0::types::ParameterContextValidationRequestEntity::try_from(
+                            body.clone(),
+                        )?,
                     )
                     .await?
                     .into())
@@ -7622,7 +6663,7 @@ impl<'a> DynamicParameterContextsApi<'a> {
     pub async fn update_parameter_context(
         &self,
         id: &str,
-        body: &serde_json::Value,
+        body: &types::ParameterContextEntity,
     ) -> Result<types::ParameterContextEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -7632,16 +6673,7 @@ impl<'a> DynamicParameterContextsApi<'a> {
                 Ok(api
                     .update_parameter_context(
                         id,
-                        &serde_json::from_value::<crate::v2_6_0::types::ParameterContextEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "update_parameter_context", e
-                            ),
-                            version: "2.6.0".to_string(),
-                        })?,
+                        &crate::v2_6_0::types::ParameterContextEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -7653,16 +6685,7 @@ impl<'a> DynamicParameterContextsApi<'a> {
                 Ok(api
                     .update_parameter_context(
                         id,
-                        &serde_json::from_value::<crate::v2_7_2::types::ParameterContextEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "update_parameter_context", e
-                            ),
-                            version: "2.7.2".to_string(),
-                        })?,
+                        &crate::v2_7_2::types::ParameterContextEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -7674,16 +6697,7 @@ impl<'a> DynamicParameterContextsApi<'a> {
                 Ok(api
                     .update_parameter_context(
                         id,
-                        &serde_json::from_value::<crate::v2_8_0::types::ParameterContextEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "update_parameter_context", e
-                            ),
-                            version: "2.8.0".to_string(),
-                        })?,
+                        &crate::v2_8_0::types::ParameterContextEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -7702,7 +6716,7 @@ impl<'a> DynamicParameterProvidersApi<'a> {
     pub async fn analyze_configuration_1(
         &self,
         id: &str,
-        body: &serde_json::Value,
+        body: &types::ConfigurationAnalysisEntity,
     ) -> Result<types::ConfigurationAnalysisDto, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -7710,69 +6724,36 @@ impl<'a> DynamicParameterProvidersApi<'a> {
                     client: self.client,
                     id,
                 };
-                Ok(
-                    api
-                        .analyze_configuration_1(
-                            &serde_json::from_value::<
-                                crate::v2_6_0::types::ConfigurationAnalysisEntity,
-                            >(body.clone())
-                            .map_err(|e| NifiError::UnsupportedEndpoint {
-                                endpoint: format!(
-                                    "{} (body deserialize: {})",
-                                    "analyze_configuration_1", e
-                                ),
-                                version: "2.6.0".to_string(),
-                            })?,
-                        )
-                        .await?
-                        .into(),
-                )
+                Ok(api
+                    .analyze_configuration_1(
+                        &crate::v2_6_0::types::ConfigurationAnalysisEntity::try_from(body.clone())?,
+                    )
+                    .await?
+                    .into())
             }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::parameterproviders::ParameterProvidersConfigApi {
                     client: self.client,
                     id,
                 };
-                Ok(
-                    api
-                        .analyze_configuration_1(
-                            &serde_json::from_value::<
-                                crate::v2_7_2::types::ConfigurationAnalysisEntity,
-                            >(body.clone())
-                            .map_err(|e| NifiError::UnsupportedEndpoint {
-                                endpoint: format!(
-                                    "{} (body deserialize: {})",
-                                    "analyze_configuration_1", e
-                                ),
-                                version: "2.7.2".to_string(),
-                            })?,
-                        )
-                        .await?
-                        .into(),
-                )
+                Ok(api
+                    .analyze_configuration_1(
+                        &crate::v2_7_2::types::ConfigurationAnalysisEntity::try_from(body.clone())?,
+                    )
+                    .await?
+                    .into())
             }
             DetectedVersion::V2_8_0 => {
                 let api = crate::v2_8_0::api::parameterproviders::ParameterProvidersConfigApi {
                     client: self.client,
                     id,
                 };
-                Ok(
-                    api
-                        .analyze_configuration_1(
-                            &serde_json::from_value::<
-                                crate::v2_8_0::types::ConfigurationAnalysisEntity,
-                            >(body.clone())
-                            .map_err(|e| NifiError::UnsupportedEndpoint {
-                                endpoint: format!(
-                                    "{} (body deserialize: {})",
-                                    "analyze_configuration_1", e
-                                ),
-                                version: "2.8.0".to_string(),
-                            })?,
-                        )
-                        .await?
-                        .into(),
-                )
+                Ok(api
+                    .analyze_configuration_1(
+                        &crate::v2_8_0::types::ConfigurationAnalysisEntity::try_from(body.clone())?,
+                    )
+                    .await?
+                    .into())
             }
         }
     }
@@ -7780,7 +6761,7 @@ impl<'a> DynamicParameterProvidersApi<'a> {
     pub async fn clear_bulletins_4(
         &self,
         id: &str,
-        body: &serde_json::Value,
+        body: &types::ClearBulletinsRequestEntity,
     ) -> Result<types::ClearBulletinsResultEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => Err(NifiError::UnsupportedEndpoint {
@@ -7792,46 +6773,24 @@ impl<'a> DynamicParameterProvidersApi<'a> {
                     client: self.client,
                     id,
                 };
-                Ok(
-                    api
-                        .clear_bulletins_4(
-                            &serde_json::from_value::<
-                                crate::v2_7_2::types::ClearBulletinsRequestEntity,
-                            >(body.clone())
-                            .map_err(|e| NifiError::UnsupportedEndpoint {
-                                endpoint: format!(
-                                    "{} (body deserialize: {})",
-                                    "clear_bulletins_4", e
-                                ),
-                                version: "2.7.2".to_string(),
-                            })?,
-                        )
-                        .await?
-                        .into(),
-                )
+                Ok(api
+                    .clear_bulletins_4(
+                        &crate::v2_7_2::types::ClearBulletinsRequestEntity::try_from(body.clone())?,
+                    )
+                    .await?
+                    .into())
             }
             DetectedVersion::V2_8_0 => {
                 let api = crate::v2_8_0::api::parameterproviders::ParameterProvidersBulletinsApi {
                     client: self.client,
                     id,
                 };
-                Ok(
-                    api
-                        .clear_bulletins_4(
-                            &serde_json::from_value::<
-                                crate::v2_8_0::types::ClearBulletinsRequestEntity,
-                            >(body.clone())
-                            .map_err(|e| NifiError::UnsupportedEndpoint {
-                                endpoint: format!(
-                                    "{} (body deserialize: {})",
-                                    "clear_bulletins_4", e
-                                ),
-                                version: "2.8.0".to_string(),
-                            })?,
-                        )
-                        .await?
-                        .into(),
-                )
+                Ok(api
+                    .clear_bulletins_4(
+                        &crate::v2_8_0::types::ClearBulletinsRequestEntity::try_from(body.clone())?,
+                    )
+                    .await?
+                    .into())
             }
         }
     }
@@ -7839,7 +6798,7 @@ impl<'a> DynamicParameterProvidersApi<'a> {
     pub async fn clear_state_2(
         &self,
         id: &str,
-        body: &serde_json::Value,
+        body: &types::ComponentStateEntity,
     ) -> Result<types::ComponentStateDto, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -7848,15 +6807,9 @@ impl<'a> DynamicParameterProvidersApi<'a> {
                     id,
                 };
                 Ok(api
-                    .clear_state_2(
-                        &serde_json::from_value::<crate::v2_6_0::types::ComponentStateEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!("{} (body deserialize: {})", "clear_state_2", e),
-                            version: "2.6.0".to_string(),
-                        })?,
-                    )
+                    .clear_state_2(&crate::v2_6_0::types::ComponentStateEntity::try_from(
+                        body.clone(),
+                    )?)
                     .await?
                     .into())
             }
@@ -7866,15 +6819,9 @@ impl<'a> DynamicParameterProvidersApi<'a> {
                     id,
                 };
                 Ok(api
-                    .clear_state_2(
-                        &serde_json::from_value::<crate::v2_7_2::types::ComponentStateEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!("{} (body deserialize: {})", "clear_state_2", e),
-                            version: "2.7.2".to_string(),
-                        })?,
-                    )
+                    .clear_state_2(&crate::v2_7_2::types::ComponentStateEntity::try_from(
+                        body.clone(),
+                    )?)
                     .await?
                     .into())
             }
@@ -7884,15 +6831,9 @@ impl<'a> DynamicParameterProvidersApi<'a> {
                     id,
                 };
                 Ok(api
-                    .clear_state_2(
-                        &serde_json::from_value::<crate::v2_8_0::types::ComponentStateEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!("{} (body deserialize: {})", "clear_state_2", e),
-                            version: "2.8.0".to_string(),
-                        })?,
-                    )
+                    .clear_state_2(&crate::v2_8_0::types::ComponentStateEntity::try_from(
+                        body.clone(),
+                    )?)
                     .await?
                     .into())
             }
@@ -7972,7 +6913,7 @@ impl<'a> DynamicParameterProvidersApi<'a> {
     pub async fn fetch_parameters(
         &self,
         id: &str,
-        body: &serde_json::Value,
+        body: &types::ParameterProviderParameterFetchEntity,
     ) -> Result<types::ParameterProviderEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -7982,13 +6923,9 @@ impl<'a> DynamicParameterProvidersApi<'a> {
                 };
                 Ok(api
                     .fetch_parameters(
-                        &serde_json::from_value::<
-                            crate::v2_6_0::types::ParameterProviderParameterFetchEntity,
-                        >(body.clone())
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!("{} (body deserialize: {})", "fetch_parameters", e),
-                            version: "2.6.0".to_string(),
-                        })?,
+                        &crate::v2_6_0::types::ParameterProviderParameterFetchEntity::try_from(
+                            body.clone(),
+                        )?,
                     )
                     .await?
                     .into())
@@ -8000,13 +6937,9 @@ impl<'a> DynamicParameterProvidersApi<'a> {
                 };
                 Ok(api
                     .fetch_parameters(
-                        &serde_json::from_value::<
-                            crate::v2_7_2::types::ParameterProviderParameterFetchEntity,
-                        >(body.clone())
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!("{} (body deserialize: {})", "fetch_parameters", e),
-                            version: "2.7.2".to_string(),
-                        })?,
+                        &crate::v2_7_2::types::ParameterProviderParameterFetchEntity::try_from(
+                            body.clone(),
+                        )?,
                     )
                     .await?
                     .into())
@@ -8018,13 +6951,9 @@ impl<'a> DynamicParameterProvidersApi<'a> {
                 };
                 Ok(api
                     .fetch_parameters(
-                        &serde_json::from_value::<
-                            crate::v2_8_0::types::ParameterProviderParameterFetchEntity,
-                        >(body.clone())
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!("{} (body deserialize: {})", "fetch_parameters", e),
-                            version: "2.8.0".to_string(),
-                        })?,
+                        &crate::v2_8_0::types::ParameterProviderParameterFetchEntity::try_from(
+                            body.clone(),
+                        )?,
                     )
                     .await?
                     .into())
@@ -8271,7 +7200,7 @@ impl<'a> DynamicParameterProvidersApi<'a> {
     pub async fn submit_apply_parameters(
         &self,
         provider_id: &str,
-        body: &serde_json::Value,
+        body: &types::ParameterProviderParameterApplicationEntity,
     ) -> Result<types::ParameterProviderApplyParametersRequestDto, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -8279,63 +7208,48 @@ impl<'a> DynamicParameterProvidersApi<'a> {
                     client: self.client,
                     provider_id,
                 };
-                Ok(api
-                    .submit_apply_parameters(
-                        &serde_json::from_value::<
-                            crate::v2_6_0::types::ParameterProviderParameterApplicationEntity,
-                        >(body.clone())
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "submit_apply_parameters", e
-                            ),
-                            version: "2.6.0".to_string(),
-                        })?,
-                    )
-                    .await?
-                    .into())
+                Ok(
+                    api
+                        .submit_apply_parameters(
+                            &crate::v2_6_0::types::ParameterProviderParameterApplicationEntity::try_from(
+                                body.clone(),
+                            )?,
+                        )
+                        .await?
+                        .into(),
+                )
             }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::parameterproviders::ParameterProvidersApplyParametersRequestsApi {
                     client: self.client,
                     provider_id,
                 };
-                Ok(api
-                    .submit_apply_parameters(
-                        &serde_json::from_value::<
-                            crate::v2_7_2::types::ParameterProviderParameterApplicationEntity,
-                        >(body.clone())
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "submit_apply_parameters", e
-                            ),
-                            version: "2.7.2".to_string(),
-                        })?,
-                    )
-                    .await?
-                    .into())
+                Ok(
+                    api
+                        .submit_apply_parameters(
+                            &crate::v2_7_2::types::ParameterProviderParameterApplicationEntity::try_from(
+                                body.clone(),
+                            )?,
+                        )
+                        .await?
+                        .into(),
+                )
             }
             DetectedVersion::V2_8_0 => {
                 let api = crate::v2_8_0::api::parameterproviders::ParameterProvidersApplyParametersRequestsApi {
                     client: self.client,
                     provider_id,
                 };
-                Ok(api
-                    .submit_apply_parameters(
-                        &serde_json::from_value::<
-                            crate::v2_8_0::types::ParameterProviderParameterApplicationEntity,
-                        >(body.clone())
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "submit_apply_parameters", e
-                            ),
-                            version: "2.8.0".to_string(),
-                        })?,
-                    )
-                    .await?
-                    .into())
+                Ok(
+                    api
+                        .submit_apply_parameters(
+                            &crate::v2_8_0::types::ParameterProviderParameterApplicationEntity::try_from(
+                                body.clone(),
+                            )?,
+                        )
+                        .await?
+                        .into(),
+                )
             }
         }
     }
@@ -8343,7 +7257,7 @@ impl<'a> DynamicParameterProvidersApi<'a> {
     pub async fn submit_config_verification_request_1(
         &self,
         id: &str,
-        body: &serde_json::Value,
+        body: &types::VerifyConfigRequestEntity,
     ) -> Result<types::VerifyConfigRequestDto, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -8353,16 +7267,7 @@ impl<'a> DynamicParameterProvidersApi<'a> {
                 };
                 Ok(api
                     .submit_config_verification_request_1(
-                        &serde_json::from_value::<crate::v2_6_0::types::VerifyConfigRequestEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "submit_config_verification_request_1", e
-                            ),
-                            version: "2.6.0".to_string(),
-                        })?,
+                        &crate::v2_6_0::types::VerifyConfigRequestEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -8374,16 +7279,7 @@ impl<'a> DynamicParameterProvidersApi<'a> {
                 };
                 Ok(api
                     .submit_config_verification_request_1(
-                        &serde_json::from_value::<crate::v2_7_2::types::VerifyConfigRequestEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "submit_config_verification_request_1", e
-                            ),
-                            version: "2.7.2".to_string(),
-                        })?,
+                        &crate::v2_7_2::types::VerifyConfigRequestEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -8395,16 +7291,7 @@ impl<'a> DynamicParameterProvidersApi<'a> {
                 };
                 Ok(api
                     .submit_config_verification_request_1(
-                        &serde_json::from_value::<crate::v2_8_0::types::VerifyConfigRequestEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "submit_config_verification_request_1", e
-                            ),
-                            version: "2.8.0".to_string(),
-                        })?,
+                        &crate::v2_8_0::types::VerifyConfigRequestEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -8415,7 +7302,7 @@ impl<'a> DynamicParameterProvidersApi<'a> {
     pub async fn update_parameter_provider(
         &self,
         id: &str,
-        body: &serde_json::Value,
+        body: &types::ParameterProviderEntity,
     ) -> Result<types::ParameterProviderEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -8425,16 +7312,7 @@ impl<'a> DynamicParameterProvidersApi<'a> {
                 Ok(api
                     .update_parameter_provider(
                         id,
-                        &serde_json::from_value::<crate::v2_6_0::types::ParameterProviderEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "update_parameter_provider", e
-                            ),
-                            version: "2.6.0".to_string(),
-                        })?,
+                        &crate::v2_6_0::types::ParameterProviderEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -8446,16 +7324,7 @@ impl<'a> DynamicParameterProvidersApi<'a> {
                 Ok(api
                     .update_parameter_provider(
                         id,
-                        &serde_json::from_value::<crate::v2_7_2::types::ParameterProviderEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "update_parameter_provider", e
-                            ),
-                            version: "2.7.2".to_string(),
-                        })?,
+                        &crate::v2_7_2::types::ParameterProviderEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -8467,16 +7336,7 @@ impl<'a> DynamicParameterProvidersApi<'a> {
                 Ok(api
                     .update_parameter_provider(
                         id,
-                        &serde_json::from_value::<crate::v2_8_0::types::ParameterProviderEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "update_parameter_provider", e
-                            ),
-                            version: "2.8.0".to_string(),
-                        })?,
+                        &crate::v2_8_0::types::ParameterProviderEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -8494,7 +7354,7 @@ impl<'a> DynamicPoliciesApi<'a> {
     /// Creates an access policy
     pub async fn create_access_policy(
         &self,
-        body: &serde_json::Value,
+        body: &types::AccessPolicyEntity,
     ) -> Result<types::AccessPolicyEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -8502,18 +7362,9 @@ impl<'a> DynamicPoliciesApi<'a> {
                     client: self.client,
                 };
                 Ok(api
-                    .create_access_policy(
-                        &serde_json::from_value::<crate::v2_6_0::types::AccessPolicyEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "create_access_policy", e
-                            ),
-                            version: "2.6.0".to_string(),
-                        })?,
-                    )
+                    .create_access_policy(&crate::v2_6_0::types::AccessPolicyEntity::try_from(
+                        body.clone(),
+                    )?)
                     .await?
                     .into())
             }
@@ -8522,18 +7373,9 @@ impl<'a> DynamicPoliciesApi<'a> {
                     client: self.client,
                 };
                 Ok(api
-                    .create_access_policy(
-                        &serde_json::from_value::<crate::v2_7_2::types::AccessPolicyEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "create_access_policy", e
-                            ),
-                            version: "2.7.2".to_string(),
-                        })?,
-                    )
+                    .create_access_policy(&crate::v2_7_2::types::AccessPolicyEntity::try_from(
+                        body.clone(),
+                    )?)
                     .await?
                     .into())
             }
@@ -8542,18 +7384,9 @@ impl<'a> DynamicPoliciesApi<'a> {
                     client: self.client,
                 };
                 Ok(api
-                    .create_access_policy(
-                        &serde_json::from_value::<crate::v2_8_0::types::AccessPolicyEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "create_access_policy", e
-                            ),
-                            version: "2.8.0".to_string(),
-                        })?,
-                    )
+                    .create_access_policy(&crate::v2_8_0::types::AccessPolicyEntity::try_from(
+                        body.clone(),
+                    )?)
                     .await?
                     .into())
             }
@@ -8663,7 +7496,7 @@ impl<'a> DynamicPoliciesApi<'a> {
     pub async fn update_access_policy(
         &self,
         id: &str,
-        body: &serde_json::Value,
+        body: &types::AccessPolicyEntity,
     ) -> Result<types::AccessPolicyEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -8673,16 +7506,7 @@ impl<'a> DynamicPoliciesApi<'a> {
                 Ok(api
                     .update_access_policy(
                         id,
-                        &serde_json::from_value::<crate::v2_6_0::types::AccessPolicyEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "update_access_policy", e
-                            ),
-                            version: "2.6.0".to_string(),
-                        })?,
+                        &crate::v2_6_0::types::AccessPolicyEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -8694,16 +7518,7 @@ impl<'a> DynamicPoliciesApi<'a> {
                 Ok(api
                     .update_access_policy(
                         id,
-                        &serde_json::from_value::<crate::v2_7_2::types::AccessPolicyEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "update_access_policy", e
-                            ),
-                            version: "2.7.2".to_string(),
-                        })?,
+                        &crate::v2_7_2::types::AccessPolicyEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -8715,16 +7530,7 @@ impl<'a> DynamicPoliciesApi<'a> {
                 Ok(api
                     .update_access_policy(
                         id,
-                        &serde_json::from_value::<crate::v2_8_0::types::AccessPolicyEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "update_access_policy", e
-                            ),
-                            version: "2.8.0".to_string(),
-                        })?,
+                        &crate::v2_8_0::types::AccessPolicyEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -8743,7 +7549,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
     pub async fn copy(
         &self,
         id: &str,
-        body: &serde_json::Value,
+        body: &types::CopyRequestEntity,
     ) -> Result<types::CopyResponseEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -8752,15 +7558,9 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                     id,
                 };
                 Ok(api
-                    .copy(
-                        &serde_json::from_value::<crate::v2_6_0::types::CopyRequestEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!("{} (body deserialize: {})", "copy", e),
-                            version: "2.6.0".to_string(),
-                        })?,
-                    )
+                    .copy(&crate::v2_6_0::types::CopyRequestEntity::try_from(
+                        body.clone(),
+                    )?)
                     .await?
                     .into())
             }
@@ -8770,15 +7570,9 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                     id,
                 };
                 Ok(api
-                    .copy(
-                        &serde_json::from_value::<crate::v2_7_2::types::CopyRequestEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!("{} (body deserialize: {})", "copy", e),
-                            version: "2.7.2".to_string(),
-                        })?,
-                    )
+                    .copy(&crate::v2_7_2::types::CopyRequestEntity::try_from(
+                        body.clone(),
+                    )?)
                     .await?
                     .into())
             }
@@ -8788,15 +7582,9 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                     id,
                 };
                 Ok(api
-                    .copy(
-                        &serde_json::from_value::<crate::v2_8_0::types::CopyRequestEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!("{} (body deserialize: {})", "copy", e),
-                            version: "2.8.0".to_string(),
-                        })?,
-                    )
+                    .copy(&crate::v2_8_0::types::CopyRequestEntity::try_from(
+                        body.clone(),
+                    )?)
                     .await?
                     .into())
             }
@@ -8806,7 +7594,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
     pub async fn copy_snippet(
         &self,
         id: &str,
-        body: &serde_json::Value,
+        body: &types::CopySnippetRequestEntity,
     ) -> Result<types::FlowDto, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -8815,15 +7603,9 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                     id,
                 };
                 Ok(api
-                    .copy_snippet(
-                        &serde_json::from_value::<crate::v2_6_0::types::CopySnippetRequestEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!("{} (body deserialize: {})", "copy_snippet", e),
-                            version: "2.6.0".to_string(),
-                        })?,
-                    )
+                    .copy_snippet(&crate::v2_6_0::types::CopySnippetRequestEntity::try_from(
+                        body.clone(),
+                    )?)
                     .await?
                     .into())
             }
@@ -8833,15 +7615,9 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                     id,
                 };
                 Ok(api
-                    .copy_snippet(
-                        &serde_json::from_value::<crate::v2_7_2::types::CopySnippetRequestEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!("{} (body deserialize: {})", "copy_snippet", e),
-                            version: "2.7.2".to_string(),
-                        })?,
-                    )
+                    .copy_snippet(&crate::v2_7_2::types::CopySnippetRequestEntity::try_from(
+                        body.clone(),
+                    )?)
                     .await?
                     .into())
             }
@@ -8851,15 +7627,9 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                     id,
                 };
                 Ok(api
-                    .copy_snippet(
-                        &serde_json::from_value::<crate::v2_8_0::types::CopySnippetRequestEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!("{} (body deserialize: {})", "copy_snippet", e),
-                            version: "2.8.0".to_string(),
-                        })?,
-                    )
+                    .copy_snippet(&crate::v2_8_0::types::CopySnippetRequestEntity::try_from(
+                        body.clone(),
+                    )?)
                     .await?
                     .into())
             }
@@ -8869,7 +7639,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
     pub async fn create_connection(
         &self,
         id: &str,
-        body: &serde_json::Value,
+        body: &types::ConnectionEntity,
     ) -> Result<types::ConnectionEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -8878,15 +7648,9 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                     id,
                 };
                 Ok(api
-                    .create_connection(
-                        &serde_json::from_value::<crate::v2_6_0::types::ConnectionEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!("{} (body deserialize: {})", "create_connection", e),
-                            version: "2.6.0".to_string(),
-                        })?,
-                    )
+                    .create_connection(&crate::v2_6_0::types::ConnectionEntity::try_from(
+                        body.clone(),
+                    )?)
                     .await?
                     .into())
             }
@@ -8896,15 +7660,9 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                     id,
                 };
                 Ok(api
-                    .create_connection(
-                        &serde_json::from_value::<crate::v2_7_2::types::ConnectionEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!("{} (body deserialize: {})", "create_connection", e),
-                            version: "2.7.2".to_string(),
-                        })?,
-                    )
+                    .create_connection(&crate::v2_7_2::types::ConnectionEntity::try_from(
+                        body.clone(),
+                    )?)
                     .await?
                     .into())
             }
@@ -8914,15 +7672,9 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                     id,
                 };
                 Ok(api
-                    .create_connection(
-                        &serde_json::from_value::<crate::v2_8_0::types::ConnectionEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!("{} (body deserialize: {})", "create_connection", e),
-                            version: "2.8.0".to_string(),
-                        })?,
-                    )
+                    .create_connection(&crate::v2_8_0::types::ConnectionEntity::try_from(
+                        body.clone(),
+                    )?)
                     .await?
                     .into())
             }
@@ -8932,7 +7684,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
     pub async fn create_controller_service_1(
         &self,
         id: &str,
-        body: &serde_json::Value,
+        body: &types::ControllerServiceEntity,
     ) -> Result<types::ControllerServiceEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -8942,16 +7694,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                 };
                 Ok(api
                     .create_controller_service_1(
-                        &serde_json::from_value::<crate::v2_6_0::types::ControllerServiceEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "create_controller_service_1", e
-                            ),
-                            version: "2.6.0".to_string(),
-                        })?,
+                        &crate::v2_6_0::types::ControllerServiceEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -8963,16 +7706,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                 };
                 Ok(api
                     .create_controller_service_1(
-                        &serde_json::from_value::<crate::v2_7_2::types::ControllerServiceEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "create_controller_service_1", e
-                            ),
-                            version: "2.7.2".to_string(),
-                        })?,
+                        &crate::v2_7_2::types::ControllerServiceEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -8984,16 +7718,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                 };
                 Ok(api
                     .create_controller_service_1(
-                        &serde_json::from_value::<crate::v2_8_0::types::ControllerServiceEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "create_controller_service_1", e
-                            ),
-                            version: "2.8.0".to_string(),
-                        })?,
+                        &crate::v2_8_0::types::ControllerServiceEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -9033,7 +7758,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
     pub async fn create_funnel(
         &self,
         id: &str,
-        body: &serde_json::Value,
+        body: &types::FunnelEntity,
     ) -> Result<types::FunnelEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -9042,13 +7767,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                     id,
                 };
                 Ok(api
-                    .create_funnel(
-                        &serde_json::from_value::<crate::v2_6_0::types::FunnelEntity>(body.clone())
-                            .map_err(|e| NifiError::UnsupportedEndpoint {
-                                endpoint: format!("{} (body deserialize: {})", "create_funnel", e),
-                                version: "2.6.0".to_string(),
-                            })?,
-                    )
+                    .create_funnel(&crate::v2_6_0::types::FunnelEntity::try_from(body.clone())?)
                     .await?
                     .into())
             }
@@ -9058,13 +7777,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                     id,
                 };
                 Ok(api
-                    .create_funnel(
-                        &serde_json::from_value::<crate::v2_7_2::types::FunnelEntity>(body.clone())
-                            .map_err(|e| NifiError::UnsupportedEndpoint {
-                                endpoint: format!("{} (body deserialize: {})", "create_funnel", e),
-                                version: "2.7.2".to_string(),
-                            })?,
-                    )
+                    .create_funnel(&crate::v2_7_2::types::FunnelEntity::try_from(body.clone())?)
                     .await?
                     .into())
             }
@@ -9074,13 +7787,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                     id,
                 };
                 Ok(api
-                    .create_funnel(
-                        &serde_json::from_value::<crate::v2_8_0::types::FunnelEntity>(body.clone())
-                            .map_err(|e| NifiError::UnsupportedEndpoint {
-                                endpoint: format!("{} (body deserialize: {})", "create_funnel", e),
-                                version: "2.8.0".to_string(),
-                            })?,
-                    )
+                    .create_funnel(&crate::v2_8_0::types::FunnelEntity::try_from(body.clone())?)
                     .await?
                     .into())
             }
@@ -9090,7 +7797,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
     pub async fn create_input_port(
         &self,
         id: &str,
-        body: &serde_json::Value,
+        body: &types::PortEntity,
     ) -> Result<types::PortEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -9099,13 +7806,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                     id,
                 };
                 Ok(api
-                    .create_input_port(
-                        &serde_json::from_value::<crate::v2_6_0::types::PortEntity>(body.clone())
-                            .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!("{} (body deserialize: {})", "create_input_port", e),
-                            version: "2.6.0".to_string(),
-                        })?,
-                    )
+                    .create_input_port(&crate::v2_6_0::types::PortEntity::try_from(body.clone())?)
                     .await?
                     .into())
             }
@@ -9115,13 +7816,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                     id,
                 };
                 Ok(api
-                    .create_input_port(
-                        &serde_json::from_value::<crate::v2_7_2::types::PortEntity>(body.clone())
-                            .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!("{} (body deserialize: {})", "create_input_port", e),
-                            version: "2.7.2".to_string(),
-                        })?,
-                    )
+                    .create_input_port(&crate::v2_7_2::types::PortEntity::try_from(body.clone())?)
                     .await?
                     .into())
             }
@@ -9131,13 +7826,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                     id,
                 };
                 Ok(api
-                    .create_input_port(
-                        &serde_json::from_value::<crate::v2_8_0::types::PortEntity>(body.clone())
-                            .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!("{} (body deserialize: {})", "create_input_port", e),
-                            version: "2.8.0".to_string(),
-                        })?,
-                    )
+                    .create_input_port(&crate::v2_8_0::types::PortEntity::try_from(body.clone())?)
                     .await?
                     .into())
             }
@@ -9147,7 +7836,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
     pub async fn create_label(
         &self,
         id: &str,
-        body: &serde_json::Value,
+        body: &types::LabelEntity,
     ) -> Result<types::LabelEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -9156,13 +7845,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                     id,
                 };
                 Ok(api
-                    .create_label(
-                        &serde_json::from_value::<crate::v2_6_0::types::LabelEntity>(body.clone())
-                            .map_err(|e| NifiError::UnsupportedEndpoint {
-                                endpoint: format!("{} (body deserialize: {})", "create_label", e),
-                                version: "2.6.0".to_string(),
-                            })?,
-                    )
+                    .create_label(&crate::v2_6_0::types::LabelEntity::try_from(body.clone())?)
                     .await?
                     .into())
             }
@@ -9172,13 +7855,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                     id,
                 };
                 Ok(api
-                    .create_label(
-                        &serde_json::from_value::<crate::v2_7_2::types::LabelEntity>(body.clone())
-                            .map_err(|e| NifiError::UnsupportedEndpoint {
-                                endpoint: format!("{} (body deserialize: {})", "create_label", e),
-                                version: "2.7.2".to_string(),
-                            })?,
-                    )
+                    .create_label(&crate::v2_7_2::types::LabelEntity::try_from(body.clone())?)
                     .await?
                     .into())
             }
@@ -9188,13 +7865,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                     id,
                 };
                 Ok(api
-                    .create_label(
-                        &serde_json::from_value::<crate::v2_8_0::types::LabelEntity>(body.clone())
-                            .map_err(|e| NifiError::UnsupportedEndpoint {
-                                endpoint: format!("{} (body deserialize: {})", "create_label", e),
-                                version: "2.8.0".to_string(),
-                            })?,
-                    )
+                    .create_label(&crate::v2_8_0::types::LabelEntity::try_from(body.clone())?)
                     .await?
                     .into())
             }
@@ -9204,7 +7875,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
     pub async fn create_output_port(
         &self,
         id: &str,
-        body: &serde_json::Value,
+        body: &types::PortEntity,
     ) -> Result<types::PortEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -9213,13 +7884,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                     id,
                 };
                 Ok(api
-                    .create_output_port(
-                        &serde_json::from_value::<crate::v2_6_0::types::PortEntity>(body.clone())
-                            .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!("{} (body deserialize: {})", "create_output_port", e),
-                            version: "2.6.0".to_string(),
-                        })?,
-                    )
+                    .create_output_port(&crate::v2_6_0::types::PortEntity::try_from(body.clone())?)
                     .await?
                     .into())
             }
@@ -9229,13 +7894,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                     id,
                 };
                 Ok(api
-                    .create_output_port(
-                        &serde_json::from_value::<crate::v2_7_2::types::PortEntity>(body.clone())
-                            .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!("{} (body deserialize: {})", "create_output_port", e),
-                            version: "2.7.2".to_string(),
-                        })?,
-                    )
+                    .create_output_port(&crate::v2_7_2::types::PortEntity::try_from(body.clone())?)
                     .await?
                     .into())
             }
@@ -9245,13 +7904,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                     id,
                 };
                 Ok(api
-                    .create_output_port(
-                        &serde_json::from_value::<crate::v2_8_0::types::PortEntity>(body.clone())
-                            .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!("{} (body deserialize: {})", "create_output_port", e),
-                            version: "2.8.0".to_string(),
-                        })?,
-                    )
+                    .create_output_port(&crate::v2_8_0::types::PortEntity::try_from(body.clone())?)
                     .await?
                     .into())
             }
@@ -9261,8 +7914,8 @@ impl<'a> DynamicProcessGroupsApi<'a> {
     pub async fn create_process_group(
         &self,
         id: &str,
-        parameter_context_handling_strategy: Option<&str>,
-        body: &serde_json::Value,
+        parameter_context_handling_strategy: Option<types::ParameterContextHandlingStrategy>,
+        body: &types::ProcessGroupEntity,
     ) -> Result<types::ProcessGroupEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -9273,28 +7926,9 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                 Ok(api
                     .create_process_group(
                         parameter_context_handling_strategy
-                            .map(|v| {
-                                serde_json::from_value::<
-                                    crate::v2_6_0::types::ParameterContextHandlingStrategy,
-                                >(serde_json::Value::String(
-                                    v.to_string(),
-                                ))
-                            })
-                            .transpose()
-                            .map_err(|_| NifiError::UnsupportedEndpoint {
-                                endpoint: "create_process_group".to_string(),
-                                version: "2.6.0".to_string(),
-                            })?,
-                        &serde_json::from_value::<crate::v2_6_0::types::ProcessGroupEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "create_process_group", e
-                            ),
-                            version: "2.6.0".to_string(),
-                        })?,
+                            .map(crate::v2_6_0::types::ParameterContextHandlingStrategy::try_from)
+                            .transpose()?,
+                        &crate::v2_6_0::types::ProcessGroupEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -9307,28 +7941,9 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                 Ok(api
                     .create_process_group(
                         parameter_context_handling_strategy
-                            .map(|v| {
-                                serde_json::from_value::<
-                                    crate::v2_7_2::types::ParameterContextHandlingStrategy,
-                                >(serde_json::Value::String(
-                                    v.to_string(),
-                                ))
-                            })
-                            .transpose()
-                            .map_err(|_| NifiError::UnsupportedEndpoint {
-                                endpoint: "create_process_group".to_string(),
-                                version: "2.7.2".to_string(),
-                            })?,
-                        &serde_json::from_value::<crate::v2_7_2::types::ProcessGroupEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "create_process_group", e
-                            ),
-                            version: "2.7.2".to_string(),
-                        })?,
+                            .map(crate::v2_7_2::types::ParameterContextHandlingStrategy::try_from)
+                            .transpose()?,
+                        &crate::v2_7_2::types::ProcessGroupEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -9341,28 +7956,9 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                 Ok(api
                     .create_process_group(
                         parameter_context_handling_strategy
-                            .map(|v| {
-                                serde_json::from_value::<
-                                    crate::v2_8_0::types::ParameterContextHandlingStrategy,
-                                >(serde_json::Value::String(
-                                    v.to_string(),
-                                ))
-                            })
-                            .transpose()
-                            .map_err(|_| NifiError::UnsupportedEndpoint {
-                                endpoint: "create_process_group".to_string(),
-                                version: "2.8.0".to_string(),
-                            })?,
-                        &serde_json::from_value::<crate::v2_8_0::types::ProcessGroupEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "create_process_group", e
-                            ),
-                            version: "2.8.0".to_string(),
-                        })?,
+                            .map(crate::v2_8_0::types::ParameterContextHandlingStrategy::try_from)
+                            .transpose()?,
+                        &crate::v2_8_0::types::ProcessGroupEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -9373,7 +7969,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
     pub async fn create_processor(
         &self,
         id: &str,
-        body: &serde_json::Value,
+        body: &types::ProcessorEntity,
     ) -> Result<types::ProcessorEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -9382,15 +7978,9 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                     id,
                 };
                 Ok(api
-                    .create_processor(
-                        &serde_json::from_value::<crate::v2_6_0::types::ProcessorEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!("{} (body deserialize: {})", "create_processor", e),
-                            version: "2.6.0".to_string(),
-                        })?,
-                    )
+                    .create_processor(&crate::v2_6_0::types::ProcessorEntity::try_from(
+                        body.clone(),
+                    )?)
                     .await?
                     .into())
             }
@@ -9400,15 +7990,9 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                     id,
                 };
                 Ok(api
-                    .create_processor(
-                        &serde_json::from_value::<crate::v2_7_2::types::ProcessorEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!("{} (body deserialize: {})", "create_processor", e),
-                            version: "2.7.2".to_string(),
-                        })?,
-                    )
+                    .create_processor(&crate::v2_7_2::types::ProcessorEntity::try_from(
+                        body.clone(),
+                    )?)
                     .await?
                     .into())
             }
@@ -9418,15 +8002,9 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                     id,
                 };
                 Ok(api
-                    .create_processor(
-                        &serde_json::from_value::<crate::v2_8_0::types::ProcessorEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!("{} (body deserialize: {})", "create_processor", e),
-                            version: "2.8.0".to_string(),
-                        })?,
-                    )
+                    .create_processor(&crate::v2_8_0::types::ProcessorEntity::try_from(
+                        body.clone(),
+                    )?)
                     .await?
                     .into())
             }
@@ -9436,7 +8014,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
     pub async fn create_remote_process_group(
         &self,
         id: &str,
-        body: &serde_json::Value,
+        body: &types::RemoteProcessGroupEntity,
     ) -> Result<types::RemoteProcessGroupEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -9446,16 +8024,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                 };
                 Ok(api
                     .create_remote_process_group(
-                        &serde_json::from_value::<crate::v2_6_0::types::RemoteProcessGroupEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "create_remote_process_group", e
-                            ),
-                            version: "2.6.0".to_string(),
-                        })?,
+                        &crate::v2_6_0::types::RemoteProcessGroupEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -9467,16 +8036,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                 };
                 Ok(api
                     .create_remote_process_group(
-                        &serde_json::from_value::<crate::v2_7_2::types::RemoteProcessGroupEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "create_remote_process_group", e
-                            ),
-                            version: "2.7.2".to_string(),
-                        })?,
+                        &crate::v2_7_2::types::RemoteProcessGroupEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -9488,16 +8048,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                 };
                 Ok(api
                     .create_remote_process_group(
-                        &serde_json::from_value::<crate::v2_8_0::types::RemoteProcessGroupEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "create_remote_process_group", e
-                            ),
-                            version: "2.8.0".to_string(),
-                        })?,
+                        &crate::v2_8_0::types::RemoteProcessGroupEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -9912,7 +8463,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
     pub async fn import_process_group(
         &self,
         id: &str,
-        body: &serde_json::Value,
+        body: &types::ProcessGroupUploadEntity,
     ) -> Result<types::ProcessGroupEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -9922,16 +8473,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                 };
                 Ok(api
                     .import_process_group(
-                        &serde_json::from_value::<crate::v2_6_0::types::ProcessGroupUploadEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "import_process_group", e
-                            ),
-                            version: "2.6.0".to_string(),
-                        })?,
+                        &crate::v2_6_0::types::ProcessGroupUploadEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -9943,16 +8485,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                 };
                 Ok(api
                     .import_process_group(
-                        &serde_json::from_value::<crate::v2_7_2::types::ProcessGroupUploadEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "import_process_group", e
-                            ),
-                            version: "2.7.2".to_string(),
-                        })?,
+                        &crate::v2_7_2::types::ProcessGroupUploadEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -9964,16 +8497,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                 };
                 Ok(api
                     .import_process_group(
-                        &serde_json::from_value::<crate::v2_8_0::types::ProcessGroupUploadEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "import_process_group", e
-                            ),
-                            version: "2.8.0".to_string(),
-                        })?,
+                        &crate::v2_8_0::types::ProcessGroupUploadEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -9984,7 +8508,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
     pub async fn initiate_replace_process_group(
         &self,
         id: &str,
-        body: &serde_json::Value,
+        body: &types::ProcessGroupImportEntity,
     ) -> Result<types::ProcessGroupReplaceRequestEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -9994,16 +8518,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                 };
                 Ok(api
                     .initiate_replace_process_group(
-                        &serde_json::from_value::<crate::v2_6_0::types::ProcessGroupImportEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "initiate_replace_process_group", e
-                            ),
-                            version: "2.6.0".to_string(),
-                        })?,
+                        &crate::v2_6_0::types::ProcessGroupImportEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -10015,16 +8530,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                 };
                 Ok(api
                     .initiate_replace_process_group(
-                        &serde_json::from_value::<crate::v2_7_2::types::ProcessGroupImportEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "initiate_replace_process_group", e
-                            ),
-                            version: "2.7.2".to_string(),
-                        })?,
+                        &crate::v2_7_2::types::ProcessGroupImportEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -10036,16 +8542,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                 };
                 Ok(api
                     .initiate_replace_process_group(
-                        &serde_json::from_value::<crate::v2_8_0::types::ProcessGroupImportEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "initiate_replace_process_group", e
-                            ),
-                            version: "2.8.0".to_string(),
-                        })?,
+                        &crate::v2_8_0::types::ProcessGroupImportEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -10056,7 +8553,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
     pub async fn paste(
         &self,
         id: &str,
-        body: &serde_json::Value,
+        body: &types::PasteRequestEntity,
     ) -> Result<types::PasteResponseEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -10065,15 +8562,9 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                     id,
                 };
                 Ok(api
-                    .paste(
-                        &serde_json::from_value::<crate::v2_6_0::types::PasteRequestEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!("{} (body deserialize: {})", "paste", e),
-                            version: "2.6.0".to_string(),
-                        })?,
-                    )
+                    .paste(&crate::v2_6_0::types::PasteRequestEntity::try_from(
+                        body.clone(),
+                    )?)
                     .await?
                     .into())
             }
@@ -10083,15 +8574,9 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                     id,
                 };
                 Ok(api
-                    .paste(
-                        &serde_json::from_value::<crate::v2_7_2::types::PasteRequestEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!("{} (body deserialize: {})", "paste", e),
-                            version: "2.7.2".to_string(),
-                        })?,
-                    )
+                    .paste(&crate::v2_7_2::types::PasteRequestEntity::try_from(
+                        body.clone(),
+                    )?)
                     .await?
                     .into())
             }
@@ -10101,15 +8586,9 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                     id,
                 };
                 Ok(api
-                    .paste(
-                        &serde_json::from_value::<crate::v2_8_0::types::PasteRequestEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!("{} (body deserialize: {})", "paste", e),
-                            version: "2.8.0".to_string(),
-                        })?,
-                    )
+                    .paste(&crate::v2_8_0::types::PasteRequestEntity::try_from(
+                        body.clone(),
+                    )?)
                     .await?
                     .into())
             }
@@ -10187,7 +8666,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
     pub async fn replace_process_group(
         &self,
         id: &str,
-        body: &serde_json::Value,
+        body: &types::ProcessGroupImportEntity,
     ) -> Result<types::ProcessGroupImportEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -10197,16 +8676,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                 };
                 Ok(api
                     .replace_process_group(
-                        &serde_json::from_value::<crate::v2_6_0::types::ProcessGroupImportEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "replace_process_group", e
-                            ),
-                            version: "2.6.0".to_string(),
-                        })?,
+                        &crate::v2_6_0::types::ProcessGroupImportEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -10218,16 +8688,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                 };
                 Ok(api
                     .replace_process_group(
-                        &serde_json::from_value::<crate::v2_7_2::types::ProcessGroupImportEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "replace_process_group", e
-                            ),
-                            version: "2.7.2".to_string(),
-                        })?,
+                        &crate::v2_7_2::types::ProcessGroupImportEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -10239,16 +8700,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                 };
                 Ok(api
                     .replace_process_group(
-                        &serde_json::from_value::<crate::v2_8_0::types::ProcessGroupImportEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "replace_process_group", e
-                            ),
-                            version: "2.8.0".to_string(),
-                        })?,
+                        &crate::v2_8_0::types::ProcessGroupImportEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -10259,7 +8711,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
     pub async fn update_process_group(
         &self,
         id: &str,
-        body: &serde_json::Value,
+        body: &types::ProcessGroupEntity,
     ) -> Result<types::ProcessGroupEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -10269,16 +8721,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                 Ok(api
                     .update_process_group(
                         id,
-                        &serde_json::from_value::<crate::v2_6_0::types::ProcessGroupEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "update_process_group", e
-                            ),
-                            version: "2.6.0".to_string(),
-                        })?,
+                        &crate::v2_6_0::types::ProcessGroupEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -10290,16 +8733,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                 Ok(api
                     .update_process_group(
                         id,
-                        &serde_json::from_value::<crate::v2_7_2::types::ProcessGroupEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "update_process_group", e
-                            ),
-                            version: "2.7.2".to_string(),
-                        })?,
+                        &crate::v2_7_2::types::ProcessGroupEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -10311,16 +8745,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                 Ok(api
                     .update_process_group(
                         id,
-                        &serde_json::from_value::<crate::v2_8_0::types::ProcessGroupEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "update_process_group", e
-                            ),
-                            version: "2.8.0".to_string(),
-                        })?,
+                        &crate::v2_8_0::types::ProcessGroupEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -10368,7 +8793,7 @@ impl<'a> DynamicProcessorsApi<'a> {
     pub async fn analyze_configuration_2(
         &self,
         id: &str,
-        body: &serde_json::Value,
+        body: &types::ConfigurationAnalysisEntity,
     ) -> Result<types::ConfigurationAnalysisDto, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -10376,69 +8801,36 @@ impl<'a> DynamicProcessorsApi<'a> {
                     client: self.client,
                     id,
                 };
-                Ok(
-                    api
-                        .analyze_configuration_2(
-                            &serde_json::from_value::<
-                                crate::v2_6_0::types::ConfigurationAnalysisEntity,
-                            >(body.clone())
-                            .map_err(|e| NifiError::UnsupportedEndpoint {
-                                endpoint: format!(
-                                    "{} (body deserialize: {})",
-                                    "analyze_configuration_2", e
-                                ),
-                                version: "2.6.0".to_string(),
-                            })?,
-                        )
-                        .await?
-                        .into(),
-                )
+                Ok(api
+                    .analyze_configuration_2(
+                        &crate::v2_6_0::types::ConfigurationAnalysisEntity::try_from(body.clone())?,
+                    )
+                    .await?
+                    .into())
             }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::processors::ProcessorsConfigApi {
                     client: self.client,
                     id,
                 };
-                Ok(
-                    api
-                        .analyze_configuration_2(
-                            &serde_json::from_value::<
-                                crate::v2_7_2::types::ConfigurationAnalysisEntity,
-                            >(body.clone())
-                            .map_err(|e| NifiError::UnsupportedEndpoint {
-                                endpoint: format!(
-                                    "{} (body deserialize: {})",
-                                    "analyze_configuration_2", e
-                                ),
-                                version: "2.7.2".to_string(),
-                            })?,
-                        )
-                        .await?
-                        .into(),
-                )
+                Ok(api
+                    .analyze_configuration_2(
+                        &crate::v2_7_2::types::ConfigurationAnalysisEntity::try_from(body.clone())?,
+                    )
+                    .await?
+                    .into())
             }
             DetectedVersion::V2_8_0 => {
                 let api = crate::v2_8_0::api::processors::ProcessorsConfigApi {
                     client: self.client,
                     id,
                 };
-                Ok(
-                    api
-                        .analyze_configuration_2(
-                            &serde_json::from_value::<
-                                crate::v2_8_0::types::ConfigurationAnalysisEntity,
-                            >(body.clone())
-                            .map_err(|e| NifiError::UnsupportedEndpoint {
-                                endpoint: format!(
-                                    "{} (body deserialize: {})",
-                                    "analyze_configuration_2", e
-                                ),
-                                version: "2.8.0".to_string(),
-                            })?,
-                        )
-                        .await?
-                        .into(),
-                )
+                Ok(api
+                    .analyze_configuration_2(
+                        &crate::v2_8_0::types::ConfigurationAnalysisEntity::try_from(body.clone())?,
+                    )
+                    .await?
+                    .into())
             }
         }
     }
@@ -10446,7 +8838,7 @@ impl<'a> DynamicProcessorsApi<'a> {
     pub async fn clear_bulletins_5(
         &self,
         id: &str,
-        body: &serde_json::Value,
+        body: &types::ClearBulletinsRequestEntity,
     ) -> Result<types::ClearBulletinsResultEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => Err(NifiError::UnsupportedEndpoint {
@@ -10458,46 +8850,24 @@ impl<'a> DynamicProcessorsApi<'a> {
                     client: self.client,
                     id,
                 };
-                Ok(
-                    api
-                        .clear_bulletins_5(
-                            &serde_json::from_value::<
-                                crate::v2_7_2::types::ClearBulletinsRequestEntity,
-                            >(body.clone())
-                            .map_err(|e| NifiError::UnsupportedEndpoint {
-                                endpoint: format!(
-                                    "{} (body deserialize: {})",
-                                    "clear_bulletins_5", e
-                                ),
-                                version: "2.7.2".to_string(),
-                            })?,
-                        )
-                        .await?
-                        .into(),
-                )
+                Ok(api
+                    .clear_bulletins_5(
+                        &crate::v2_7_2::types::ClearBulletinsRequestEntity::try_from(body.clone())?,
+                    )
+                    .await?
+                    .into())
             }
             DetectedVersion::V2_8_0 => {
                 let api = crate::v2_8_0::api::processors::ProcessorsBulletinsApi {
                     client: self.client,
                     id,
                 };
-                Ok(
-                    api
-                        .clear_bulletins_5(
-                            &serde_json::from_value::<
-                                crate::v2_8_0::types::ClearBulletinsRequestEntity,
-                            >(body.clone())
-                            .map_err(|e| NifiError::UnsupportedEndpoint {
-                                endpoint: format!(
-                                    "{} (body deserialize: {})",
-                                    "clear_bulletins_5", e
-                                ),
-                                version: "2.8.0".to_string(),
-                            })?,
-                        )
-                        .await?
-                        .into(),
-                )
+                Ok(api
+                    .clear_bulletins_5(
+                        &crate::v2_8_0::types::ClearBulletinsRequestEntity::try_from(body.clone())?,
+                    )
+                    .await?
+                    .into())
             }
         }
     }
@@ -10505,7 +8875,7 @@ impl<'a> DynamicProcessorsApi<'a> {
     pub async fn clear_state_3(
         &self,
         id: &str,
-        body: &serde_json::Value,
+        body: &types::ComponentStateEntity,
     ) -> Result<types::ComponentStateDto, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -10514,15 +8884,9 @@ impl<'a> DynamicProcessorsApi<'a> {
                     id,
                 };
                 Ok(api
-                    .clear_state_3(
-                        &serde_json::from_value::<crate::v2_6_0::types::ComponentStateEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!("{} (body deserialize: {})", "clear_state_3", e),
-                            version: "2.6.0".to_string(),
-                        })?,
-                    )
+                    .clear_state_3(&crate::v2_6_0::types::ComponentStateEntity::try_from(
+                        body.clone(),
+                    )?)
                     .await?
                     .into())
             }
@@ -10532,15 +8896,9 @@ impl<'a> DynamicProcessorsApi<'a> {
                     id,
                 };
                 Ok(api
-                    .clear_state_3(
-                        &serde_json::from_value::<crate::v2_7_2::types::ComponentStateEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!("{} (body deserialize: {})", "clear_state_3", e),
-                            version: "2.7.2".to_string(),
-                        })?,
-                    )
+                    .clear_state_3(&crate::v2_7_2::types::ComponentStateEntity::try_from(
+                        body.clone(),
+                    )?)
                     .await?
                     .into())
             }
@@ -10550,15 +8908,9 @@ impl<'a> DynamicProcessorsApi<'a> {
                     id,
                 };
                 Ok(api
-                    .clear_state_3(
-                        &serde_json::from_value::<crate::v2_8_0::types::ComponentStateEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!("{} (body deserialize: {})", "clear_state_3", e),
-                            version: "2.8.0".to_string(),
-                        })?,
-                    )
+                    .clear_state_3(&crate::v2_8_0::types::ComponentStateEntity::try_from(
+                        body.clone(),
+                    )?)
                     .await?
                     .into())
             }
@@ -10687,7 +9039,7 @@ impl<'a> DynamicProcessorsApi<'a> {
     /// Submits a query to retrieve the run status details of all processors that are in the given list of Processor IDs
     pub async fn get_processor_run_status_details(
         &self,
-        body: &serde_json::Value,
+        body: &types::RunStatusDetailsRequestEntity,
     ) -> Result<types::ProcessorsRunStatusDetailsEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -10696,16 +9048,9 @@ impl<'a> DynamicProcessorsApi<'a> {
                 };
                 Ok(api
                     .get_processor_run_status_details(
-                        &serde_json::from_value::<
-                            crate::v2_6_0::types::RunStatusDetailsRequestEntity,
-                        >(body.clone())
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "get_processor_run_status_details", e
-                            ),
-                            version: "2.6.0".to_string(),
-                        })?,
+                        &crate::v2_6_0::types::RunStatusDetailsRequestEntity::try_from(
+                            body.clone(),
+                        )?,
                     )
                     .await?
                     .into())
@@ -10716,16 +9061,9 @@ impl<'a> DynamicProcessorsApi<'a> {
                 };
                 Ok(api
                     .get_processor_run_status_details(
-                        &serde_json::from_value::<
-                            crate::v2_7_2::types::RunStatusDetailsRequestEntity,
-                        >(body.clone())
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "get_processor_run_status_details", e
-                            ),
-                            version: "2.7.2".to_string(),
-                        })?,
+                        &crate::v2_7_2::types::RunStatusDetailsRequestEntity::try_from(
+                            body.clone(),
+                        )?,
                     )
                     .await?
                     .into())
@@ -10736,16 +9074,9 @@ impl<'a> DynamicProcessorsApi<'a> {
                 };
                 Ok(api
                     .get_processor_run_status_details(
-                        &serde_json::from_value::<
-                            crate::v2_8_0::types::RunStatusDetailsRequestEntity,
-                        >(body.clone())
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "get_processor_run_status_details", e
-                            ),
-                            version: "2.8.0".to_string(),
-                        })?,
+                        &crate::v2_8_0::types::RunStatusDetailsRequestEntity::try_from(
+                            body.clone(),
+                        )?,
                     )
                     .await?
                     .into())
@@ -10853,7 +9184,7 @@ impl<'a> DynamicProcessorsApi<'a> {
     pub async fn submit_processor_verification_request(
         &self,
         id: &str,
-        body: &serde_json::Value,
+        body: &types::VerifyConfigRequestEntity,
     ) -> Result<types::VerifyConfigRequestDto, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -10863,16 +9194,7 @@ impl<'a> DynamicProcessorsApi<'a> {
                 };
                 Ok(api
                     .submit_processor_verification_request(
-                        &serde_json::from_value::<crate::v2_6_0::types::VerifyConfigRequestEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "submit_processor_verification_request", e
-                            ),
-                            version: "2.6.0".to_string(),
-                        })?,
+                        &crate::v2_6_0::types::VerifyConfigRequestEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -10884,16 +9206,7 @@ impl<'a> DynamicProcessorsApi<'a> {
                 };
                 Ok(api
                     .submit_processor_verification_request(
-                        &serde_json::from_value::<crate::v2_7_2::types::VerifyConfigRequestEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "submit_processor_verification_request", e
-                            ),
-                            version: "2.7.2".to_string(),
-                        })?,
+                        &crate::v2_7_2::types::VerifyConfigRequestEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -10905,16 +9218,7 @@ impl<'a> DynamicProcessorsApi<'a> {
                 };
                 Ok(api
                     .submit_processor_verification_request(
-                        &serde_json::from_value::<crate::v2_8_0::types::VerifyConfigRequestEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "submit_processor_verification_request", e
-                            ),
-                            version: "2.8.0".to_string(),
-                        })?,
+                        &crate::v2_8_0::types::VerifyConfigRequestEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -10951,7 +9255,7 @@ impl<'a> DynamicProcessorsApi<'a> {
     pub async fn update_processor(
         &self,
         id: &str,
-        body: &serde_json::Value,
+        body: &types::ProcessorEntity,
     ) -> Result<types::ProcessorEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -10961,13 +9265,7 @@ impl<'a> DynamicProcessorsApi<'a> {
                 Ok(api
                     .update_processor(
                         id,
-                        &serde_json::from_value::<crate::v2_6_0::types::ProcessorEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!("{} (body deserialize: {})", "update_processor", e),
-                            version: "2.6.0".to_string(),
-                        })?,
+                        &crate::v2_6_0::types::ProcessorEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -10979,13 +9277,7 @@ impl<'a> DynamicProcessorsApi<'a> {
                 Ok(api
                     .update_processor(
                         id,
-                        &serde_json::from_value::<crate::v2_7_2::types::ProcessorEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!("{} (body deserialize: {})", "update_processor", e),
-                            version: "2.7.2".to_string(),
-                        })?,
+                        &crate::v2_7_2::types::ProcessorEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -10997,13 +9289,7 @@ impl<'a> DynamicProcessorsApi<'a> {
                 Ok(api
                     .update_processor(
                         id,
-                        &serde_json::from_value::<crate::v2_8_0::types::ProcessorEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!("{} (body deserialize: {})", "update_processor", e),
-                            version: "2.8.0".to_string(),
-                        })?,
+                        &crate::v2_8_0::types::ProcessorEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -11014,7 +9300,7 @@ impl<'a> DynamicProcessorsApi<'a> {
     pub async fn update_run_status_4(
         &self,
         id: &str,
-        body: &serde_json::Value,
+        body: &types::ProcessorRunStatusEntity,
     ) -> Result<types::ProcessorEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -11023,18 +9309,9 @@ impl<'a> DynamicProcessorsApi<'a> {
                     id,
                 };
                 Ok(api
-                    .update_run_status_4(
-                        &serde_json::from_value::<crate::v2_6_0::types::ProcessorRunStatusEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "update_run_status_4", e
-                            ),
-                            version: "2.6.0".to_string(),
-                        })?,
-                    )
+                    .update_run_status_4(&crate::v2_6_0::types::ProcessorRunStatusEntity::try_from(
+                        body.clone(),
+                    )?)
                     .await?
                     .into())
             }
@@ -11044,18 +9321,9 @@ impl<'a> DynamicProcessorsApi<'a> {
                     id,
                 };
                 Ok(api
-                    .update_run_status_4(
-                        &serde_json::from_value::<crate::v2_7_2::types::ProcessorRunStatusEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "update_run_status_4", e
-                            ),
-                            version: "2.7.2".to_string(),
-                        })?,
-                    )
+                    .update_run_status_4(&crate::v2_7_2::types::ProcessorRunStatusEntity::try_from(
+                        body.clone(),
+                    )?)
                     .await?
                     .into())
             }
@@ -11065,18 +9333,9 @@ impl<'a> DynamicProcessorsApi<'a> {
                     id,
                 };
                 Ok(api
-                    .update_run_status_4(
-                        &serde_json::from_value::<crate::v2_8_0::types::ProcessorRunStatusEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "update_run_status_4", e
-                            ),
-                            version: "2.8.0".to_string(),
-                        })?,
-                    )
+                    .update_run_status_4(&crate::v2_8_0::types::ProcessorRunStatusEntity::try_from(
+                        body.clone(),
+                    )?)
                     .await?
                     .into())
             }
@@ -11235,7 +9494,7 @@ impl<'a> DynamicProvenanceApi<'a> {
     /// Submits a lineage query
     pub async fn submit_lineage_request(
         &self,
-        body: &serde_json::Value,
+        body: &types::LineageEntity,
     ) -> Result<types::LineageDto, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -11243,18 +9502,9 @@ impl<'a> DynamicProvenanceApi<'a> {
                     client: self.client,
                 };
                 Ok(api
-                    .submit_lineage_request(
-                        &serde_json::from_value::<crate::v2_6_0::types::LineageEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "submit_lineage_request", e
-                            ),
-                            version: "2.6.0".to_string(),
-                        })?,
-                    )
+                    .submit_lineage_request(&crate::v2_6_0::types::LineageEntity::try_from(
+                        body.clone(),
+                    )?)
                     .await?
                     .into())
             }
@@ -11263,18 +9513,9 @@ impl<'a> DynamicProvenanceApi<'a> {
                     client: self.client,
                 };
                 Ok(api
-                    .submit_lineage_request(
-                        &serde_json::from_value::<crate::v2_7_2::types::LineageEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "submit_lineage_request", e
-                            ),
-                            version: "2.7.2".to_string(),
-                        })?,
-                    )
+                    .submit_lineage_request(&crate::v2_7_2::types::LineageEntity::try_from(
+                        body.clone(),
+                    )?)
                     .await?
                     .into())
             }
@@ -11283,18 +9524,9 @@ impl<'a> DynamicProvenanceApi<'a> {
                     client: self.client,
                 };
                 Ok(api
-                    .submit_lineage_request(
-                        &serde_json::from_value::<crate::v2_8_0::types::LineageEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "submit_lineage_request", e
-                            ),
-                            version: "2.8.0".to_string(),
-                        })?,
-                    )
+                    .submit_lineage_request(&crate::v2_8_0::types::LineageEntity::try_from(
+                        body.clone(),
+                    )?)
                     .await?
                     .into())
             }
@@ -11303,7 +9535,7 @@ impl<'a> DynamicProvenanceApi<'a> {
     /// Submits a provenance query
     pub async fn submit_provenance_request(
         &self,
-        body: &serde_json::Value,
+        body: &types::ProvenanceEntity,
     ) -> Result<types::ProvenanceDto, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -11311,18 +9543,9 @@ impl<'a> DynamicProvenanceApi<'a> {
                     client: self.client,
                 };
                 Ok(api
-                    .submit_provenance_request(
-                        &serde_json::from_value::<crate::v2_6_0::types::ProvenanceEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "submit_provenance_request", e
-                            ),
-                            version: "2.6.0".to_string(),
-                        })?,
-                    )
+                    .submit_provenance_request(&crate::v2_6_0::types::ProvenanceEntity::try_from(
+                        body.clone(),
+                    )?)
                     .await?
                     .into())
             }
@@ -11331,18 +9554,9 @@ impl<'a> DynamicProvenanceApi<'a> {
                     client: self.client,
                 };
                 Ok(api
-                    .submit_provenance_request(
-                        &serde_json::from_value::<crate::v2_7_2::types::ProvenanceEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "submit_provenance_request", e
-                            ),
-                            version: "2.7.2".to_string(),
-                        })?,
-                    )
+                    .submit_provenance_request(&crate::v2_7_2::types::ProvenanceEntity::try_from(
+                        body.clone(),
+                    )?)
                     .await?
                     .into())
             }
@@ -11351,18 +9565,9 @@ impl<'a> DynamicProvenanceApi<'a> {
                     client: self.client,
                 };
                 Ok(api
-                    .submit_provenance_request(
-                        &serde_json::from_value::<crate::v2_8_0::types::ProvenanceEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "submit_provenance_request", e
-                            ),
-                            version: "2.8.0".to_string(),
-                        })?,
-                    )
+                    .submit_provenance_request(&crate::v2_8_0::types::ProvenanceEntity::try_from(
+                        body.clone(),
+                    )?)
                     .await?
                     .into())
             }
@@ -11502,7 +9707,7 @@ impl<'a> DynamicProvenanceEventsApi<'a> {
     /// Replays content from a provenance event
     pub async fn submit_replay(
         &self,
-        body: &serde_json::Value,
+        body: &types::SubmitReplayRequestEntity,
     ) -> Result<types::ProvenanceEventDto, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -11510,15 +9715,9 @@ impl<'a> DynamicProvenanceEventsApi<'a> {
                     client: self.client,
                 };
                 Ok(api
-                    .submit_replay(
-                        &serde_json::from_value::<crate::v2_6_0::types::SubmitReplayRequestEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!("{} (body deserialize: {})", "submit_replay", e),
-                            version: "2.6.0".to_string(),
-                        })?,
-                    )
+                    .submit_replay(&crate::v2_6_0::types::SubmitReplayRequestEntity::try_from(
+                        body.clone(),
+                    )?)
                     .await?
                     .into())
             }
@@ -11527,15 +9726,9 @@ impl<'a> DynamicProvenanceEventsApi<'a> {
                     client: self.client,
                 };
                 Ok(api
-                    .submit_replay(
-                        &serde_json::from_value::<crate::v2_7_2::types::SubmitReplayRequestEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!("{} (body deserialize: {})", "submit_replay", e),
-                            version: "2.7.2".to_string(),
-                        })?,
-                    )
+                    .submit_replay(&crate::v2_7_2::types::SubmitReplayRequestEntity::try_from(
+                        body.clone(),
+                    )?)
                     .await?
                     .into())
             }
@@ -11544,15 +9737,9 @@ impl<'a> DynamicProvenanceEventsApi<'a> {
                     client: self.client,
                 };
                 Ok(api
-                    .submit_replay(
-                        &serde_json::from_value::<crate::v2_8_0::types::SubmitReplayRequestEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!("{} (body deserialize: {})", "submit_replay", e),
-                            version: "2.8.0".to_string(),
-                        })?,
-                    )
+                    .submit_replay(&crate::v2_8_0::types::SubmitReplayRequestEntity::try_from(
+                        body.clone(),
+                    )?)
                     .await?
                     .into())
             }
@@ -11561,74 +9748,47 @@ impl<'a> DynamicProvenanceEventsApi<'a> {
     /// Replays content from a provenance event
     pub async fn submit_replay_latest_event(
         &self,
-        body: &serde_json::Value,
+        body: &types::ReplayLastEventRequestEntity,
     ) -> Result<types::ReplayLastEventResponseEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::provenanceevents::ProvenanceEventsApi {
                     client: self.client,
                 };
-                Ok(
-                    api
-                        .submit_replay_latest_event(
-                            &serde_json::from_value::<
-                                crate::v2_6_0::types::ReplayLastEventRequestEntity,
-                            >(body.clone())
-                            .map_err(|e| NifiError::UnsupportedEndpoint {
-                                endpoint: format!(
-                                    "{} (body deserialize: {})",
-                                    "submit_replay_latest_event", e
-                                ),
-                                version: "2.6.0".to_string(),
-                            })?,
-                        )
-                        .await?
-                        .into(),
-                )
+                Ok(api
+                    .submit_replay_latest_event(
+                        &crate::v2_6_0::types::ReplayLastEventRequestEntity::try_from(
+                            body.clone(),
+                        )?,
+                    )
+                    .await?
+                    .into())
             }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::provenanceevents::ProvenanceEventsApi {
                     client: self.client,
                 };
-                Ok(
-                    api
-                        .submit_replay_latest_event(
-                            &serde_json::from_value::<
-                                crate::v2_7_2::types::ReplayLastEventRequestEntity,
-                            >(body.clone())
-                            .map_err(|e| NifiError::UnsupportedEndpoint {
-                                endpoint: format!(
-                                    "{} (body deserialize: {})",
-                                    "submit_replay_latest_event", e
-                                ),
-                                version: "2.7.2".to_string(),
-                            })?,
-                        )
-                        .await?
-                        .into(),
-                )
+                Ok(api
+                    .submit_replay_latest_event(
+                        &crate::v2_7_2::types::ReplayLastEventRequestEntity::try_from(
+                            body.clone(),
+                        )?,
+                    )
+                    .await?
+                    .into())
             }
             DetectedVersion::V2_8_0 => {
                 let api = crate::v2_8_0::api::provenanceevents::ProvenanceEventsApi {
                     client: self.client,
                 };
-                Ok(
-                    api
-                        .submit_replay_latest_event(
-                            &serde_json::from_value::<
-                                crate::v2_8_0::types::ReplayLastEventRequestEntity,
-                            >(body.clone())
-                            .map_err(|e| NifiError::UnsupportedEndpoint {
-                                endpoint: format!(
-                                    "{} (body deserialize: {})",
-                                    "submit_replay_latest_event", e
-                                ),
-                                version: "2.8.0".to_string(),
-                            })?,
-                        )
-                        .await?
-                        .into(),
-                )
+                Ok(api
+                    .submit_replay_latest_event(
+                        &crate::v2_8_0::types::ReplayLastEventRequestEntity::try_from(
+                            body.clone(),
+                        )?,
+                    )
+                    .await?
+                    .into())
             }
         }
     }
@@ -11644,7 +9804,7 @@ impl<'a> DynamicRemoteProcessGroupsApi<'a> {
     pub async fn clear_bulletins_6(
         &self,
         id: &str,
-        body: &serde_json::Value,
+        body: &types::ClearBulletinsRequestEntity,
     ) -> Result<types::ClearBulletinsResultEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => Err(NifiError::UnsupportedEndpoint {
@@ -11657,23 +9817,12 @@ impl<'a> DynamicRemoteProcessGroupsApi<'a> {
                         client: self.client,
                         id,
                     };
-                Ok(
-                    api
-                        .clear_bulletins_6(
-                            &serde_json::from_value::<
-                                crate::v2_7_2::types::ClearBulletinsRequestEntity,
-                            >(body.clone())
-                            .map_err(|e| NifiError::UnsupportedEndpoint {
-                                endpoint: format!(
-                                    "{} (body deserialize: {})",
-                                    "clear_bulletins_6", e
-                                ),
-                                version: "2.7.2".to_string(),
-                            })?,
-                        )
-                        .await?
-                        .into(),
-                )
+                Ok(api
+                    .clear_bulletins_6(
+                        &crate::v2_7_2::types::ClearBulletinsRequestEntity::try_from(body.clone())?,
+                    )
+                    .await?
+                    .into())
             }
             DetectedVersion::V2_8_0 => {
                 let api =
@@ -11681,23 +9830,12 @@ impl<'a> DynamicRemoteProcessGroupsApi<'a> {
                         client: self.client,
                         id,
                     };
-                Ok(
-                    api
-                        .clear_bulletins_6(
-                            &serde_json::from_value::<
-                                crate::v2_8_0::types::ClearBulletinsRequestEntity,
-                            >(body.clone())
-                            .map_err(|e| NifiError::UnsupportedEndpoint {
-                                endpoint: format!(
-                                    "{} (body deserialize: {})",
-                                    "clear_bulletins_6", e
-                                ),
-                                version: "2.8.0".to_string(),
-                            })?,
-                        )
-                        .await?
-                        .into(),
-                )
+                Ok(api
+                    .clear_bulletins_6(
+                        &crate::v2_8_0::types::ClearBulletinsRequestEntity::try_from(body.clone())?,
+                    )
+                    .await?
+                    .into())
             }
         }
     }
@@ -11810,7 +9948,7 @@ impl<'a> DynamicRemoteProcessGroupsApi<'a> {
     pub async fn update_remote_process_group(
         &self,
         id: &str,
-        body: &serde_json::Value,
+        body: &types::RemoteProcessGroupEntity,
     ) -> Result<types::RemoteProcessGroupEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -11820,16 +9958,7 @@ impl<'a> DynamicRemoteProcessGroupsApi<'a> {
                 Ok(api
                     .update_remote_process_group(
                         id,
-                        &serde_json::from_value::<crate::v2_6_0::types::RemoteProcessGroupEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "update_remote_process_group", e
-                            ),
-                            version: "2.6.0".to_string(),
-                        })?,
+                        &crate::v2_6_0::types::RemoteProcessGroupEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -11841,16 +9970,7 @@ impl<'a> DynamicRemoteProcessGroupsApi<'a> {
                 Ok(api
                     .update_remote_process_group(
                         id,
-                        &serde_json::from_value::<crate::v2_7_2::types::RemoteProcessGroupEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "update_remote_process_group", e
-                            ),
-                            version: "2.7.2".to_string(),
-                        })?,
+                        &crate::v2_7_2::types::RemoteProcessGroupEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -11862,16 +9982,7 @@ impl<'a> DynamicRemoteProcessGroupsApi<'a> {
                 Ok(api
                     .update_remote_process_group(
                         id,
-                        &serde_json::from_value::<crate::v2_8_0::types::RemoteProcessGroupEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "update_remote_process_group", e
-                            ),
-                            version: "2.8.0".to_string(),
-                        })?,
+                        &crate::v2_8_0::types::RemoteProcessGroupEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -11883,7 +9994,7 @@ impl<'a> DynamicRemoteProcessGroupsApi<'a> {
         &self,
         id: &str,
         port_id: &str,
-        body: &serde_json::Value,
+        body: &types::RemoteProcessGroupPortEntity,
     ) -> Result<types::RemoteProcessGroupPortEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -11892,24 +10003,15 @@ impl<'a> DynamicRemoteProcessGroupsApi<'a> {
                         client: self.client,
                         id,
                     };
-                Ok(
-                    api
-                        .update_remote_process_group_input_port(
-                            port_id,
-                            &serde_json::from_value::<
-                                crate::v2_6_0::types::RemoteProcessGroupPortEntity,
-                            >(body.clone())
-                            .map_err(|e| NifiError::UnsupportedEndpoint {
-                                endpoint: format!(
-                                    "{} (body deserialize: {})",
-                                    "update_remote_process_group_input_port", e
-                                ),
-                                version: "2.6.0".to_string(),
-                            })?,
-                        )
-                        .await?
-                        .into(),
-                )
+                Ok(api
+                    .update_remote_process_group_input_port(
+                        port_id,
+                        &crate::v2_6_0::types::RemoteProcessGroupPortEntity::try_from(
+                            body.clone(),
+                        )?,
+                    )
+                    .await?
+                    .into())
             }
             DetectedVersion::V2_7_2 => {
                 let api =
@@ -11917,24 +10019,15 @@ impl<'a> DynamicRemoteProcessGroupsApi<'a> {
                         client: self.client,
                         id,
                     };
-                Ok(
-                    api
-                        .update_remote_process_group_input_port(
-                            port_id,
-                            &serde_json::from_value::<
-                                crate::v2_7_2::types::RemoteProcessGroupPortEntity,
-                            >(body.clone())
-                            .map_err(|e| NifiError::UnsupportedEndpoint {
-                                endpoint: format!(
-                                    "{} (body deserialize: {})",
-                                    "update_remote_process_group_input_port", e
-                                ),
-                                version: "2.7.2".to_string(),
-                            })?,
-                        )
-                        .await?
-                        .into(),
-                )
+                Ok(api
+                    .update_remote_process_group_input_port(
+                        port_id,
+                        &crate::v2_7_2::types::RemoteProcessGroupPortEntity::try_from(
+                            body.clone(),
+                        )?,
+                    )
+                    .await?
+                    .into())
             }
             DetectedVersion::V2_8_0 => {
                 let api =
@@ -11942,24 +10035,15 @@ impl<'a> DynamicRemoteProcessGroupsApi<'a> {
                         client: self.client,
                         id,
                     };
-                Ok(
-                    api
-                        .update_remote_process_group_input_port(
-                            port_id,
-                            &serde_json::from_value::<
-                                crate::v2_8_0::types::RemoteProcessGroupPortEntity,
-                            >(body.clone())
-                            .map_err(|e| NifiError::UnsupportedEndpoint {
-                                endpoint: format!(
-                                    "{} (body deserialize: {})",
-                                    "update_remote_process_group_input_port", e
-                                ),
-                                version: "2.8.0".to_string(),
-                            })?,
-                        )
-                        .await?
-                        .into(),
-                )
+                Ok(api
+                    .update_remote_process_group_input_port(
+                        port_id,
+                        &crate::v2_8_0::types::RemoteProcessGroupPortEntity::try_from(
+                            body.clone(),
+                        )?,
+                    )
+                    .await?
+                    .into())
             }
         }
     }
@@ -11968,7 +10052,7 @@ impl<'a> DynamicRemoteProcessGroupsApi<'a> {
         &self,
         id: &str,
         port_id: &str,
-        body: &serde_json::Value,
+        body: &types::RemotePortRunStatusEntity,
     ) -> Result<types::RemoteProcessGroupPortEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -11980,16 +10064,7 @@ impl<'a> DynamicRemoteProcessGroupsApi<'a> {
                 Ok(api
                     .update_remote_process_group_input_port_run_status(
                         port_id,
-                        &serde_json::from_value::<crate::v2_6_0::types::RemotePortRunStatusEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "update_remote_process_group_input_port_run_status", e
-                            ),
-                            version: "2.6.0".to_string(),
-                        })?,
+                        &crate::v2_6_0::types::RemotePortRunStatusEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -12003,16 +10078,7 @@ impl<'a> DynamicRemoteProcessGroupsApi<'a> {
                 Ok(api
                     .update_remote_process_group_input_port_run_status(
                         port_id,
-                        &serde_json::from_value::<crate::v2_7_2::types::RemotePortRunStatusEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "update_remote_process_group_input_port_run_status", e
-                            ),
-                            version: "2.7.2".to_string(),
-                        })?,
+                        &crate::v2_7_2::types::RemotePortRunStatusEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -12026,16 +10092,7 @@ impl<'a> DynamicRemoteProcessGroupsApi<'a> {
                 Ok(api
                     .update_remote_process_group_input_port_run_status(
                         port_id,
-                        &serde_json::from_value::<crate::v2_8_0::types::RemotePortRunStatusEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "update_remote_process_group_input_port_run_status", e
-                            ),
-                            version: "2.8.0".to_string(),
-                        })?,
+                        &crate::v2_8_0::types::RemotePortRunStatusEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -12047,7 +10104,7 @@ impl<'a> DynamicRemoteProcessGroupsApi<'a> {
         &self,
         id: &str,
         port_id: &str,
-        body: &serde_json::Value,
+        body: &types::RemoteProcessGroupPortEntity,
     ) -> Result<types::RemoteProcessGroupPortEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -12056,24 +10113,15 @@ impl<'a> DynamicRemoteProcessGroupsApi<'a> {
                         client: self.client,
                         id,
                     };
-                Ok(
-                    api
-                        .update_remote_process_group_output_port(
-                            port_id,
-                            &serde_json::from_value::<
-                                crate::v2_6_0::types::RemoteProcessGroupPortEntity,
-                            >(body.clone())
-                            .map_err(|e| NifiError::UnsupportedEndpoint {
-                                endpoint: format!(
-                                    "{} (body deserialize: {})",
-                                    "update_remote_process_group_output_port", e
-                                ),
-                                version: "2.6.0".to_string(),
-                            })?,
-                        )
-                        .await?
-                        .into(),
-                )
+                Ok(api
+                    .update_remote_process_group_output_port(
+                        port_id,
+                        &crate::v2_6_0::types::RemoteProcessGroupPortEntity::try_from(
+                            body.clone(),
+                        )?,
+                    )
+                    .await?
+                    .into())
             }
             DetectedVersion::V2_7_2 => {
                 let api =
@@ -12081,24 +10129,15 @@ impl<'a> DynamicRemoteProcessGroupsApi<'a> {
                         client: self.client,
                         id,
                     };
-                Ok(
-                    api
-                        .update_remote_process_group_output_port(
-                            port_id,
-                            &serde_json::from_value::<
-                                crate::v2_7_2::types::RemoteProcessGroupPortEntity,
-                            >(body.clone())
-                            .map_err(|e| NifiError::UnsupportedEndpoint {
-                                endpoint: format!(
-                                    "{} (body deserialize: {})",
-                                    "update_remote_process_group_output_port", e
-                                ),
-                                version: "2.7.2".to_string(),
-                            })?,
-                        )
-                        .await?
-                        .into(),
-                )
+                Ok(api
+                    .update_remote_process_group_output_port(
+                        port_id,
+                        &crate::v2_7_2::types::RemoteProcessGroupPortEntity::try_from(
+                            body.clone(),
+                        )?,
+                    )
+                    .await?
+                    .into())
             }
             DetectedVersion::V2_8_0 => {
                 let api =
@@ -12106,24 +10145,15 @@ impl<'a> DynamicRemoteProcessGroupsApi<'a> {
                         client: self.client,
                         id,
                     };
-                Ok(
-                    api
-                        .update_remote_process_group_output_port(
-                            port_id,
-                            &serde_json::from_value::<
-                                crate::v2_8_0::types::RemoteProcessGroupPortEntity,
-                            >(body.clone())
-                            .map_err(|e| NifiError::UnsupportedEndpoint {
-                                endpoint: format!(
-                                    "{} (body deserialize: {})",
-                                    "update_remote_process_group_output_port", e
-                                ),
-                                version: "2.8.0".to_string(),
-                            })?,
-                        )
-                        .await?
-                        .into(),
-                )
+                Ok(api
+                    .update_remote_process_group_output_port(
+                        port_id,
+                        &crate::v2_8_0::types::RemoteProcessGroupPortEntity::try_from(
+                            body.clone(),
+                        )?,
+                    )
+                    .await?
+                    .into())
             }
         }
     }
@@ -12132,7 +10162,7 @@ impl<'a> DynamicRemoteProcessGroupsApi<'a> {
         &self,
         id: &str,
         port_id: &str,
-        body: &serde_json::Value,
+        body: &types::RemotePortRunStatusEntity,
     ) -> Result<types::RemoteProcessGroupPortEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -12144,16 +10174,7 @@ impl<'a> DynamicRemoteProcessGroupsApi<'a> {
                 Ok(api
                     .update_remote_process_group_output_port_run_status(
                         port_id,
-                        &serde_json::from_value::<crate::v2_6_0::types::RemotePortRunStatusEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "update_remote_process_group_output_port_run_status", e
-                            ),
-                            version: "2.6.0".to_string(),
-                        })?,
+                        &crate::v2_6_0::types::RemotePortRunStatusEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -12167,16 +10188,7 @@ impl<'a> DynamicRemoteProcessGroupsApi<'a> {
                 Ok(api
                     .update_remote_process_group_output_port_run_status(
                         port_id,
-                        &serde_json::from_value::<crate::v2_7_2::types::RemotePortRunStatusEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "update_remote_process_group_output_port_run_status", e
-                            ),
-                            version: "2.7.2".to_string(),
-                        })?,
+                        &crate::v2_7_2::types::RemotePortRunStatusEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -12190,16 +10202,7 @@ impl<'a> DynamicRemoteProcessGroupsApi<'a> {
                 Ok(api
                     .update_remote_process_group_output_port_run_status(
                         port_id,
-                        &serde_json::from_value::<crate::v2_8_0::types::RemotePortRunStatusEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "update_remote_process_group_output_port_run_status", e
-                            ),
-                            version: "2.8.0".to_string(),
-                        })?,
+                        &crate::v2_8_0::types::RemotePortRunStatusEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -12210,7 +10213,7 @@ impl<'a> DynamicRemoteProcessGroupsApi<'a> {
     pub async fn update_remote_process_group_run_status(
         &self,
         id: &str,
-        body: &serde_json::Value,
+        body: &types::RemotePortRunStatusEntity,
     ) -> Result<types::RemoteProcessGroupEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -12221,16 +10224,7 @@ impl<'a> DynamicRemoteProcessGroupsApi<'a> {
                     };
                 Ok(api
                     .update_remote_process_group_run_status(
-                        &serde_json::from_value::<crate::v2_6_0::types::RemotePortRunStatusEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "update_remote_process_group_run_status", e
-                            ),
-                            version: "2.6.0".to_string(),
-                        })?,
+                        &crate::v2_6_0::types::RemotePortRunStatusEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -12243,16 +10237,7 @@ impl<'a> DynamicRemoteProcessGroupsApi<'a> {
                     };
                 Ok(api
                     .update_remote_process_group_run_status(
-                        &serde_json::from_value::<crate::v2_7_2::types::RemotePortRunStatusEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "update_remote_process_group_run_status", e
-                            ),
-                            version: "2.7.2".to_string(),
-                        })?,
+                        &crate::v2_7_2::types::RemotePortRunStatusEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -12265,16 +10250,7 @@ impl<'a> DynamicRemoteProcessGroupsApi<'a> {
                     };
                 Ok(api
                     .update_remote_process_group_run_status(
-                        &serde_json::from_value::<crate::v2_8_0::types::RemotePortRunStatusEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "update_remote_process_group_run_status", e
-                            ),
-                            version: "2.8.0".to_string(),
-                        })?,
+                        &crate::v2_8_0::types::RemotePortRunStatusEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -12285,7 +10261,7 @@ impl<'a> DynamicRemoteProcessGroupsApi<'a> {
     pub async fn update_remote_process_group_run_statuses(
         &self,
         id: &str,
-        body: &serde_json::Value,
+        body: &types::RemotePortRunStatusEntity,
     ) -> Result<types::RemoteProcessGroupEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -12296,16 +10272,7 @@ impl<'a> DynamicRemoteProcessGroupsApi<'a> {
                     };
                 Ok(api
                     .update_remote_process_group_run_statuses(
-                        &serde_json::from_value::<crate::v2_6_0::types::RemotePortRunStatusEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "update_remote_process_group_run_statuses", e
-                            ),
-                            version: "2.6.0".to_string(),
-                        })?,
+                        &crate::v2_6_0::types::RemotePortRunStatusEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -12318,16 +10285,7 @@ impl<'a> DynamicRemoteProcessGroupsApi<'a> {
                     };
                 Ok(api
                     .update_remote_process_group_run_statuses(
-                        &serde_json::from_value::<crate::v2_7_2::types::RemotePortRunStatusEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "update_remote_process_group_run_statuses", e
-                            ),
-                            version: "2.7.2".to_string(),
-                        })?,
+                        &crate::v2_7_2::types::RemotePortRunStatusEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -12340,16 +10298,7 @@ impl<'a> DynamicRemoteProcessGroupsApi<'a> {
                     };
                 Ok(api
                     .update_remote_process_group_run_statuses(
-                        &serde_json::from_value::<crate::v2_8_0::types::RemotePortRunStatusEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "update_remote_process_group_run_statuses", e
-                            ),
-                            version: "2.8.0".to_string(),
-                        })?,
+                        &crate::v2_8_0::types::RemotePortRunStatusEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -12368,7 +10317,7 @@ impl<'a> DynamicReportingTasksApi<'a> {
     pub async fn analyze_configuration_3(
         &self,
         id: &str,
-        body: &serde_json::Value,
+        body: &types::ConfigurationAnalysisEntity,
     ) -> Result<types::ConfigurationAnalysisDto, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -12376,69 +10325,36 @@ impl<'a> DynamicReportingTasksApi<'a> {
                     client: self.client,
                     id,
                 };
-                Ok(
-                    api
-                        .analyze_configuration_3(
-                            &serde_json::from_value::<
-                                crate::v2_6_0::types::ConfigurationAnalysisEntity,
-                            >(body.clone())
-                            .map_err(|e| NifiError::UnsupportedEndpoint {
-                                endpoint: format!(
-                                    "{} (body deserialize: {})",
-                                    "analyze_configuration_3", e
-                                ),
-                                version: "2.6.0".to_string(),
-                            })?,
-                        )
-                        .await?
-                        .into(),
-                )
+                Ok(api
+                    .analyze_configuration_3(
+                        &crate::v2_6_0::types::ConfigurationAnalysisEntity::try_from(body.clone())?,
+                    )
+                    .await?
+                    .into())
             }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::reportingtasks::ReportingTasksConfigApi {
                     client: self.client,
                     id,
                 };
-                Ok(
-                    api
-                        .analyze_configuration_3(
-                            &serde_json::from_value::<
-                                crate::v2_7_2::types::ConfigurationAnalysisEntity,
-                            >(body.clone())
-                            .map_err(|e| NifiError::UnsupportedEndpoint {
-                                endpoint: format!(
-                                    "{} (body deserialize: {})",
-                                    "analyze_configuration_3", e
-                                ),
-                                version: "2.7.2".to_string(),
-                            })?,
-                        )
-                        .await?
-                        .into(),
-                )
+                Ok(api
+                    .analyze_configuration_3(
+                        &crate::v2_7_2::types::ConfigurationAnalysisEntity::try_from(body.clone())?,
+                    )
+                    .await?
+                    .into())
             }
             DetectedVersion::V2_8_0 => {
                 let api = crate::v2_8_0::api::reportingtasks::ReportingTasksConfigApi {
                     client: self.client,
                     id,
                 };
-                Ok(
-                    api
-                        .analyze_configuration_3(
-                            &serde_json::from_value::<
-                                crate::v2_8_0::types::ConfigurationAnalysisEntity,
-                            >(body.clone())
-                            .map_err(|e| NifiError::UnsupportedEndpoint {
-                                endpoint: format!(
-                                    "{} (body deserialize: {})",
-                                    "analyze_configuration_3", e
-                                ),
-                                version: "2.8.0".to_string(),
-                            })?,
-                        )
-                        .await?
-                        .into(),
-                )
+                Ok(api
+                    .analyze_configuration_3(
+                        &crate::v2_8_0::types::ConfigurationAnalysisEntity::try_from(body.clone())?,
+                    )
+                    .await?
+                    .into())
             }
         }
     }
@@ -12446,7 +10362,7 @@ impl<'a> DynamicReportingTasksApi<'a> {
     pub async fn clear_bulletins_7(
         &self,
         id: &str,
-        body: &serde_json::Value,
+        body: &types::ClearBulletinsRequestEntity,
     ) -> Result<types::ClearBulletinsResultEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => Err(NifiError::UnsupportedEndpoint {
@@ -12458,46 +10374,24 @@ impl<'a> DynamicReportingTasksApi<'a> {
                     client: self.client,
                     id,
                 };
-                Ok(
-                    api
-                        .clear_bulletins_7(
-                            &serde_json::from_value::<
-                                crate::v2_7_2::types::ClearBulletinsRequestEntity,
-                            >(body.clone())
-                            .map_err(|e| NifiError::UnsupportedEndpoint {
-                                endpoint: format!(
-                                    "{} (body deserialize: {})",
-                                    "clear_bulletins_7", e
-                                ),
-                                version: "2.7.2".to_string(),
-                            })?,
-                        )
-                        .await?
-                        .into(),
-                )
+                Ok(api
+                    .clear_bulletins_7(
+                        &crate::v2_7_2::types::ClearBulletinsRequestEntity::try_from(body.clone())?,
+                    )
+                    .await?
+                    .into())
             }
             DetectedVersion::V2_8_0 => {
                 let api = crate::v2_8_0::api::reportingtasks::ReportingTasksBulletinsApi {
                     client: self.client,
                     id,
                 };
-                Ok(
-                    api
-                        .clear_bulletins_7(
-                            &serde_json::from_value::<
-                                crate::v2_8_0::types::ClearBulletinsRequestEntity,
-                            >(body.clone())
-                            .map_err(|e| NifiError::UnsupportedEndpoint {
-                                endpoint: format!(
-                                    "{} (body deserialize: {})",
-                                    "clear_bulletins_7", e
-                                ),
-                                version: "2.8.0".to_string(),
-                            })?,
-                        )
-                        .await?
-                        .into(),
-                )
+                Ok(api
+                    .clear_bulletins_7(
+                        &crate::v2_8_0::types::ClearBulletinsRequestEntity::try_from(body.clone())?,
+                    )
+                    .await?
+                    .into())
             }
         }
     }
@@ -12505,7 +10399,7 @@ impl<'a> DynamicReportingTasksApi<'a> {
     pub async fn clear_state_4(
         &self,
         id: &str,
-        body: &serde_json::Value,
+        body: &types::ComponentStateEntity,
     ) -> Result<types::ComponentStateDto, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -12514,15 +10408,9 @@ impl<'a> DynamicReportingTasksApi<'a> {
                     id,
                 };
                 Ok(api
-                    .clear_state_4(
-                        &serde_json::from_value::<crate::v2_6_0::types::ComponentStateEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!("{} (body deserialize: {})", "clear_state_4", e),
-                            version: "2.6.0".to_string(),
-                        })?,
-                    )
+                    .clear_state_4(&crate::v2_6_0::types::ComponentStateEntity::try_from(
+                        body.clone(),
+                    )?)
                     .await?
                     .into())
             }
@@ -12532,15 +10420,9 @@ impl<'a> DynamicReportingTasksApi<'a> {
                     id,
                 };
                 Ok(api
-                    .clear_state_4(
-                        &serde_json::from_value::<crate::v2_7_2::types::ComponentStateEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!("{} (body deserialize: {})", "clear_state_4", e),
-                            version: "2.7.2".to_string(),
-                        })?,
-                    )
+                    .clear_state_4(&crate::v2_7_2::types::ComponentStateEntity::try_from(
+                        body.clone(),
+                    )?)
                     .await?
                     .into())
             }
@@ -12550,15 +10432,9 @@ impl<'a> DynamicReportingTasksApi<'a> {
                     id,
                 };
                 Ok(api
-                    .clear_state_4(
-                        &serde_json::from_value::<crate::v2_8_0::types::ComponentStateEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!("{} (body deserialize: {})", "clear_state_4", e),
-                            version: "2.8.0".to_string(),
-                        })?,
-                    )
+                    .clear_state_4(&crate::v2_8_0::types::ComponentStateEntity::try_from(
+                        body.clone(),
+                    )?)
                     .await?
                     .into())
             }
@@ -12758,7 +10634,7 @@ impl<'a> DynamicReportingTasksApi<'a> {
     pub async fn submit_config_verification_request_2(
         &self,
         id: &str,
-        body: &serde_json::Value,
+        body: &types::VerifyConfigRequestEntity,
     ) -> Result<types::VerifyConfigRequestDto, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -12768,16 +10644,7 @@ impl<'a> DynamicReportingTasksApi<'a> {
                 };
                 Ok(api
                     .submit_config_verification_request_2(
-                        &serde_json::from_value::<crate::v2_6_0::types::VerifyConfigRequestEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "submit_config_verification_request_2", e
-                            ),
-                            version: "2.6.0".to_string(),
-                        })?,
+                        &crate::v2_6_0::types::VerifyConfigRequestEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -12789,16 +10656,7 @@ impl<'a> DynamicReportingTasksApi<'a> {
                 };
                 Ok(api
                     .submit_config_verification_request_2(
-                        &serde_json::from_value::<crate::v2_7_2::types::VerifyConfigRequestEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "submit_config_verification_request_2", e
-                            ),
-                            version: "2.7.2".to_string(),
-                        })?,
+                        &crate::v2_7_2::types::VerifyConfigRequestEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -12810,16 +10668,7 @@ impl<'a> DynamicReportingTasksApi<'a> {
                 };
                 Ok(api
                     .submit_config_verification_request_2(
-                        &serde_json::from_value::<crate::v2_8_0::types::VerifyConfigRequestEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "submit_config_verification_request_2", e
-                            ),
-                            version: "2.8.0".to_string(),
-                        })?,
+                        &crate::v2_8_0::types::VerifyConfigRequestEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -12830,7 +10679,7 @@ impl<'a> DynamicReportingTasksApi<'a> {
     pub async fn update_reporting_task(
         &self,
         id: &str,
-        body: &serde_json::Value,
+        body: &types::ReportingTaskEntity,
     ) -> Result<types::ReportingTaskEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -12840,16 +10689,7 @@ impl<'a> DynamicReportingTasksApi<'a> {
                 Ok(api
                     .update_reporting_task(
                         id,
-                        &serde_json::from_value::<crate::v2_6_0::types::ReportingTaskEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "update_reporting_task", e
-                            ),
-                            version: "2.6.0".to_string(),
-                        })?,
+                        &crate::v2_6_0::types::ReportingTaskEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -12861,16 +10701,7 @@ impl<'a> DynamicReportingTasksApi<'a> {
                 Ok(api
                     .update_reporting_task(
                         id,
-                        &serde_json::from_value::<crate::v2_7_2::types::ReportingTaskEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "update_reporting_task", e
-                            ),
-                            version: "2.7.2".to_string(),
-                        })?,
+                        &crate::v2_7_2::types::ReportingTaskEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -12882,16 +10713,7 @@ impl<'a> DynamicReportingTasksApi<'a> {
                 Ok(api
                     .update_reporting_task(
                         id,
-                        &serde_json::from_value::<crate::v2_8_0::types::ReportingTaskEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "update_reporting_task", e
-                            ),
-                            version: "2.8.0".to_string(),
-                        })?,
+                        &crate::v2_8_0::types::ReportingTaskEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -12902,7 +10724,7 @@ impl<'a> DynamicReportingTasksApi<'a> {
     pub async fn update_run_status_5(
         &self,
         id: &str,
-        body: &serde_json::Value,
+        body: &types::ReportingTaskRunStatusEntity,
     ) -> Result<types::ReportingTaskEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -12910,69 +10732,42 @@ impl<'a> DynamicReportingTasksApi<'a> {
                     client: self.client,
                     id,
                 };
-                Ok(
-                    api
-                        .update_run_status_5(
-                            &serde_json::from_value::<
-                                crate::v2_6_0::types::ReportingTaskRunStatusEntity,
-                            >(body.clone())
-                            .map_err(|e| NifiError::UnsupportedEndpoint {
-                                endpoint: format!(
-                                    "{} (body deserialize: {})",
-                                    "update_run_status_5", e
-                                ),
-                                version: "2.6.0".to_string(),
-                            })?,
-                        )
-                        .await?
-                        .into(),
-                )
+                Ok(api
+                    .update_run_status_5(
+                        &crate::v2_6_0::types::ReportingTaskRunStatusEntity::try_from(
+                            body.clone(),
+                        )?,
+                    )
+                    .await?
+                    .into())
             }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::reportingtasks::ReportingTasksRunStatusApi {
                     client: self.client,
                     id,
                 };
-                Ok(
-                    api
-                        .update_run_status_5(
-                            &serde_json::from_value::<
-                                crate::v2_7_2::types::ReportingTaskRunStatusEntity,
-                            >(body.clone())
-                            .map_err(|e| NifiError::UnsupportedEndpoint {
-                                endpoint: format!(
-                                    "{} (body deserialize: {})",
-                                    "update_run_status_5", e
-                                ),
-                                version: "2.7.2".to_string(),
-                            })?,
-                        )
-                        .await?
-                        .into(),
-                )
+                Ok(api
+                    .update_run_status_5(
+                        &crate::v2_7_2::types::ReportingTaskRunStatusEntity::try_from(
+                            body.clone(),
+                        )?,
+                    )
+                    .await?
+                    .into())
             }
             DetectedVersion::V2_8_0 => {
                 let api = crate::v2_8_0::api::reportingtasks::ReportingTasksRunStatusApi {
                     client: self.client,
                     id,
                 };
-                Ok(
-                    api
-                        .update_run_status_5(
-                            &serde_json::from_value::<
-                                crate::v2_8_0::types::ReportingTaskRunStatusEntity,
-                            >(body.clone())
-                            .map_err(|e| NifiError::UnsupportedEndpoint {
-                                endpoint: format!(
-                                    "{} (body deserialize: {})",
-                                    "update_run_status_5", e
-                                ),
-                                version: "2.8.0".to_string(),
-                            })?,
-                        )
-                        .await?
-                        .into(),
-                )
+                Ok(api
+                    .update_run_status_5(
+                        &crate::v2_8_0::types::ReportingTaskRunStatusEntity::try_from(
+                            body.clone(),
+                        )?,
+                    )
+                    .await?
+                    .into())
             }
         }
     }
@@ -13072,7 +10867,7 @@ impl<'a> DynamicSnippetsApi<'a> {
     /// Creates a snippet. The snippet will be automatically discarded if not used in a subsequent request after 1 minute.
     pub async fn create_snippet(
         &self,
-        body: &serde_json::Value,
+        body: &types::SnippetEntity,
     ) -> Result<types::SnippetEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -13080,15 +10875,9 @@ impl<'a> DynamicSnippetsApi<'a> {
                     client: self.client,
                 };
                 Ok(api
-                    .create_snippet(
-                        &serde_json::from_value::<crate::v2_6_0::types::SnippetEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!("{} (body deserialize: {})", "create_snippet", e),
-                            version: "2.6.0".to_string(),
-                        })?,
-                    )
+                    .create_snippet(&crate::v2_6_0::types::SnippetEntity::try_from(
+                        body.clone(),
+                    )?)
                     .await?
                     .into())
             }
@@ -13097,15 +10886,9 @@ impl<'a> DynamicSnippetsApi<'a> {
                     client: self.client,
                 };
                 Ok(api
-                    .create_snippet(
-                        &serde_json::from_value::<crate::v2_7_2::types::SnippetEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!("{} (body deserialize: {})", "create_snippet", e),
-                            version: "2.7.2".to_string(),
-                        })?,
-                    )
+                    .create_snippet(&crate::v2_7_2::types::SnippetEntity::try_from(
+                        body.clone(),
+                    )?)
                     .await?
                     .into())
             }
@@ -13114,15 +10897,9 @@ impl<'a> DynamicSnippetsApi<'a> {
                     client: self.client,
                 };
                 Ok(api
-                    .create_snippet(
-                        &serde_json::from_value::<crate::v2_8_0::types::SnippetEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!("{} (body deserialize: {})", "create_snippet", e),
-                            version: "2.8.0".to_string(),
-                        })?,
-                    )
+                    .create_snippet(&crate::v2_8_0::types::SnippetEntity::try_from(
+                        body.clone(),
+                    )?)
                     .await?
                     .into())
             }
@@ -13168,7 +10945,7 @@ impl<'a> DynamicSnippetsApi<'a> {
     pub async fn update_snippet(
         &self,
         id: &str,
-        body: &serde_json::Value,
+        body: &types::SnippetEntity,
     ) -> Result<types::SnippetEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -13178,13 +10955,7 @@ impl<'a> DynamicSnippetsApi<'a> {
                 Ok(api
                     .update_snippet(
                         id,
-                        &serde_json::from_value::<crate::v2_6_0::types::SnippetEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!("{} (body deserialize: {})", "update_snippet", e),
-                            version: "2.6.0".to_string(),
-                        })?,
+                        &crate::v2_6_0::types::SnippetEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -13196,13 +10967,7 @@ impl<'a> DynamicSnippetsApi<'a> {
                 Ok(api
                     .update_snippet(
                         id,
-                        &serde_json::from_value::<crate::v2_7_2::types::SnippetEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!("{} (body deserialize: {})", "update_snippet", e),
-                            version: "2.7.2".to_string(),
-                        })?,
+                        &crate::v2_7_2::types::SnippetEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -13214,13 +10979,7 @@ impl<'a> DynamicSnippetsApi<'a> {
                 Ok(api
                     .update_snippet(
                         id,
-                        &serde_json::from_value::<crate::v2_8_0::types::SnippetEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!("{} (body deserialize: {})", "update_snippet", e),
-                            version: "2.8.0".to_string(),
-                        })?,
+                        &crate::v2_8_0::types::SnippetEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -13265,7 +11024,7 @@ impl<'a> DynamicSystemDiagnosticsApi<'a> {
     pub async fn get_system_diagnostics(
         &self,
         nodewise: Option<bool>,
-        diagnostic_level: Option<&str>,
+        diagnostic_level: Option<types::DiagnosticLevel>,
         cluster_node_id: Option<&str>,
     ) -> Result<types::SystemDiagnosticsDto, NifiError> {
         match self.version {
@@ -13277,16 +11036,8 @@ impl<'a> DynamicSystemDiagnosticsApi<'a> {
                     .get_system_diagnostics(
                         nodewise,
                         diagnostic_level
-                            .map(|v| {
-                                serde_json::from_value::<crate::v2_6_0::types::DiagnosticLevel>(
-                                    serde_json::Value::String(v.to_string()),
-                                )
-                            })
-                            .transpose()
-                            .map_err(|_| NifiError::UnsupportedEndpoint {
-                                endpoint: "get_system_diagnostics".to_string(),
-                                version: "2.6.0".to_string(),
-                            })?,
+                            .map(crate::v2_6_0::types::DiagnosticLevel::try_from)
+                            .transpose()?,
                         cluster_node_id,
                     )
                     .await?
@@ -13300,16 +11051,8 @@ impl<'a> DynamicSystemDiagnosticsApi<'a> {
                     .get_system_diagnostics(
                         nodewise,
                         diagnostic_level
-                            .map(|v| {
-                                serde_json::from_value::<crate::v2_7_2::types::DiagnosticLevel>(
-                                    serde_json::Value::String(v.to_string()),
-                                )
-                            })
-                            .transpose()
-                            .map_err(|_| NifiError::UnsupportedEndpoint {
-                                endpoint: "get_system_diagnostics".to_string(),
-                                version: "2.7.2".to_string(),
-                            })?,
+                            .map(crate::v2_7_2::types::DiagnosticLevel::try_from)
+                            .transpose()?,
                         cluster_node_id,
                     )
                     .await?
@@ -13323,16 +11066,8 @@ impl<'a> DynamicSystemDiagnosticsApi<'a> {
                     .get_system_diagnostics(
                         nodewise,
                         diagnostic_level
-                            .map(|v| {
-                                serde_json::from_value::<crate::v2_8_0::types::DiagnosticLevel>(
-                                    serde_json::Value::String(v.to_string()),
-                                )
-                            })
-                            .transpose()
-                            .map_err(|_| NifiError::UnsupportedEndpoint {
-                                endpoint: "get_system_diagnostics".to_string(),
-                                version: "2.8.0".to_string(),
-                            })?,
+                            .map(crate::v2_8_0::types::DiagnosticLevel::try_from)
+                            .transpose()?,
                         cluster_node_id,
                     )
                     .await?
@@ -13351,7 +11086,7 @@ impl<'a> DynamicTenantsApi<'a> {
     /// Creates a user
     pub async fn create_user(
         &self,
-        body: &serde_json::Value,
+        body: &types::UserEntity,
     ) -> Result<types::UserEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -13359,13 +11094,7 @@ impl<'a> DynamicTenantsApi<'a> {
                     client: self.client,
                 };
                 Ok(api
-                    .create_user(
-                        &serde_json::from_value::<crate::v2_6_0::types::UserEntity>(body.clone())
-                            .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!("{} (body deserialize: {})", "create_user", e),
-                            version: "2.6.0".to_string(),
-                        })?,
-                    )
+                    .create_user(&crate::v2_6_0::types::UserEntity::try_from(body.clone())?)
                     .await?
                     .into())
             }
@@ -13374,13 +11103,7 @@ impl<'a> DynamicTenantsApi<'a> {
                     client: self.client,
                 };
                 Ok(api
-                    .create_user(
-                        &serde_json::from_value::<crate::v2_7_2::types::UserEntity>(body.clone())
-                            .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!("{} (body deserialize: {})", "create_user", e),
-                            version: "2.7.2".to_string(),
-                        })?,
-                    )
+                    .create_user(&crate::v2_7_2::types::UserEntity::try_from(body.clone())?)
                     .await?
                     .into())
             }
@@ -13389,13 +11112,7 @@ impl<'a> DynamicTenantsApi<'a> {
                     client: self.client,
                 };
                 Ok(api
-                    .create_user(
-                        &serde_json::from_value::<crate::v2_8_0::types::UserEntity>(body.clone())
-                            .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!("{} (body deserialize: {})", "create_user", e),
-                            version: "2.8.0".to_string(),
-                        })?,
-                    )
+                    .create_user(&crate::v2_8_0::types::UserEntity::try_from(body.clone())?)
                     .await?
                     .into())
             }
@@ -13404,7 +11121,7 @@ impl<'a> DynamicTenantsApi<'a> {
     /// Creates a user group
     pub async fn create_user_group(
         &self,
-        body: &serde_json::Value,
+        body: &types::UserGroupEntity,
     ) -> Result<types::UserGroupEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -13412,15 +11129,9 @@ impl<'a> DynamicTenantsApi<'a> {
                     client: self.client,
                 };
                 Ok(api
-                    .create_user_group(
-                        &serde_json::from_value::<crate::v2_6_0::types::UserGroupEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!("{} (body deserialize: {})", "create_user_group", e),
-                            version: "2.6.0".to_string(),
-                        })?,
-                    )
+                    .create_user_group(&crate::v2_6_0::types::UserGroupEntity::try_from(
+                        body.clone(),
+                    )?)
                     .await?
                     .into())
             }
@@ -13429,15 +11140,9 @@ impl<'a> DynamicTenantsApi<'a> {
                     client: self.client,
                 };
                 Ok(api
-                    .create_user_group(
-                        &serde_json::from_value::<crate::v2_7_2::types::UserGroupEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!("{} (body deserialize: {})", "create_user_group", e),
-                            version: "2.7.2".to_string(),
-                        })?,
-                    )
+                    .create_user_group(&crate::v2_7_2::types::UserGroupEntity::try_from(
+                        body.clone(),
+                    )?)
                     .await?
                     .into())
             }
@@ -13446,15 +11151,9 @@ impl<'a> DynamicTenantsApi<'a> {
                     client: self.client,
                 };
                 Ok(api
-                    .create_user_group(
-                        &serde_json::from_value::<crate::v2_8_0::types::UserGroupEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!("{} (body deserialize: {})", "create_user_group", e),
-                            version: "2.8.0".to_string(),
-                        })?,
-                    )
+                    .create_user_group(&crate::v2_8_0::types::UserGroupEntity::try_from(
+                        body.clone(),
+                    )?)
                     .await?
                     .into())
             }
@@ -13655,7 +11354,7 @@ impl<'a> DynamicTenantsApi<'a> {
     pub async fn update_user(
         &self,
         id: &str,
-        body: &serde_json::Value,
+        body: &types::UserEntity,
     ) -> Result<types::UserEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -13665,11 +11364,7 @@ impl<'a> DynamicTenantsApi<'a> {
                 Ok(api
                     .update_user(
                         id,
-                        &serde_json::from_value::<crate::v2_6_0::types::UserEntity>(body.clone())
-                            .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!("{} (body deserialize: {})", "update_user", e),
-                            version: "2.6.0".to_string(),
-                        })?,
+                        &crate::v2_6_0::types::UserEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -13681,11 +11376,7 @@ impl<'a> DynamicTenantsApi<'a> {
                 Ok(api
                     .update_user(
                         id,
-                        &serde_json::from_value::<crate::v2_7_2::types::UserEntity>(body.clone())
-                            .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!("{} (body deserialize: {})", "update_user", e),
-                            version: "2.7.2".to_string(),
-                        })?,
+                        &crate::v2_7_2::types::UserEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -13697,11 +11388,7 @@ impl<'a> DynamicTenantsApi<'a> {
                 Ok(api
                     .update_user(
                         id,
-                        &serde_json::from_value::<crate::v2_8_0::types::UserEntity>(body.clone())
-                            .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!("{} (body deserialize: {})", "update_user", e),
-                            version: "2.8.0".to_string(),
-                        })?,
+                        &crate::v2_8_0::types::UserEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -13712,7 +11399,7 @@ impl<'a> DynamicTenantsApi<'a> {
     pub async fn update_user_group(
         &self,
         id: &str,
-        body: &serde_json::Value,
+        body: &types::UserGroupEntity,
     ) -> Result<types::UserGroupEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -13722,13 +11409,7 @@ impl<'a> DynamicTenantsApi<'a> {
                 Ok(api
                     .update_user_group(
                         id,
-                        &serde_json::from_value::<crate::v2_6_0::types::UserGroupEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!("{} (body deserialize: {})", "update_user_group", e),
-                            version: "2.6.0".to_string(),
-                        })?,
+                        &crate::v2_6_0::types::UserGroupEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -13740,13 +11421,7 @@ impl<'a> DynamicTenantsApi<'a> {
                 Ok(api
                     .update_user_group(
                         id,
-                        &serde_json::from_value::<crate::v2_7_2::types::UserGroupEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!("{} (body deserialize: {})", "update_user_group", e),
-                            version: "2.7.2".to_string(),
-                        })?,
+                        &crate::v2_7_2::types::UserGroupEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -13758,13 +11433,7 @@ impl<'a> DynamicTenantsApi<'a> {
                 Ok(api
                     .update_user_group(
                         id,
-                        &serde_json::from_value::<crate::v2_8_0::types::UserGroupEntity>(
-                            body.clone(),
-                        )
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!("{} (body deserialize: {})", "update_user_group", e),
-                            version: "2.8.0".to_string(),
-                        })?,
+                        &crate::v2_8_0::types::UserGroupEntity::try_from(body.clone())?,
                     )
                     .await?
                     .into())
@@ -13782,7 +11451,7 @@ impl<'a> DynamicVersionsApi<'a> {
     /// Create a version control request
     pub async fn create_version_control_request(
         &self,
-        body: &serde_json::Value,
+        body: &types::CreateActiveRequestEntity,
     ) -> Result<(), NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -13790,16 +11459,7 @@ impl<'a> DynamicVersionsApi<'a> {
                     client: self.client,
                 };
                 api.create_version_control_request(
-                    &serde_json::from_value::<crate::v2_6_0::types::CreateActiveRequestEntity>(
-                        body.clone(),
-                    )
-                    .map_err(|e| NifiError::UnsupportedEndpoint {
-                        endpoint: format!(
-                            "{} (body deserialize: {})",
-                            "create_version_control_request", e
-                        ),
-                        version: "2.6.0".to_string(),
-                    })?,
+                    &crate::v2_6_0::types::CreateActiveRequestEntity::try_from(body.clone())?,
                 )
                 .await
             }
@@ -13808,16 +11468,7 @@ impl<'a> DynamicVersionsApi<'a> {
                     client: self.client,
                 };
                 api.create_version_control_request(
-                    &serde_json::from_value::<crate::v2_7_2::types::CreateActiveRequestEntity>(
-                        body.clone(),
-                    )
-                    .map_err(|e| NifiError::UnsupportedEndpoint {
-                        endpoint: format!(
-                            "{} (body deserialize: {})",
-                            "create_version_control_request", e
-                        ),
-                        version: "2.7.2".to_string(),
-                    })?,
+                    &crate::v2_7_2::types::CreateActiveRequestEntity::try_from(body.clone())?,
                 )
                 .await
             }
@@ -13826,16 +11477,7 @@ impl<'a> DynamicVersionsApi<'a> {
                     client: self.client,
                 };
                 api.create_version_control_request(
-                    &serde_json::from_value::<crate::v2_8_0::types::CreateActiveRequestEntity>(
-                        body.clone(),
-                    )
-                    .map_err(|e| NifiError::UnsupportedEndpoint {
-                        endpoint: format!(
-                            "{} (body deserialize: {})",
-                            "create_version_control_request", e
-                        ),
-                        version: "2.8.0".to_string(),
-                    })?,
+                    &crate::v2_8_0::types::CreateActiveRequestEntity::try_from(body.clone())?,
                 )
                 .await
             }
@@ -14051,7 +11693,7 @@ impl<'a> DynamicVersionsApi<'a> {
     pub async fn initiate_revert_flow_version(
         &self,
         id: &str,
-        body: &serde_json::Value,
+        body: &types::VersionControlInformationEntity,
     ) -> Result<types::VersionedFlowUpdateRequestEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -14061,16 +11703,9 @@ impl<'a> DynamicVersionsApi<'a> {
                 Ok(api
                     .initiate_revert_flow_version(
                         id,
-                        &serde_json::from_value::<
-                            crate::v2_6_0::types::VersionControlInformationEntity,
-                        >(body.clone())
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "initiate_revert_flow_version", e
-                            ),
-                            version: "2.6.0".to_string(),
-                        })?,
+                        &crate::v2_6_0::types::VersionControlInformationEntity::try_from(
+                            body.clone(),
+                        )?,
                     )
                     .await?
                     .into())
@@ -14082,16 +11717,9 @@ impl<'a> DynamicVersionsApi<'a> {
                 Ok(api
                     .initiate_revert_flow_version(
                         id,
-                        &serde_json::from_value::<
-                            crate::v2_7_2::types::VersionControlInformationEntity,
-                        >(body.clone())
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "initiate_revert_flow_version", e
-                            ),
-                            version: "2.7.2".to_string(),
-                        })?,
+                        &crate::v2_7_2::types::VersionControlInformationEntity::try_from(
+                            body.clone(),
+                        )?,
                     )
                     .await?
                     .into())
@@ -14103,16 +11731,9 @@ impl<'a> DynamicVersionsApi<'a> {
                 Ok(api
                     .initiate_revert_flow_version(
                         id,
-                        &serde_json::from_value::<
-                            crate::v2_8_0::types::VersionControlInformationEntity,
-                        >(body.clone())
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "initiate_revert_flow_version", e
-                            ),
-                            version: "2.8.0".to_string(),
-                        })?,
+                        &crate::v2_8_0::types::VersionControlInformationEntity::try_from(
+                            body.clone(),
+                        )?,
                     )
                     .await?
                     .into())
@@ -14123,7 +11744,7 @@ impl<'a> DynamicVersionsApi<'a> {
     pub async fn initiate_version_control_update(
         &self,
         id: &str,
-        body: &serde_json::Value,
+        body: &types::VersionControlInformationEntity,
     ) -> Result<types::VersionedFlowUpdateRequestEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -14133,16 +11754,9 @@ impl<'a> DynamicVersionsApi<'a> {
                 Ok(api
                     .initiate_version_control_update(
                         id,
-                        &serde_json::from_value::<
-                            crate::v2_6_0::types::VersionControlInformationEntity,
-                        >(body.clone())
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "initiate_version_control_update", e
-                            ),
-                            version: "2.6.0".to_string(),
-                        })?,
+                        &crate::v2_6_0::types::VersionControlInformationEntity::try_from(
+                            body.clone(),
+                        )?,
                     )
                     .await?
                     .into())
@@ -14154,16 +11768,9 @@ impl<'a> DynamicVersionsApi<'a> {
                 Ok(api
                     .initiate_version_control_update(
                         id,
-                        &serde_json::from_value::<
-                            crate::v2_7_2::types::VersionControlInformationEntity,
-                        >(body.clone())
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "initiate_version_control_update", e
-                            ),
-                            version: "2.7.2".to_string(),
-                        })?,
+                        &crate::v2_7_2::types::VersionControlInformationEntity::try_from(
+                            body.clone(),
+                        )?,
                     )
                     .await?
                     .into())
@@ -14175,16 +11782,9 @@ impl<'a> DynamicVersionsApi<'a> {
                 Ok(api
                     .initiate_version_control_update(
                         id,
-                        &serde_json::from_value::<
-                            crate::v2_8_0::types::VersionControlInformationEntity,
-                        >(body.clone())
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "initiate_version_control_update", e
-                            ),
-                            version: "2.8.0".to_string(),
-                        })?,
+                        &crate::v2_8_0::types::VersionControlInformationEntity::try_from(
+                            body.clone(),
+                        )?,
                     )
                     .await?
                     .into())
@@ -14195,7 +11795,7 @@ impl<'a> DynamicVersionsApi<'a> {
     pub async fn save_to_flow_registry(
         &self,
         id: &str,
-        body: &serde_json::Value,
+        body: &types::StartVersionControlRequestEntity,
     ) -> Result<types::VersionControlInformationEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -14205,16 +11805,9 @@ impl<'a> DynamicVersionsApi<'a> {
                 Ok(api
                     .save_to_flow_registry(
                         id,
-                        &serde_json::from_value::<
-                            crate::v2_6_0::types::StartVersionControlRequestEntity,
-                        >(body.clone())
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "save_to_flow_registry", e
-                            ),
-                            version: "2.6.0".to_string(),
-                        })?,
+                        &crate::v2_6_0::types::StartVersionControlRequestEntity::try_from(
+                            body.clone(),
+                        )?,
                     )
                     .await?
                     .into())
@@ -14226,16 +11819,9 @@ impl<'a> DynamicVersionsApi<'a> {
                 Ok(api
                     .save_to_flow_registry(
                         id,
-                        &serde_json::from_value::<
-                            crate::v2_7_2::types::StartVersionControlRequestEntity,
-                        >(body.clone())
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "save_to_flow_registry", e
-                            ),
-                            version: "2.7.2".to_string(),
-                        })?,
+                        &crate::v2_7_2::types::StartVersionControlRequestEntity::try_from(
+                            body.clone(),
+                        )?,
                     )
                     .await?
                     .into())
@@ -14247,16 +11833,9 @@ impl<'a> DynamicVersionsApi<'a> {
                 Ok(api
                     .save_to_flow_registry(
                         id,
-                        &serde_json::from_value::<
-                            crate::v2_8_0::types::StartVersionControlRequestEntity,
-                        >(body.clone())
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "save_to_flow_registry", e
-                            ),
-                            version: "2.8.0".to_string(),
-                        })?,
+                        &crate::v2_8_0::types::StartVersionControlRequestEntity::try_from(
+                            body.clone(),
+                        )?,
                     )
                     .await?
                     .into())
@@ -14305,77 +11884,44 @@ impl<'a> DynamicVersionsApi<'a> {
     pub async fn update_flow_version(
         &self,
         id: &str,
-        body: &serde_json::Value,
+        body: &types::VersionedFlowSnapshotEntity,
     ) -> Result<types::VersionControlInformationEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::versions::VersionsApi {
                     client: self.client,
                 };
-                Ok(
-                    api
-                        .update_flow_version(
-                            id,
-                            &serde_json::from_value::<
-                                crate::v2_6_0::types::VersionedFlowSnapshotEntity,
-                            >(body.clone())
-                            .map_err(|e| NifiError::UnsupportedEndpoint {
-                                endpoint: format!(
-                                    "{} (body deserialize: {})",
-                                    "update_flow_version", e
-                                ),
-                                version: "2.6.0".to_string(),
-                            })?,
-                        )
-                        .await?
-                        .into(),
-                )
+                Ok(api
+                    .update_flow_version(
+                        id,
+                        &crate::v2_6_0::types::VersionedFlowSnapshotEntity::try_from(body.clone())?,
+                    )
+                    .await?
+                    .into())
             }
             DetectedVersion::V2_7_2 => {
                 let api = crate::v2_7_2::api::versions::VersionsApi {
                     client: self.client,
                 };
-                Ok(
-                    api
-                        .update_flow_version(
-                            id,
-                            &serde_json::from_value::<
-                                crate::v2_7_2::types::VersionedFlowSnapshotEntity,
-                            >(body.clone())
-                            .map_err(|e| NifiError::UnsupportedEndpoint {
-                                endpoint: format!(
-                                    "{} (body deserialize: {})",
-                                    "update_flow_version", e
-                                ),
-                                version: "2.7.2".to_string(),
-                            })?,
-                        )
-                        .await?
-                        .into(),
-                )
+                Ok(api
+                    .update_flow_version(
+                        id,
+                        &crate::v2_7_2::types::VersionedFlowSnapshotEntity::try_from(body.clone())?,
+                    )
+                    .await?
+                    .into())
             }
             DetectedVersion::V2_8_0 => {
                 let api = crate::v2_8_0::api::versions::VersionsApi {
                     client: self.client,
                 };
-                Ok(
-                    api
-                        .update_flow_version(
-                            id,
-                            &serde_json::from_value::<
-                                crate::v2_8_0::types::VersionedFlowSnapshotEntity,
-                            >(body.clone())
-                            .map_err(|e| NifiError::UnsupportedEndpoint {
-                                endpoint: format!(
-                                    "{} (body deserialize: {})",
-                                    "update_flow_version", e
-                                ),
-                                version: "2.8.0".to_string(),
-                            })?,
-                        )
-                        .await?
-                        .into(),
-                )
+                Ok(api
+                    .update_flow_version(
+                        id,
+                        &crate::v2_8_0::types::VersionedFlowSnapshotEntity::try_from(body.clone())?,
+                    )
+                    .await?
+                    .into())
             }
         }
     }
@@ -14383,7 +11929,7 @@ impl<'a> DynamicVersionsApi<'a> {
     pub async fn update_version_control_request(
         &self,
         id: &str,
-        body: &serde_json::Value,
+        body: &types::VersionControlComponentMappingEntity,
     ) -> Result<types::VersionControlInformationEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -14393,16 +11939,9 @@ impl<'a> DynamicVersionsApi<'a> {
                 Ok(api
                     .update_version_control_request(
                         id,
-                        &serde_json::from_value::<
-                            crate::v2_6_0::types::VersionControlComponentMappingEntity,
-                        >(body.clone())
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "update_version_control_request", e
-                            ),
-                            version: "2.6.0".to_string(),
-                        })?,
+                        &crate::v2_6_0::types::VersionControlComponentMappingEntity::try_from(
+                            body.clone(),
+                        )?,
                     )
                     .await?
                     .into())
@@ -14414,16 +11953,9 @@ impl<'a> DynamicVersionsApi<'a> {
                 Ok(api
                     .update_version_control_request(
                         id,
-                        &serde_json::from_value::<
-                            crate::v2_7_2::types::VersionControlComponentMappingEntity,
-                        >(body.clone())
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "update_version_control_request", e
-                            ),
-                            version: "2.7.2".to_string(),
-                        })?,
+                        &crate::v2_7_2::types::VersionControlComponentMappingEntity::try_from(
+                            body.clone(),
+                        )?,
                     )
                     .await?
                     .into())
@@ -14435,16 +11967,9 @@ impl<'a> DynamicVersionsApi<'a> {
                 Ok(api
                     .update_version_control_request(
                         id,
-                        &serde_json::from_value::<
-                            crate::v2_8_0::types::VersionControlComponentMappingEntity,
-                        >(body.clone())
-                        .map_err(|e| NifiError::UnsupportedEndpoint {
-                            endpoint: format!(
-                                "{} (body deserialize: {})",
-                                "update_version_control_request", e
-                            ),
-                            version: "2.8.0".to_string(),
-                        })?,
+                        &crate::v2_8_0::types::VersionControlComponentMappingEntity::try_from(
+                            body.clone(),
+                        )?,
                     )
                     .await?
                     .into())

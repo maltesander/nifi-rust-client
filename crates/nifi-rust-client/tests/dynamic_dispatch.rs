@@ -1,6 +1,7 @@
 #![cfg(feature = "dynamic")]
 
 use nifi_rust_client::NifiClientBuilder;
+use nifi_rust_client::dynamic::types::{FlowMetricsReportingStrategy, IncludedRegistries};
 use wiremock::matchers::{method, path, query_param};
 use wiremock::{Mock, MockServer, ResponseTemplate};
 
@@ -156,11 +157,11 @@ async fn dynamic_flow_metrics_v2_6_0_skips_extra_param() {
         .flow_api()
         .get_flow_metrics(
             "prometheus",
-            Some("JVM"),                // includedRegistries
-            None,                       // sampleName
-            None,                       // sampleLabelValue
-            None,                       // rootFieldName
-            Some("ALL_PROCESS_GROUPS"), // flowMetricsReportingStrategy — should be IGNORED for 2.6.0
+            Some(IncludedRegistries::Jvm), // includedRegistries
+            None,                          // sampleName
+            None,                          // sampleLabelValue
+            None,                          // rootFieldName
+            Some(FlowMetricsReportingStrategy::AllProcessGroups), // should be IGNORED for 2.6.0
         )
         .await
         .unwrap();
@@ -190,11 +191,11 @@ async fn dynamic_flow_metrics_v2_8_0_passes_all_params() {
         .flow_api()
         .get_flow_metrics(
             "prometheus",
-            Some("JVM"),
+            Some(IncludedRegistries::Jvm),
             None,
             None,
             None,
-            Some("ALL_PROCESS_GROUPS"),
+            Some(FlowMetricsReportingStrategy::AllProcessGroups),
         )
         .await
         .unwrap();
@@ -223,11 +224,11 @@ async fn dynamic_flow_metrics_v2_7_2_passes_all_params() {
         .flow_api()
         .get_flow_metrics(
             "prometheus",
-            Some("NIFI"),
+            Some(IncludedRegistries::Nifi),
             Some("my_sample"),
             None,
             None,
-            Some("ALL_COMPONENTS"),
+            Some(FlowMetricsReportingStrategy::AllComponents),
         )
         .await
         .unwrap();

@@ -11,7 +11,9 @@ pub use emit_api::{emit_api, emit_api_with_prefix};
 pub use emit_dynamic::emit_dynamic;
 pub use emit_dynamic_conversions::emit_dynamic_conversions;
 pub use emit_dynamic_tests::emit_dynamic_tests;
-pub use emit_dynamic_types::{collect_merged_field_names, emit_dynamic_types};
+pub use emit_dynamic_types::{
+    collect_merged_field_names, collect_universal_fields, emit_dynamic_types,
+};
 pub use emit_tests::emit_tests;
 pub use emit_types::emit_types;
 pub use parser::{
