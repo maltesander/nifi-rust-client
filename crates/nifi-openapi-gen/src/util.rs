@@ -168,12 +168,12 @@ pub(crate) fn wire_to_pascal(wire: &str) -> String {
 }
 
 /// Convert a version string like "2.8.0" to a Rust module name like "v2_8_0".
-pub(crate) fn version_to_mod_name(version: &str) -> String {
+pub fn version_to_mod_name(version: &str) -> String {
     format!("v{}", version.replace('.', "_"))
 }
 
 /// Convert a version string like "2.8.0" to a Cargo feature name like "nifi-2-8-0".
-pub(crate) fn version_to_feature(version: &str) -> String {
+pub fn version_to_feature(version: &str) -> String {
     format!("nifi-{}", version.replace('.', "-"))
 }
 
@@ -187,7 +187,7 @@ pub(crate) fn sort_versions_semver(versions: &mut [String]) {
 }
 
 /// Discover all valid semver directories under `specs_dir` and return them sorted.
-pub(crate) fn discover_spec_versions(specs_dir: &std::path::Path) -> Vec<String> {
+pub fn discover_spec_versions(specs_dir: &std::path::Path) -> Vec<String> {
     let mut versions: Vec<String> = std::fs::read_dir(specs_dir)
         .unwrap_or_else(|_| {
             panic!(
@@ -236,7 +236,7 @@ pub(crate) fn replace_between_markers(
 }
 
 /// Read a file, replace content between markers, and write back if changed.
-pub(crate) fn update_file_between_markers(
+pub fn update_file_between_markers(
     path: &std::path::Path,
     start_marker: &str,
     end_marker: &str,

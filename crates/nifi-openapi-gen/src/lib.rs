@@ -3,7 +3,7 @@ pub mod docs;
 pub mod emit;
 pub mod parser;
 pub mod repo;
-pub(crate) mod util;
+pub mod util;
 
 pub use diff::{
     EndpointChanges, EndpointDiff, EndpointSummary, FieldChange, ParamChange, TypeChanges,
