@@ -53,6 +53,9 @@ impl<'a> FlowFileQueuesDropRequestsApi<'a> {
     ///
     /// Calls `POST /nifi-api/flowfile-queues/{id}/drop-requests`.
     ///
+    /// # Returns
+    /// - `202`: The request has been accepted. A HTTP response header will contain the URI where the response can be polled.
+    ///
     /// # Errors
     /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
     /// - `401`: Client could not be authenticated.
@@ -186,8 +189,10 @@ impl<'a> FlowFileQueuesFlowfilesApi<'a> {
     /// - `client_id`: If the client id is not specified, new one will be generated. This value (whether specified or generated) is included in the response.
     /// - `cluster_node_id`: The id of the node where the content exists if clustered.
     ///
-    /// # Errors
+    /// # Returns
     /// - `206`: Partial Content with range of bytes requested
+    ///
+    /// # Errors
     /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
     /// - `401`: Client could not be authenticated.
     /// - `403`: Client is not authorized to make this request.
@@ -232,6 +237,9 @@ impl<'a> FlowFileQueuesListingRequestsApi<'a> {
     /// Lists the contents of the queue in this connection.
     ///
     /// Calls `POST /nifi-api/flowfile-queues/{id}/listing-requests`.
+    ///
+    /// # Returns
+    /// - `202`: The request has been accepted. A HTTP response header will contain the URI where the response can be polled.
     ///
     /// # Errors
     /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.

@@ -651,6 +651,7 @@ mod tests {
             response_inner: response_inner.map(|s| s.to_string()),
             response_field: response_inner.map(|_| "inner".to_string()),
             query_params,
+            success_responses: vec![],
             error_responses: vec![],
             security: None,
         }

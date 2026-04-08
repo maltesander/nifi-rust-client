@@ -932,6 +932,7 @@ mod tests {
                             response_inner: None,
                             response_field: None,
                             query_params: vec![],
+                            success_responses: vec![],
                             error_responses: vec![],
                             security: None,
                         })

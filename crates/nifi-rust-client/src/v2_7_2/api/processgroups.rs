@@ -512,6 +512,9 @@ impl<'a> ProcessGroupsEmptyAllConnectionsRequestsApi<'a> {
     ///
     /// Calls `POST /nifi-api/process-groups/{id}/empty-all-connections-requests`.
     ///
+    /// # Returns
+    /// - `202`: The request has been accepted. An HTTP response header will contain the URI where the status can be polled.
+    ///
     /// # Errors
     /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
     /// - `401`: Client could not be authenticated.

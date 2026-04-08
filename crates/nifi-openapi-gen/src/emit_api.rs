@@ -127,13 +127,18 @@ fn emit_param_docs(out: &mut String, ep: &Endpoint, skip_param: Option<&str>) {
     }
 }
 
-/// Appends `# Errors` and `# Permissions` rustdoc sections.
+/// Appends `# Returns`, `# Errors`, and `# Permissions` rustdoc sections.
 fn emit_error_and_permission_docs(out: &mut String, ep: &Endpoint) {
+    if !ep.success_responses.is_empty() {
+        out.push_str("    ///\n    /// # Returns\n");
+        for (code, desc) in &ep.success_responses {
+            out.push_str(&format!("    /// - `{code}`: {desc}\n"));
+        }
+    }
+
     if !ep.error_responses.is_empty() {
         out.push_str("    ///\n    /// # Errors\n");
-        let mut sorted: Vec<&(String, String)> = ep.error_responses.iter().collect();
-        sorted.sort_by(|a, b| a.0.cmp(&b.0));
-        for (code, desc) in &sorted {
+        for (code, desc) in &ep.error_responses {
             out.push_str(&format!("    /// - `{code}`: {desc}\n"));
         }
     }

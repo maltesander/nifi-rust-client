@@ -17,6 +17,9 @@ impl<'a> AccessApi<'a> {
     ///
     /// Calls `DELETE /nifi-api/access/logout`.
     ///
+    /// # Returns
+    /// - `200`: User was logged out successfully.
+    ///
     /// # Errors
     /// - `401`: Authentication token provided was empty or not in the correct JWT format.
     /// - `500`: Client failed to log out.

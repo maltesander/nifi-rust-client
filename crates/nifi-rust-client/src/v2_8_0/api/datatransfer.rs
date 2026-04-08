@@ -184,6 +184,9 @@ impl<'a> DataTransferTransactionsApi<'a> {
     ///
     /// Calls `GET /nifi-api/data-transfer/output-ports/{portId}/transactions/{transactionId}/flow-files`.
     ///
+    /// # Returns
+    /// - `200`: There is no flow file to return.
+    ///
     /// # Errors
     /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
     /// - `401`: Client could not be authenticated.

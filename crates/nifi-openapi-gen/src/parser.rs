@@ -139,6 +139,8 @@ pub struct Endpoint {
     /// If response_type is an Entity, the field name to unwrap.
     pub response_field: Option<String>,
     pub query_params: Vec<QueryParam>,
+    /// 2xx responses: (status_code, description), e.g. ("206", "Partial Content...").
+    pub success_responses: Vec<(String, String)>,
     /// Non-2xx responses: (status_code, description), e.g. ("400", "NiFi was unable to...").
     pub error_responses: Vec<(String, String)>,
     /// Security requirements from the spec.
@@ -575,18 +577,38 @@ fn parse_tags(
                 }
             };
 
+            let success_responses: Vec<(String, String)> = responses
+                .and_then(|r| r.as_object())
+                .map(|map| {
+                    let mut v: Vec<(String, String)> = map
+                        .iter()
+                        .filter(|(code, _)| code.starts_with('2'))
+                        .filter_map(|(code, resp)| {
+                            let desc = resp.get("description")?.as_str()?;
+                            Some((code.clone(), desc.to_string()))
+                        })
+                        .collect();
+                    v.sort_by(|a, b| a.0.cmp(&b.0));
+                    v
+                })
+                .unwrap_or_default();
+
             let error_responses: Vec<(String, String)> = responses
                 .and_then(|r| r.as_object())
                 .map(|map| {
-                    map.iter()
+                    let mut v: Vec<(String, String)> = map
+                        .iter()
                         .filter(|(code, _)| {
-                            !matches!(code.as_str(), "200" | "201" | "202" | "default")
+                            let is_2xx = code.starts_with('2');
+                            !is_2xx && code.as_str() != "default"
                         })
                         .filter_map(|(code, resp)| {
                             let desc = resp.get("description")?.as_str()?;
                             Some((code.clone(), desc.to_string()))
                         })
-                        .collect()
+                        .collect();
+                    v.sort_by(|a, b| a.0.cmp(&b.0));
+                    v
                 })
                 .unwrap_or_default();
 
@@ -618,6 +640,7 @@ fn parse_tags(
                 response_inner,
                 response_field,
                 query_params,
+                success_responses,
                 error_responses,
                 security,
             };

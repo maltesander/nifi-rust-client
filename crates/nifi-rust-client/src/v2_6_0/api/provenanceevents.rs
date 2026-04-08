@@ -155,8 +155,10 @@ impl<'a> ProvenanceEventsContentApi<'a> {
     /// # Parameters
     /// - `cluster_node_id`: The id of the node where the content exists if clustered.
     ///
-    /// # Errors
+    /// # Returns
     /// - `206`: Partial Content with range of bytes requested
+    ///
+    /// # Errors
     /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
     /// - `401`: Client could not be authenticated.
     /// - `403`: Client is not authorized to make this request.
@@ -184,8 +186,10 @@ impl<'a> ProvenanceEventsContentApi<'a> {
     /// # Parameters
     /// - `cluster_node_id`: The id of the node where the content exists if clustered.
     ///
-    /// # Errors
+    /// # Returns
     /// - `206`: Partial Content with range of bytes requested
+    ///
+    /// # Errors
     /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
     /// - `401`: Client could not be authenticated.
     /// - `403`: Client is not authorized to make this request.
