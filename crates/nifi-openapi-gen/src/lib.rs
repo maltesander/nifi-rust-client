@@ -2,6 +2,7 @@ pub mod diff;
 pub mod docs;
 pub mod emit;
 pub mod parser;
+pub mod repo;
 pub(crate) mod util;
 
 pub use diff::{
