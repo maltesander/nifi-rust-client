@@ -36,8 +36,10 @@ fn emit_trait_file(
 ) -> String {
     let mut out = String::new();
 
+    out.push_str("#[allow(unused_imports)]\n");
     out.push_str("use crate::NifiError;\n");
-    out.push_str("use super::types;\n\n");
+    out.push_str("#[allow(unused_imports)]\n");
+    out.push_str("use crate::dynamic::types;\n\n");
 
     // Trait-level doc comment: use the tag name
     out.push_str(&format!(
@@ -45,7 +47,8 @@ fn emit_trait_file(
     ));
 
     // Use #[allow(unused_variables)] to suppress warnings for default impls
-    out.push_str("#[allow(unused_variables)]\n");
+    // Use #[allow(async_fn_in_trait)] since we don't need Send bounds
+    out.push_str("#[allow(unused_variables, async_fn_in_trait, clippy::too_many_arguments)]\n");
     out.push_str(&format!("pub trait {struct_name} {{\n"));
 
     let endpoints = collect_tag_endpoints(versions, tag);

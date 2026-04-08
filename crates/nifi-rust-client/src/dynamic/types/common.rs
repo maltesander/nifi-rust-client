@@ -1,53 +1,8 @@
 // @generated — do not edit; run `cargo run -p nifi-openapi-gen`
 
-#![allow(dead_code, private_interfaces)]
-
+#![allow(dead_code, private_interfaces, unused_imports)]
+use super::*;
 use serde::{Deserialize, Serialize};
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct AboutDto {
-    /// Build branch
-    #[serde(rename = "buildBranch")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub build_branch: Option<String>,
-    /// Build revision or commit hash
-    #[serde(rename = "buildRevision")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub build_revision: Option<String>,
-    /// Build tag
-    #[serde(rename = "buildTag")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub build_tag: Option<String>,
-    /// Build timestamp
-    #[serde(rename = "buildTimestamp")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub build_timestamp: Option<String>,
-    /// The URL for the content viewer if configured.
-    #[serde(rename = "contentViewerUrl")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub content_viewer_url: Option<String>,
-    /// The timezone of the NiFi instance.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub timezone: Option<String>,
-    /// The title to be used on the page and in the about dialog.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub title: Option<String>,
-    /// The URI for the NiFi.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub uri: Option<String>,
-    /// The version of this NiFi.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub version: Option<String>,
-}
-
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct AboutEntity {
-    pub about: Option<AboutDto>,
-}
-
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -85,38 +40,6 @@ pub struct AccessPolicyDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub versioned_component_id: Option<String>,
 }
-
-/// The access policies this user group belongs to. This field was incorrectly defined as an AccessPolicyEntity. For compatibility reasons the field will remain of this type, however only the fields that are present in the AccessPolicySummaryEntity will be populated here.
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct AccessPolicyEntity {
-    /// The bulletins for this component.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub bulletins: Option<Vec<BulletinEntity>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub component: Option<AccessPolicyDto>,
-    /// Acknowledges that this node is disconnected to allow for mutable requests to proceed.
-    #[serde(rename = "disconnectedNodeAcknowledged")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub disconnected_node_acknowledged: Option<bool>,
-    /// When this content was generated.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub generated: Option<String>,
-    /// The id of the component.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub permissions: Option<PermissionsDto>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub position: Option<PositionDto>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub revision: Option<RevisionDto>,
-    /// The URI for futures requests to the component.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub uri: Option<String>,
-}
-
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -147,7 +70,6 @@ pub struct AccessPolicySummaryDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub versioned_component_id: Option<String>,
 }
-
 /// The access policies this user belongs to.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -175,13 +97,11 @@ pub struct AccessPolicySummaryEntity {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub uri: Option<String>,
 }
-
 /// The details of the action.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ActionDetailsDto {}
-
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -218,56 +138,6 @@ pub struct ActionDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub user_identity: Option<String>,
 }
-
-/// The actions.
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ActionEntity {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub action: Option<ActionDto>,
-    /// Indicates whether the user can read a given resource.
-    #[serde(rename = "canRead")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub can_read: Option<bool>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub id: Option<i32>,
-    #[serde(rename = "sourceId")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub source_id: Option<String>,
-    /// The timestamp of the action.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub timestamp: Option<String>,
-}
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ActivateControllerServicesEntity {
-    /// Optional services to schedule. If not specified, all authorized descendant controller services will be used.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub components: Option<std::collections::HashMap<String, Option<RevisionDto>>>,
-    /// Acknowledges that this node is disconnected to allow for mutable requests to proceed.
-    #[serde(rename = "disconnectedNodeAcknowledged")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub disconnected_node_acknowledged: Option<bool>,
-    /// The id of the ProcessGroup
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    /// The desired state of the descendant components
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub state: Option<String>,
-}
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct AdditionalDetailsEntity {
-    #[serde(rename = "additionalDetails")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub additional_details: Option<String>,
-}
-
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -298,7 +168,6 @@ pub struct AffectedComponentDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub validation_errors: Option<Vec<String>>,
 }
-
 /// The set of all components in the flow that are referencing this Parameter
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -333,7 +202,6 @@ pub struct AffectedComponentEntity {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub uri: Option<String>,
 }
-
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -349,7 +217,6 @@ pub struct AllowableValueDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
 }
-
 /// Allowable values for the property. If empty then the allowed values are not constrained.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -363,33 +230,6 @@ pub struct AllowableValueEntity {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub can_read: Option<bool>,
 }
-
-/// The Asset.
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct AssetDto {
-    /// The digest of the asset, will be null if the asset content is missing.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub digest: Option<String>,
-    /// The identifier of the asset.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    /// Indicates if the content of the asset is missing.
-    #[serde(rename = "missingContent")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub missing_content: Option<bool>,
-    /// The name of the asset.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-}
-
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct AssetEntity {
-    pub asset: Option<AssetDto>,
-}
-
 /// A list of identifiers of the assets that are referenced by the parameter
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -402,16 +242,6 @@ pub struct AssetReferenceDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct AssetsEntity {
-    /// The asset entities
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub assets: Option<Vec<AssetEntity>>,
-}
-
 /// The FlowFile attributes this processor writes/updates
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -424,7 +254,6 @@ pub struct Attribute {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
-
 /// The attributes of the flowfile for the event.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -441,55 +270,6 @@ pub struct AttributeDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
 }
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct AuthenticationConfigurationDto {
-    /// Whether the system requires login through an external Identity Provider
-    #[serde(rename = "externalLoginRequired")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub external_login_required: Option<bool>,
-    /// Whether the system is configured to support login operations
-    #[serde(rename = "loginSupported")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub login_supported: Option<bool>,
-    /// Location for initiating login processing
-    #[serde(rename = "loginUri")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub login_uri: Option<String>,
-    /// Location for initiating logout processing
-    #[serde(rename = "logoutUri")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub logout_uri: Option<String>,
-}
-
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct AuthenticationConfigurationEntity {
-    pub authentication_configuration: Option<AuthenticationConfigurationDto>,
-}
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct BannerDto {
-    /// The footer text.
-    #[serde(rename = "footerText")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub footer_text: Option<String>,
-    /// The header text.
-    #[serde(rename = "headerText")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub header_text: Option<String>,
-}
-
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct BannerEntity {
-    pub banners: Option<BannerDto>,
-}
-
 /// The batch settings for data transmission.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -505,7 +285,6 @@ pub struct BatchSettingsDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub size: Option<String>,
 }
-
 /// The batch settings for data transmission.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -521,7 +300,6 @@ pub struct BatchSize {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub size: Option<String>,
 }
-
 /// The build metadata for this component
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -548,25 +326,6 @@ pub struct BuildInfo {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
 }
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct BulletinBoardDto {
-    /// The bulletins in the bulletin board, that matches the supplied request.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub bulletins: Option<Vec<BulletinEntity>>,
-    /// The timestamp when this report was generated.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub generated: Option<String>,
-}
-
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct BulletinBoardEntity {
-    pub bulletin_board: Option<BulletinBoardDto>,
-}
-
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -577,7 +336,6 @@ pub struct BulletinBoardPatternParameter {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub raw_pattern: Option<String>,
 }
-
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -628,39 +386,6 @@ pub struct BulletinDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub timestamp_iso: Option<String>,
 }
-
-/// The bulletins for this component.
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct BulletinEntity {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub bulletin: Option<BulletinDto>,
-    /// Indicates whether the user can read a given resource.
-    #[serde(rename = "canRead")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub can_read: Option<bool>,
-    #[serde(rename = "groupId")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub group_id: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub id: Option<i64>,
-    #[serde(rename = "nodeAddress")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub node_address: Option<String>,
-    #[serde(rename = "sourceId")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub source_id: Option<String>,
-    /// When this bulletin was generated.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub timestamp: Option<String>,
-    /// When this bulletin was generated in ISO format with full date and milliseconds.
-    #[serde(rename = "timestampIso")]
-    #[serde(default)]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub timestamp_iso: Option<String>,
-}
-
 /// The details of the artifact that bundled this parameter provider.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -676,7 +401,6 @@ pub struct Bundle {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
 }
-
 /// If the property identifies a controller service this returns the bundle of the type, null otherwise.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -692,37 +416,6 @@ pub struct BundleDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
 }
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ClearBulletinsForGroupRequestEntity {
-    /// Optional component IDs for which to clear bulletins. If not specified, all authorized descendant components will be used.
-    #[serde(default)]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub components: Option<Vec<String>>,
-    /// The timestamp from which to clear bulletins (inclusive). This field is required.
-    #[serde(rename = "fromTimestamp")]
-    #[serde(default)]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub from_timestamp: Option<String>,
-    /// The id of the ProcessGroup
-    #[serde(default)]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-}
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ClearBulletinsForGroupResultsEntity {
-    /// The total number of bulletins that were cleared.
-    #[serde(rename = "bulletinsCleared")]
-    #[serde(default)]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub bulletins_cleared: Option<i32>,
-}
-
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -733,7 +426,6 @@ pub struct ClearBulletinsRequestEntity {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub from_timestamp: Option<String>,
 }
-
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -753,7 +445,6 @@ pub struct ClearBulletinsResultEntity {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub component_id: Option<String>,
 }
-
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -762,71 +453,11 @@ pub struct ClientIdParameter {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub client_id: Option<String>,
 }
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ClusterDto {
-    /// The timestamp the report was generated.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub generated: Option<String>,
-    /// The collection of nodes that are part of the cluster.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub nodes: Option<Vec<NodeDto>>,
-}
-
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ClusterEntity {
-    pub cluster: Option<ClusterDto>,
-}
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ClusterSearchResultsEntity {
-    #[serde(rename = "nodeResults")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub node_results: Option<Vec<NodeSearchResultDto>>,
-}
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ClusterSummaryDto {
-    /// Whether this NiFi instance is clustered.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub clustered: Option<bool>,
-    /// The number of nodes that are currently connected to the cluster
-    #[serde(rename = "connectedNodeCount")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub connected_node_count: Option<i32>,
-    /// When clustered, reports the number of nodes connected vs the number of nodes in the cluster.
-    #[serde(rename = "connectedNodes")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub connected_nodes: Option<String>,
-    /// Whether this NiFi instance is connected to a cluster.
-    #[serde(rename = "connectedToCluster")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub connected_to_cluster: Option<bool>,
-    /// The number of nodes in the cluster, regardless of whether or not they are connected
-    #[serde(rename = "totalNodeCount")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub total_node_count: Option<i32>,
-}
-
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ClusterSummaryEntity {
-    pub cluster_summary: Option<ClusterSummaryDto>,
-}
-
 /// The details of the source component.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ComponentDetailsDto {}
-
 /// The list of differences for each component in the flow that is not the same between the two flows
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -852,7 +483,6 @@ pub struct ComponentDifferenceDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub process_group_id: Option<String>,
 }
-
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -866,13 +496,11 @@ pub struct ComponentHistoryDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub property_history: Option<std::collections::HashMap<String, Option<PropertyHistoryDto>>>,
 }
-
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ComponentHistoryEntity {
     pub component_history: Option<ComponentHistoryDto>,
 }
-
 /// The full specification of the bundle contents
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -906,7 +534,6 @@ pub struct ComponentManifest {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub reporting_tasks: Option<Vec<ReportingTaskDefinition>>,
 }
-
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -928,7 +555,6 @@ pub struct ComponentReferenceDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub versioned_component_id: Option<String>,
 }
-
 /// Component this policy references if applicable.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -960,7 +586,6 @@ pub struct ComponentReferenceEntity {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub uri: Option<String>,
 }
-
 /// Permissions for specific component restrictions.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -972,7 +597,6 @@ pub struct ComponentRestrictionPermissionDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub required_permission: Option<RequiredPermissionDto>,
 }
-
 /// The parameters that matched the search.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -998,7 +622,6 @@ pub struct ComponentSearchResultDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub versioned_group: Option<SearchResultGroupDto>,
 }
-
 /// The component state.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -1023,13 +646,11 @@ pub struct ComponentStateDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub state_description: Option<String>,
 }
-
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ComponentStateEntity {
     pub component_state: Option<ComponentStateDto>,
 }
-
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -1072,7 +693,6 @@ pub struct ComponentValidationResultDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub validation_errors: Option<Vec<String>>,
 }
-
 /// A List of ComponentValidationResultEntity, one for each component that is validated
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -1100,7 +720,6 @@ pub struct ComponentValidationResultEntity {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub uri: Option<String>,
 }
-
 /// The Validation Results that were calculated for each component. This value may not be set until the request completes.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -1111,7 +730,6 @@ pub struct ComponentValidationResultsEntity {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub validation_results: Option<Vec<ComponentValidationResultEntity>>,
 }
-
 /// The Results of the verification
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -1128,7 +746,6 @@ pub struct ConfigVerificationResultDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub verification_step_name: Option<String>,
 }
-
 /// The configuration analysis
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -1150,13 +767,11 @@ pub struct ConfigurationAnalysisDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub supports_verification: Option<bool>,
 }
-
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ConfigurationAnalysisEntity {
     pub configuration_analysis: Option<ConfigurationAnalysisDto>,
 }
-
 /// The destination of the connection.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -1183,7 +798,6 @@ pub struct ConnectableComponent {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub r#type: Option<String>,
 }
-
 /// The destination of the connection.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -1216,7 +830,6 @@ pub struct ConnectableDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub versioned_component_id: Option<String>,
 }
-
 /// The connections in this flow snippet.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -1297,7 +910,6 @@ pub struct ConnectionDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub versioned_component_id: Option<String>,
 }
-
 /// The connections in this flow.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -1360,7 +972,6 @@ pub struct ConnectionEntity {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub uri: Option<String>,
 }
-
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -1380,20 +991,6 @@ pub struct ConnectionStatisticsDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub stats_last_refreshed: Option<String>,
 }
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ConnectionStatisticsEntity {
-    /// Indicates whether the user can read a given resource.
-    #[serde(rename = "canRead")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub can_read: Option<bool>,
-    #[serde(rename = "connectionStatistics")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub connection_statistics: Option<ConnectionStatisticsDto>,
-}
-
 /// The connection status snapshot from the node.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -1431,7 +1028,6 @@ pub struct ConnectionStatisticsSnapshotDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub prediction_interval_millis: Option<i64>,
 }
-
 /// The status of the connection.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -1475,20 +1071,6 @@ pub struct ConnectionStatusDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub stats_last_refreshed: Option<String>,
 }
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ConnectionStatusEntity {
-    /// Indicates whether the user can read a given resource.
-    #[serde(rename = "canRead")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub can_read: Option<bool>,
-    #[serde(rename = "connectionStatus")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub connection_status: Option<ConnectionStatusDto>,
-}
-
 /// Predictions, if available, for this connection (null if not available)
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -1523,7 +1105,6 @@ pub struct ConnectionStatusPredictionsSnapshotDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub prediction_interval_seconds: Option<i32>,
 }
-
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -1614,7 +1195,6 @@ pub struct ConnectionStatusSnapshotDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub source_name: Option<String>,
 }
-
 /// The status of all connections in the process group.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -1631,15 +1211,6 @@ pub struct ConnectionStatusSnapshotEntity {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
 }
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ConnectionsEntity {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub connections: Option<Vec<ConnectionEntity>>,
-}
-
 /// The Content Viewers.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -1657,46 +1228,6 @@ pub struct ContentViewerDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub uri: Option<String>,
 }
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ContentViewerEntity {
-    /// The Content Viewers.
-    #[serde(rename = "contentViewers")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub content_viewers: Option<Vec<ContentViewerDto>>,
-}
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ControllerBulletinsEntity {
-    /// System level bulletins to be reported to the user.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub bulletins: Option<Vec<BulletinEntity>>,
-    /// Controller service bulletins to be reported to the user.
-    #[serde(rename = "controllerServiceBulletins")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub controller_service_bulletins: Option<Vec<BulletinEntity>>,
-    /// Flow Analysis Rule bulletins to be reported to the user.
-    #[serde(rename = "flowAnalysisRuleBulletins")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub flow_analysis_rule_bulletins: Option<Vec<BulletinEntity>>,
-    /// Flow registry client bulletins to be reported to the user.
-    #[serde(rename = "flowRegistryClientBulletins")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub flow_registry_client_bulletins: Option<Vec<BulletinEntity>>,
-    /// Parameter provider bulletins to be reported to the user.
-    #[serde(rename = "parameterProviderBulletins")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub parameter_provider_bulletins: Option<Vec<BulletinEntity>>,
-    /// Reporting task bulletins to be reported to the user.
-    #[serde(rename = "reportingTaskBulletins")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub reporting_task_bulletins: Option<Vec<BulletinEntity>>,
-}
-
 /// The controller configuration.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -1707,100 +1238,6 @@ pub struct ControllerConfigurationDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub max_timer_driven_thread_count: Option<i32>,
 }
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ControllerConfigurationEntity {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub component: Option<ControllerConfigurationDto>,
-    /// Acknowledges that this node is disconnected to allow for mutable requests to proceed.
-    #[serde(rename = "disconnectedNodeAcknowledged")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub disconnected_node_acknowledged: Option<bool>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub permissions: Option<PermissionsDto>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub revision: Option<RevisionDto>,
-}
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ControllerDto {
-    /// The number of active remote ports contained in the NiFi.
-    #[serde(rename = "activeRemotePortCount")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub active_remote_port_count: Option<i32>,
-    /// The comments for the NiFi.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub comments: Option<String>,
-    /// The number of disabled components in the NiFi.
-    #[serde(rename = "disabledCount")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub disabled_count: Option<i32>,
-    /// The id of the NiFi.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    /// The number of inactive remote ports contained in the NiFi.
-    #[serde(rename = "inactiveRemotePortCount")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub inactive_remote_port_count: Option<i32>,
-    /// The number of input ports contained in the NiFi.
-    #[serde(rename = "inputPortCount")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub input_port_count: Option<i32>,
-    /// The input ports available to send data to for the NiFi.
-    #[serde(rename = "inputPorts")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub input_ports: Option<Vec<PortDto>>,
-    /// If clustered, the id of the Cluster Manager, otherwise the id of the NiFi.
-    #[serde(rename = "instanceId")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub instance_id: Option<String>,
-    /// The number of invalid components in the NiFi.
-    #[serde(rename = "invalidCount")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub invalid_count: Option<i32>,
-    /// The name of the NiFi.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    /// The number of output ports in the NiFi.
-    #[serde(rename = "outputPortCount")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub output_port_count: Option<i32>,
-    /// The output ports available to received data from the NiFi.
-    #[serde(rename = "outputPorts")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub output_ports: Option<Vec<PortDto>>,
-    /// The HTTP(S) Port on which this instance is listening for Remote Transfers of Flow Files. If this instance is not configured to receive Flow Files from remote instances, this will be null.
-    #[serde(rename = "remoteSiteHttpListeningPort")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub remote_site_http_listening_port: Option<i32>,
-    /// The Socket Port on which this instance is listening for Remote Transfers of Flow Files. If this instance is not configured to receive Flow Files from remote instances, this will be null.
-    #[serde(rename = "remoteSiteListeningPort")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub remote_site_listening_port: Option<i32>,
-    /// The number of running components in the NiFi.
-    #[serde(rename = "runningCount")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub running_count: Option<i32>,
-    /// Indicates whether or not Site-to-Site communications with this instance is secure (2-way authentication).
-    #[serde(rename = "siteToSiteSecure")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub site_to_site_secure: Option<bool>,
-    /// The number of stopped components in the NiFi.
-    #[serde(rename = "stoppedCount")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub stopped_count: Option<i32>,
-}
-
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ControllerEntity {
-    pub controller: Option<ControllerDto>,
-}
-
 /// Lists the APIs this Controller Service implements.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -1812,7 +1249,6 @@ pub struct ControllerServiceAPI {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub r#type: Option<String>,
 }
-
 /// Lists the APIs this Controller Service implements.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -1824,92 +1260,6 @@ pub struct ControllerServiceApiDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub r#type: Option<String>,
 }
-
-/// Controller Services provided in this bundle
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ControllerServiceDefinition {
-    /// Indicates if the component has additional details documentation
-    #[serde(rename = "additionalDetails")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub additional_details: Option<bool>,
-    /// The artifact name of the bundle that provides the referenced type.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub artifact: Option<String>,
-    #[serde(rename = "buildInfo")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub build_info: Option<BuildInfo>,
-    /// Whether or not the component has been deprecated
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub deprecated: Option<bool>,
-    /// If this component has been deprecated, this optional field provides alternatives to use
-    #[serde(rename = "deprecationAlternatives")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub deprecation_alternatives: Option<Vec<String>>,
-    /// If this component has been deprecated, this optional field can be used to provide an explanation
-    #[serde(rename = "deprecationReason")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub deprecation_reason: Option<String>,
-    /// Describes the dynamic properties supported by this component
-    #[serde(rename = "dynamicProperties")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub dynamic_properties: Option<Vec<DynamicProperty>>,
-    /// Explicit restrictions that indicate a require permission to use the component
-    #[serde(rename = "explicitRestrictions")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub explicit_restrictions: Option<Vec<Restriction>>,
-    /// The group name of the bundle that provides the referenced type.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub group: Option<String>,
-    /// Descriptions of configuration properties applicable to this component.
-    #[serde(rename = "propertyDescriptors")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub property_descriptors: Option<std::collections::HashMap<String, Option<PropertyDescriptor>>>,
-    /// If this type represents a provider for an interface, this lists the APIs it implements
-    #[serde(rename = "providedApiImplementations")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub provided_api_implementations: Option<Vec<DefinedType>>,
-    /// Whether or not the component has a general restriction
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub restricted: Option<bool>,
-    /// An optional description of the general restriction
-    #[serde(rename = "restrictedExplanation")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub restricted_explanation: Option<String>,
-    /// The names of other component types that may be related
-    #[serde(rename = "seeAlso")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub see_also: Option<Vec<String>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub stateful: Option<Stateful>,
-    /// Whether or not this component makes use of dynamic (user-set) properties.
-    #[serde(rename = "supportsDynamicProperties")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub supports_dynamic_properties: Option<bool>,
-    /// Whether or not this component makes use of sensitive dynamic (user-set) properties.
-    #[serde(rename = "supportsSensitiveDynamicProperties")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub supports_sensitive_dynamic_properties: Option<bool>,
-    /// The system resource considerations for the given component
-    #[serde(rename = "systemResourceConsiderations")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub system_resource_considerations: Option<Vec<SystemResourceConsideration>>,
-    /// The tags associated with this type
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub tags: Option<Vec<String>>,
-    /// The fully-qualified class type
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub r#type: Option<String>,
-    /// The description of the type.
-    #[serde(rename = "typeDescription")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub type_description: Option<String>,
-    /// The version of the bundle that provides the referenced type.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub version: Option<String>,
-}
-
 /// The controller services in this flow snippet.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -2004,7 +1354,6 @@ pub struct ControllerServiceDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub versioned_component_id: Option<String>,
 }
-
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -2040,7 +1389,6 @@ pub struct ControllerServiceEntity {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub uri: Option<String>,
 }
-
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -2088,7 +1436,6 @@ pub struct ControllerServiceReferencingComponentDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub validation_errors: Option<Vec<String>>,
 }
-
 /// All components referencing this controller service.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -2119,38 +1466,6 @@ pub struct ControllerServiceReferencingComponentEntity {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub uri: Option<String>,
 }
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ControllerServiceReferencingComponentsEntity {
-    #[serde(rename = "controllerServiceReferencingComponents")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub controller_service_referencing_components:
-        Option<Vec<ControllerServiceReferencingComponentEntity>>,
-}
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ControllerServiceRunStatusEntity {
-    /// Acknowledges that this node is disconnected to allow for mutable requests to proceed.
-    #[serde(rename = "disconnectedNodeAcknowledged")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub disconnected_node_acknowledged: Option<bool>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub revision: Option<RevisionDto>,
-    /// The run status of the ControllerService.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub state: Option<String>,
-    /// Indicates whether or not responses should only include fields necessary for rendering the NiFi User Interface.
-    /// As such, when this value is set to true, some fields may be returned as null values, and the selected fields may change at any time without notice.
-    /// As a result, this value should not be set to true by any client other than the UI.
-    #[serde(rename = "uiOnly")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub ui_only: Option<bool>,
-}
-
 /// The status for this ControllerService.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -2169,260 +1484,6 @@ pub struct ControllerServiceStatusDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub validation_status: Option<String>,
 }
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ControllerServiceTypesEntity {
-    #[serde(rename = "controllerServiceTypes")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub controller_service_types: Option<Vec<DocumentedTypeDto>>,
-}
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ControllerServicesEntity {
-    #[serde(rename = "controllerServices")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub controller_services: Option<Vec<ControllerServiceEntity>>,
-    /// The current time on the system.
-    #[serde(rename = "currentTime")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub current_time: Option<String>,
-}
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ControllerStatusDto {
-    /// The number of active remote ports in the NiFi.
-    #[serde(rename = "activeRemotePortCount")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub active_remote_port_count: Option<i32>,
-    /// The number of active threads in the NiFi.
-    #[serde(rename = "activeThreadCount")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub active_thread_count: Option<i32>,
-    /// The size of the FlowFiles queued across the entire flow
-    #[serde(rename = "bytesQueued")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub bytes_queued: Option<i64>,
-    /// The number of disabled components in the NiFi.
-    #[serde(rename = "disabledCount")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub disabled_count: Option<i32>,
-    /// The number of FlowFiles queued across the entire flow
-    #[serde(rename = "flowFilesQueued")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub flow_files_queued: Option<i32>,
-    /// The number of inactive remote ports in the NiFi.
-    #[serde(rename = "inactiveRemotePortCount")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub inactive_remote_port_count: Option<i32>,
-    /// The number of invalid components in the NiFi.
-    #[serde(rename = "invalidCount")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub invalid_count: Option<i32>,
-    /// The number of locally modified and stale versioned process groups in the NiFi.
-    #[serde(rename = "locallyModifiedAndStaleCount")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub locally_modified_and_stale_count: Option<i32>,
-    /// The number of locally modified versioned process groups in the NiFi.
-    #[serde(rename = "locallyModifiedCount")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub locally_modified_count: Option<i32>,
-    /// The number of flowfiles queued in the NiFi.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub queued: Option<String>,
-    /// The number of running components in the NiFi.
-    #[serde(rename = "runningCount")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub running_count: Option<i32>,
-    /// The number of stale versioned process groups in the NiFi.
-    #[serde(rename = "staleCount")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub stale_count: Option<i32>,
-    /// The number of stopped components in the NiFi.
-    #[serde(rename = "stoppedCount")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub stopped_count: Option<i32>,
-    /// The number of versioned process groups in the NiFi that are unable to sync to a registry.
-    #[serde(rename = "syncFailureCount")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub sync_failure_count: Option<i32>,
-    /// The number of terminated threads in the NiFi.
-    #[serde(rename = "terminatedThreadCount")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub terminated_thread_count: Option<i32>,
-    /// The number of up to date versioned process groups in the NiFi.
-    #[serde(rename = "upToDateCount")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub up_to_date_count: Option<i32>,
-}
-
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ControllerStatusEntity {
-    pub controller_status: Option<ControllerStatusDto>,
-}
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct CopyRequestEntity {
-    /// The ids of the connections to be copied.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub connections: Option<Vec<String>>,
-    /// The ids of the funnels to be copied.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub funnels: Option<Vec<String>>,
-    /// The ids of the input ports to be copied.
-    #[serde(rename = "inputPorts")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub input_ports: Option<Vec<String>>,
-    /// The ids of the labels to be copied.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub labels: Option<Vec<String>>,
-    /// The ids of the output ports to be copied.
-    #[serde(rename = "outputPorts")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub output_ports: Option<Vec<String>>,
-    /// The ids of the process groups to be copied.
-    #[serde(rename = "processGroups")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub process_groups: Option<Vec<String>>,
-    /// The ids of the processors to be copied.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub processors: Option<Vec<String>>,
-    /// The ids of the remote process groups to be copied.
-    #[serde(rename = "remoteProcessGroups")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub remote_process_groups: Option<Vec<String>>,
-}
-
-/// The response from copying.
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct CopyResponseEntity {
-    /// The connections being copied.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub connections: Option<Vec<VersionedConnection>>,
-    /// The external controller service references.
-    #[serde(rename = "externalControllerServiceReferences")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub external_controller_service_references:
-        Option<std::collections::HashMap<String, Option<ExternalControllerServiceReference>>>,
-    /// The funnels being copied.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub funnels: Option<Vec<VersionedFunnel>>,
-    /// The id for this copy action.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    /// The input ports being copied.
-    #[serde(rename = "inputPorts")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub input_ports: Option<Vec<VersionedPort>>,
-    /// The labels being copied.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub labels: Option<Vec<VersionedLabel>>,
-    /// The output ports being copied.
-    #[serde(rename = "outputPorts")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub output_ports: Option<Vec<VersionedPort>>,
-    /// The referenced parameter contexts.
-    #[serde(rename = "parameterContexts")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub parameter_contexts:
-        Option<std::collections::HashMap<String, Option<VersionedParameterContext>>>,
-    /// The referenced parameter providers.
-    #[serde(rename = "parameterProviders")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub parameter_providers:
-        Option<std::collections::HashMap<String, Option<ParameterProviderReference>>>,
-    /// The process groups being copied.
-    #[serde(rename = "processGroups")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub process_groups: Option<Vec<VersionedProcessGroup>>,
-    /// The processors being copied.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub processors: Option<Vec<VersionedProcessor>>,
-    /// The remote process groups being copied.
-    #[serde(rename = "remoteProcessGroups")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub remote_process_groups: Option<Vec<VersionedRemoteProcessGroup>>,
-}
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct CopySnippetRequestEntity {
-    /// Acknowledges that this node is disconnected to allow for mutable requests to proceed.
-    #[serde(rename = "disconnectedNodeAcknowledged")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub disconnected_node_acknowledged: Option<bool>,
-    /// The x coordinate of the origin of the bounding box where the new components will be placed.
-    #[serde(rename = "originX")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub origin_x: Option<f64>,
-    /// The y coordinate of the origin of the bounding box where the new components will be placed.
-    #[serde(rename = "originY")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub origin_y: Option<f64>,
-    /// The identifier of the snippet.
-    #[serde(rename = "snippetId")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub snippet_id: Option<String>,
-}
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct CounterDto {
-    /// The context of the counter.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub context: Option<String>,
-    /// The id of the counter.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    /// The name of the counter.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-    /// The value of the counter.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub value: Option<String>,
-    /// The value count.
-    #[serde(rename = "valueCount")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub value_count: Option<i64>,
-}
-
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct CounterEntity {
-    pub counter: Option<CounterDto>,
-}
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct CountersDto {
-    #[serde(rename = "aggregateSnapshot")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub aggregate_snapshot: Option<CountersSnapshotDto>,
-    /// A Counters snapshot for each node in the cluster. If the NiFi instance is a standalone instance, rather than a cluster, this may be null.
-    #[serde(rename = "nodeSnapshots")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub node_snapshots: Option<Vec<NodeCountersSnapshotDto>>,
-}
-
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct CountersEntity {
-    pub counters: Option<CountersDto>,
-}
-
 /// The counters from the node.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -2435,69 +1496,6 @@ pub struct CountersSnapshotDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub generated: Option<String>,
 }
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct CreateActiveRequestEntity {
-    /// Acknowledges that this node is disconnected to allow for mutable requests to proceed.
-    #[serde(rename = "disconnectedNodeAcknowledged")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub disconnected_node_acknowledged: Option<bool>,
-    /// The Process Group ID that this active request will update
-    #[serde(rename = "processGroupId")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub process_group_id: Option<String>,
-}
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct CurrentUserEntity {
-    /// Whether the current user is anonymous.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub anonymous: Option<bool>,
-    /// Whether the current user can version flows.
-    #[serde(rename = "canVersionFlows")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub can_version_flows: Option<bool>,
-    /// Permissions for specific component restrictions.
-    #[serde(rename = "componentRestrictionPermissions")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub component_restriction_permissions: Option<Vec<ComponentRestrictionPermissionDto>>,
-    #[serde(rename = "controllerPermissions")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub controller_permissions: Option<PermissionsDto>,
-    #[serde(rename = "countersPermissions")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub counters_permissions: Option<PermissionsDto>,
-    /// The user identity being serialized.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub identity: Option<String>,
-    /// Whether the system is configured to support logout operations based on current user authentication status
-    #[serde(rename = "logoutSupported")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub logout_supported: Option<bool>,
-    #[serde(rename = "parameterContextPermissions")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub parameter_context_permissions: Option<PermissionsDto>,
-    #[serde(rename = "policiesPermissions")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub policies_permissions: Option<PermissionsDto>,
-    #[serde(rename = "provenancePermissions")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub provenance_permissions: Option<PermissionsDto>,
-    #[serde(rename = "restrictedComponentsPermissions")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub restricted_components_permissions: Option<PermissionsDto>,
-    #[serde(rename = "systemPermissions")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub system_permissions: Option<PermissionsDto>,
-    #[serde(rename = "tenantsPermissions")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub tenants_permissions: Option<PermissionsDto>,
-}
-
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -2506,7 +1504,6 @@ pub struct DateTimeParameter {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub date_time: Option<String>,
 }
-
 /// Indicates that this property is for selecting a controller service of the specified type
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -2529,25 +1526,6 @@ pub struct DefinedType {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
 }
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
-pub enum DiagnosticLevel {
-    #[serde(rename = "BASIC")]
-    Basic,
-    #[serde(rename = "VERBOSE")]
-    Verbose,
-}
-
-impl std::fmt::Display for DiagnosticLevel {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            DiagnosticLevel::Basic => write!(f, "BASIC"),
-            DiagnosticLevel::Verbose => write!(f, "VERBOSE"),
-        }
-    }
-}
-
 /// The differences in the component between the two flows
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -2561,7 +1539,6 @@ pub struct DifferenceDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub difference_type: Option<String>,
 }
-
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -2573,7 +1550,6 @@ pub struct DimensionsDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub width: Option<f64>,
 }
-
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -2609,7 +1585,6 @@ pub struct DocumentedTypeDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub usage_restriction: Option<String>,
 }
-
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -2676,13 +1651,11 @@ pub struct DropRequestDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub uri: Option<String>,
 }
-
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DropRequestEntity {
     pub drop_request: Option<DropRequestDto>,
 }
-
 /// Describes the dynamic properties supported by this component
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -2702,7 +1675,6 @@ pub struct DynamicProperty {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
 }
-
 /// If the processor supports dynamic relationships, this describes the dynamic relationship
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -2715,7 +1687,6 @@ pub struct DynamicRelationship {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
-
 /// An optional collection of explicit restrictions. If specified, these explicit restrictions will be enfored.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -2728,7 +1699,6 @@ pub struct ExplicitRestrictionDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub required_permission: Option<RequiredPermissionDto>,
 }
-
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -2740,106 +1710,6 @@ pub struct ExternalControllerServiceReference {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct FlowAnalysisResultEntity {
-    #[serde(rename = "flowAnalysisPending")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub flow_analysis_pending: Option<bool>,
-    #[serde(rename = "ruleViolations")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub rule_violations: Option<Vec<FlowAnalysisRuleViolationDto>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub rules: Option<Vec<FlowAnalysisRuleDto>>,
-}
-
-/// Flow Analysis Rules provided in this bundle
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct FlowAnalysisRuleDefinition {
-    /// Indicates if the component has additional details documentation
-    #[serde(rename = "additionalDetails")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub additional_details: Option<bool>,
-    /// The artifact name of the bundle that provides the referenced type.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub artifact: Option<String>,
-    #[serde(rename = "buildInfo")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub build_info: Option<BuildInfo>,
-    /// Whether or not the component has been deprecated
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub deprecated: Option<bool>,
-    /// If this component has been deprecated, this optional field provides alternatives to use
-    #[serde(rename = "deprecationAlternatives")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub deprecation_alternatives: Option<Vec<String>>,
-    /// If this component has been deprecated, this optional field can be used to provide an explanation
-    #[serde(rename = "deprecationReason")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub deprecation_reason: Option<String>,
-    /// Describes the dynamic properties supported by this component
-    #[serde(rename = "dynamicProperties")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub dynamic_properties: Option<Vec<DynamicProperty>>,
-    /// Explicit restrictions that indicate a require permission to use the component
-    #[serde(rename = "explicitRestrictions")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub explicit_restrictions: Option<Vec<Restriction>>,
-    /// The group name of the bundle that provides the referenced type.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub group: Option<String>,
-    /// Descriptions of configuration properties applicable to this component.
-    #[serde(rename = "propertyDescriptors")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub property_descriptors: Option<std::collections::HashMap<String, Option<PropertyDescriptor>>>,
-    /// If this type represents a provider for an interface, this lists the APIs it implements
-    #[serde(rename = "providedApiImplementations")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub provided_api_implementations: Option<Vec<DefinedType>>,
-    /// Whether or not the component has a general restriction
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub restricted: Option<bool>,
-    /// An optional description of the general restriction
-    #[serde(rename = "restrictedExplanation")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub restricted_explanation: Option<String>,
-    /// The names of other component types that may be related
-    #[serde(rename = "seeAlso")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub see_also: Option<Vec<String>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub stateful: Option<Stateful>,
-    /// Whether or not this component makes use of dynamic (user-set) properties.
-    #[serde(rename = "supportsDynamicProperties")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub supports_dynamic_properties: Option<bool>,
-    /// Whether or not this component makes use of sensitive dynamic (user-set) properties.
-    #[serde(rename = "supportsSensitiveDynamicProperties")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub supports_sensitive_dynamic_properties: Option<bool>,
-    /// The system resource considerations for the given component
-    #[serde(rename = "systemResourceConsiderations")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub system_resource_considerations: Option<Vec<SystemResourceConsideration>>,
-    /// The tags associated with this type
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub tags: Option<Vec<String>>,
-    /// The fully-qualified class type
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub r#type: Option<String>,
-    /// The description of the type.
-    #[serde(rename = "typeDescription")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub type_description: Option<String>,
-    /// The version of the bundle that provides the referenced type.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub version: Option<String>,
-}
-
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -2916,54 +1786,6 @@ pub struct FlowAnalysisRuleDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub versioned_component_id: Option<String>,
 }
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct FlowAnalysisRuleEntity {
-    /// The bulletins for this component.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub bulletins: Option<Vec<BulletinEntity>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub component: Option<FlowAnalysisRuleDto>,
-    /// Acknowledges that this node is disconnected to allow for mutable requests to proceed.
-    #[serde(rename = "disconnectedNodeAcknowledged")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub disconnected_node_acknowledged: Option<bool>,
-    /// The id of the component.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[serde(rename = "operatePermissions")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub operate_permissions: Option<PermissionsDto>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub permissions: Option<PermissionsDto>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub position: Option<PositionDto>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub revision: Option<RevisionDto>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub status: Option<FlowAnalysisRuleStatusDto>,
-    /// The URI for futures requests to the component.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub uri: Option<String>,
-}
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct FlowAnalysisRuleRunStatusEntity {
-    /// Acknowledges that this node is disconnected to allow for mutable requests to proceed.
-    #[serde(rename = "disconnectedNodeAcknowledged")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub disconnected_node_acknowledged: Option<bool>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub revision: Option<RevisionDto>,
-    /// The state of the FlowAnalysisRule.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub state: Option<String>,
-}
-
 /// The status for this FlowAnalysisRule.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -2982,16 +1804,6 @@ pub struct FlowAnalysisRuleStatusDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub validation_status: Option<String>,
 }
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct FlowAnalysisRuleTypesEntity {
-    #[serde(rename = "flowAnalysisRuleTypes")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub flow_analysis_rule_types: Option<Vec<DocumentedTypeDto>>,
-}
-
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -3028,20 +1840,6 @@ pub struct FlowAnalysisRuleViolationDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub violation_message: Option<String>,
 }
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct FlowAnalysisRulesEntity {
-    /// The current time on the system.
-    #[serde(rename = "currentTime")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub current_time: Option<String>,
-    #[serde(rename = "flowAnalysisRules")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub flow_analysis_rules: Option<Vec<FlowAnalysisRuleEntity>>,
-}
-
 /// This breadcrumb.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -3057,28 +1855,6 @@ pub struct FlowBreadcrumbDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub version_control_information: Option<VersionControlInformationDto>,
 }
-
-/// The breadcrumb of the process group.
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct FlowBreadcrumbEntity {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub breadcrumb: Option<FlowBreadcrumbDto>,
-    /// The id of this ancestor ProcessGroup.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[serde(rename = "parentBreadcrumb")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub parent_breadcrumb: Option<Box<FlowBreadcrumbEntity>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub permissions: Option<PermissionsDto>,
-    /// The current state of the Process Group, as it relates to the Versioned Flow
-    #[serde(rename = "versionedFlowState")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub versioned_flow_state: Option<String>,
-}
-
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -3088,170 +1864,6 @@ pub struct FlowComparisonEntity {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub component_differences: Option<Vec<ComponentDifferenceDto>>,
 }
-
-/// The controller configuration.
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct FlowConfigurationDto {
-    /// The current time on the system.
-    #[serde(rename = "currentTime")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub current_time: Option<String>,
-    /// The default back pressure data size threshold.
-    #[serde(rename = "defaultBackPressureDataSizeThreshold")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub default_back_pressure_data_size_threshold: Option<String>,
-    /// The default back pressure object threshold.
-    #[serde(rename = "defaultBackPressureObjectThreshold")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub default_back_pressure_object_threshold: Option<i64>,
-    /// Whether this NiFi supports a configurable authorizer.
-    #[serde(rename = "supportsConfigurableAuthorizer")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub supports_configurable_authorizer: Option<bool>,
-    /// Whether this NiFi supports configurable users and groups.
-    #[serde(rename = "supportsConfigurableUsersAndGroups")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub supports_configurable_users_and_groups: Option<bool>,
-    /// Whether this NiFi supports a managed authorizer. Managed authorizers can visualize users, groups, and policies in the UI.
-    #[serde(rename = "supportsManagedAuthorizer")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub supports_managed_authorizer: Option<bool>,
-    /// The time offset of the system.
-    #[serde(rename = "timeOffset")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub time_offset: Option<i32>,
-}
-
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct FlowConfigurationEntity {
-    pub flow_configuration: Option<FlowConfigurationDto>,
-}
-
-/// Flow containing the components that were created as part of this paste action.
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct FlowDto {
-    /// The connections in this flow.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub connections: Option<Vec<ConnectionEntity>>,
-    /// The funnels in this flow.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub funnels: Option<Vec<FunnelEntity>>,
-    /// The input ports in this flow.
-    #[serde(rename = "inputPorts")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub input_ports: Option<Vec<PortEntity>>,
-    /// The labels in this flow.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub labels: Option<Vec<LabelEntity>>,
-    /// The output ports in this flow.
-    #[serde(rename = "outputPorts")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub output_ports: Option<Vec<PortEntity>>,
-    /// The process groups in this flow.
-    #[serde(rename = "processGroups")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub process_groups: Option<Vec<ProcessGroupEntity>>,
-    /// The processors in this flow.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub processors: Option<Vec<ProcessorEntity>>,
-    /// The remote process groups in this flow.
-    #[serde(rename = "remoteProcessGroups")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub remote_process_groups: Option<Vec<RemoteProcessGroupEntity>>,
-}
-
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct FlowEntity {
-    pub flow: Option<FlowDto>,
-}
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct FlowFileDto {
-    /// The FlowFile attributes.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub attributes: Option<std::collections::HashMap<String, Option<String>>>,
-    /// The label for the node where this FlowFile resides.
-    #[serde(rename = "clusterNodeAddress")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub cluster_node_address: Option<String>,
-    /// The id of the node where this FlowFile resides.
-    #[serde(rename = "clusterNodeId")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub cluster_node_id: Option<String>,
-    /// The container in which the content claim lives.
-    #[serde(rename = "contentClaimContainer")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub content_claim_container: Option<String>,
-    /// The file size of the content claim formatted.
-    #[serde(rename = "contentClaimFileSize")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub content_claim_file_size: Option<String>,
-    /// The file size of the content claim in bytes.
-    #[serde(rename = "contentClaimFileSizeBytes")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub content_claim_file_size_bytes: Option<i64>,
-    /// The identifier of the content claim.
-    #[serde(rename = "contentClaimIdentifier")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub content_claim_identifier: Option<String>,
-    /// The offset into the content claim where the flowfile's content begins.
-    #[serde(rename = "contentClaimOffset")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub content_claim_offset: Option<i64>,
-    /// The section in which the content claim lives.
-    #[serde(rename = "contentClaimSection")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub content_claim_section: Option<String>,
-    /// The FlowFile filename.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub filename: Option<String>,
-    /// Duration since the FlowFile's greatest ancestor entered the flow.
-    #[serde(rename = "lineageDuration")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub lineage_duration: Option<i64>,
-    /// The FlowFile mime type.
-    #[serde(rename = "mimeType")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub mime_type: Option<String>,
-    /// If the FlowFile is penalized.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub penalized: Option<bool>,
-    /// How long in milliseconds until the FlowFile penalty expires.
-    #[serde(rename = "penaltyExpiresIn")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub penalty_expires_in: Option<i64>,
-    /// The FlowFile's position in the queue.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub position: Option<i32>,
-    /// How long this FlowFile has been enqueued.
-    #[serde(rename = "queuedDuration")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub queued_duration: Option<i64>,
-    /// The FlowFile file size.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub size: Option<i64>,
-    /// The URI that can be used to access this FlowFile.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub uri: Option<String>,
-    /// The FlowFile UUID.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub uuid: Option<String>,
-}
-
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct FlowFileEntity {
-    pub flow_file: Option<FlowFileDto>,
-}
-
 /// The FlowFile summaries. The summaries will be populated once the request has completed.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -3300,25 +1912,6 @@ pub struct FlowFileSummaryDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub uuid: Option<String>,
 }
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
-pub enum FlowMetricsReportingStrategy {
-    #[serde(rename = "ALL_COMPONENTS")]
-    AllComponents,
-    #[serde(rename = "ALL_PROCESS_GROUPS")]
-    AllProcessGroups,
-}
-
-impl std::fmt::Display for FlowMetricsReportingStrategy {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            FlowMetricsReportingStrategy::AllComponents => write!(f, "ALL_COMPONENTS"),
-            FlowMetricsReportingStrategy::AllProcessGroups => write!(f, "ALL_PROCESS_GROUPS"),
-        }
-    }
-}
-
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -3327,21 +1920,11 @@ pub struct FlowRegistryBranchDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
-
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct FlowRegistryBranchEntity {
     pub branch: Option<FlowRegistryBranchDto>,
 }
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct FlowRegistryBranchesEntity {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub branches: Option<Vec<FlowRegistryBranchEntity>>,
-}
-
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -3358,7 +1941,6 @@ pub struct FlowRegistryBucket {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub permissions: Option<FlowRegistryPermissions>,
 }
-
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -3376,7 +1958,6 @@ pub struct FlowRegistryBucketDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
-
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -3388,122 +1969,6 @@ pub struct FlowRegistryBucketEntity {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub permissions: Option<PermissionsDto>,
 }
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct FlowRegistryBucketsEntity {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub buckets: Option<Vec<FlowRegistryBucketEntity>>,
-}
-
-/// Flow Registry Clients provided in this bundle
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct FlowRegistryClientDefinition {
-    /// Indicates if the component has additional details documentation
-    #[serde(rename = "additionalDetails")]
-    #[serde(default)]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub additional_details: Option<bool>,
-    /// The artifact name of the bundle that provides the referenced type.
-    #[serde(default)]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub artifact: Option<String>,
-    #[serde(rename = "buildInfo")]
-    #[serde(default)]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub build_info: Option<BuildInfo>,
-    /// Whether or not the component has been deprecated
-    #[serde(default)]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub deprecated: Option<bool>,
-    /// If this component has been deprecated, this optional field provides alternatives to use
-    #[serde(rename = "deprecationAlternatives")]
-    #[serde(default)]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub deprecation_alternatives: Option<Vec<String>>,
-    /// If this component has been deprecated, this optional field can be used to provide an explanation
-    #[serde(rename = "deprecationReason")]
-    #[serde(default)]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub deprecation_reason: Option<String>,
-    /// Describes the dynamic properties supported by this component
-    #[serde(rename = "dynamicProperties")]
-    #[serde(default)]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub dynamic_properties: Option<Vec<DynamicProperty>>,
-    /// Explicit restrictions that indicate a require permission to use the component
-    #[serde(rename = "explicitRestrictions")]
-    #[serde(default)]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub explicit_restrictions: Option<Vec<Restriction>>,
-    /// The group name of the bundle that provides the referenced type.
-    #[serde(default)]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub group: Option<String>,
-    /// Descriptions of configuration properties applicable to this component.
-    #[serde(rename = "propertyDescriptors")]
-    #[serde(default)]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub property_descriptors: Option<std::collections::HashMap<String, Option<PropertyDescriptor>>>,
-    /// If this type represents a provider for an interface, this lists the APIs it implements
-    #[serde(rename = "providedApiImplementations")]
-    #[serde(default)]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub provided_api_implementations: Option<Vec<DefinedType>>,
-    /// Whether or not the component has a general restriction
-    #[serde(default)]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub restricted: Option<bool>,
-    /// An optional description of the general restriction
-    #[serde(rename = "restrictedExplanation")]
-    #[serde(default)]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub restricted_explanation: Option<String>,
-    /// The names of other component types that may be related
-    #[serde(rename = "seeAlso")]
-    #[serde(default)]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub see_also: Option<Vec<String>>,
-    #[serde(default)]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub stateful: Option<Stateful>,
-    /// Whether or not this component makes use of dynamic (user-set) properties.
-    #[serde(rename = "supportsDynamicProperties")]
-    #[serde(default)]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub supports_dynamic_properties: Option<bool>,
-    /// Whether or not this component makes use of sensitive dynamic (user-set) properties.
-    #[serde(rename = "supportsSensitiveDynamicProperties")]
-    #[serde(default)]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub supports_sensitive_dynamic_properties: Option<bool>,
-    /// The system resource considerations for the given component
-    #[serde(rename = "systemResourceConsiderations")]
-    #[serde(default)]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub system_resource_considerations: Option<Vec<SystemResourceConsideration>>,
-    /// The tags associated with this type
-    #[serde(default)]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub tags: Option<Vec<String>>,
-    /// The fully-qualified class type
-    #[serde(default)]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub r#type: Option<String>,
-    /// The description of the type.
-    #[serde(rename = "typeDescription")]
-    #[serde(default)]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub type_description: Option<String>,
-    /// The version of the bundle that provides the referenced type.
-    #[serde(default)]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub version: Option<String>,
-}
-
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -3567,46 +2032,6 @@ pub struct FlowRegistryClientDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub validation_status: Option<String>,
 }
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct FlowRegistryClientEntity {
-    /// The bulletins for this component.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub bulletins: Option<Vec<BulletinEntity>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub component: Option<FlowRegistryClientDto>,
-    /// Acknowledges that this node is disconnected to allow for mutable requests to proceed.
-    #[serde(rename = "disconnectedNodeAcknowledged")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub disconnected_node_acknowledged: Option<bool>,
-    /// The id of the component.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[serde(rename = "operatePermissions")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub operate_permissions: Option<PermissionsDto>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub permissions: Option<PermissionsDto>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub position: Option<PositionDto>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub revision: Option<RevisionDto>,
-    /// The URI for futures requests to the component.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub uri: Option<String>,
-}
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct FlowRegistryClientTypesEntity {
-    #[serde(rename = "flowRegistryClientTypes")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub flow_registry_client_types: Option<Vec<DocumentedTypeDto>>,
-}
-
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -3618,7 +2043,6 @@ pub struct FlowRegistryClientsEntity {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub registries: Option<Vec<FlowRegistryClientEntity>>,
 }
-
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -3633,7 +2057,6 @@ pub struct FlowRegistryPermissions {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub can_write: Option<bool>,
 }
-
 /// The contents of this process group.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -3672,7 +2095,6 @@ pub struct FlowSnippetDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub remote_process_groups: Option<Vec<RemoteProcessGroupDto>>,
 }
-
 /// The funnels in this flow snippet.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -3692,7 +2114,6 @@ pub struct FunnelDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub versioned_component_id: Option<String>,
 }
-
 /// The funnels in this flow.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -3720,15 +2141,6 @@ pub struct FunnelEntity {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub uri: Option<String>,
 }
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct FunnelsEntity {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub funnels: Option<Vec<FunnelEntity>>,
-}
-
 /// The garbage collection details.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -3750,7 +2162,6 @@ pub struct GarbageCollectionDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
-
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -3766,52 +2177,11 @@ pub struct HistoryDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub total: Option<i32>,
 }
-
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct HistoryEntity {
     pub history: Option<HistoryDto>,
 }
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
-pub enum IncludedRegistries {
-    #[serde(rename = "BULLETIN")]
-    Bulletin,
-    #[serde(rename = "CLUSTER")]
-    Cluster,
-    #[serde(rename = "CONNECTION")]
-    Connection,
-    #[serde(rename = "JVM")]
-    Jvm,
-    #[serde(rename = "NIFI")]
-    Nifi,
-    #[serde(rename = "VERSION_INFO")]
-    VersionInfo,
-}
-
-impl std::fmt::Display for IncludedRegistries {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            IncludedRegistries::Bulletin => write!(f, "BULLETIN"),
-            IncludedRegistries::Cluster => write!(f, "CLUSTER"),
-            IncludedRegistries::Connection => write!(f, "CONNECTION"),
-            IncludedRegistries::Jvm => write!(f, "JVM"),
-            IncludedRegistries::Nifi => write!(f, "NIFI"),
-            IncludedRegistries::VersionInfo => write!(f, "VERSION_INFO"),
-        }
-    }
-}
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct InputPortsEntity {
-    #[serde(rename = "inputPorts")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub input_ports: Option<Vec<PortEntity>>,
-}
-
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -3819,7 +2189,6 @@ pub struct IntegerParameter {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub integer: Option<i32>,
 }
-
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -3837,16 +2206,6 @@ pub struct JmxMetricsResultDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub bean_name: Option<String>,
 }
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct JmxMetricsResultsEntity {
-    #[serde(rename = "jmxMetricsResults")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub jmx_metrics_results: Option<Vec<JmxMetricsResultDto>>,
-}
-
 /// The labels in this flow snippet.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -3882,7 +2241,6 @@ pub struct LabelDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub width: Option<f64>,
 }
-
 /// The labels in this flow.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -3916,69 +2274,6 @@ pub struct LabelEntity {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub uri: Option<String>,
 }
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct LabelsEntity {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub labels: Option<Vec<LabelEntity>>,
-}
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct LatestProvenanceEventsDto {
-    #[serde(rename = "componentId")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub component_id: Option<String>,
-    #[serde(rename = "provenanceEvents")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub provenance_events: Option<Vec<ProvenanceEventDto>>,
-}
-
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct LatestProvenanceEventsEntity {
-    pub latest_provenance_events: Option<LatestProvenanceEventsDto>,
-}
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct LineageDto {
-    /// When the lineage query will expire.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub expiration: Option<String>,
-    /// Whether the lineage query has finished.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub finished: Option<bool>,
-    /// The id of this lineage query.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    /// The percent complete for the lineage query.
-    #[serde(rename = "percentCompleted")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub percent_completed: Option<i32>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub request: Option<LineageRequestDto>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub results: Option<LineageResultsDto>,
-    /// When the lineage query was submitted.
-    #[serde(rename = "submissionTime")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub submission_time: Option<String>,
-    /// The URI for this lineage query for later retrieval and deletion.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub uri: Option<String>,
-}
-
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct LineageEntity {
-    pub lineage: Option<LineageDto>,
-}
-
 /// The initial lineage result.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -4002,7 +2297,6 @@ pub struct LineageRequestDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub uuid: Option<String>,
 }
-
 /// The results of the lineage query.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -4018,7 +2312,6 @@ pub struct LineageResultsDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub nodes: Option<Vec<ProvenanceNodeDto>>,
 }
-
 /// A list of ingress ports that are currently configured
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -4075,77 +2368,6 @@ pub struct ListenPortDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub transport_protocol: Option<String>,
 }
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ListenPortsEntity {
-    /// A list of ingress ports that are currently configured
-    #[serde(rename = "listenPorts")]
-    #[serde(default)]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub listen_ports: Option<Vec<ListenPortDto>>,
-}
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ListingRequestDto {
-    /// Whether the destination of the connection is running
-    #[serde(rename = "destinationRunning")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub destination_running: Option<bool>,
-    /// The reason, if any, that this listing request failed.
-    #[serde(rename = "failureReason")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub failure_reason: Option<String>,
-    /// Whether the query has finished.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub finished: Option<bool>,
-    /// The FlowFile summaries. The summaries will be populated once the request has completed.
-    #[serde(rename = "flowFileSummaries")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub flow_file_summaries: Option<Vec<FlowFileSummaryDto>>,
-    /// The id for this listing request.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    /// The last time this listing request was updated.
-    #[serde(rename = "lastUpdated")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub last_updated: Option<String>,
-    /// The maximum number of FlowFileSummary objects to return
-    #[serde(rename = "maxResults")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub max_results: Option<i32>,
-    /// The current percent complete.
-    #[serde(rename = "percentCompleted")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub percent_completed: Option<i32>,
-    #[serde(rename = "queueSize")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub queue_size: Option<QueueSizeDto>,
-    /// Whether the source of the connection is running
-    #[serde(rename = "sourceRunning")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub source_running: Option<bool>,
-    /// The current state of the listing request.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub state: Option<String>,
-    /// The timestamp when the query was submitted.
-    #[serde(rename = "submissionTime")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub submission_time: Option<String>,
-    /// The URI for future requests to this listing request.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub uri: Option<String>,
-}
-
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ListingRequestEntity {
-    pub listing_request: Option<ListingRequestDto>,
-}
-
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -4153,7 +2375,6 @@ pub struct LongParameter {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub long: Option<i64>,
 }
-
 /// A list of use cases that have been documented that involve this Processor in conjunction with other Processors
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -4172,7 +2393,6 @@ pub struct MultiProcessorUseCase {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub notes: Option<String>,
 }
-
 /// The coordinate of another NAR that the this NAR is dependent on, or null if not dependent on another NAR.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -4188,113 +2408,6 @@ pub struct NarCoordinateDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
 }
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct NarDetailsEntity {
-    /// The ControllerService types contained in the NAR
-    #[serde(rename = "controllerServiceTypes")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub controller_service_types: Option<Vec<DocumentedTypeDto>>,
-    /// The coordinates of NARs that depend on this NAR
-    #[serde(rename = "dependentCoordinates")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub dependent_coordinates: Option<Vec<NarCoordinateDto>>,
-    /// The FlowAnalysisRule types contained in the NAR
-    #[serde(rename = "flowAnalysisRuleTypes")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub flow_analysis_rule_types: Option<Vec<DocumentedTypeDto>>,
-    /// The FlowRegistryClient types contained in the NAR
-    #[serde(rename = "flowRegistryClientTypes")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub flow_registry_client_types: Option<Vec<DocumentedTypeDto>>,
-    #[serde(rename = "narSummary")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub nar_summary: Option<NarSummaryDto>,
-    /// The ParameterProvider types contained in the NAR
-    #[serde(rename = "parameterProviderTypes")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub parameter_provider_types: Option<Vec<DocumentedTypeDto>>,
-    /// The Processor types contained in the NAR
-    #[serde(rename = "processorTypes")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub processor_types: Option<Vec<DocumentedTypeDto>>,
-    /// The ReportingTask types contained in the NAR
-    #[serde(rename = "reportingTaskTypes")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub reporting_task_types: Option<Vec<DocumentedTypeDto>>,
-}
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct NarSummariesEntity {
-    /// The current time on the system.
-    #[serde(rename = "currentTime")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub current_time: Option<String>,
-    /// The NAR summaries
-    #[serde(rename = "narSummaries")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub nar_summaries: Option<Vec<NarSummaryEntity>>,
-}
-
-/// The NAR summary
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct NarSummaryDto {
-    /// The time the NAR was built according to it's MANIFEST
-    #[serde(rename = "buildTime")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub build_time: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub coordinate: Option<NarCoordinateDto>,
-    /// The plugin that created the NAR according to it's MANIFEST
-    #[serde(rename = "createdBy")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub created_by: Option<String>,
-    #[serde(rename = "dependencyCoordinate")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub dependency_coordinate: Option<NarCoordinateDto>,
-    /// The hex digest of the NAR contents
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub digest: Option<String>,
-    /// The number of extensions contained in this NAR
-    #[serde(rename = "extensionCount")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub extension_count: Option<i32>,
-    /// Information about why the installation failed, only populated when the state is failed
-    #[serde(rename = "failureMessage")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub failure_message: Option<String>,
-    /// The identifier of the NAR.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub identifier: Option<String>,
-    /// Indicates if the install task has completed
-    #[serde(rename = "installComplete")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub install_complete: Option<bool>,
-    /// The identifier of the source of this NAR
-    #[serde(rename = "sourceIdentifier")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub source_identifier: Option<String>,
-    /// The source of this NAR
-    #[serde(rename = "sourceType")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub source_type: Option<String>,
-    /// The state of the NAR (i.e. Installed, or not)
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub state: Option<String>,
-}
-
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct NarSummaryEntity {
-    pub nar_summary: Option<NarSummaryDto>,
-}
-
 /// A list of status snapshots for each node
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -4315,7 +2428,6 @@ pub struct NodeConnectionStatisticsSnapshotDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub statistics_snapshot: Option<ConnectionStatisticsSnapshotDto>,
 }
-
 /// A list of status snapshots for each node
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -4336,7 +2448,6 @@ pub struct NodeConnectionStatusSnapshotDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub status_snapshot: Option<ConnectionStatusSnapshotDto>,
 }
-
 /// A Counters snapshot for each node in the cluster. If the NiFi instance is a standalone instance, rather than a cluster, this may be null.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -4356,68 +2467,6 @@ pub struct NodeCountersSnapshotDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub snapshot: Option<CountersSnapshotDto>,
 }
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct NodeDto {
-    /// The active threads for the NiFi on the node.
-    #[serde(rename = "activeThreadCount")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub active_thread_count: Option<i32>,
-    /// The node's host/ip address.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub address: Option<String>,
-    /// The port the node is listening for API requests.
-    #[serde(rename = "apiPort")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub api_port: Option<i32>,
-    /// The total size of all FlowFiles that are queued up on the node
-    #[serde(rename = "bytesQueued")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub bytes_queued: Option<i64>,
-    /// The time of the node's last connection request.
-    #[serde(rename = "connectionRequested")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub connection_requested: Option<String>,
-    /// The node's events.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub events: Option<Vec<NodeEventDto>>,
-    #[serde(rename = "flowFileBytes")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub flow_file_bytes: Option<i64>,
-    /// The number of FlowFiles that are queued up on the node
-    #[serde(rename = "flowFilesQueued")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub flow_files_queued: Option<i32>,
-    /// the time of the nodes's last heartbeat.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub heartbeat: Option<String>,
-    /// The id of the node.
-    #[serde(rename = "nodeId")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub node_id: Option<String>,
-    /// The time at which this Node was last refreshed.
-    #[serde(rename = "nodeStartTime")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub node_start_time: Option<String>,
-    /// The queue the NiFi on the node.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub queued: Option<String>,
-    /// The roles of this node.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub roles: Option<Vec<String>>,
-    /// The node's status.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub status: Option<String>,
-}
-
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct NodeEntity {
-    pub node: Option<NodeDto>,
-}
-
 /// The node's events.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -4433,7 +2482,6 @@ pub struct NodeEventDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub timestamp: Option<String>,
 }
-
 /// A status snapshot for each node in the cluster. If the NiFi instance is a standalone instance, rather than a cluster, this may be null.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -4454,7 +2502,6 @@ pub struct NodePortStatusSnapshotDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub status_snapshot: Option<PortStatusSnapshotDto>,
 }
-
 /// The status reported by each node in the cluster. If the NiFi instance is a standalone instance, rather than a clustered instance, this value may be null.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -4475,7 +2522,6 @@ pub struct NodeProcessGroupStatusSnapshotDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub status_snapshot: Option<ProcessGroupStatusSnapshotDto>,
 }
-
 /// A status snapshot for each node in the cluster. If the NiFi instance is a standalone instance, rather than a cluster, this may be null.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -4496,7 +2542,6 @@ pub struct NodeProcessorStatusSnapshotDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub status_snapshot: Option<ProcessorStatusSnapshotDto>,
 }
-
 /// A status snapshot for each node in the cluster. If the NiFi instance is a standalone instance, rather than a cluster, this may be null.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -4517,7 +2562,6 @@ pub struct NodeRemoteProcessGroupStatusSnapshotDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub status_snapshot: Option<RemoteProcessGroupStatusSnapshotDto>,
 }
-
 /// The node-wise results
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -4537,7 +2581,6 @@ pub struct NodeReplayLastEventSnapshotDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub snapshot: Option<ReplayLastEventSnapshotDto>,
 }
-
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -4549,7 +2592,6 @@ pub struct NodeSearchResultDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
 }
-
 /// The NodeStatusSnapshotsDTO objects that provide the actual metric values for the component, for each node. If the NiFi instance is not clustered, this value will be null.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -4571,7 +2613,6 @@ pub struct NodeStatusSnapshotsDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub status_snapshots: Option<Vec<StatusSnapshotDto>>,
 }
-
 /// A systems diagnostics snapshot for each node in the cluster. If the NiFi instance is a standalone instance, rather than a cluster, this may be null.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -4591,16 +2632,6 @@ pub struct NodeSystemDiagnosticsSnapshotDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub snapshot: Option<SystemDiagnosticsSnapshotDto>,
 }
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct OutputPortsEntity {
-    #[serde(rename = "outputPorts")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub output_ports: Option<Vec<PortEntity>>,
-}
-
 /// The Parameter Context that is being operated on. This may not be populated until the request has successfully completed.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -4630,52 +2661,6 @@ pub struct ParameterContextDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub parameters: Option<Vec<ParameterEntity>>,
 }
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ParameterContextEntity {
-    /// The bulletins for this component.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub bulletins: Option<Vec<BulletinEntity>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub component: Option<ParameterContextDto>,
-    /// Acknowledges that this node is disconnected to allow for mutable requests to proceed.
-    #[serde(rename = "disconnectedNodeAcknowledged")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub disconnected_node_acknowledged: Option<bool>,
-    /// The id of the component.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub permissions: Option<PermissionsDto>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub position: Option<PositionDto>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub revision: Option<RevisionDto>,
-    /// The URI for futures requests to the component.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub uri: Option<String>,
-}
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
-pub enum ParameterContextHandlingStrategy {
-    #[serde(rename = "KEEP_EXISTING")]
-    KeepExisting,
-    #[serde(rename = "REPLACE")]
-    Replace,
-}
-
-impl std::fmt::Display for ParameterContextHandlingStrategy {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            ParameterContextHandlingStrategy::KeepExisting => write!(f, "KEEP_EXISTING"),
-            ParameterContextHandlingStrategy::Replace => write!(f, "REPLACE"),
-        }
-    }
-}
-
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -4687,7 +2672,6 @@ pub struct ParameterContextReferenceDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
-
 /// The Parameter Context, or null if no Parameter Context has been bound to the Process Group
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -4701,7 +2685,6 @@ pub struct ParameterContextReferenceEntity {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub permissions: Option<PermissionsDto>,
 }
-
 /// The Parameter Contexts updated by this Parameter Provider. This may not be populated until the request has successfully completed.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -4718,7 +2701,6 @@ pub struct ParameterContextUpdateEntity {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub referencing_components: Option<Vec<AffectedComponentEntity>>,
 }
-
 /// The Update Request
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -4765,18 +2747,6 @@ pub struct ParameterContextUpdateRequestDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub uri: Option<String>,
 }
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ParameterContextUpdateRequestEntity {
-    #[serde(rename = "parameterContextRevision")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub parameter_context_revision: Option<RevisionDto>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub request: Option<ParameterContextUpdateRequestDto>,
-}
-
 /// The steps that are required in order to complete the request, along with the status of each
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -4793,7 +2763,6 @@ pub struct ParameterContextUpdateStepDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub failure_reason: Option<String>,
 }
-
 /// The Update Request
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -4839,19 +2808,6 @@ pub struct ParameterContextValidationRequestDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub uri: Option<String>,
 }
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ParameterContextValidationRequestEntity {
-    /// Acknowledges that this node is disconnected to allow for mutable requests to proceed.
-    #[serde(rename = "disconnectedNodeAcknowledged")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub disconnected_node_acknowledged: Option<bool>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub request: Option<ParameterContextValidationRequestDto>,
-}
-
 /// The steps that are required in order to complete the request, along with the status of each
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -4868,21 +2824,6 @@ pub struct ParameterContextValidationStepDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub failure_reason: Option<String>,
 }
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ParameterContextsEntity {
-    /// The current time on the system.
-    #[serde(rename = "currentTime")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub current_time: Option<String>,
-    /// The Parameter Contexts
-    #[serde(rename = "parameterContexts")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub parameter_contexts: Option<Vec<ParameterContextEntity>>,
-}
-
 /// The parameter information
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -4925,7 +2866,6 @@ pub struct ParameterDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub value_removed: Option<bool>,
 }
-
 /// The name of the Parameter
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -4938,7 +2878,6 @@ pub struct ParameterEntity {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub parameter: Option<ParameterDto>,
 }
-
 /// Configuration for any fetched parameter groups.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -4960,64 +2899,6 @@ pub struct ParameterGroupConfigurationEntity {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub synchronized: Option<bool>,
 }
-
-/// The Apply Parameters Request
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ParameterProviderApplyParametersRequestDto {
-    /// Whether or not the request is completed
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub complete: Option<bool>,
-    /// The reason for the request failing, or null if the request has not failed
-    #[serde(rename = "failureReason")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub failure_reason: Option<String>,
-    /// The timestamp of when the request was last updated
-    #[serde(rename = "lastUpdated")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub last_updated: Option<String>,
-    /// The Parameter Contexts updated by this Parameter Provider. This may not be populated until the request has successfully completed.
-    #[serde(rename = "parameterContextUpdates")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub parameter_context_updates: Option<Vec<ParameterContextUpdateEntity>>,
-    #[serde(rename = "parameterProvider")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub parameter_provider: Option<ParameterProviderDto>,
-    /// A value between 0 and 100 (inclusive) indicating how close the request is to completion
-    #[serde(rename = "percentCompleted")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub percent_completed: Option<i32>,
-    /// The components that are referenced by the update.
-    #[serde(rename = "referencingComponents")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub referencing_components: Option<Vec<AffectedComponentEntity>>,
-    /// The ID of the request
-    #[serde(rename = "requestId")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub request_id: Option<String>,
-    /// A description of the current state of the request
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub state: Option<String>,
-    /// The timestamp of when the request was submitted
-    #[serde(rename = "submissionTime")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub submission_time: Option<String>,
-    /// The steps that are required in order to complete the request, along with the status of each
-    #[serde(rename = "updateSteps")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub update_steps: Option<Vec<ParameterProviderApplyParametersUpdateStepDto>>,
-    /// The URI for the request
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub uri: Option<String>,
-}
-
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ParameterProviderApplyParametersRequestEntity {
-    pub request: Option<ParameterProviderApplyParametersRequestDto>,
-}
-
 /// The steps that are required in order to complete the request, along with the status of each
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -5034,7 +2915,6 @@ pub struct ParameterProviderApplyParametersUpdateStepDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub failure_reason: Option<String>,
 }
-
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -5055,7 +2935,6 @@ pub struct ParameterProviderConfigurationDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub synchronized: Option<bool>,
 }
-
 /// Optional configuration for a Parameter Provider
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -5069,92 +2948,6 @@ pub struct ParameterProviderConfigurationEntity {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub permissions: Option<PermissionsDto>,
 }
-
-/// Parameter Providers provided in this bundle
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ParameterProviderDefinition {
-    /// Indicates if the component has additional details documentation
-    #[serde(rename = "additionalDetails")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub additional_details: Option<bool>,
-    /// The artifact name of the bundle that provides the referenced type.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub artifact: Option<String>,
-    #[serde(rename = "buildInfo")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub build_info: Option<BuildInfo>,
-    /// Whether or not the component has been deprecated
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub deprecated: Option<bool>,
-    /// If this component has been deprecated, this optional field provides alternatives to use
-    #[serde(rename = "deprecationAlternatives")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub deprecation_alternatives: Option<Vec<String>>,
-    /// If this component has been deprecated, this optional field can be used to provide an explanation
-    #[serde(rename = "deprecationReason")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub deprecation_reason: Option<String>,
-    /// Describes the dynamic properties supported by this component
-    #[serde(rename = "dynamicProperties")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub dynamic_properties: Option<Vec<DynamicProperty>>,
-    /// Explicit restrictions that indicate a require permission to use the component
-    #[serde(rename = "explicitRestrictions")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub explicit_restrictions: Option<Vec<Restriction>>,
-    /// The group name of the bundle that provides the referenced type.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub group: Option<String>,
-    /// Descriptions of configuration properties applicable to this component.
-    #[serde(rename = "propertyDescriptors")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub property_descriptors: Option<std::collections::HashMap<String, Option<PropertyDescriptor>>>,
-    /// If this type represents a provider for an interface, this lists the APIs it implements
-    #[serde(rename = "providedApiImplementations")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub provided_api_implementations: Option<Vec<DefinedType>>,
-    /// Whether or not the component has a general restriction
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub restricted: Option<bool>,
-    /// An optional description of the general restriction
-    #[serde(rename = "restrictedExplanation")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub restricted_explanation: Option<String>,
-    /// The names of other component types that may be related
-    #[serde(rename = "seeAlso")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub see_also: Option<Vec<String>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub stateful: Option<Stateful>,
-    /// Whether or not this component makes use of dynamic (user-set) properties.
-    #[serde(rename = "supportsDynamicProperties")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub supports_dynamic_properties: Option<bool>,
-    /// Whether or not this component makes use of sensitive dynamic (user-set) properties.
-    #[serde(rename = "supportsSensitiveDynamicProperties")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub supports_sensitive_dynamic_properties: Option<bool>,
-    /// The system resource considerations for the given component
-    #[serde(rename = "systemResourceConsiderations")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub system_resource_considerations: Option<Vec<SystemResourceConsideration>>,
-    /// The tags associated with this type
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub tags: Option<Vec<String>>,
-    /// The fully-qualified class type
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub r#type: Option<String>,
-    /// The description of the type.
-    #[serde(rename = "typeDescription")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub type_description: Option<String>,
-    /// The version of the bundle that provides the referenced type.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub version: Option<String>,
-}
-
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -5240,7 +3033,6 @@ pub struct ParameterProviderDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub versioned_component_id: Option<String>,
 }
-
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -5267,41 +3059,6 @@ pub struct ParameterProviderEntity {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub uri: Option<String>,
 }
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ParameterProviderParameterApplicationEntity {
-    /// Acknowledges that this node is disconnected to allow for mutable requests to proceed.
-    #[serde(rename = "disconnectedNodeAcknowledged")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub disconnected_node_acknowledged: Option<bool>,
-    /// The id of the parameter provider.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    /// Configuration for the fetched Parameter Groups
-    #[serde(rename = "parameterGroupConfigurations")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub parameter_group_configurations: Option<Vec<ParameterGroupConfigurationEntity>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub revision: Option<RevisionDto>,
-}
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ParameterProviderParameterFetchEntity {
-    /// Acknowledges that this node is disconnected to allow for mutable requests to proceed.
-    #[serde(rename = "disconnectedNodeAcknowledged")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub disconnected_node_acknowledged: Option<bool>,
-    /// The id of the parameter provider.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub revision: Option<RevisionDto>,
-}
-
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -5318,7 +3075,6 @@ pub struct ParameterProviderReference {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub r#type: Option<String>,
 }
-
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -5330,7 +3086,6 @@ pub struct ParameterProviderReferencingComponentDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
-
 /// The Parameter Contexts that reference this Parameter Provider
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -5358,39 +3113,6 @@ pub struct ParameterProviderReferencingComponentEntity {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub uri: Option<String>,
 }
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ParameterProviderReferencingComponentsEntity {
-    #[serde(rename = "parameterProviderReferencingComponents")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub parameter_provider_referencing_components:
-        Option<Vec<ParameterProviderReferencingComponentEntity>>,
-}
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ParameterProviderTypesEntity {
-    #[serde(rename = "parameterProviderTypes")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub parameter_provider_types: Option<Vec<DocumentedTypeDto>>,
-}
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ParameterProvidersEntity {
-    /// The current time on the system.
-    #[serde(rename = "currentTime")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub current_time: Option<String>,
-    #[serde(rename = "parameterProviders")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub parameter_providers: Option<Vec<ParameterProviderEntity>>,
-}
-
 /// The status of all provided parameters for this parameter provider
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -5402,31 +3124,6 @@ pub struct ParameterStatusDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
 }
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct PasteRequestEntity {
-    #[serde(rename = "copyResponse")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub copy_response: Option<CopyResponseEntity>,
-    #[serde(rename = "disconnectedNodeAcknowledged")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub disconnected_node_acknowledged: Option<bool>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub revision: Option<RevisionDto>,
-}
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct PasteResponseEntity {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub flow: Option<FlowDto>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub revision: Option<RevisionDto>,
-}
-
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -5445,15 +3142,6 @@ pub struct PeerDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub secure: Option<bool>,
 }
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct PeersEntity {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub peers: Option<Vec<PeerDto>>,
-}
-
 /// The permissions for this component.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -5468,7 +3156,6 @@ pub struct PermissionsDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub can_write: Option<bool>,
 }
-
 /// The output ports available to received data from the NiFi.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -5519,7 +3206,6 @@ pub struct PortDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub versioned_component_id: Option<String>,
 }
-
 /// The output ports in this flow.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -5559,7 +3245,6 @@ pub struct PortEntity {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub uri: Option<String>,
 }
-
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -5574,7 +3259,6 @@ pub struct PortRunStatusEntity {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub state: Option<String>,
 }
-
 /// The status of the port.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -5609,20 +3293,6 @@ pub struct PortStatusDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub transmitting: Option<bool>,
 }
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct PortStatusEntity {
-    /// Indicates whether the user can read a given resource.
-    #[serde(rename = "canRead")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub can_read: Option<bool>,
-    #[serde(rename = "portStatus")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub port_status: Option<PortStatusDto>,
-}
-
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -5671,7 +3341,6 @@ pub struct PortStatusSnapshotDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub transmitting: Option<bool>,
 }
-
 /// The status of all output ports in the process group.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -5688,7 +3357,6 @@ pub struct PortStatusSnapshotEntity {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub port_status_snapshot: Option<PortStatusSnapshotDto>,
 }
-
 /// The position of a component on the graph
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -5701,7 +3369,6 @@ pub struct Position {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub y: Option<f64>,
 }
-
 /// The position of this component in the UI if applicable.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -5714,7 +3381,6 @@ pub struct PositionDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub y: Option<f64>,
 }
-
 /// Previous values for a given property.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -5732,16 +3398,6 @@ pub struct PreviousValueDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub user_identity: Option<String>,
 }
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct PrioritizerTypesEntity {
-    #[serde(rename = "prioritizerTypes")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub prioritizer_types: Option<Vec<DocumentedTypeDto>>,
-}
-
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -5882,118 +3538,6 @@ pub struct ProcessGroupDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub versioned_component_id: Option<String>,
 }
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ProcessGroupEntity {
-    /// The number of active remote ports in the process group.
-    #[serde(rename = "activeRemotePortCount")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub active_remote_port_count: Option<i32>,
-    /// The bulletins for this component.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub bulletins: Option<Vec<BulletinEntity>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub component: Option<ProcessGroupDto>,
-    /// The number of disabled components in the process group.
-    #[serde(rename = "disabledCount")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub disabled_count: Option<i32>,
-    /// Acknowledges that this node is disconnected to allow for mutable requests to proceed.
-    #[serde(rename = "disconnectedNodeAcknowledged")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub disconnected_node_acknowledged: Option<bool>,
-    /// The id of the component.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    /// The number of inactive remote ports in the process group.
-    #[serde(rename = "inactiveRemotePortCount")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub inactive_remote_port_count: Option<i32>,
-    /// The number of input ports in the process group.
-    #[serde(rename = "inputPortCount")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub input_port_count: Option<i32>,
-    /// The number of invalid components in the process group.
-    #[serde(rename = "invalidCount")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub invalid_count: Option<i32>,
-    /// The number of local input ports in the process group.
-    #[serde(rename = "localInputPortCount")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub local_input_port_count: Option<i32>,
-    /// The number of local output ports in the process group.
-    #[serde(rename = "localOutputPortCount")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub local_output_port_count: Option<i32>,
-    /// The number of locally modified and stale versioned process groups in the process group.
-    #[serde(rename = "locallyModifiedAndStaleCount")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub locally_modified_and_stale_count: Option<i32>,
-    /// The number of locally modified versioned process groups in the process group.
-    #[serde(rename = "locallyModifiedCount")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub locally_modified_count: Option<i32>,
-    /// The number of output ports in the process group.
-    #[serde(rename = "outputPortCount")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub output_port_count: Option<i32>,
-    #[serde(rename = "parameterContext")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub parameter_context: Option<ParameterContextReferenceEntity>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub permissions: Option<PermissionsDto>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub position: Option<PositionDto>,
-    /// Determines the process group update strategy
-    #[serde(rename = "processGroupUpdateStrategy")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub process_group_update_strategy: Option<String>,
-    /// The number of public input ports in the process group.
-    #[serde(rename = "publicInputPortCount")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub public_input_port_count: Option<i32>,
-    /// The number of public output ports in the process group.
-    #[serde(rename = "publicOutputPortCount")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub public_output_port_count: Option<i32>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub revision: Option<RevisionDto>,
-    /// The number of running components in this process group.
-    #[serde(rename = "runningCount")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub running_count: Option<i32>,
-    /// The number of stale versioned process groups in the process group.
-    #[serde(rename = "staleCount")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub stale_count: Option<i32>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub status: Option<ProcessGroupStatusDto>,
-    /// The number of stopped components in the process group.
-    #[serde(rename = "stoppedCount")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub stopped_count: Option<i32>,
-    /// The number of versioned process groups in the process group that are unable to sync to a registry.
-    #[serde(rename = "syncFailureCount")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub sync_failure_count: Option<i32>,
-    /// The number of up to date versioned process groups in the process group.
-    #[serde(rename = "upToDateCount")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub up_to_date_count: Option<i32>,
-    /// The URI for futures requests to the component.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub uri: Option<String>,
-    #[serde(rename = "versionedFlowSnapshot")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub versioned_flow_snapshot: Option<RegisteredFlowSnapshot>,
-    /// The current state of the Process Group, as it relates to the Versioned Flow
-    #[serde(rename = "versionedFlowState")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub versioned_flow_state: Option<String>,
-}
-
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -6020,36 +3564,6 @@ pub struct ProcessGroupFlowDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub uri: Option<String>,
 }
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ProcessGroupFlowEntity {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub permissions: Option<PermissionsDto>,
-    #[serde(rename = "processGroupFlow")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub process_group_flow: Option<ProcessGroupFlowDto>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub revision: Option<RevisionDto>,
-}
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ProcessGroupImportEntity {
-    /// Acknowledges that this node is disconnected to allow for mutable requests to proceed.
-    #[serde(rename = "disconnectedNodeAcknowledged")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub disconnected_node_acknowledged: Option<bool>,
-    #[serde(rename = "processGroupRevision")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub process_group_revision: Option<RevisionDto>,
-    #[serde(rename = "versionedFlowSnapshot")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub versioned_flow_snapshot: Option<RegisteredFlowSnapshot>,
-}
-
 /// The Process Group that the component belongs to
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -6062,7 +3576,6 @@ pub struct ProcessGroupNameDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
-
 /// The Process Group Change Request
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -6098,21 +3611,6 @@ pub struct ProcessGroupReplaceRequestDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub uri: Option<String>,
 }
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ProcessGroupReplaceRequestEntity {
-    #[serde(rename = "processGroupRevision")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub process_group_revision: Option<RevisionDto>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub request: Option<ProcessGroupReplaceRequestDto>,
-    #[serde(rename = "versionedFlowSnapshot")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub versioned_flow_snapshot: Option<RegisteredFlowSnapshot>,
-}
-
 /// The status of the process group.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -6136,20 +3634,6 @@ pub struct ProcessGroupStatusDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub stats_last_refreshed: Option<String>,
 }
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ProcessGroupStatusEntity {
-    /// Indicates whether the user can read a given resource.
-    #[serde(rename = "canRead")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub can_read: Option<bool>,
-    #[serde(rename = "processGroupStatus")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub process_group_status: Option<ProcessGroupStatusDto>,
-}
-
 /// The process group status snapshot from the node.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -6296,7 +3780,6 @@ pub struct ProcessGroupStatusSnapshotDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub written: Option<String>,
 }
-
 /// The status of all process groups in the process group.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -6313,40 +3796,6 @@ pub struct ProcessGroupStatusSnapshotEntity {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub process_group_status_snapshot: Option<ProcessGroupStatusSnapshotDto>,
 }
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ProcessGroupUploadEntity {
-    #[serde(rename = "disconnectedNodeAcknowledged")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub disconnected_node_acknowledged: Option<bool>,
-    #[serde(rename = "flowSnapshot")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub flow_snapshot: Option<RegisteredFlowSnapshot>,
-    #[serde(rename = "groupId")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub group_id: Option<String>,
-    #[serde(rename = "groupName")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub group_name: Option<String>,
-    #[serde(rename = "positionDTO")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub position_d_t_o: Option<PositionDto>,
-    #[serde(rename = "revisionDTO")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub revision_d_t_o: Option<RevisionDto>,
-}
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ProcessGroupsEntity {
-    #[serde(rename = "processGroups")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub process_groups: Option<Vec<ProcessGroupEntity>>,
-}
-
 /// Represents the processor's processing performance.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -6376,7 +3825,6 @@ pub struct ProcessingPerformanceStatusDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub session_commit_duration: Option<i64>,
 }
-
 /// The configuration details for the processor. These details will be included in a response if the verbose flag is included in a request.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -6468,7 +3916,6 @@ pub struct ProcessorConfigDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub yield_duration: Option<String>,
 }
-
 /// A description of how to configure the Processor to perform the task described in the use case
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -6482,177 +3929,6 @@ pub struct ProcessorConfiguration {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub processor_class_name: Option<String>,
 }
-
-/// Processors provided in this bundle
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ProcessorDefinition {
-    /// Indicates if the component has additional details documentation
-    #[serde(rename = "additionalDetails")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub additional_details: Option<bool>,
-    /// The artifact name of the bundle that provides the referenced type.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub artifact: Option<String>,
-    #[serde(rename = "buildInfo")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub build_info: Option<BuildInfo>,
-    /// The default bulletin level, such as WARN, INFO, DEBUG, etc.
-    #[serde(rename = "defaultBulletinLevel")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub default_bulletin_level: Option<String>,
-    /// The default concurrent tasks for each scheduling strategy.
-    #[serde(rename = "defaultConcurrentTasksBySchedulingStrategy")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub default_concurrent_tasks_by_scheduling_strategy:
-        Option<std::collections::HashMap<String, Option<i32>>>,
-    /// The default penalty duration as a time period, such as "30 sec".
-    #[serde(rename = "defaultPenaltyDuration")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub default_penalty_duration: Option<String>,
-    /// The default scheduling period for each scheduling strategy. The scheduling period is expected to be a time period, such as "30 sec".
-    #[serde(rename = "defaultSchedulingPeriodBySchedulingStrategy")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub default_scheduling_period_by_scheduling_strategy:
-        Option<std::collections::HashMap<String, Option<String>>>,
-    /// The default scheduling strategy for the processor.
-    #[serde(rename = "defaultSchedulingStrategy")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub default_scheduling_strategy: Option<String>,
-    /// The default yield duration as a time period, such as "1 sec".
-    #[serde(rename = "defaultYieldDuration")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub default_yield_duration: Option<String>,
-    /// Whether or not the component has been deprecated
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub deprecated: Option<bool>,
-    /// If this component has been deprecated, this optional field provides alternatives to use
-    #[serde(rename = "deprecationAlternatives")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub deprecation_alternatives: Option<Vec<String>>,
-    /// If this component has been deprecated, this optional field can be used to provide an explanation
-    #[serde(rename = "deprecationReason")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub deprecation_reason: Option<String>,
-    /// Describes the dynamic properties supported by this component
-    #[serde(rename = "dynamicProperties")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub dynamic_properties: Option<Vec<DynamicProperty>>,
-    #[serde(rename = "dynamicRelationship")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub dynamic_relationship: Option<DynamicRelationship>,
-    /// Explicit restrictions that indicate a require permission to use the component
-    #[serde(rename = "explicitRestrictions")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub explicit_restrictions: Option<Vec<Restriction>>,
-    /// The group name of the bundle that provides the referenced type.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub group: Option<String>,
-    /// Any input requirements this processor has.
-    #[serde(rename = "inputRequirement")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub input_requirement: Option<String>,
-    /// A list of use cases that have been documented that involve this Processor in conjunction with other Processors
-    #[serde(rename = "multiProcessorUseCases")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub multi_processor_use_cases: Option<Vec<MultiProcessorUseCase>>,
-    /// Whether or not this processor should be scheduled only on the primary node in a cluster.
-    #[serde(rename = "primaryNodeOnly")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub primary_node_only: Option<bool>,
-    /// Descriptions of configuration properties applicable to this component.
-    #[serde(rename = "propertyDescriptors")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub property_descriptors: Option<std::collections::HashMap<String, Option<PropertyDescriptor>>>,
-    /// If this type represents a provider for an interface, this lists the APIs it implements
-    #[serde(rename = "providedApiImplementations")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub provided_api_implementations: Option<Vec<DefinedType>>,
-    /// The FlowFile attributes this processor reads
-    #[serde(rename = "readsAttributes")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub reads_attributes: Option<Vec<Attribute>>,
-    /// Whether or not the component has a general restriction
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub restricted: Option<bool>,
-    /// An optional description of the general restriction
-    #[serde(rename = "restrictedExplanation")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub restricted_explanation: Option<String>,
-    /// The names of other component types that may be related
-    #[serde(rename = "seeAlso")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub see_also: Option<Vec<String>>,
-    /// Whether or not this processor is considered side-effect free. Side-effect free indicate that the processor's operations on FlowFiles can be safely repeated across process sessions.
-    #[serde(rename = "sideEffectFree")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub side_effect_free: Option<bool>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub stateful: Option<Stateful>,
-    /// The supported relationships for this processor.
-    #[serde(rename = "supportedRelationships")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub supported_relationships: Option<Vec<Relationship>>,
-    /// The supported scheduling strategies, such as TIME_DRIVER, CRON, or EVENT_DRIVEN.
-    #[serde(rename = "supportedSchedulingStrategies")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub supported_scheduling_strategies: Option<Vec<String>>,
-    /// Whether or not this processor supports batching. If a Processor uses this annotation, it allows the Framework to batch calls to session commits, as well as allowing the Framework to return the same session multiple times.
-    #[serde(rename = "supportsBatching")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub supports_batching: Option<bool>,
-    /// Whether or not this component makes use of dynamic (user-set) properties.
-    #[serde(rename = "supportsDynamicProperties")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub supports_dynamic_properties: Option<bool>,
-    /// Whether or not this processor supports dynamic relationships.
-    #[serde(rename = "supportsDynamicRelationships")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub supports_dynamic_relationships: Option<bool>,
-    /// Whether or not this component makes use of sensitive dynamic (user-set) properties.
-    #[serde(rename = "supportsSensitiveDynamicProperties")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub supports_sensitive_dynamic_properties: Option<bool>,
-    /// The system resource considerations for the given component
-    #[serde(rename = "systemResourceConsiderations")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub system_resource_considerations: Option<Vec<SystemResourceConsideration>>,
-    /// The tags associated with this type
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub tags: Option<Vec<String>>,
-    /// Whether or not this processor should be triggered serially (i.e. no concurrent execution).
-    #[serde(rename = "triggerSerially")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub trigger_serially: Option<bool>,
-    /// Whether or not this processor should be triggered when any destination queue has room.
-    #[serde(rename = "triggerWhenAnyDestinationAvailable")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub trigger_when_any_destination_available: Option<bool>,
-    /// Whether or not this processor should be triggered when incoming queues are empty.
-    #[serde(rename = "triggerWhenEmpty")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub trigger_when_empty: Option<bool>,
-    /// The fully-qualified class type
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub r#type: Option<String>,
-    /// The description of the type.
-    #[serde(rename = "typeDescription")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub type_description: Option<String>,
-    /// A list of use cases that have been documented for this Processor
-    #[serde(rename = "useCases")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub use_cases: Option<Vec<UseCase>>,
-    /// The version of the bundle that provides the referenced type.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub version: Option<String>,
-    /// The FlowFile attributes this processor writes/updates
-    #[serde(rename = "writesAttributes")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub writes_attributes: Option<Vec<Attribute>>,
-}
-
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -6744,7 +4020,6 @@ pub struct ProcessorDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub versioned_component_id: Option<String>,
 }
-
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -6785,7 +4060,6 @@ pub struct ProcessorEntity {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub uri: Option<String>,
 }
-
 /// The details of a Processor's run status
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -6810,7 +4084,6 @@ pub struct ProcessorRunStatusDetailsDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub validation_errors: Option<Vec<String>>,
 }
-
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -6823,22 +4096,6 @@ pub struct ProcessorRunStatusDetailsEntity {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub run_status_details: Option<ProcessorRunStatusDetailsDto>,
 }
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ProcessorRunStatusEntity {
-    /// Acknowledges that this node is disconnected to allow for mutable requests to proceed.
-    #[serde(rename = "disconnectedNodeAcknowledged")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub disconnected_node_acknowledged: Option<bool>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub revision: Option<RevisionDto>,
-    /// The run status of the Processor.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub state: Option<String>,
-}
-
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -6872,20 +4129,6 @@ pub struct ProcessorStatusDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub r#type: Option<String>,
 }
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ProcessorStatusEntity {
-    /// Indicates whether the user can read a given resource.
-    #[serde(rename = "canRead")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub can_read: Option<bool>,
-    #[serde(rename = "processorStatus")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub processor_status: Option<ProcessorStatusDto>,
-}
-
 /// The processor status snapshot from the node.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -6975,7 +4218,6 @@ pub struct ProcessorStatusSnapshotDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub written: Option<String>,
 }
-
 /// The status of all processors in the process group.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -6992,33 +4234,6 @@ pub struct ProcessorStatusSnapshotEntity {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub processor_status_snapshot: Option<ProcessorStatusSnapshotDto>,
 }
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ProcessorTypesEntity {
-    #[serde(rename = "processorTypes")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub processor_types: Option<Vec<DocumentedTypeDto>>,
-}
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ProcessorsEntity {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub processors: Option<Vec<ProcessorEntity>>,
-}
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ProcessorsRunStatusDetailsEntity {
-    #[serde(rename = "runStatusDetails")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub run_status_details: Option<Vec<ProcessorRunStatusDetailsEntity>>,
-}
-
 /// A list of the allowable values for the property
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -7035,7 +4250,6 @@ pub struct PropertyAllowableValue {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
 }
-
 /// The dependencies that this property has on other properties
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -7054,7 +4268,6 @@ pub struct PropertyDependency {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub property_name: Option<String>,
 }
-
 /// A list of dependencies that must be met in order for this Property to be relevant. If any of these dependencies is not met, the property described by this Property Descriptor is not relevant.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -7069,7 +4282,6 @@ pub struct PropertyDependencyDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub property_name: Option<String>,
 }
-
 /// Descriptions of configuration properties applicable to this component.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -7131,7 +4343,6 @@ pub struct PropertyDescriptor {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub validator: Option<String>,
 }
-
 /// The descriptors for the reporting tasks properties.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -7183,13 +4394,11 @@ pub struct PropertyDescriptorDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub supports_el: Option<bool>,
 }
-
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PropertyDescriptorEntity {
     pub property_descriptor: Option<PropertyDescriptorDto>,
 }
-
 /// The history for the properties of the component.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -7200,7 +4409,6 @@ pub struct PropertyHistoryDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub previous_values: Option<Vec<PreviousValueDto>>,
 }
-
 /// Indicates that this property defines a listen port
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -7217,7 +4425,6 @@ pub struct PropertyListenPortDefinition {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub transport_protocol: Option<String>,
 }
-
 /// Indicates that this property references external resources
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -7231,221 +4438,6 @@ pub struct PropertyResourceDefinition {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub resource_types: Option<Vec<String>>,
 }
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ProvenanceDto {
-    /// The timestamp when the query will expire.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub expiration: Option<String>,
-    /// Whether the query has finished.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub finished: Option<bool>,
-    /// The id of the provenance query.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    /// The current percent complete.
-    #[serde(rename = "percentCompleted")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub percent_completed: Option<i32>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub request: Option<ProvenanceRequestDto>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub results: Option<ProvenanceResultsDto>,
-    /// The timestamp when the query was submitted.
-    #[serde(rename = "submissionTime")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub submission_time: Option<String>,
-    /// The URI for this query. Used for obtaining/deleting the request at a later time
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub uri: Option<String>,
-}
-
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ProvenanceEntity {
-    pub provenance: Option<ProvenanceDto>,
-}
-
-/// The provenance events that matched the search criteria.
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ProvenanceEventDto {
-    /// The alternate identifier uri for the fileflow for the event.
-    #[serde(rename = "alternateIdentifierUri")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub alternate_identifier_uri: Option<String>,
-    /// The attributes of the flowfile for the event.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub attributes: Option<Vec<AttributeDto>>,
-    /// The child uuids for the event.
-    #[serde(rename = "childUuids")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub child_uuids: Option<Vec<String>>,
-    /// The label for the node where the event originated.
-    #[serde(rename = "clusterNodeAddress")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub cluster_node_address: Option<String>,
-    /// The identifier for the node where the event originated.
-    #[serde(rename = "clusterNodeId")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub cluster_node_id: Option<String>,
-    /// The id of the component that generated the event.
-    #[serde(rename = "componentId")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub component_id: Option<String>,
-    /// The name of the component that generated the event.
-    #[serde(rename = "componentName")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub component_name: Option<String>,
-    /// The type of the component that generated the event.
-    #[serde(rename = "componentType")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub component_type: Option<String>,
-    /// Whether the input and output content claim is the same.
-    #[serde(rename = "contentEqual")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub content_equal: Option<bool>,
-    /// The event details.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub details: Option<String>,
-    /// The event duration in milliseconds.
-    #[serde(rename = "eventDuration")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub event_duration: Option<i64>,
-    /// The event id. This is a one up number thats unique per node.
-    #[serde(rename = "eventId")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub event_id: Option<i64>,
-    /// The timestamp of the event.
-    #[serde(rename = "eventTime")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub event_time: Option<String>,
-    /// Event Timestamp formatted using ISO8601
-    #[serde(rename = "eventTimestamp")]
-    #[serde(default)]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub event_timestamp: Option<String>,
-    /// The type of the event.
-    #[serde(rename = "eventType")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub event_type: Option<String>,
-    /// The size of the flowfile for the event.
-    #[serde(rename = "fileSize")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub file_size: Option<String>,
-    /// The size of the flowfile in bytes for the event.
-    #[serde(rename = "fileSizeBytes")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub file_size_bytes: Option<i64>,
-    /// The uuid of the flowfile for the event.
-    #[serde(rename = "flowFileUuid")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub flow_file_uuid: Option<String>,
-    /// The id of the group that the component resides in. If the component is no longer in the flow, the group id will not be set.
-    #[serde(rename = "groupId")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub group_id: Option<String>,
-    /// The event uuid.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    /// Whether the input content is still available.
-    #[serde(rename = "inputContentAvailable")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub input_content_available: Option<bool>,
-    /// The container in which the input content claim lives.
-    #[serde(rename = "inputContentClaimContainer")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub input_content_claim_container: Option<String>,
-    /// The file size of the input content claim formatted.
-    #[serde(rename = "inputContentClaimFileSize")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub input_content_claim_file_size: Option<String>,
-    /// The file size of the intput content claim in bytes.
-    #[serde(rename = "inputContentClaimFileSizeBytes")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub input_content_claim_file_size_bytes: Option<i64>,
-    /// The identifier of the input content claim.
-    #[serde(rename = "inputContentClaimIdentifier")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub input_content_claim_identifier: Option<String>,
-    /// The offset into the input content claim where the flowfiles content begins.
-    #[serde(rename = "inputContentClaimOffset")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub input_content_claim_offset: Option<i64>,
-    /// The section in which the input content claim lives.
-    #[serde(rename = "inputContentClaimSection")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub input_content_claim_section: Option<String>,
-    /// The duration since the lineage began, in milliseconds.
-    #[serde(rename = "lineageDuration")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub lineage_duration: Option<i64>,
-    /// Whether the output content is still available.
-    #[serde(rename = "outputContentAvailable")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub output_content_available: Option<bool>,
-    /// The container in which the output content claim lives.
-    #[serde(rename = "outputContentClaimContainer")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub output_content_claim_container: Option<String>,
-    /// The file size of the output content claim formatted.
-    #[serde(rename = "outputContentClaimFileSize")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub output_content_claim_file_size: Option<String>,
-    /// The file size of the output content claim in bytes.
-    #[serde(rename = "outputContentClaimFileSizeBytes")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub output_content_claim_file_size_bytes: Option<i64>,
-    /// The identifier of the output content claim.
-    #[serde(rename = "outputContentClaimIdentifier")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub output_content_claim_identifier: Option<String>,
-    /// The offset into the output content claim where the flowfiles content begins.
-    #[serde(rename = "outputContentClaimOffset")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub output_content_claim_offset: Option<i64>,
-    /// The section in which the output content claim lives.
-    #[serde(rename = "outputContentClaimSection")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub output_content_claim_section: Option<String>,
-    /// The parent uuids for the event.
-    #[serde(rename = "parentUuids")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub parent_uuids: Option<Vec<String>>,
-    /// The relationship to which the flowfile was routed if the event is of type ROUTE.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub relationship: Option<String>,
-    /// Whether or not replay is available.
-    #[serde(rename = "replayAvailable")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub replay_available: Option<bool>,
-    /// Explanation as to why replay is unavailable.
-    #[serde(rename = "replayExplanation")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub replay_explanation: Option<String>,
-    /// The identifier of the queue/connection from which the flowfile was pulled to genereate this event. May be null if the queue/connection is unknown or the flowfile was generated from this event.
-    #[serde(rename = "sourceConnectionIdentifier")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub source_connection_identifier: Option<String>,
-    /// The source system flowfile id.
-    #[serde(rename = "sourceSystemFlowFileId")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub source_system_flow_file_id: Option<String>,
-    /// The source/destination system uri if the event was a RECEIVE/SEND.
-    #[serde(rename = "transitUri")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub transit_uri: Option<String>,
-}
-
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ProvenanceEventEntity {
-    pub provenance_event: Option<ProvenanceEventDto>,
-}
-
 /// The links between the nodes in the lineage.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -7470,7 +4462,6 @@ pub struct ProvenanceLinkDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub timestamp: Option<String>,
 }
-
 /// The nodes in the lineage.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -7514,23 +4505,6 @@ pub struct ProvenanceNodeDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub r#type: Option<String>,
 }
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ProvenanceOptionsDto {
-    /// The available searchable field for the NiFi.
-    #[serde(rename = "searchableFields")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub searchable_fields: Option<Vec<ProvenanceSearchableFieldDto>>,
-}
-
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ProvenanceOptionsEntity {
-    pub provenance_options: Option<ProvenanceOptionsDto>,
-}
-
 /// The provenance request.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -7572,7 +4546,6 @@ pub struct ProvenanceRequestDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub summarize: Option<bool>,
 }
-
 /// The provenance results.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -7604,7 +4577,6 @@ pub struct ProvenanceResultsDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub total_count: Option<i64>,
 }
-
 /// The search terms used to perform the search.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -7617,7 +4589,6 @@ pub struct ProvenanceSearchValueDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
 }
-
 /// The available searchable field for the NiFi.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -7636,7 +4607,6 @@ pub struct ProvenanceSearchableFieldDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub r#type: Option<String>,
 }
-
 /// The size of the queue
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -7651,7 +4621,6 @@ pub struct QueueSizeDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub object_count: Option<i32>,
 }
-
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -7685,7 +4654,6 @@ pub struct RegisteredFlow {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub version_info: Option<RegisteredFlowVersionInfo>,
 }
-
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -7718,7 +4686,6 @@ pub struct RegisteredFlowSnapshot {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub snapshot_metadata: Option<RegisteredFlowSnapshotMetadata>,
 }
-
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -7749,7 +4716,6 @@ pub struct RegisteredFlowSnapshotMetadata {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
 }
-
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -7757,7 +4723,6 @@ pub struct RegisteredFlowVersionInfo {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub version: Option<i64>,
 }
-
 /// The supported relationships for this processor.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -7770,7 +4735,6 @@ pub struct Relationship {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
-
 /// The available relationships that the processor currently supports.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -7790,22 +4754,6 @@ pub struct RelationshipDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub retry: Option<bool>,
 }
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct RemotePortRunStatusEntity {
-    /// Acknowledges that this node is disconnected to allow for mutable requests to proceed.
-    #[serde(rename = "disconnectedNodeAcknowledged")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub disconnected_node_acknowledged: Option<bool>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub revision: Option<RevisionDto>,
-    /// The run status of the RemotePort.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub state: Option<String>,
-}
-
 /// The contents of the remote process group. Will contain available input/output ports.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -7820,7 +4768,6 @@ pub struct RemoteProcessGroupContentsDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub output_ports: Option<Vec<RemoteProcessGroupPortDto>>,
 }
-
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -7926,7 +4873,6 @@ pub struct RemoteProcessGroupDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub yield_duration: Option<String>,
 }
-
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -7966,7 +4912,6 @@ pub struct RemoteProcessGroupEntity {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub uri: Option<String>,
 }
-
 /// The output ports from which data can be retrieved.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -8018,38 +4963,6 @@ pub struct RemoteProcessGroupPortDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub versioned_component_id: Option<String>,
 }
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct RemoteProcessGroupPortEntity {
-    /// The bulletins for this component.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub bulletins: Option<Vec<BulletinEntity>>,
-    /// Acknowledges that this node is disconnected to allow for mutable requests to proceed.
-    #[serde(rename = "disconnectedNodeAcknowledged")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub disconnected_node_acknowledged: Option<bool>,
-    /// The id of the component.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[serde(rename = "operatePermissions")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub operate_permissions: Option<PermissionsDto>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub permissions: Option<PermissionsDto>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub position: Option<PositionDto>,
-    #[serde(rename = "remoteProcessGroupPort")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub remote_process_group_port: Option<RemoteProcessGroupPortDto>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub revision: Option<RevisionDto>,
-    /// The URI for futures requests to the component.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub uri: Option<String>,
-}
-
 /// The status of the remote process group.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -8089,20 +5002,6 @@ pub struct RemoteProcessGroupStatusDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub validation_status: Option<String>,
 }
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct RemoteProcessGroupStatusEntity {
-    /// Indicates whether the user can read a given resource.
-    #[serde(rename = "canRead")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub can_read: Option<bool>,
-    #[serde(rename = "remoteProcessGroupStatus")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub remote_process_group_status: Option<RemoteProcessGroupStatusDto>,
-}
-
 /// The remote process group status snapshot from the node.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -8153,7 +5052,6 @@ pub struct RemoteProcessGroupStatusSnapshotDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub transmission_status: Option<String>,
 }
-
 /// The status of all remote process groups in the process group.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -8170,49 +5068,6 @@ pub struct RemoteProcessGroupStatusSnapshotEntity {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub remote_process_group_status_snapshot: Option<RemoteProcessGroupStatusSnapshotDto>,
 }
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct RemoteProcessGroupsEntity {
-    #[serde(rename = "remoteProcessGroups")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub remote_process_groups: Option<Vec<RemoteProcessGroupEntity>>,
-}
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ReplayLastEventRequestEntity {
-    /// The UUID of the component whose last event should be replayed.
-    #[serde(rename = "componentId")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub component_id: Option<String>,
-    /// Which nodes are to replay their last provenance event.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub nodes: Option<String>,
-}
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ReplayLastEventResponseEntity {
-    #[serde(rename = "aggregateSnapshot")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub aggregate_snapshot: Option<ReplayLastEventSnapshotDto>,
-    /// The UUID of the component whose last event should be replayed.
-    #[serde(rename = "componentId")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub component_id: Option<String>,
-    /// The node-wise results
-    #[serde(rename = "nodeSnapshots")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub node_snapshots: Option<Vec<NodeReplayLastEventSnapshotDto>>,
-    /// Which nodes were requested to replay their last provenance event.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub nodes: Option<String>,
-}
-
 /// The snapshot from the node
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -8231,105 +5086,6 @@ pub struct ReplayLastEventSnapshotDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub failure_explanation: Option<String>,
 }
-
-/// Reporting Tasks provided in this bundle
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ReportingTaskDefinition {
-    /// Indicates if the component has additional details documentation
-    #[serde(rename = "additionalDetails")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub additional_details: Option<bool>,
-    /// The artifact name of the bundle that provides the referenced type.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub artifact: Option<String>,
-    #[serde(rename = "buildInfo")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub build_info: Option<BuildInfo>,
-    /// The default scheduling period for each scheduling strategy. The scheduling period is expected to be a time period, such as "30 sec".
-    #[serde(rename = "defaultSchedulingPeriodBySchedulingStrategy")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub default_scheduling_period_by_scheduling_strategy:
-        Option<std::collections::HashMap<String, Option<String>>>,
-    /// The default scheduling strategy for the reporting task.
-    #[serde(rename = "defaultSchedulingStrategy")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub default_scheduling_strategy: Option<String>,
-    /// Whether or not the component has been deprecated
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub deprecated: Option<bool>,
-    /// If this component has been deprecated, this optional field provides alternatives to use
-    #[serde(rename = "deprecationAlternatives")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub deprecation_alternatives: Option<Vec<String>>,
-    /// If this component has been deprecated, this optional field can be used to provide an explanation
-    #[serde(rename = "deprecationReason")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub deprecation_reason: Option<String>,
-    /// Describes the dynamic properties supported by this component
-    #[serde(rename = "dynamicProperties")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub dynamic_properties: Option<Vec<DynamicProperty>>,
-    /// Explicit restrictions that indicate a require permission to use the component
-    #[serde(rename = "explicitRestrictions")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub explicit_restrictions: Option<Vec<Restriction>>,
-    /// The group name of the bundle that provides the referenced type.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub group: Option<String>,
-    /// Descriptions of configuration properties applicable to this component.
-    #[serde(rename = "propertyDescriptors")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub property_descriptors: Option<std::collections::HashMap<String, Option<PropertyDescriptor>>>,
-    /// If this type represents a provider for an interface, this lists the APIs it implements
-    #[serde(rename = "providedApiImplementations")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub provided_api_implementations: Option<Vec<DefinedType>>,
-    /// Whether or not the component has a general restriction
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub restricted: Option<bool>,
-    /// An optional description of the general restriction
-    #[serde(rename = "restrictedExplanation")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub restricted_explanation: Option<String>,
-    /// The names of other component types that may be related
-    #[serde(rename = "seeAlso")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub see_also: Option<Vec<String>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub stateful: Option<Stateful>,
-    /// The supported scheduling strategies, such as TIME_DRIVER or CRON.
-    #[serde(rename = "supportedSchedulingStrategies")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub supported_scheduling_strategies: Option<Vec<String>>,
-    /// Whether or not this component makes use of dynamic (user-set) properties.
-    #[serde(rename = "supportsDynamicProperties")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub supports_dynamic_properties: Option<bool>,
-    /// Whether or not this component makes use of sensitive dynamic (user-set) properties.
-    #[serde(rename = "supportsSensitiveDynamicProperties")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub supports_sensitive_dynamic_properties: Option<bool>,
-    /// The system resource considerations for the given component
-    #[serde(rename = "systemResourceConsiderations")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub system_resource_considerations: Option<Vec<SystemResourceConsideration>>,
-    /// The tags associated with this type
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub tags: Option<Vec<String>>,
-    /// The fully-qualified class type
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub r#type: Option<String>,
-    /// The description of the type.
-    #[serde(rename = "typeDescription")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub type_description: Option<String>,
-    /// The version of the bundle that provides the referenced type.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub version: Option<String>,
-}
-
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -8426,7 +5182,6 @@ pub struct ReportingTaskDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub versioned_component_id: Option<String>,
 }
-
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -8458,22 +5213,6 @@ pub struct ReportingTaskEntity {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub uri: Option<String>,
 }
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ReportingTaskRunStatusEntity {
-    /// Acknowledges that this node is disconnected to allow for mutable requests to proceed.
-    #[serde(rename = "disconnectedNodeAcknowledged")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub disconnected_node_acknowledged: Option<bool>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub revision: Option<RevisionDto>,
-    /// The run status of the ReportingTask.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub state: Option<String>,
-}
-
 /// The status for this ReportingTask.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -8492,29 +5231,6 @@ pub struct ReportingTaskStatusDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub validation_status: Option<String>,
 }
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ReportingTaskTypesEntity {
-    #[serde(rename = "reportingTaskTypes")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub reporting_task_types: Option<Vec<DocumentedTypeDto>>,
-}
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ReportingTasksEntity {
-    /// The current time on the system.
-    #[serde(rename = "currentTime")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub current_time: Option<String>,
-    #[serde(rename = "reportingTasks")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub reporting_tasks: Option<Vec<ReportingTaskEntity>>,
-}
-
 /// The required permission necessary for this restriction.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -8527,7 +5243,6 @@ pub struct RequiredPermissionDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub label: Option<String>,
 }
-
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -8557,7 +5272,6 @@ pub struct ResourceClaimDetailsDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub writable: Option<bool>,
 }
-
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -8569,15 +5283,6 @@ pub struct ResourceDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ResourcesEntity {
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub resources: Option<Vec<ResourceDto>>,
-}
-
 /// Explicit restrictions that indicate a require permission to use the component
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -8591,7 +5296,6 @@ pub struct Restriction {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub required_permission: Option<String>,
 }
-
 /// The revision of the Process Group
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -8612,67 +5316,6 @@ pub struct RevisionDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub version: Option<i64>,
 }
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct RunStatusDetailsRequestEntity {
-    /// The IDs of all processors whose run status details should be provided
-    #[serde(rename = "processorIds")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub processor_ids: Option<Vec<String>>,
-}
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct RuntimeManifest {
-    /// The type of the runtime binary, e.g., 'minifi-java' or 'minifi-cpp'
-    #[serde(rename = "agentType")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub agent_type: Option<String>,
-    #[serde(rename = "buildInfo")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub build_info: Option<BuildInfo>,
-    /// All extension bundles included with this runtime
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub bundles: Option<Vec<Bundle>>,
-    /// A unique identifier for the manifest
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub identifier: Option<String>,
-    #[serde(rename = "schedulingDefaults")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub scheduling_defaults: Option<SchedulingDefaults>,
-    /// The version of the runtime binary, e.g., '1.0.1'
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub version: Option<String>,
-}
-
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct RuntimeManifestEntity {
-    pub runtime_manifest: Option<RuntimeManifest>,
-}
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ScheduleComponentsEntity {
-    /// Optional components to schedule. If not specified, all authorized descendant components will be used.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub components: Option<std::collections::HashMap<String, Option<RevisionDto>>>,
-    /// Acknowledges that this node is disconnected to allow for mutable requests to proceed.
-    #[serde(rename = "disconnectedNodeAcknowledged")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub disconnected_node_acknowledged: Option<bool>,
-    /// The id of the ProcessGroup
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    /// The desired state of the descendant components
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub state: Option<String>,
-}
-
 /// Scheduling defaults for components defined in this manifest
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -8713,7 +5356,6 @@ pub struct SchedulingDefaults {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub yield_duration_millis: Option<i64>,
 }
-
 /// The nearest versioned ancestor group of the component that matched the search.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -8725,67 +5367,6 @@ pub struct SearchResultGroupDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct SearchResultsDto {
-    /// The connections that matched the search.
-    #[serde(rename = "connectionResults")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub connection_results: Option<Vec<ComponentSearchResultDto>>,
-    /// The controller service nodes that matched the search
-    #[serde(rename = "controllerServiceNodeResults")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub controller_service_node_results: Option<Vec<ComponentSearchResultDto>>,
-    /// The funnels that matched the search.
-    #[serde(rename = "funnelResults")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub funnel_results: Option<Vec<ComponentSearchResultDto>>,
-    /// The input ports that matched the search.
-    #[serde(rename = "inputPortResults")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub input_port_results: Option<Vec<ComponentSearchResultDto>>,
-    /// The labels that matched the search.
-    #[serde(rename = "labelResults")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub label_results: Option<Vec<ComponentSearchResultDto>>,
-    /// The output ports that matched the search.
-    #[serde(rename = "outputPortResults")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub output_port_results: Option<Vec<ComponentSearchResultDto>>,
-    /// The parameter contexts that matched the search.
-    #[serde(rename = "parameterContextResults")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub parameter_context_results: Option<Vec<ComponentSearchResultDto>>,
-    /// The parameter provider nodes that matched the search
-    #[serde(rename = "parameterProviderNodeResults")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub parameter_provider_node_results: Option<Vec<ComponentSearchResultDto>>,
-    /// The parameters that matched the search.
-    #[serde(rename = "parameterResults")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub parameter_results: Option<Vec<ComponentSearchResultDto>>,
-    /// The process groups that matched the search.
-    #[serde(rename = "processGroupResults")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub process_group_results: Option<Vec<ComponentSearchResultDto>>,
-    /// The processors that matched the search.
-    #[serde(rename = "processorResults")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub processor_results: Option<Vec<ComponentSearchResultDto>>,
-    /// The remote process groups that matched the search.
-    #[serde(rename = "remoteProcessGroupResults")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub remote_process_group_results: Option<Vec<ComponentSearchResultDto>>,
-}
-
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct SearchResultsEntity {
-    pub search_results_d_t_o: Option<SearchResultsDto>,
-}
-
 /// The snippet.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -8833,35 +5414,6 @@ pub struct SnippetDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub uri: Option<String>,
 }
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct SnippetEntity {
-    /// Acknowledges that this node is disconnected to allow for mutable requests to proceed.
-    #[serde(rename = "disconnectedNodeAcknowledged")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub disconnected_node_acknowledged: Option<bool>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub snippet: Option<SnippetDto>,
-}
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct StartVersionControlRequestEntity {
-    /// Acknowledges that this node is disconnected to allow for mutable requests to proceed.
-    #[serde(rename = "disconnectedNodeAcknowledged")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub disconnected_node_acknowledged: Option<bool>,
-    #[serde(rename = "processGroupRevision")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub process_group_revision: Option<RevisionDto>,
-    #[serde(rename = "versionedFlow")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub versioned_flow: Option<VersionedFlowDto>,
-}
-
 /// The state.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -8882,7 +5434,6 @@ pub struct StateEntryDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
 }
-
 /// The local state for this component.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -8899,7 +5450,6 @@ pub struct StateMapDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub total_entry_count: Option<i32>,
 }
-
 /// Indicates if the component stores state
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -8912,7 +5462,6 @@ pub struct Stateful {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub scopes: Option<Vec<String>>,
 }
-
 /// The Descriptors that provide information on each of the metrics provided in the status history
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -8931,7 +5480,6 @@ pub struct StatusDescriptorDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub label: Option<String>,
 }
-
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -8956,20 +5504,6 @@ pub struct StatusHistoryDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub node_snapshots: Option<Vec<NodeStatusSnapshotsDto>>,
 }
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct StatusHistoryEntity {
-    /// Indicates whether the user can read a given resource.
-    #[serde(rename = "canRead")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub can_read: Option<bool>,
-    #[serde(rename = "statusHistory")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub status_history: Option<StatusHistoryDto>,
-}
-
 /// A list of StatusSnapshotDTO objects that provide the actual metric values for the component for this node.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -8983,7 +5517,6 @@ pub struct StatusSnapshotDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub timestamp: Option<String>,
 }
-
 /// The provenance repository storage usage.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -9020,26 +5553,10 @@ pub struct StorageUsageDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub utilization: Option<String>,
 }
-
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct StreamingOutput {}
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct SubmitReplayRequestEntity {
-    /// The identifier of the node where to submit the replay request.
-    #[serde(rename = "clusterNodeId")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub cluster_node_id: Option<String>,
-    /// The event identifier
-    #[serde(rename = "eventId")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub event_id: Option<i64>,
-}
-
 /// The mime types this Content Viewer supports.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -9054,26 +5571,6 @@ pub struct SupportedMimeTypesDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub mime_types: Option<Vec<String>>,
 }
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct SystemDiagnosticsDto {
-    #[serde(rename = "aggregateSnapshot")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub aggregate_snapshot: Option<SystemDiagnosticsSnapshotDto>,
-    /// A systems diagnostics snapshot for each node in the cluster. If the NiFi instance is a standalone instance, rather than a cluster, this may be null.
-    #[serde(rename = "nodeSnapshots")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub node_snapshots: Option<Vec<NodeSystemDiagnosticsSnapshotDto>>,
-}
-
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct SystemDiagnosticsEntity {
-    pub system_diagnostics: Option<SystemDiagnosticsDto>,
-}
-
 /// The System Diagnostics snapshot from the node.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -9196,7 +5693,6 @@ pub struct SystemDiagnosticsSnapshotDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub version_info: Option<VersionInfoDto>,
 }
-
 /// The system resource considerations for the given component
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -9209,7 +5705,6 @@ pub struct SystemResourceConsideration {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub resource: Option<String>,
 }
-
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -9234,7 +5729,6 @@ pub struct TenantDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub versioned_component_id: Option<String>,
 }
-
 /// The set of user group IDs associated with this access policy.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -9262,59 +5756,6 @@ pub struct TenantEntity {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub uri: Option<String>,
 }
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct TenantsEntity {
-    #[serde(rename = "userGroups")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub user_groups: Option<Vec<TenantEntity>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub users: Option<Vec<TenantEntity>>,
-}
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct TransactionResultEntity {
-    #[serde(rename = "flowFileSent")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub flow_file_sent: Option<i32>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub message: Option<String>,
-    #[serde(rename = "responseCode")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub response_code: Option<i32>,
-}
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct UpdateControllerServiceReferenceRequestEntity {
-    /// Acknowledges that this node is disconnected to allow for mutable requests to proceed.
-    #[serde(rename = "disconnectedNodeAcknowledged")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub disconnected_node_acknowledged: Option<bool>,
-    /// The identifier of the Controller Service.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    /// The revisions for all referencing components.
-    #[serde(rename = "referencingComponentRevisions")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub referencing_component_revisions:
-        Option<std::collections::HashMap<String, Option<RevisionDto>>>,
-    /// The new state of the references for the controller service.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub state: Option<String>,
-    /// Indicates whether or not the response should only include fields necessary for rendering the NiFi User Interface.
-    /// As such, when this value is set to true, some fields may be returned as null values, and the selected fields may change at any time without notice.
-    /// As a result, this value should not be set to true by any client other than the UI.
-    #[serde(rename = "uiOnly")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub ui_only: Option<bool>,
-}
-
 /// A list of use cases that have been documented for this Processor
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -9337,7 +5778,6 @@ pub struct UseCase {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub notes: Option<String>,
 }
-
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -9370,34 +5810,6 @@ pub struct UserDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub versioned_component_id: Option<String>,
 }
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct UserEntity {
-    /// The bulletins for this component.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub bulletins: Option<Vec<BulletinEntity>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub component: Option<UserDto>,
-    /// Acknowledges that this node is disconnected to allow for mutable requests to proceed.
-    #[serde(rename = "disconnectedNodeAcknowledged")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub disconnected_node_acknowledged: Option<bool>,
-    /// The id of the component.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub permissions: Option<PermissionsDto>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub position: Option<PositionDto>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub revision: Option<RevisionDto>,
-    /// The URI for futures requests to the component.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub uri: Option<String>,
-}
-
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -9429,54 +5841,6 @@ pub struct UserGroupDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub versioned_component_id: Option<String>,
 }
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct UserGroupEntity {
-    /// The bulletins for this component.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub bulletins: Option<Vec<BulletinEntity>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub component: Option<UserGroupDto>,
-    /// Acknowledges that this node is disconnected to allow for mutable requests to proceed.
-    #[serde(rename = "disconnectedNodeAcknowledged")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub disconnected_node_acknowledged: Option<bool>,
-    /// The id of the component.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub permissions: Option<PermissionsDto>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub position: Option<PositionDto>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub revision: Option<RevisionDto>,
-    /// The URI for futures requests to the component.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub uri: Option<String>,
-}
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct UserGroupsEntity {
-    #[serde(rename = "userGroups")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub user_groups: Option<Vec<UserGroupEntity>>,
-}
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct UsersEntity {
-    /// When this content was generated.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub generated: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub users: Option<Vec<UserEntity>>,
-}
-
 /// The request
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -9529,13 +5893,11 @@ pub struct VerifyConfigRequestDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub uri: Option<String>,
 }
-
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct VerifyConfigRequestEntity {
     pub request: Option<VerifyConfigRequestDto>,
 }
-
 /// The steps that are required in order to complete the request, along with the status of each
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -9552,28 +5914,6 @@ pub struct VerifyConfigUpdateStepDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub failure_reason: Option<String>,
 }
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct VersionControlComponentMappingEntity {
-    /// Acknowledges that this node is disconnected to allow for mutable requests to proceed.
-    #[serde(rename = "disconnectedNodeAcknowledged")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub disconnected_node_acknowledged: Option<bool>,
-    #[serde(rename = "processGroupRevision")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub process_group_revision: Option<RevisionDto>,
-    /// The mapping of Versioned Component Identifiers to instance ID's
-    #[serde(rename = "versionControlComponentMapping")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub version_control_component_mapping:
-        Option<std::collections::HashMap<String, Option<String>>>,
-    #[serde(rename = "versionControlInformation")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub version_control_information: Option<VersionControlInformationDto>,
-}
-
 /// The Version Control information
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -9629,23 +5969,6 @@ pub struct VersionControlInformationDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
 }
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct VersionControlInformationEntity {
-    /// Acknowledges that this node is disconnected to allow for mutable requests to proceed.
-    #[serde(rename = "disconnectedNodeAcknowledged")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub disconnected_node_acknowledged: Option<bool>,
-    #[serde(rename = "processGroupRevision")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub process_group_revision: Option<RevisionDto>,
-    #[serde(rename = "versionControlInformation")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub version_control_information: Option<VersionControlInformationDto>,
-}
-
 /// The nifi, os, java, and build version information
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -9692,7 +6015,6 @@ pub struct VersionInfoDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub os_version: Option<String>,
 }
-
 /// The assets that are referenced by this parameter
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -9705,7 +6027,6 @@ pub struct VersionedAsset {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
-
 /// The Connections
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -9780,7 +6101,6 @@ pub struct VersionedConnection {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub z_index: Option<i64>,
 }
-
 /// The Controller Services
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -9838,7 +6158,6 @@ pub struct VersionedControllerService {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub r#type: Option<String>,
 }
-
 /// The coordinates where the remote flow is stored, or null if the Process Group is not directly under Version Control
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -9870,75 +6189,6 @@ pub struct VersionedFlowCoordinates {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub version: Option<String>,
 }
-
-/// The versioned flow
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct VersionedFlowDto {
-    /// The action being performed
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub action: Option<String>,
-    /// The branch where the flow is stored
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub branch: Option<String>,
-    /// The ID of the bucket where the flow is stored
-    #[serde(rename = "bucketId")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub bucket_id: Option<String>,
-    /// Comments for the changeset
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub comments: Option<String>,
-    /// A description of the flow
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>,
-    /// The ID of the flow
-    #[serde(rename = "flowId")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub flow_id: Option<String>,
-    /// The name of the flow
-    #[serde(rename = "flowName")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub flow_name: Option<String>,
-    /// The ID of the registry that the flow is tracked to
-    #[serde(rename = "registryId")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub registry_id: Option<String>,
-}
-
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct VersionedFlowEntity {
-    pub versioned_flow: Option<VersionedFlowDto>,
-}
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct VersionedFlowSnapshotEntity {
-    /// Acknowledges that this node is disconnected to allow for mutable requests to proceed.
-    #[serde(rename = "disconnectedNodeAcknowledged")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub disconnected_node_acknowledged: Option<bool>,
-    #[serde(rename = "processGroupRevision")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub process_group_revision: Option<RevisionDto>,
-    /// The ID of the Registry that this flow belongs to
-    #[serde(rename = "registryId")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub registry_id: Option<String>,
-    /// If the Process Group to be updated has a child or descendant Process Group that is also under Version Control, this specifies whether or not the contents of that child/descendant Process Group should be updated.
-    #[serde(rename = "updateDescendantVersionedFlows")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub update_descendant_versioned_flows: Option<bool>,
-    #[serde(rename = "versionedFlow")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub versioned_flow: Option<RegisteredFlowSnapshot>,
-    #[serde(rename = "versionedFlowSnapshot")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub versioned_flow_snapshot: Option<RegisteredFlowSnapshot>,
-}
-
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -9951,16 +6201,6 @@ pub struct VersionedFlowSnapshotMetadataEntity {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub versioned_flow_snapshot_metadata: Option<RegisteredFlowSnapshotMetadata>,
 }
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct VersionedFlowSnapshotMetadataSetEntity {
-    #[serde(rename = "versionedFlowSnapshotMetadataSet")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub versioned_flow_snapshot_metadata_set: Option<Vec<VersionedFlowSnapshotMetadataEntity>>,
-}
-
 /// The Flow Update Request
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -9999,27 +6239,6 @@ pub struct VersionedFlowUpdateRequestDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub version_control_information: Option<VersionControlInformationDto>,
 }
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct VersionedFlowUpdateRequestEntity {
-    #[serde(rename = "processGroupRevision")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub process_group_revision: Option<RevisionDto>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub request: Option<VersionedFlowUpdateRequestDto>,
-}
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct VersionedFlowsEntity {
-    #[serde(rename = "versionedFlows")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub versioned_flows: Option<Vec<VersionedFlowEntity>>,
-}
-
 /// The Funnels
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -10048,7 +6267,6 @@ pub struct VersionedFunnel {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub position: Option<Position>,
 }
-
 /// The Labels
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -10093,7 +6311,6 @@ pub struct VersionedLabel {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub z_index: Option<i64>,
 }
-
 /// Returns the Listen Port Definition for the port this property specifies, if applicable
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -10110,7 +6327,6 @@ pub struct VersionedListenPortDefinition {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub transport_protocol: Option<String>,
 }
-
 /// The parameters in the context
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -10136,7 +6352,6 @@ pub struct VersionedParameter {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
 }
-
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -10185,7 +6400,6 @@ pub struct VersionedParameterContext {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub synchronized: Option<bool>,
 }
-
 /// The Output Ports
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -10233,7 +6447,6 @@ pub struct VersionedPort {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub r#type: Option<String>,
 }
-
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -10340,7 +6553,6 @@ pub struct VersionedProcessGroup {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub versioned_flow_coordinates: Option<VersionedFlowCoordinates>,
 }
-
 /// The Processors
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -10445,7 +6657,6 @@ pub struct VersionedProcessor {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub yield_duration: Option<String>,
 }
-
 /// The property descriptors for the component.
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -10476,7 +6687,6 @@ pub struct VersionedPropertyDescriptor {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub sensitive: Option<bool>,
 }
-
 /// A Set of Output Ports that can be connected to, in order to pull data from the remote NiFi instance
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -10528,7 +6738,6 @@ pub struct VersionedRemoteGroupPort {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub use_compression: Option<bool>,
 }
-
 /// The Remote Process Groups
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -10597,7 +6806,6 @@ pub struct VersionedRemoteProcessGroup {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub yield_duration: Option<String>,
 }
-
 /// The reporting tasks
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
@@ -10655,48 +6863,6 @@ pub struct VersionedReportingTask {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub r#type: Option<String>,
 }
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct VersionedReportingTaskImportRequestEntity {
-    /// The disconnected node acknowledged flag
-    #[serde(rename = "disconnectedNodeAcknowledged")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub disconnected_node_acknowledged: Option<bool>,
-    #[serde(rename = "reportingTaskSnapshot")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub reporting_task_snapshot: Option<VersionedReportingTaskSnapshot>,
-}
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct VersionedReportingTaskImportResponseEntity {
-    /// The controller services created by the import
-    #[serde(rename = "controllerServices")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub controller_services: Option<Vec<ControllerServiceEntity>>,
-    /// The reporting tasks created by the import
-    #[serde(rename = "reportingTasks")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub reporting_tasks: Option<Vec<ReportingTaskEntity>>,
-}
-
-#[non_exhaustive]
-#[derive(Debug, Clone, Default, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct VersionedReportingTaskSnapshot {
-    /// The controller services
-    #[serde(rename = "controllerServices")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub controller_services: Option<Vec<VersionedControllerService>>,
-    /// The reporting tasks
-    #[serde(rename = "reportingTasks")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub reporting_tasks: Option<Vec<VersionedReportingTask>>,
-}
-
 /// Returns the Resource Definition that defines which type(s) of resource(s) this property references, if any
 #[non_exhaustive]
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]

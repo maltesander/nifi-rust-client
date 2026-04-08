@@ -1,0 +1,25 @@
+// @generated — do not edit; run `cargo run -p nifi-openapi-gen`
+
+#[allow(unused_imports)]
+use crate::NifiError;
+use crate::dynamic::traits::AccessApi;
+#[allow(unused_imports)]
+use crate::dynamic::types;
+pub(crate) struct V2_8_0AccessApi<'a> {
+    pub(crate) client: &'a crate::NifiClient,
+}
+#[allow(unused_variables)]
+impl AccessApi for V2_8_0AccessApi<'_> {
+    async fn log_out(&self) -> Result<(), NifiError> {
+        let api = crate::v2_8_0::api::access::AccessApi {
+            client: self.client,
+        };
+        api.log_out().await
+    }
+    async fn log_out_complete(&self) -> Result<(), NifiError> {
+        let api = crate::v2_8_0::api::access::AccessApi {
+            client: self.client,
+        };
+        api.log_out_complete().await
+    }
+}

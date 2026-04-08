@@ -53,6 +53,7 @@ nifi-rust-client = { version = "0.3", features = ["dynamic"] }
 <!-- DYNAMIC_FEATURE_EXAMPLE_END -->
 
 ```rust
+use nifi_rust_client::dynamic::traits::FlowApi;
 use nifi_rust_client::dynamic::types::DiagnosticLevel;
 
 let client = NifiClientBuilder::new("https://nifi:8443")?
@@ -72,6 +73,21 @@ let diag = client.system_diagnostics_api()
 // Request bodies use typed dynamic union structs (not serde_json::Value)
 println!("Connected to NiFi {}", client.detected_version());
 ```
+
+All 28 API groups have corresponding traits in `dynamic::traits` (e.g., `FlowApi`, `ProcessorsApi`). Import the trait to call methods on a dispatch enum, or use traits for generic code:
+
+```rust
+use nifi_rust_client::dynamic::traits::FlowApi;
+use nifi_rust_client::NifiError;
+
+async fn check_version(api: &impl FlowApi) -> Result<(), NifiError> {
+    let about = api.get_about_info().await?;
+    println!("NiFi {}", about.nifi_version.unwrap_or_default());
+    Ok(())
+}
+```
+
+Dynamic types use `#[non_exhaustive]` for forward compatibility — match arms should include a `..` fallback when destructuring fields.
 
 Fields present in all supported versions use their natural type (e.g., `String`); fields that only exist in some versions are `Option<T>`. Endpoints that don't exist in the connected version return `NifiError::UnsupportedEndpoint`. Enum query params and request bodies are fully typed.
 

@@ -1,6 +1,6 @@
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 
-use crate::parser::{ApiSpec, Field, FieldType, TypeKind};
+use crate::parser::{ApiSpec, Field, FieldType, TagGroup, TypeKind};
 
 /// Intermediate representation of a merged type across all API versions.
 enum MergedType {
@@ -22,113 +22,209 @@ enum MergedType {
     },
 }
 
-/// Merge type definitions from all API versions and emit a single Rust source file
+/// Merge type definitions from all API versions and emit per-tag Rust source files
 /// containing union types where all fields are `Option<T>`.
-pub fn emit_dynamic_types(specs: &[(&str, &ApiSpec)]) -> String {
+///
+/// Returns a list of `(filename, content)` pairs to write into `src/dynamic/types/`:
+/// - `"mod.rs"` — module declarations + glob re-exports
+/// - `"common.rs"` — types referenced by 0 or 2+ tags (across all versions)
+/// - `"<tag>.rs"` — one file per tag for types used exclusively by that tag
+pub fn emit_dynamic_types(specs: &[(&str, &ApiSpec)]) -> Vec<(String, String)> {
     let merged = merge_all_types(specs);
 
-    let mut out = String::new();
-    out.push_str("#![allow(dead_code, private_interfaces)]\n\n");
-    out.push_str("use serde::{Deserialize, Serialize};\n\n");
-
-    for (name, mt) in &merged {
-        match mt {
-            MergedType::Dto {
-                fields,
-                universal_fields,
-                doc,
-            } => {
-                if let Some(d) = doc {
-                    for line in d.lines() {
-                        out.push_str(&format!("/// {line}\n"));
-                    }
-                }
-                out.push_str("#[non_exhaustive]\n");
-                out.push_str("#[derive(Debug, Clone, Default, Deserialize, Serialize)]\n");
-                out.push_str("#[serde(rename_all = \"camelCase\")]\n");
-                out.push_str(&format!("pub struct {name} {{\n"));
-                for field in fields.values() {
-                    let rust_ty = field_type_to_rust(&field.ty, name);
-                    let is_universal = universal_fields.contains(&field.rust_name);
-                    let final_ty = if is_universal {
-                        // Field exists in all versions with the same type — emit as-is
-                        rust_ty
-                    } else {
-                        // Field missing in some version or type differs — wrap in Option
-                        wrap_in_option(&field.ty, &rust_ty)
-                    };
-                    if let Some(field_doc) = &field.doc {
-                        for line in field_doc.lines() {
-                            out.push_str(&format!("    /// {line}\n"));
-                        }
-                    }
-                    // Use serde rename if it differs from rust_name
-                    if field.serde_name != field.rust_name {
-                        out.push_str(&format!(
-                            "    #[serde(rename = \"{}\")]\n",
-                            field.serde_name
-                        ));
-                    }
-                    // Non-universal fields need default on deserialization for missing keys
-                    if !is_universal {
-                        out.push_str("    #[serde(default)]\n");
-                    }
-                    // Add skip_serializing_if for Option fields
-                    if final_ty.starts_with("Option<") {
-                        out.push_str(
-                            "    #[serde(skip_serializing_if = \"Option::is_none\")]\n",
-                        );
-                    }
-                    out.push_str(&format!(
-                        "    pub {}: {final_ty},\n",
-                        escape_keyword(&field.rust_name)
-                    ));
-                }
-                out.push_str("}\n\n");
-            }
-            MergedType::Entity { field, inner } => {
-                out.push_str("#[derive(Debug, Clone, Default, Deserialize, Serialize)]\n");
-                out.push_str("#[serde(rename_all = \"camelCase\")]\n");
-                out.push_str(&format!("pub struct {name} {{\n"));
-                out.push_str(&format!(
-                    "    pub {}: Option<{inner}>,\n",
-                    escape_keyword(field)
-                ));
-                out.push_str("}\n\n");
-            }
-            MergedType::StringEnum { variants } => {
-                out.push_str("#[non_exhaustive]\n");
-                out.push_str(
-                    "#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]\n",
-                );
-                out.push_str(&format!("pub enum {name} {{\n"));
-                for wire in variants {
-                    let pascal = wire_to_pascal(wire);
-                    out.push_str(&format!("    #[serde(rename = \"{wire}\")]\n"));
-                    out.push_str(&format!("    {pascal},\n"));
-                }
-                out.push_str("}\n\n");
-
-                // Display impl — outputs the wire value
-                out.push_str(&format!("impl std::fmt::Display for {name} {{\n"));
-                out.push_str(
-                    "    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {\n",
-                );
-                out.push_str("        match self {\n");
-                for wire in variants {
-                    let pascal = wire_to_pascal(wire);
-                    out.push_str(&format!(
-                        "            {name}::{pascal} => write!(f, \"{wire}\"),\n"
-                    ));
-                }
-                out.push_str("        }\n");
-                out.push_str("    }\n");
-                out.push_str("}\n\n");
+    // Build type_name -> set of tag module_names across ALL versions.
+    let mut type_to_tags: HashMap<String, HashSet<String>> = HashMap::new();
+    for (_version, spec) in specs {
+        for tag in &spec.tags {
+            for type_name in types_referenced_by_tag(tag) {
+                type_to_tags
+                    .entry(type_name)
+                    .or_default()
+                    .insert(tag.module_name.clone());
             }
         }
     }
 
-    out
+    // Assign each merged type to exactly one tag or common.
+    // BTreeMap for deterministic file order.
+    let mut tag_types: BTreeMap<String, Vec<&str>> = BTreeMap::new();
+    let mut common_names: Vec<&str> = vec![];
+
+    for name in merged.keys() {
+        match type_to_tags.get(name.as_str()) {
+            Some(tags) if tags.len() == 1 => {
+                let tag = tags.iter().next().unwrap().clone();
+                tag_types.entry(tag).or_default().push(name.as_str());
+            }
+            _ => common_names.push(name.as_str()),
+        }
+    }
+
+    let mut files: Vec<(String, String)> = vec![];
+
+    // common.rs
+    files.push((
+        "common.rs".into(),
+        emit_dynamic_type_file(&common_names, &merged),
+    ));
+
+    // per-tag files
+    let tag_names: Vec<String> = tag_types.keys().cloned().collect();
+    for tag_name in &tag_names {
+        let names = tag_types.get(tag_name).unwrap();
+        files.push((
+            format!("{tag_name}.rs"),
+            emit_dynamic_type_file(names, &merged),
+        ));
+    }
+
+    // mod.rs
+    let mut mod_out = String::new();
+    mod_out.push_str("pub mod common;\n");
+    for tag_name in &tag_names {
+        mod_out.push_str(&format!("pub mod {tag_name};\n"));
+    }
+    mod_out.push_str("\npub use common::*;\n");
+    for tag_name in &tag_names {
+        mod_out.push_str(&format!("pub use {tag_name}::*;\n"));
+    }
+    files.push(("mod.rs".into(), crate::util::format_source(&mod_out)));
+
+    files
+}
+
+/// Collect all type names directly referenced by a tag's endpoints (shallow — no transitive follow).
+fn types_referenced_by_tag(tag: &TagGroup) -> HashSet<String> {
+    let mut names = HashSet::new();
+    let all_eps = tag
+        .root_endpoints
+        .iter()
+        .chain(tag.sub_groups.iter().flat_map(|sg| sg.endpoints.iter()));
+    for ep in all_eps {
+        if let Some(t) = &ep.request_type {
+            names.insert(t.clone());
+        }
+        if let Some(t) = &ep.response_type {
+            names.insert(t.clone());
+        }
+        if let Some(t) = &ep.response_inner {
+            names.insert(t.clone());
+        }
+        for qp in &ep.query_params {
+            if let Some(type_name) = &qp.enum_type_name {
+                names.insert(type_name.clone());
+            }
+        }
+    }
+    names
+}
+
+fn emit_dynamic_type_file(names: &[&str], merged: &BTreeMap<String, MergedType>) -> String {
+    let mut out = String::new();
+    out.push_str("#![allow(dead_code, private_interfaces, unused_imports)]\n\n");
+    out.push_str("use serde::{Deserialize, Serialize};\n");
+    out.push_str("use super::*;\n\n");
+
+    for name in names {
+        let mt = match merged.get(*name) {
+            Some(m) => m,
+            None => continue,
+        };
+        emit_merged_type(&mut out, name, mt);
+    }
+
+    crate::util::format_source(&out)
+}
+
+fn emit_merged_type(out: &mut String, name: &str, mt: &MergedType) {
+    match mt {
+        MergedType::Dto {
+            fields,
+            universal_fields,
+            doc,
+        } => {
+            if let Some(d) = doc {
+                for line in d.lines() {
+                    out.push_str(&format!("/// {line}\n"));
+                }
+            }
+            out.push_str("#[non_exhaustive]\n");
+            out.push_str("#[derive(Debug, Clone, Default, Deserialize, Serialize)]\n");
+            out.push_str("#[serde(rename_all = \"camelCase\")]\n");
+            out.push_str(&format!("pub struct {name} {{\n"));
+            for field in fields.values() {
+                let rust_ty = field_type_to_rust(&field.ty, name);
+                let is_universal = universal_fields.contains(&field.rust_name);
+                let final_ty = if is_universal {
+                    rust_ty
+                } else {
+                    wrap_in_option(&field.ty, &rust_ty)
+                };
+                if let Some(field_doc) = &field.doc {
+                    for line in field_doc.lines() {
+                        out.push_str(&format!("    /// {line}\n"));
+                    }
+                }
+                if field.serde_name != field.rust_name {
+                    out.push_str(&format!(
+                        "    #[serde(rename = \"{}\")]\n",
+                        field.serde_name
+                    ));
+                }
+                if !is_universal {
+                    out.push_str("    #[serde(default)]\n");
+                }
+                if final_ty.starts_with("Option<") {
+                    out.push_str(
+                        "    #[serde(skip_serializing_if = \"Option::is_none\")]\n",
+                    );
+                }
+                out.push_str(&format!(
+                    "    pub {}: {final_ty},\n",
+                    escape_keyword(&field.rust_name)
+                ));
+            }
+            out.push_str("}\n\n");
+        }
+        MergedType::Entity { field, inner } => {
+            out.push_str("#[derive(Debug, Clone, Default, Deserialize, Serialize)]\n");
+            out.push_str("#[serde(rename_all = \"camelCase\")]\n");
+            out.push_str(&format!("pub struct {name} {{\n"));
+            out.push_str(&format!(
+                "    pub {}: Option<{inner}>,\n",
+                escape_keyword(field)
+            ));
+            out.push_str("}\n\n");
+        }
+        MergedType::StringEnum { variants } => {
+            out.push_str("#[non_exhaustive]\n");
+            out.push_str(
+                "#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]\n",
+            );
+            out.push_str(&format!("pub enum {name} {{\n"));
+            for wire in variants {
+                let pascal = wire_to_pascal(wire);
+                out.push_str(&format!("    #[serde(rename = \"{wire}\")]\n"));
+                out.push_str(&format!("    {pascal},\n"));
+            }
+            out.push_str("}\n\n");
+
+            out.push_str(&format!("impl std::fmt::Display for {name} {{\n"));
+            out.push_str(
+                "    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {\n",
+            );
+            out.push_str("        match self {\n");
+            for wire in variants {
+                let pascal = wire_to_pascal(wire);
+                out.push_str(&format!(
+                    "            {name}::{pascal} => write!(f, \"{wire}\"),\n"
+                ));
+            }
+            out.push_str("        }\n");
+            out.push_str("    }\n");
+            out.push_str("}\n\n");
+        }
+    }
 }
 
 /// Returns a map of type_name -> sorted field names (rust_name) for all merged types.
@@ -332,12 +428,53 @@ fn wire_to_pascal(wire: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::parser::{ApiSpec, Field, FieldType, TypeDef, TypeKind};
+    use crate::parser::{ApiSpec, Endpoint, Field, FieldType, TagGroup, TypeDef, TypeKind};
 
     fn make_spec(types: Vec<TypeDef>) -> ApiSpec {
         ApiSpec {
             tags: vec![],
             all_types: types,
+        }
+    }
+
+    fn make_spec_with_tags(types: Vec<TypeDef>, tags: Vec<TagGroup>) -> ApiSpec {
+        ApiSpec {
+            tags,
+            all_types: types,
+        }
+    }
+
+    fn make_tag(module_name: &str, response_types: Vec<&str>) -> TagGroup {
+        use crate::parser::HttpMethod;
+        let endpoints = response_types
+            .into_iter()
+            .map(|t| Endpoint {
+                fn_name: format!("get_{t}"),
+                path: format!("/{t}"),
+                method: HttpMethod::Get,
+                doc: None,
+                description: None,
+                path_params: vec![],
+                query_params: vec![],
+                request_type: None,
+                body_kind: None,
+                body_doc: None,
+                response_type: Some(t.to_string()),
+                response_inner: None,
+                response_field: None,
+                success_responses: vec![],
+                error_responses: vec![],
+                security: None,
+            })
+            .collect();
+        TagGroup {
+            tag: module_name.to_string(),
+            struct_name: format!("{}Api", module_name),
+            module_name: module_name.to_string(),
+            accessor_fn: format!("{module_name}_api"),
+            types: vec![],
+            root_endpoints: endpoints,
+            sub_groups: vec![],
         }
     }
 
@@ -349,6 +486,11 @@ mod tests {
             doc: None,
             read_only: false,
         }
+    }
+
+    /// Concatenate all file contents from emit_dynamic_types output.
+    fn all_content(files: &[(String, String)]) -> String {
+        files.iter().map(|(_, c)| c.as_str()).collect::<Vec<_>>().join("\n")
     }
 
     #[test]
@@ -364,7 +506,8 @@ mod tests {
         };
         let spec_a = make_spec(vec![td.clone()]);
         let spec_b = make_spec(vec![td]);
-        let output = emit_dynamic_types(&[("2.7.2", &spec_a), ("2.8.0", &spec_b)]);
+        let files = emit_dynamic_types(&[("2.7.2", &spec_a), ("2.8.0", &spec_b)]);
+        let output = all_content(&files);
         assert!(output.contains("pub struct AboutDto"));
         assert!(output.contains("pub title: Option<String>"));
         assert!(output.contains("pub version: Option<String>"));
@@ -389,7 +532,8 @@ mod tests {
         };
         let spec_a = make_spec(vec![td_old]);
         let spec_b = make_spec(vec![td_new]);
-        let output = emit_dynamic_types(&[("2.7.2", &spec_a), ("2.8.0", &spec_b)]);
+        let files = emit_dynamic_types(&[("2.7.2", &spec_a), ("2.8.0", &spec_b)]);
+        let output = all_content(&files);
         assert!(output.contains("pub struct ProcessorDto"));
         assert!(output.contains("pub name: Option<String>"));
         assert!(output.contains("pub new_field: Option<bool>"));
@@ -411,7 +555,8 @@ mod tests {
         };
         let spec_a = make_spec(vec![td_old]);
         let spec_b = make_spec(vec![td_new]);
-        let output = emit_dynamic_types(&[("2.7.2", &spec_a), ("2.8.0", &spec_b)]);
+        let files = emit_dynamic_types(&[("2.7.2", &spec_a), ("2.8.0", &spec_b)]);
+        let output = all_content(&files);
         assert!(output.contains("pub enum IncludedRegistries"));
         assert!(output.contains("Nifi"));
         assert!(output.contains("Jvm"));
@@ -428,7 +573,8 @@ mod tests {
         };
         let spec_a = make_spec(vec![]);
         let spec_b = make_spec(vec![td]);
-        let output = emit_dynamic_types(&[("2.7.2", &spec_a), ("2.8.0", &spec_b)]);
+        let files = emit_dynamic_types(&[("2.7.2", &spec_a), ("2.8.0", &spec_b)]);
+        let output = all_content(&files);
         assert!(output.contains("pub struct NewInV2Dto"));
         assert!(output.contains("pub id: Option<String>"));
     }
@@ -481,7 +627,8 @@ mod tests {
             doc: Some("Information about the NiFi instance".to_string()),
         };
         let spec = make_spec(vec![td]);
-        let output = emit_dynamic_types(&[("2.8.0", &spec)]);
+        let files = emit_dynamic_types(&[("2.8.0", &spec)]);
+        let output = all_content(&files);
         // non_exhaustive attribute on struct
         assert!(output.contains("#[non_exhaustive]"), "missing #[non_exhaustive] on struct");
         // struct-level doc comment
@@ -501,8 +648,60 @@ mod tests {
             doc: None,
         };
         let spec = make_spec(vec![td]);
-        let output = emit_dynamic_types(&[("2.8.0", &spec)]);
+        let files = emit_dynamic_types(&[("2.8.0", &spec)]);
+        let output = all_content(&files);
         assert!(output.contains("pub enum DiagnosticLevel"), "missing enum declaration");
         assert!(output.contains("#[non_exhaustive]"), "missing #[non_exhaustive] on enum");
+    }
+
+    #[test]
+    fn dynamic_types_split_per_tag() {
+        // AboutDto and AboutEntity are referenced by the "flow" tag
+        // PositionDto is not referenced by any tag — goes to common.rs
+        let about_dto = TypeDef {
+            name: "AboutDto".to_string(),
+            kind: TypeKind::Dto,
+            fields: vec![make_field("version", FieldType::Opt(Box::new(FieldType::Str)))],
+            doc: None,
+        };
+        let about_entity = TypeDef {
+            name: "AboutEntity".to_string(),
+            kind: TypeKind::Entity {
+                field: "about".into(),
+                inner: "AboutDto".into(),
+            },
+            fields: vec![],
+            doc: None,
+        };
+        let position_dto = TypeDef {
+            name: "PositionDto".to_string(),
+            kind: TypeKind::Dto,
+            fields: vec![make_field("x", FieldType::F64)],
+            doc: None,
+        };
+
+        let flow_tag = make_tag("flow", vec!["AboutEntity"]);
+        let spec = make_spec_with_tags(
+            vec![about_dto, about_entity, position_dto],
+            vec![flow_tag],
+        );
+
+        let files = emit_dynamic_types(&[("2.8.0", &spec)]);
+        let filenames: Vec<&str> = files.iter().map(|(n, _)| n.as_str()).collect();
+
+        // Must contain mod.rs, flow.rs, and common.rs
+        assert!(filenames.contains(&"mod.rs"), "missing mod.rs; got: {filenames:?}");
+        assert!(filenames.contains(&"flow.rs"), "missing flow.rs; got: {filenames:?}");
+        assert!(filenames.contains(&"common.rs"), "missing common.rs; got: {filenames:?}");
+
+        let flow_content = files.iter().find(|(n, _)| n == "flow.rs").unwrap().1.as_str();
+        let common_content = files.iter().find(|(n, _)| n == "common.rs").unwrap().1.as_str();
+
+        // AboutEntity is exclusively referenced by flow -> flow.rs
+        assert!(flow_content.contains("AboutEntity"), "flow.rs should contain AboutEntity");
+        // PositionDto is not referenced by any tag -> common.rs
+        assert!(common_content.contains("PositionDto"), "common.rs should contain PositionDto");
+        // AboutDto is not directly referenced (AboutEntity is, not AboutDto itself) -> common.rs
+        assert!(common_content.contains("AboutDto"), "common.rs should contain AboutDto");
     }
 }

@@ -222,12 +222,24 @@ The `DynamicClient` auto-detects the NiFi version via the `/flow/about` endpoint
 API calls to the correct version's generated code. Returns common union types with all fields
 as `Option<T>`.
 
+The dispatch layer is trait-based:
+
+- **`dynamic::traits`** — public traits (e.g., `FlowApi`, `ProcessorsApi`) that callers import to use dispatch enum methods or write generic code
+- **`dynamic::dispatch`** — dispatch enums (e.g., `FlowApiDispatch`) that implement the traits and route to per-version code
+- **`dynamic::impls`** — per-version implementations generated from each spec
+
+Users must import a trait to call its methods:
+
 ```rust
-let mut client = NifiClientBuilder::new("https://nifi:8443")?
+use nifi_rust_client::dynamic::traits::FlowApi;
+
+let client = NifiClientBuilder::new("https://nifi:8443")?
     .build_dynamic().await?;
 client.login("admin", "password").await?;
 let about = client.flow_api().get_about_info().await?;
 ```
+
+**Forward compatibility:** All dynamic structs and enums carry `#[non_exhaustive]`. All fields are `Option<T>`. Trait methods for endpoints that don't exist in a given version have default impls returning `NifiError::UnsupportedEndpoint`.
 
 ### Adding or bumping a NiFi version
 
