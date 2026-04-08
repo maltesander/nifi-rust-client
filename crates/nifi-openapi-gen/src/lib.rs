@@ -1,3 +1,4 @@
+pub mod diff;
 mod emit_api;
 mod emit_dynamic;
 mod emit_dynamic_conversions;
