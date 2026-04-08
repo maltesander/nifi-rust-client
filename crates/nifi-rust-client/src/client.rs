@@ -111,7 +111,7 @@ impl NifiClient {
     /// NiFi JWTs expire after 12 hours by default (configurable server-side via
     /// `nifi.security.user.login.identity.provider.expiration`). Once expired,
     /// any API call returns [`NifiError::Unauthorized`]. Configure a
-    /// [`CredentialProvider`](crate::CredentialProvider) on the builder to enable
+    /// [`CredentialProvider`] on the builder to enable
     /// automatic token refresh on 401 responses.
     pub async fn login(&self, username: &str, password: &str) -> Result<(), NifiError> {
         tracing::debug!(method = "POST", path = "/access/token", "NiFi API request");
