@@ -73,8 +73,18 @@ impl VersionDiff {
         let added_ep = self.endpoints.added.len() as i64;
         let removed_ep = self.endpoints.removed.len() as i64;
 
-        let added_fields: usize = self.types.changed.iter().map(|tc| tc.added_fields.len()).sum();
-        let removed_fields: usize = self.types.changed.iter().map(|tc| tc.removed_fields.len()).sum();
+        let added_fields: usize = self
+            .types
+            .changed
+            .iter()
+            .map(|tc| tc.added_fields.len())
+            .sum();
+        let removed_fields: usize = self
+            .types
+            .changed
+            .iter()
+            .map(|tc| tc.removed_fields.len())
+            .sum();
 
         let added_enum_vals: usize = self
             .endpoints
@@ -157,7 +167,10 @@ fn endpoint_map(spec: &ApiSpec) -> HashMap<(String, String), (&Endpoint, String)
 
 /// Collects all types from a spec as name → TypeDef ref.
 fn type_map(spec: &ApiSpec) -> HashMap<&str, &TypeDef> {
-    spec.all_types.iter().map(|t| (t.name.as_str(), t)).collect()
+    spec.all_types
+        .iter()
+        .map(|t| (t.name.as_str(), t))
+        .collect()
 }
 
 fn diff_endpoints(from: &ApiSpec, to: &ApiSpec) -> EndpointDiff {
@@ -208,12 +221,14 @@ fn diff_endpoints(from: &ApiSpec, to: &ApiSpec) -> EndpointDiff {
 
     // Sort for deterministic output
     added.sort_by(|a, b| (&a.path, method_key(&a.method)).cmp(&(&b.path, method_key(&b.method))));
-    removed
-        .sort_by(|a, b| (&a.path, method_key(&a.method)).cmp(&(&b.path, method_key(&b.method))));
-    changed
-        .sort_by(|a, b| (&a.path, method_key(&a.method)).cmp(&(&b.path, method_key(&b.method))));
+    removed.sort_by(|a, b| (&a.path, method_key(&a.method)).cmp(&(&b.path, method_key(&b.method))));
+    changed.sort_by(|a, b| (&a.path, method_key(&a.method)).cmp(&(&b.path, method_key(&b.method))));
 
-    EndpointDiff { added, removed, changed }
+    EndpointDiff {
+        added,
+        removed,
+        changed,
+    }
 }
 
 struct RawEndpointChanges {
@@ -223,10 +238,16 @@ struct RawEndpointChanges {
 }
 
 fn diff_endpoint_params(to_ep: &Endpoint, from_ep: &Endpoint) -> RawEndpointChanges {
-    let from_params: HashMap<&str, &QueryParam> =
-        from_ep.query_params.iter().map(|p| (p.name.as_str(), p)).collect();
-    let to_params: HashMap<&str, &QueryParam> =
-        to_ep.query_params.iter().map(|p| (p.name.as_str(), p)).collect();
+    let from_params: HashMap<&str, &QueryParam> = from_ep
+        .query_params
+        .iter()
+        .map(|p| (p.name.as_str(), p))
+        .collect();
+    let to_params: HashMap<&str, &QueryParam> = to_ep
+        .query_params
+        .iter()
+        .map(|p| (p.name.as_str(), p))
+        .collect();
 
     let mut added_params = Vec::new();
     let mut removed_params = Vec::new();
@@ -253,7 +274,11 @@ fn diff_endpoint_params(to_ep: &Endpoint, from_ep: &Endpoint) -> RawEndpointChan
     removed_params.sort();
     changed_params.sort_by(|a, b| a.name.cmp(&b.name));
 
-    RawEndpointChanges { added_params, removed_params, changed_params }
+    RawEndpointChanges {
+        added_params,
+        removed_params,
+        changed_params,
+    }
 }
 
 fn diff_param_enums(name: &str, from_p: &QueryParam, to_p: &QueryParam) -> Option<ParamChange> {
@@ -269,8 +294,14 @@ fn diff_param_enums(name: &str, from_p: &QueryParam, to_p: &QueryParam) -> Optio
     let from_set: std::collections::HashSet<&str> = from_vals.iter().map(String::as_str).collect();
     let to_set: std::collections::HashSet<&str> = to_vals.iter().map(String::as_str).collect();
 
-    let added: Vec<String> = to_set.difference(&from_set).map(|s| s.to_string()).collect();
-    let removed: Vec<String> = from_set.difference(&to_set).map(|s| s.to_string()).collect();
+    let added: Vec<String> = to_set
+        .difference(&from_set)
+        .map(|s| s.to_string())
+        .collect();
+    let removed: Vec<String> = from_set
+        .difference(&to_set)
+        .map(|s| s.to_string())
+        .collect();
 
     if added.is_empty() && removed.is_empty() {
         return None;
@@ -321,14 +352,24 @@ fn diff_types(from: &ApiSpec, to: &ApiSpec) -> TypesDiff {
     removed.sort();
     changed.sort_by(|a, b| a.name.cmp(&b.name));
 
-    TypesDiff { added, removed, changed }
+    TypesDiff {
+        added,
+        removed,
+        changed,
+    }
 }
 
 fn diff_type_fields(name: &str, from_type: &TypeDef, to_type: &TypeDef) -> TypeChanges {
-    let from_fields: HashMap<&str, &Field> =
-        from_type.fields.iter().map(|f| (f.rust_name.as_str(), f)).collect();
-    let to_fields: HashMap<&str, &Field> =
-        to_type.fields.iter().map(|f| (f.rust_name.as_str(), f)).collect();
+    let from_fields: HashMap<&str, &Field> = from_type
+        .fields
+        .iter()
+        .map(|f| (f.rust_name.as_str(), f))
+        .collect();
+    let to_fields: HashMap<&str, &Field> = to_type
+        .fields
+        .iter()
+        .map(|f| (f.rust_name.as_str(), f))
+        .collect();
 
     let mut added_fields = Vec::new();
     let mut removed_fields = Vec::new();
@@ -375,7 +416,7 @@ fn diff_type_fields(name: &str, from_type: &TypeDef, to_type: &TypeDef) -> TypeC
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::parser::{SubGroup, TagGroup, TypeKind};
+    use crate::parser::{TagGroup, TypeKind};
 
     // ─── Helpers ─────────────────────────────────────────────────────────────
 
@@ -441,11 +482,19 @@ mod tests {
     }
 
     fn make_spec(tags: Vec<TagGroup>, types: Vec<TypeDef>) -> ApiSpec {
-        ApiSpec { tags, all_types: types }
+        ApiSpec {
+            tags,
+            all_types: types,
+        }
     }
 
     fn make_dto(name: &str, fields: Vec<Field>) -> TypeDef {
-        TypeDef { name: name.to_string(), kind: TypeKind::Dto, fields, doc: None }
+        TypeDef {
+            name: name.to_string(),
+            kind: TypeKind::Dto,
+            fields,
+            doc: None,
+        }
     }
 
     fn make_field(name: &str, ty: FieldType) -> Field {
@@ -463,14 +512,20 @@ mod tests {
     #[test]
     fn test_added_endpoint() {
         let from = make_spec(
-            vec![make_tag("Flow", vec![make_endpoint(HttpMethod::Get, "/flow/about")])],
+            vec![make_tag(
+                "Flow",
+                vec![make_endpoint(HttpMethod::Get, "/flow/about")],
+            )],
             vec![],
         );
         let to = make_spec(
-            vec![make_tag("Flow", vec![
-                make_endpoint(HttpMethod::Get, "/flow/about"),
-                make_endpoint(HttpMethod::Get, "/flow/metrics"),
-            ])],
+            vec![make_tag(
+                "Flow",
+                vec![
+                    make_endpoint(HttpMethod::Get, "/flow/about"),
+                    make_endpoint(HttpMethod::Get, "/flow/metrics"),
+                ],
+            )],
             vec![],
         );
         let diff = compute_diff(&from, &to, "2.7.2", "2.8.0");
@@ -482,14 +537,20 @@ mod tests {
     #[test]
     fn test_removed_endpoint() {
         let from = make_spec(
-            vec![make_tag("Flow", vec![
-                make_endpoint(HttpMethod::Get, "/flow/about"),
-                make_endpoint(HttpMethod::Get, "/flow/old"),
-            ])],
+            vec![make_tag(
+                "Flow",
+                vec![
+                    make_endpoint(HttpMethod::Get, "/flow/about"),
+                    make_endpoint(HttpMethod::Get, "/flow/old"),
+                ],
+            )],
             vec![],
         );
         let to = make_spec(
-            vec![make_tag("Flow", vec![make_endpoint(HttpMethod::Get, "/flow/about")])],
+            vec![make_tag(
+                "Flow",
+                vec![make_endpoint(HttpMethod::Get, "/flow/about")],
+            )],
             vec![],
         );
         let diff = compute_diff(&from, &to, "2.7.2", "2.8.0");
@@ -501,13 +562,21 @@ mod tests {
     #[test]
     fn test_added_query_param() {
         let from = make_spec(
-            vec![make_tag("Flow", vec![make_endpoint(HttpMethod::Get, "/flow/about")])],
+            vec![make_tag(
+                "Flow",
+                vec![make_endpoint(HttpMethod::Get, "/flow/about")],
+            )],
             vec![],
         );
         let to = make_spec(
-            vec![make_tag("Flow", vec![
-                make_endpoint_with_param(HttpMethod::Get, "/flow/about", make_str_param("verbose")),
-            ])],
+            vec![make_tag(
+                "Flow",
+                vec![make_endpoint_with_param(
+                    HttpMethod::Get,
+                    "/flow/about",
+                    make_str_param("verbose"),
+                )],
+            )],
             vec![],
         );
         let diff = compute_diff(&from, &to, "2.7.2", "2.8.0");
@@ -520,23 +589,25 @@ mod tests {
     #[test]
     fn test_enum_value_added() {
         let from = make_spec(
-            vec![make_tag("Flow", vec![
-                make_endpoint_with_param(
+            vec![make_tag(
+                "Flow",
+                vec![make_endpoint_with_param(
                     HttpMethod::Get,
                     "/flow/about",
                     make_enum_param("strategy", &["A", "B"]),
-                ),
-            ])],
+                )],
+            )],
             vec![],
         );
         let to = make_spec(
-            vec![make_tag("Flow", vec![
-                make_endpoint_with_param(
+            vec![make_tag(
+                "Flow",
+                vec![make_endpoint_with_param(
                     HttpMethod::Get,
                     "/flow/about",
                     make_enum_param("strategy", &["A", "B", "C"]),
-                ),
-            ])],
+                )],
+            )],
             vec![],
         );
         let diff = compute_diff(&from, &to, "2.7.2", "2.8.0");
@@ -562,14 +633,20 @@ mod tests {
     fn test_added_field() {
         let from = make_spec(
             vec![],
-            vec![make_dto("AboutDTO", vec![make_field("version", FieldType::Str)])],
+            vec![make_dto(
+                "AboutDTO",
+                vec![make_field("version", FieldType::Str)],
+            )],
         );
         let to = make_spec(
             vec![],
-            vec![make_dto("AboutDTO", vec![
-                make_field("version", FieldType::Str),
-                make_field("build_tag", FieldType::Opt(Box::new(FieldType::Str))),
-            ])],
+            vec![make_dto(
+                "AboutDTO",
+                vec![
+                    make_field("version", FieldType::Str),
+                    make_field("build_tag", FieldType::Opt(Box::new(FieldType::Str))),
+                ],
+            )],
         );
         let diff = compute_diff(&from, &to, "2.7.2", "2.8.0");
         assert_eq!(diff.types.changed.len(), 1);
@@ -580,13 +657,20 @@ mod tests {
     fn test_field_became_optional() {
         let from = make_spec(
             vec![],
-            vec![make_dto("AboutDTO", vec![make_field("version", FieldType::Str)])],
+            vec![make_dto(
+                "AboutDTO",
+                vec![make_field("version", FieldType::Str)],
+            )],
         );
         let to = make_spec(
             vec![],
-            vec![make_dto("AboutDTO", vec![
-                make_field("version", FieldType::Opt(Box::new(FieldType::Str))),
-            ])],
+            vec![make_dto(
+                "AboutDTO",
+                vec![make_field(
+                    "version",
+                    FieldType::Opt(Box::new(FieldType::Str)),
+                )],
+            )],
         );
         let diff = compute_diff(&from, &to, "2.7.2", "2.8.0");
         assert_eq!(diff.types.changed.len(), 1);
@@ -599,8 +683,14 @@ mod tests {
     #[test]
     fn test_identical_specs_produce_empty_diff() {
         let spec = make_spec(
-            vec![make_tag("Flow", vec![make_endpoint(HttpMethod::Get, "/flow/about")])],
-            vec![make_dto("AboutDTO", vec![make_field("version", FieldType::Str)])],
+            vec![make_tag(
+                "Flow",
+                vec![make_endpoint(HttpMethod::Get, "/flow/about")],
+            )],
+            vec![make_dto(
+                "AboutDTO",
+                vec![make_field("version", FieldType::Str)],
+            )],
         );
         let diff = compute_diff(&spec, &spec, "2.7.2", "2.8.0");
         assert!(diff.endpoints.added.is_empty());
@@ -614,18 +704,30 @@ mod tests {
     #[test]
     fn test_summary_with_changes() {
         let from = make_spec(
-            vec![make_tag("Flow", vec![make_endpoint(HttpMethod::Get, "/flow/about")])],
-            vec![make_dto("AboutDTO", vec![make_field("version", FieldType::Str)])],
+            vec![make_tag(
+                "Flow",
+                vec![make_endpoint(HttpMethod::Get, "/flow/about")],
+            )],
+            vec![make_dto(
+                "AboutDTO",
+                vec![make_field("version", FieldType::Str)],
+            )],
         );
         let to = make_spec(
-            vec![make_tag("Flow", vec![
-                make_endpoint(HttpMethod::Get, "/flow/about"),
-                make_endpoint(HttpMethod::Get, "/flow/metrics"),
-            ])],
-            vec![make_dto("AboutDTO", vec![
-                make_field("version", FieldType::Str),
-                make_field("build_tag", FieldType::Opt(Box::new(FieldType::Str))),
-            ])],
+            vec![make_tag(
+                "Flow",
+                vec![
+                    make_endpoint(HttpMethod::Get, "/flow/about"),
+                    make_endpoint(HttpMethod::Get, "/flow/metrics"),
+                ],
+            )],
+            vec![make_dto(
+                "AboutDTO",
+                vec![
+                    make_field("version", FieldType::Str),
+                    make_field("build_tag", FieldType::Opt(Box::new(FieldType::Str))),
+                ],
+            )],
         );
         let diff = compute_diff(&from, &to, "2.7.2", "2.8.0");
         let summary = diff.summary();
@@ -643,14 +745,20 @@ mod tests {
     #[test]
     fn test_summary_with_removed() {
         let from = make_spec(
-            vec![make_tag("Flow", vec![
-                make_endpoint(HttpMethod::Get, "/flow/about"),
-                make_endpoint(HttpMethod::Get, "/flow/old"),
-            ])],
+            vec![make_tag(
+                "Flow",
+                vec![
+                    make_endpoint(HttpMethod::Get, "/flow/about"),
+                    make_endpoint(HttpMethod::Get, "/flow/old"),
+                ],
+            )],
             vec![],
         );
         let to = make_spec(
-            vec![make_tag("Flow", vec![make_endpoint(HttpMethod::Get, "/flow/about")])],
+            vec![make_tag(
+                "Flow",
+                vec![make_endpoint(HttpMethod::Get, "/flow/about")],
+            )],
             vec![],
         );
         let diff = compute_diff(&from, &to, "2.7.2", "2.8.0");
