@@ -1,0 +1,167 @@
+use crate::parser::ApiSpec;
+use crate::util::version_to_feature;
+
+pub(crate) fn count_spec_endpoints(spec: &ApiSpec) -> usize {
+    spec.tags
+        .iter()
+        .map(|t| {
+            t.root_endpoints.len()
+                + t.sub_groups
+                    .iter()
+                    .map(|sg| sg.endpoints.len())
+                    .sum::<usize>()
+        })
+        .sum()
+}
+
+pub(crate) fn count_spec_types(spec: &ApiSpec) -> usize {
+    spec.all_types.len()
+}
+
+/// Generates the Markdown rows for the supported-versions table.
+/// `all_specs` must be sorted semver-ascending (oldest first).
+/// The table is rendered newest-first so users see the current default at a glance.
+pub fn generate_versions_table_content(
+    all_specs: &[(String, ApiSpec)],
+    latest: &str,
+) -> String {
+    let mut rows: Vec<String> = Vec::new();
+    rows.push(
+        "| NiFi Version | Feature flag | Endpoints | Types | Changes | Default |".to_string(),
+    );
+    rows.push("|---|---|---|---|---|---|".to_string());
+
+    for (i, (version, spec)) in all_specs.iter().enumerate().rev() {
+        let endpoints = count_spec_endpoints(spec);
+        let types = count_spec_types(spec);
+        let feature = version_to_feature(version);
+        let default_mark = if version == latest { "\u{2713}" } else { "" };
+
+        let changes = if i == 0 {
+            "\u{2014}".to_string()
+        } else {
+            let (prev_version, prev_spec) = &all_specs[i - 1];
+            crate::compute_diff(prev_spec, spec, prev_version, version).summary()
+        };
+
+        rows.push(format!(
+            "| {version} | `{feature}` | {endpoints} | {types} | {changes} | {default_mark} |"
+        ));
+    }
+
+    rows.join("\n")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_generate_versions_table_latest_first_and_marked() {
+        let specs = vec![
+            (
+                "2.7.2".to_string(),
+                ApiSpec {
+                    tags: vec![],
+                    all_types: vec![],
+                },
+            ),
+            (
+                "2.8.0".to_string(),
+                ApiSpec {
+                    tags: vec![],
+                    all_types: vec![],
+                },
+            ),
+        ];
+        let table = generate_versions_table_content(&specs, "2.8.0");
+        // Latest version appears first in the rendered table
+        let pos_new = table.find("2.8.0").unwrap();
+        let pos_old = table.find("2.7.2").unwrap();
+        assert!(pos_new < pos_old, "latest version should appear first");
+        // Default mark only on the latest
+        assert!(table.contains("\u{2713}"), "default mark missing");
+        // Both versions have equal counts -> no API changes message
+        assert!(
+            table.contains("no API changes vs 2.7.2"),
+            "expected no-changes message"
+        );
+        // Oldest shows em dash
+        assert!(table.contains("| \u{2014} |"), "oldest version should show \u{2014}");
+    }
+
+    #[test]
+    fn test_generate_versions_table_shows_delta() {
+        use crate::parser::{Endpoint, HttpMethod, TagGroup};
+        fn make_spec(endpoint_count: usize) -> ApiSpec {
+            ApiSpec {
+                tags: vec![TagGroup {
+                    tag: "flow".to_string(),
+                    struct_name: "FlowApi".to_string(),
+                    module_name: "flow".to_string(),
+                    accessor_fn: "flow_api".to_string(),
+                    types: vec![],
+                    root_endpoints: (0..endpoint_count)
+                        .map(|i| Endpoint {
+                            method: HttpMethod::Get,
+                            path: format!("/nifi-api/flow/ep{i}"),
+                            fn_name: format!("get_ep{i}"),
+                            doc: None,
+                            description: None,
+                            path_params: vec![],
+                            request_type: None,
+                            body_kind: None,
+                            body_doc: None,
+                            response_type: None,
+                            response_inner: None,
+                            response_field: None,
+                            query_params: vec![],
+                            success_responses: vec![],
+                            error_responses: vec![],
+                            security: None,
+                        })
+                        .collect(),
+                    sub_groups: vec![],
+                }],
+                all_types: vec![],
+            }
+        }
+
+        let specs = vec![
+            ("2.6.0".to_string(), make_spec(10)),
+            ("2.7.2".to_string(), make_spec(12)),
+        ];
+        let table = generate_versions_table_content(&specs, "2.7.2");
+        assert!(
+            table.contains("+2 endpoints vs 2.6.0"),
+            "expected +2 endpoints delta"
+        );
+    }
+
+    #[test]
+    fn test_generate_versions_table_uses_diff_summary() {
+        use std::path::Path;
+        let codegen_dir = Path::new(env!("CARGO_MANIFEST_DIR"));
+        let specs_dir = codegen_dir.join("specs");
+        let versions = crate::util::discover_spec_versions(&specs_dir);
+        if versions.len() < 2 {
+            return; // skip if only one version present
+        }
+        let all_specs: Vec<(String, ApiSpec)> = versions
+            .iter()
+            .map(|v| {
+                let path = specs_dir.join(v).join("nifi-api.json");
+                let spec = crate::load(path.to_str().unwrap());
+                (v.clone(), spec)
+            })
+            .collect();
+        let latest = versions.last().unwrap().as_str();
+        let content = generate_versions_table_content(&all_specs, latest);
+        // Table has the header and separator rows plus one row per version
+        assert!(content.contains("| NiFi Version |"));
+        // Baseline row has em dash
+        assert!(content.contains("| \u{2014} |"));
+        // Non-baseline row has "vs" in changes column
+        assert!(content.contains(" vs ") || content.contains("no API changes"));
+    }
+}

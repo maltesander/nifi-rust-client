@@ -1,4 +1,5 @@
 pub mod diff;
+pub mod docs;
 pub mod emit;
 pub mod parser;
 pub(crate) mod util;
