@@ -2,7 +2,7 @@ use nifi_openapi_gen::parser::{
     ApiSpec, Endpoint, HttpMethod, PathParam, QueryParam, QueryParamType, RequestBodyKind,
     SubGroup, TagGroup,
 };
-use nifi_openapi_gen::{emit_api, emit_tests};
+use nifi_openapi_gen::emit::{emit_api, emit_tests};
 
 fn flow_spec() -> ApiSpec {
     ApiSpec {

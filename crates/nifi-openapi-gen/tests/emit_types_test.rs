@@ -1,4 +1,4 @@
-use nifi_openapi_gen::emit_types;
+use nifi_openapi_gen::emit::emit_types;
 use nifi_openapi_gen::parser::{
     ApiSpec, Endpoint, Field, FieldType, HttpMethod, PathParam, TagGroup, TypeDef, TypeKind,
 };
@@ -302,7 +302,7 @@ fn mod_rs_reexports_all_modules() {
 
 #[test]
 fn emit_string_enum_generates_enum_and_display() {
-    use nifi_openapi_gen::emit_types;
+    use nifi_openapi_gen::emit::emit_types;
     use nifi_openapi_gen::parser::{ApiSpec, TypeDef, TypeKind};
 
     let spec = ApiSpec {

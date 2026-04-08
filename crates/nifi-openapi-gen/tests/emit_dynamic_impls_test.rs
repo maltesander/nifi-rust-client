@@ -1,4 +1,4 @@
-use nifi_openapi_gen::emit_dynamic_impls;
+use nifi_openapi_gen::emit::emit_dynamic_impls;
 use nifi_openapi_gen::parser::{
     ApiSpec, Endpoint, HttpMethod, PathParam, QueryParam, QueryParamType, RequestBodyKind,
     SubGroup, TagGroup,
