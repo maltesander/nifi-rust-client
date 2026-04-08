@@ -187,10 +187,51 @@ impl NifiClient {
         }
     }
 
+    // ── Transient-error retry wrapper ──────────────────────────────────────────
+
+    /// Execute `f` with optional transient-error retry using exponential backoff.
+    ///
+    /// When a [`RetryPolicy`](crate::retry::RetryPolicy) is configured, retries
+    /// [retryable](NifiError::is_retryable) errors up to `max_retries` times.
+    /// Each attempt goes through [`with_auth_retry`] so 401 handling still works.
+    async fn with_retry<T, F, Fut>(&self, f: F) -> Result<T, NifiError>
+    where
+        F: Fn() -> Fut,
+        Fut: std::future::Future<Output = Result<T, NifiError>>,
+    {
+        let Some(policy) = &self.retry_policy else {
+            return self.with_auth_retry(&f).await;
+        };
+
+        let mut last_err: Option<NifiError> = None;
+        for attempt in 0..=policy.max_retries {
+            if attempt > 0 {
+                let backoff = policy.backoff_for(attempt - 1);
+                tracing::info!(attempt, backoff_ms = backoff.as_millis() as u64, "retrying after transient error");
+                tokio::time::sleep(backoff).await;
+            }
+            match self.with_auth_retry(&f).await {
+                Ok(v) => return Ok(v),
+                Err(e) if e.is_retryable() => {
+                    tracing::warn!(attempt, error = %e, "transient error, will retry");
+                    last_err = Some(e);
+                }
+                Err(e) => return Err(e),
+            }
+        }
+        // Safety: the loop always executes at least once (attempt 0..=max_retries),
+        // and every iteration that reaches here sets `last_err`.
+        match last_err {
+            Some(e) => Err(e),
+            // unreachable: loop runs at least once and non-retryable errors return early
+            None => self.with_auth_retry(&f).await,
+        }
+    }
+
     // ── Private helpers ───────────────────────────────────────────────────────
 
     pub(crate) async fn get<T: DeserializeOwned>(&self, path: &str) -> Result<T, NifiError> {
-        self.with_auth_retry(|| async {
+        self.with_retry(|| async {
             tracing::debug!(method = "GET", path, "NiFi API request");
             let url = self.api_url(path);
             let resp = self
@@ -209,7 +250,7 @@ impl NifiClient {
         B: serde::Serialize,
         T: DeserializeOwned,
     {
-        self.with_auth_retry(|| async {
+        self.with_retry(|| async {
             tracing::debug!(method = "POST", path, "NiFi API request");
             let url = self.api_url(path);
             let resp = self
@@ -229,7 +270,7 @@ impl NifiClient {
         B: serde::Serialize,
         T: DeserializeOwned,
     {
-        self.with_auth_retry(|| async {
+        self.with_retry(|| async {
             tracing::debug!(method = "PUT", path, "NiFi API request");
             let url = self.api_url(path);
             let resp = self
@@ -250,7 +291,7 @@ impl NifiClient {
         path: &str,
         body: &B,
     ) -> Result<(), NifiError> {
-        self.with_auth_retry(|| async {
+        self.with_retry(|| async {
             tracing::debug!(method = "POST", path, "NiFi API request");
             let url = self.api_url(path);
             let resp = self
@@ -272,7 +313,7 @@ impl NifiClient {
         path: &str,
         body: &B,
     ) -> Result<(), NifiError> {
-        self.with_auth_retry(|| async {
+        self.with_retry(|| async {
             tracing::debug!(method = "PUT", path, "NiFi API request");
             let url = self.api_url(path);
             let resp = self
@@ -292,7 +333,7 @@ impl NifiClient {
         &self,
         path: &str,
     ) -> Result<T, NifiError> {
-        self.with_auth_retry(|| async {
+        self.with_retry(|| async {
             tracing::debug!(method = "POST", path, "NiFi API request");
             let url = self.api_url(path);
             let resp = self
@@ -311,7 +352,7 @@ impl NifiClient {
     // No current NiFi 2.x endpoint triggers this path, but keep it for forward compatibility.
     #[allow(dead_code)]
     pub(crate) async fn post_void_no_body(&self, path: &str) -> Result<(), NifiError> {
-        self.with_auth_retry(|| async {
+        self.with_retry(|| async {
             tracing::debug!(method = "POST", path, "NiFi API request");
             let url = self.api_url(path);
             let resp = self
@@ -330,7 +371,7 @@ impl NifiClient {
         &self,
         path: &str,
     ) -> Result<T, NifiError> {
-        self.with_auth_retry(|| async {
+        self.with_retry(|| async {
             tracing::debug!(method = "PUT", path, "NiFi API request");
             let url = self.api_url(path);
             let resp = self
@@ -347,7 +388,7 @@ impl NifiClient {
     /// PUT with no request body; ignores the response body.
     #[allow(dead_code)]
     pub(crate) async fn put_void_no_body(&self, path: &str) -> Result<(), NifiError> {
-        self.with_auth_retry(|| async {
+        self.with_retry(|| async {
             tracing::debug!(method = "PUT", path, "NiFi API request");
             let url = self.api_url(path);
             let resp = self
@@ -371,7 +412,7 @@ impl NifiClient {
         filename: Option<&str>,
         data: Vec<u8>,
     ) -> Result<T, NifiError> {
-        self.with_auth_retry(|| async {
+        self.with_retry(|| async {
             tracing::debug!(method = "POST", path, "NiFi API request");
             let url = self.api_url(path);
             let builder = self
@@ -400,7 +441,7 @@ impl NifiClient {
         filename: Option<&str>,
         data: Vec<u8>,
     ) -> Result<(), NifiError> {
-        self.with_auth_retry(|| async {
+        self.with_retry(|| async {
             tracing::debug!(method = "POST", path, "NiFi API request");
             let url = self.api_url(path);
             let builder = self
@@ -429,7 +470,7 @@ impl NifiClient {
         body: &B,
         query: &[(&str, String)],
     ) -> Result<(), NifiError> {
-        self.with_auth_retry(|| async {
+        self.with_retry(|| async {
             tracing::debug!(method = "POST", path, "NiFi API request");
             let url = self.api_url(path);
             let resp = self
@@ -449,7 +490,7 @@ impl NifiClient {
     /// Treats 302 as success in addition to 2xx: NiFi's `GET /access/logout/complete`
     /// responds with a redirect once the logout is complete.
     pub(crate) async fn get_void(&self, path: &str) -> Result<(), NifiError> {
-        self.with_auth_retry(|| async {
+        self.with_retry(|| async {
             tracing::debug!(method = "GET", path, "NiFi API request");
             let url = self.api_url(path);
             let resp = self
@@ -468,7 +509,7 @@ impl NifiClient {
         path: &str,
         query: &[(&str, String)],
     ) -> Result<T, NifiError> {
-        self.with_auth_retry(|| async {
+        self.with_retry(|| async {
             tracing::debug!(method = "GET", path, "NiFi API request");
             let url = self.api_url(path);
             let resp = self
@@ -487,7 +528,7 @@ impl NifiClient {
         path: &str,
         query: &[(&str, String)],
     ) -> Result<(), NifiError> {
-        self.with_auth_retry(|| async {
+        self.with_retry(|| async {
             tracing::debug!(method = "GET", path, "NiFi API request");
             let url = self.api_url(path);
             let resp = self
@@ -506,7 +547,7 @@ impl NifiClient {
         path: &str,
         query: &[(&str, String)],
     ) -> Result<T, NifiError> {
-        self.with_auth_retry(|| async {
+        self.with_retry(|| async {
             tracing::debug!(method = "DELETE", path, "NiFi API request");
             let url = self.api_url(path);
             let resp = self
@@ -525,7 +566,7 @@ impl NifiClient {
         path: &str,
         query: &[(&str, String)],
     ) -> Result<(), NifiError> {
-        self.with_auth_retry(|| async {
+        self.with_retry(|| async {
             tracing::debug!(method = "DELETE", path, "NiFi API request");
             let url = self.api_url(path);
             let resp = self
@@ -549,7 +590,7 @@ impl NifiClient {
         B: serde::Serialize,
         T: DeserializeOwned,
     {
-        self.with_auth_retry(|| async {
+        self.with_retry(|| async {
             tracing::debug!(method = "POST", path, "NiFi API request");
             let url = self.api_url(path);
             let resp = self
@@ -568,7 +609,7 @@ impl NifiClient {
         &self,
         path: &str,
     ) -> Result<T, NifiError> {
-        self.with_auth_retry(|| async {
+        self.with_retry(|| async {
             tracing::debug!(method = "DELETE", path, "NiFi API request");
             let url = self.api_url(path);
             let resp = self
@@ -583,7 +624,7 @@ impl NifiClient {
     }
 
     pub(crate) async fn delete(&self, path: &str) -> Result<(), NifiError> {
-        self.with_auth_retry(|| async {
+        self.with_retry(|| async {
             tracing::debug!(method = "DELETE", path, "NiFi API request");
             let url = self.api_url(path);
             let resp = self

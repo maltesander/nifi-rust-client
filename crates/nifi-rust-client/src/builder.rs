@@ -40,6 +40,7 @@ pub struct NifiClientBuilder {
     danger_accept_invalid_certs: bool,
     root_certificates: Vec<Vec<u8>>,
     credential_provider: Option<Arc<dyn CredentialProvider>>,
+    retry_policy: Option<crate::retry::RetryPolicy>,
 }
 
 impl std::fmt::Debug for NifiClientBuilder {
@@ -63,6 +64,7 @@ impl std::fmt::Debug for NifiClientBuilder {
                 "credential_provider",
                 &self.credential_provider.as_ref().map(|c| format!("{c:?}")),
             )
+            .field("retry_policy", &self.retry_policy)
             .finish()
     }
 }
@@ -83,6 +85,7 @@ impl NifiClientBuilder {
             danger_accept_invalid_certs: false,
             root_certificates: Vec::new(),
             credential_provider: None,
+            retry_policy: None,
         })
     }
 
@@ -145,6 +148,15 @@ impl NifiClientBuilder {
         self
     }
 
+    /// Configure a [`RetryPolicy`](crate::retry::RetryPolicy) for transient error retry.
+    ///
+    /// When set, HTTP helpers automatically retry
+    /// [retryable](crate::NifiError::is_retryable) errors using exponential backoff.
+    pub fn retry_policy(mut self, policy: crate::retry::RetryPolicy) -> Self {
+        self.retry_policy = Some(policy);
+        self
+    }
+
     /// Build the [`NifiClient`].
     pub fn build(self) -> Result<NifiClient, NifiError> {
         let mut builder = reqwest::Client::builder()
@@ -180,7 +192,7 @@ impl NifiClientBuilder {
             self.base_url,
             http,
             self.credential_provider,
-            None,
+            self.retry_policy,
         ))
     }
 
