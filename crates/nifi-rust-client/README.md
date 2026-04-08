@@ -33,10 +33,12 @@ For tools that talk to multiple NiFi versions. The client auto-detects the NiFi 
 
 Use this when you're building a monitoring dashboard, CLI tool, or fleet management system that needs to work across NiFi clusters running different versions.
 
+<!-- DYNAMIC_FEATURE_EXAMPLE_START -->
 ```toml
 [dependencies]
-nifi-rust-client = { version = "...", features = ["dynamic"] }
+nifi-rust-client = { version = "0.3", features = ["dynamic"] }
 ```
+<!-- DYNAMIC_FEATURE_EXAMPLE_END -->
 
 ```rust
 let mut client = NifiClientBuilder::new("https://nifi:8443")?

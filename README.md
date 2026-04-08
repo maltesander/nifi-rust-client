@@ -25,10 +25,12 @@ Apache NiFi 2.x REST API client library written in Rust.
 
 Target a specific NiFi version with full type safety and autocompletion:
 
+<!-- STATIC_FEATURE_EXAMPLE_START -->
 ```toml
 [dependencies]
 nifi-rust-client = "0.3"  # defaults to the latest supported NiFi version
 ```
+<!-- STATIC_FEATURE_EXAMPLE_END -->
 
 ```rust
 use nifi_rust_client::NifiClientBuilder;
@@ -46,10 +48,12 @@ println!("NiFi version: {:?}", about.version);
 
 Talk to any supported NiFi version — auto-detected at connect time:
 
+<!-- DYNAMIC_FEATURE_EXAMPLE_START -->
 ```toml
 [dependencies]
 nifi-rust-client = { version = "0.3", features = ["dynamic"] }
 ```
+<!-- DYNAMIC_FEATURE_EXAMPLE_END -->
 
 ```rust
 use nifi_rust_client::NifiClientBuilder;

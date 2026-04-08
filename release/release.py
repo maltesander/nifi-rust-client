@@ -25,6 +25,7 @@ from datetime import date
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CARGO_TOML = os.path.join(ROOT, "Cargo.toml")
 README = os.path.join(ROOT, "README.md")
+NIFI_RUST_CLIENT_README = os.path.join(ROOT, "crates", "nifi-rust-client", "README.md")
 CHANGELOG = os.path.join(ROOT, "CHANGELOG.md")
 
 # ---------------------------------------------------------------------------
@@ -50,6 +51,7 @@ EXCLUDE_FILES = {
     os.path.join("release", "release.py"),
     "Cargo.toml",
     "README.md",
+    os.path.join("crates", "nifi-rust-client", "README.md"),
 }
 
 
@@ -187,46 +189,67 @@ def _version_shorthand(version_str):
     return f"{parts[0]}.{parts[1]}"
 
 
-def update_readme(old_version, new_version, bump_type, dry_run):
-    """Update README.md version shorthands on major/minor bumps."""
+FEATURE_EXAMPLE_TAGS = [
+    ("<!-- STATIC_FEATURE_EXAMPLE_START -->", "<!-- STATIC_FEATURE_EXAMPLE_END -->"),
+    ("<!-- DYNAMIC_FEATURE_EXAMPLE_START -->", "<!-- DYNAMIC_FEATURE_EXAMPLE_END -->"),
+]
+
+
+def _update_readme_tagged_blocks(path, old_short, new_short):
+    """Replace version shorthand inside tagged blocks in a README file. Returns change count."""
+    with open(path, "r") as f:
+        content = f.read()
+
+    changes = 0
+    for start_tag, end_tag in FEATURE_EXAMPLE_TAGS:
+        pattern = re.compile(
+            r'(' + re.escape(start_tag) + r'.*?' + re.escape(end_tag) + r')',
+            re.DOTALL,
+        )
+        def replace_in_block(m):
+            nonlocal changes
+            block = m.group(1)
+            # bare string form: nifi-rust-client = "0.3"
+            new_block, n = re.subn(
+                r'(nifi-rust-client\s*=\s*")' + re.escape(old_short) + r'"',
+                r'\g<1>' + new_short + '"',
+                block,
+            )
+            changes += n
+            # inline-table form: version = "0.3"
+            new_block, n = re.subn(
+                r'(version\s*=\s*")' + re.escape(old_short) + r'"',
+                r'\g<1>' + new_short + '"',
+                new_block,
+            )
+            changes += n
+            return new_block
+        content = pattern.sub(replace_in_block, content)
+
+    if changes:
+        with open(path, "w") as f:
+            f.write(content)
+    return changes
+
+
+def update_readmes(old_version, new_version, bump_type, dry_run):
+    """Update version shorthands inside tagged blocks in both README files."""
     if bump_type == "patch":
-        print("      README.md: skipped (patch bump)")
+        print("      README files: skipped (patch bump)")
         return
 
     old_short = _version_shorthand(old_version)
     new_short = _version_shorthand(new_version)
 
-    with open(README, "r") as f:
-        lines = f.readlines()
-
-    updated_lines = []
-    changes = 0
-    for line in lines:
-        new_line = line
-        # Pattern 1: nifi-rust-client = "old_short"
-        if re.search(r'nifi-rust-client\s*=\s*"' + re.escape(old_short) + r'"', line):
-            new_line = re.sub(
-                r'(nifi-rust-client\s*=\s*")' + re.escape(old_short) + r'"',
-                r'\g<1>' + new_short + '"',
-                new_line,
-            )
-            changes += 1
-        # Pattern 2: lines containing nifi-rust-client AND version = "old_short"
-        elif "nifi-rust-client" in line and f'version = "{old_short}"' in line:
-            new_line = new_line.replace(f'version = "{old_short}"', f'version = "{new_short}"')
-            changes += 1
-        updated_lines.append(new_line)
-
-    if changes == 0:
-        print(f"      README.md: no occurrences of shorthand '{old_short}' found")
-        return
-
-    print(f"      README.md: replaced {changes} occurrence(s) of '{old_short}' → '{new_short}'")
-    if not dry_run:
-        with open(README, "w") as f:
-            f.writelines(updated_lines)
-    else:
-        print("      (skipped write — dry-run)")
+    for label, path in [("README.md", README), ("crates/nifi-rust-client/README.md", NIFI_RUST_CLIENT_README)]:
+        if dry_run:
+            print(f"      {label}: would replace '{old_short}' → '{new_short}' (skipped — dry-run)")
+            continue
+        changes = _update_readme_tagged_blocks(path, old_short, new_short)
+        if changes:
+            print(f"      {label}: replaced {changes} occurrence(s) of '{old_short}' → '{new_short}'")
+        else:
+            print(f"      {label}: no occurrences of '{old_short}' found in tagged blocks")
 
 
 # ---------------------------------------------------------------------------
@@ -466,7 +489,7 @@ def commit_release(new_version, dry_run):
     if dry_run:
         print("      Skipped (dry-run)")
         return
-    run("git add Cargo.toml Cargo.lock README.md CHANGELOG.md")
+    run("git add Cargo.toml Cargo.lock README.md crates/nifi-rust-client/README.md CHANGELOG.md")
     run(f'git commit -m "chore: release v{new_version}"')
     print(f"      chore: release v{new_version}")
 
@@ -534,7 +557,7 @@ def main():
     # [3/9] Update files
     print("[3/9] Updating version in files...")
     update_cargo_toml(old_version, new_version, args.dry_run)
-    update_readme(old_version, new_version, args.bump, args.dry_run)
+    update_readmes(old_version, new_version, args.bump, args.dry_run)
 
     # [4/9] Stale version scan
     scan_stale_version(old_version, args.dry_run)
