@@ -4,6 +4,16 @@ Idiomatic Rust client for the Apache NiFi 2.x REST API.
 
 All NiFi REST API endpoints are generated from the official OpenAPI spec and exposed via typed resource accessor methods.
 
+## Supported NiFi Versions
+
+<!-- SUPPORTED_VERSIONS_START -->
+| NiFi Version | Feature flag | Endpoints | Types | Changes | Default |
+|---|---|---|---|---|---|
+| 2.8.0 | `nifi-2-8-0` | 317 | 405 | no API changes vs 2.7.2 | ✓ |
+| 2.7.2 | `nifi-2-7-2` | 317 | 405 | +17 endpoints, +10 types vs 2.6.0 |  |
+| 2.6.0 | `nifi-2-6-0` | 300 | 395 | — |  |
+<!-- SUPPORTED_VERSIONS_END -->
+
 ## Modes
 
 ### Static mode (default)
@@ -19,6 +29,7 @@ nifi-rust-client = { version = "0.3", features = ["nifi-2-8-0"] }
 ```
 <!-- STATIC_FEATURE_EXAMPLE_END -->
 
+<!-- STATIC_RUST_EXAMPLE_START -->
 ```rust
 let mut client = NifiClientBuilder::new("https://nifi:8443")?.build()?;
 client.login("admin", "password").await?;
@@ -26,6 +37,7 @@ client.login("admin", "password").await?;
 // Full type safety — ProcessorEntity is v2_8_0::types::ProcessorEntity
 let proc = client.processors_api().get_processor("id").await?;
 ```
+<!-- STATIC_RUST_EXAMPLE_END -->
 
 ### Dynamic mode
 
