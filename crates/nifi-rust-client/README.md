@@ -53,7 +53,7 @@ nifi-rust-client = { version = "0.3", features = ["dynamic"] }
 <!-- DYNAMIC_FEATURE_EXAMPLE_END -->
 
 ```rust
-let mut client = NifiClientBuilder::new("https://nifi:8443")?
+let client = NifiClientBuilder::new("https://nifi:8443")?
     .build_dynamic()
     .await?;
 client.login("admin", "password").await?;
@@ -86,7 +86,7 @@ use std::time::Duration;
 use nifi_rust_client::NifiClientBuilder;
 use url::Url;
 
-let mut client = NifiClientBuilder::new("https://nifi.example.com:8443")?
+let client = NifiClientBuilder::new("https://nifi.example.com:8443")?
     .timeout(Duration::from_secs(60))
     .connect_timeout(Duration::from_secs(10))
     .proxy(Url::parse("http://proxy.internal:3128")?)
@@ -107,32 +107,66 @@ client.login("admin", "password").await?;
 | `.https_proxy(url)` | `Url` | Proxy for HTTPS traffic only |
 | `.danger_accept_invalid_certs(b)` | `bool` | Skip TLS verification — dev only |
 | `.add_root_certificate(pem)` | `&[u8]` | Trust an additional PEM-encoded CA cert; call multiple times |
+| `.credential_provider(p)` | `impl CredentialProvider` | Enable auto token refresh on 401 |
+| `.retry_policy(p)` | `RetryPolicy` | Enable transient error retry with backoff |
 | `.build()` | — | Returns `Result<NifiClient, NifiError>` |
 
 ## Authentication
 
 `login()` posts credentials to `/nifi-api/access/token` and stores the returned JWT on the client. The token is sent as `Authorization: Bearer <token>` on every subsequent request.
 
+### Credential providers
+
+Instead of calling `login()` with hardcoded credentials, you can configure a credential provider.
+The client will automatically re-authenticate and retry when a token expires (401 response):
+
+```rust,no_run
+use nifi_rust_client::NifiClientBuilder;
+use nifi_rust_client::credentials::StaticCredentials;
+
+let client = NifiClientBuilder::new("https://nifi:8443")?
+    .credential_provider(StaticCredentials::new("admin", "password"))
+    .build()?;
+
+// Initial login
+client.login_with_provider().await?;
+
+// If a token expires mid-session, the client automatically
+// re-authenticates and retries the request.
+let about = client.flow_api().get_about_info().await?;
+```
+
+Read credentials from environment variables (`NIFI_USERNAME`, `NIFI_PASSWORD`):
+
+```rust,no_run
+use nifi_rust_client::credentials::EnvCredentials;
+
+let client = NifiClientBuilder::new("https://nifi:8443")?
+    .credential_provider(EnvCredentials::new()) // reads NIFI_USERNAME, NIFI_PASSWORD
+    .build()?;
+```
+
 ### Token management
 
 After a successful `login()`, the JWT can be persisted and reused across process restarts:
 
-```rust
+```rust,no_run
 // Save token after login
-if let Some(token) = client.token() {
+if let Some(token) = client.token().await {
     fs::write("nifi-token.txt", token)?;
 }
 
 // Restore on the next run instead of re-authenticating
 let token = fs::read_to_string("nifi-token.txt")?;
-client.set_token(token);
+client.set_token(token).await;
 ```
 
 NiFi JWTs expire after **12 hours** by default (configurable server-side via
 `nifi.security.user.login.identity.provider.expiration`). An expired token causes any API call to
-return `NifiError::Unauthorized { .. }`. Re-call `login()` to obtain a fresh token:
+return `NifiError::Unauthorized { .. }`. If a credential provider is configured, the client handles
+this automatically. Otherwise, re-call `login()` to obtain a fresh token:
 
-```rust
+```rust,no_run
 use nifi_rust_client::NifiError;
 
 match client.flow_api().get_about_info().await {
@@ -143,8 +177,6 @@ match client.flow_api().get_about_info().await {
     other => { other?; }
 }
 ```
-
-Automatic re-login is not built in because storing credentials on the client would keep plaintext passwords in memory for the lifetime of the process.
 
 ### Logging out
 
@@ -160,9 +192,35 @@ client.logout().await?;
 | Method | Description |
 |--------|-------------|
 | `client.login(user, pass)` | `POST /access/token` — authenticate and store the JWT |
+| `client.login_with_provider()` | Authenticate using the configured credential provider |
 | `client.logout()` | `DELETE /access/logout` — invalidate server-side and clear local token |
-| `client.token()` | Return the current bearer token as `Option<&str>` |
-| `client.set_token(token)` | Restore a previously obtained token |
+| `client.token()` | Return the current bearer token as `Option<String>` (async) |
+| `client.set_token(token)` | Restore a previously obtained token (async) |
+
+## Retry policy
+
+By default, failed requests are not retried (except for automatic token refresh when a credential
+provider is configured). Enable transient error retry with exponential backoff:
+
+```rust,no_run
+use nifi_rust_client::NifiClientBuilder;
+use nifi_rust_client::retry::RetryPolicy;
+use std::time::Duration;
+
+let client = NifiClientBuilder::new("https://nifi:8443")?
+    .retry_policy(RetryPolicy {
+        max_retries: 3,
+        initial_backoff: Duration::from_millis(500),
+        max_backoff: Duration::from_secs(10),
+    })
+    .build()?;
+```
+
+This retries on HTTP 408, 429, 500, 502, 503, 504, and network errors. Non-retryable errors
+(400, 404, 409, etc.) are returned immediately.
+
+Retry composes with token refresh: if a retried request gets a 401, the client refreshes the
+token (if a credential provider is configured) before continuing.
 
 ## Resource accessors
 
@@ -209,13 +267,22 @@ client.processgroups_api().get_process_group("root").await?;
 
 All methods return `Result<T, NifiError>`. Variants:
 
-- `NifiError::Api { status, message }` — NiFi returned a non-2xx response
+- `NifiError::Unauthorized { message }` — 401 response (expired token, bad credentials)
+- `NifiError::Forbidden { message }` — 403 response (insufficient permissions)
+- `NifiError::NotFound { message }` — 404 response (resource does not exist)
+- `NifiError::Conflict { message }` — 409 response (e.g. component is running)
+- `NifiError::Api { status, message }` — other non-2xx responses
 - `NifiError::Http { source }` — network or transport error
-- `NifiError::Auth { message }` — authentication failed (e.g. bad credentials)
-- `NifiError::InvalidBaseUrl { source }` — bad base URL passed to the builder
-- `NifiError::InvalidCertificate { source }` — invalid CA certificate passed to the builder
-- `NifiError::UnsupportedVersion { detected }` — dynamic mode detected a NiFi version not compiled in
-- `NifiError::UnsupportedEndpoint { endpoint, version }` — dynamic mode: endpoint not available in the connected NiFi version
+- `NifiError::Auth { message }` — authentication failed
+- `NifiError::InvalidBaseUrl { source }` — bad base URL
+- `NifiError::InvalidCertificate { source }` — invalid CA certificate
+- `NifiError::UnsupportedVersion { detected }` — dynamic mode: unsupported NiFi version
+- `NifiError::UnsupportedEndpoint { endpoint, version }` — dynamic mode: endpoint not available
+
+Helper methods:
+
+- `err.status_code()` — returns `Option<u16>` for API error variants
+- `err.is_retryable()` — returns `true` for transient errors (408, 429, 5xx, network errors)
 
 ## Integration test coverage
 

@@ -35,7 +35,7 @@ nifi-rust-client = "0.3"  # defaults to the latest supported NiFi version
 ```rust
 use nifi_rust_client::NifiClientBuilder;
 
-let mut client = NifiClientBuilder::new("https://nifi.example.com:8443")?
+let client = NifiClientBuilder::new("https://nifi.example.com:8443")?
     .build()?;
 
 client.login("admin", "password").await?;
@@ -58,7 +58,7 @@ nifi-rust-client = { version = "0.3", features = ["dynamic"] }
 ```rust
 use nifi_rust_client::NifiClientBuilder;
 
-let mut client = NifiClientBuilder::new("https://nifi.example.com:8443")?
+let client = NifiClientBuilder::new("https://nifi.example.com:8443")?
     .build_dynamic().await?;
 
 client.login("admin", "password").await?;
@@ -82,7 +82,7 @@ Use **static mode** for full type safety and IDE autocompletion when you target 
 Every generated endpoint gets an auto-generated wiremock stub. Integration tests run against a Docker-hosted NiFi and cover the full request/response cycle — not just serialization. Both static and dynamic modes have dedicated test suites.
 
 **Low-level by design: you stay in control.**
-The client does not hide HTTP details behind opinionated abstractions. Token lifecycle, retry logic on expiry, and connection tuning are your responsibility — which means you can implement them exactly the way your application requires, without fighting the library.
+The client does not hide HTTP details behind opinionated abstractions. Token refresh, retry on transient errors, and connection tuning are opt-in — configure what you need, and the defaults stay out of your way.
 
 ## Build
 
