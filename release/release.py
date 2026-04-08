@@ -330,40 +330,91 @@ COMMIT_TYPE_MAP = {
     "fix": "Fixed",
     "docs": "Documentation",
     "refactor": "Changed",
-    "chore": "Changed",
     "test": "Tests",
+    # "chore" intentionally omitted — housekeeping is not user-facing
 }
 
-CATEGORY_ORDER = ["Added", "Changed", "Fixed", "Documentation", "Tests", "Other"]
+CATEGORY_ORDER = ["Breaking Changes", "Added", "Changed", "Fixed", "Documentation", "Tests"]
 
 REPO_URL = "https://github.com/maltesander/nifi-rust-client"
 
+# Scopes that are purely internal — never shown to users.
+_EXCLUDED_SCOPES = {"ci", "release", "rustfmt", "rust-analyzer"}
+
+# Message substrings/patterns that indicate formatting or tooling noise.
+_NOISE_PATTERNS = [
+    re.compile(r'\bfmt\b', re.IGNORECASE),
+    re.compile(r'\bformat(ting)?\b', re.IGNORECASE),
+    re.compile(r'\bclippy\b', re.IGNORECASE),
+    re.compile(r'\brustfmt\b', re.IGNORECASE),
+    re.compile(r'\bregenerate\b', re.IGNORECASE),
+]
+
+
+def _is_noise(message):
+    return any(p.search(message) for p in _NOISE_PATTERNS)
+
 
 def parse_conventional_commits(old_version):
-    """Parse git log since old_version tag and group commits by category."""
+    """Parse git log since old_version tag and group commits by category.
+
+    Filters out:
+    - Commits with excluded scopes (ci, release, rustfmt, rust-analyzer)
+    - chore commits (internal housekeeping)
+    - Messages matching noise patterns (fmt, formatting, clippy, rustfmt, regenerate)
+    - Release commits themselves (chore: release ...)
+
+    Breaking changes (type! or type(scope)!) go into a dedicated top section.
+    """
     log = run(f"git log v{old_version}..HEAD --format='%h %s'")
     categories = {}
     for line in log.splitlines():
         line = line.strip()
         if not line:
             continue
-        # Split short hash from subject
         parts = line.split(" ", 1)
         if len(parts) < 2:
             continue
         short_hash = parts[0]
         subject = parts[1]
-        match = re.match(r'^(\w+)(?:\([^)]*\))?:\s*(.+)$', subject)
+
+        # Parse: type[(scope)][!]: message
+        match = re.match(r'^(\w+)(?:\(([^)]*)\))?(!)?\s*:\s*(.+)$', subject)
         if match:
             commit_type = match.group(1)
-            message = match.group(2)
+            scope = match.group(2) or ""
+            is_breaking = bool(match.group(3))
+            message = match.group(4)
         else:
             commit_type = ""
+            scope = ""
+            is_breaking = False
             message = subject
-        category = COMMIT_TYPE_MAP.get(commit_type, "Other")
+
+        # Drop excluded scopes
+        if scope in _EXCLUDED_SCOPES:
+            continue
+
+        # Drop chore commits (housekeeping, release bookkeeping)
+        if commit_type == "chore":
+            continue
+
+        # Drop noise by message content
+        if _is_noise(message):
+            continue
+
         message = message[0].upper() + message[1:] if message else message
         commit_link = f"[{short_hash}]({REPO_URL}/commit/{short_hash})"
-        categories.setdefault(category, []).append(f"{message} ({commit_link})")
+        entry = f"{message} ({commit_link})"
+
+        if is_breaking:
+            categories.setdefault("Breaking Changes", []).append(entry)
+        else:
+            category = COMMIT_TYPE_MAP.get(commit_type, None)
+            if category is None:
+                continue  # unknown types are dropped rather than shown as noise
+            categories.setdefault(category, []).append(entry)
+
     return categories
 
 
