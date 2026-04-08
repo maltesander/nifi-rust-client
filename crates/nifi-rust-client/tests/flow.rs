@@ -106,16 +106,16 @@ async fn logout_invalidates_token_on_success() {
         .mount(&mock_server)
         .await;
 
-    let mut client = NifiClientBuilder::new(&mock_server.uri())
+    let client = NifiClientBuilder::new(&mock_server.uri())
         .unwrap()
         .build()
         .unwrap();
-    client.set_token("some-jwt".to_string());
-    assert!(client.token().is_some());
+    client.set_token("some-jwt".to_string()).await;
+    assert!(client.token().await.is_some());
 
     client.logout().await.unwrap();
 
-    assert!(client.token().is_none());
+    assert!(client.token().await.is_none());
 }
 
 #[tokio::test]
@@ -128,16 +128,16 @@ async fn logout_clears_token_even_on_server_error() {
         .mount(&mock_server)
         .await;
 
-    let mut client = NifiClientBuilder::new(&mock_server.uri())
+    let client = NifiClientBuilder::new(&mock_server.uri())
         .unwrap()
         .build()
         .unwrap();
-    client.set_token("expired-jwt".to_string());
+    client.set_token("expired-jwt".to_string()).await;
 
     let err = client.logout().await.unwrap_err();
 
     assert!(matches!(err, NifiError::Unauthorized { .. }));
-    assert!(client.token().is_none());
+    assert!(client.token().await.is_none());
 }
 
 #[tokio::test]

@@ -31,7 +31,7 @@ nifi-rust-client = { version = "0.3", features = ["nifi-2-8-0"] }
 
 <!-- STATIC_RUST_EXAMPLE_START -->
 ```rust
-let mut client = NifiClientBuilder::new("https://nifi:8443")?.build()?;
+let client = NifiClientBuilder::new("https://nifi:8443")?.build()?;
 client.login("admin", "password").await?;
 
 // Full type safety — ProcessorEntity is v2_8_0::types::ProcessorEntity

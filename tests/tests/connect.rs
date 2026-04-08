@@ -19,7 +19,7 @@ fn nifi_password() -> String {
 #[tokio::test]
 #[ignore = "requires a running NiFi instance (use test/run.sh)"]
 async fn login_and_connect_insecure() {
-    let mut client = nifi_rust_client::NifiClientBuilder::new(&nifi_url())
+    let client = nifi_rust_client::NifiClientBuilder::new(&nifi_url())
         .expect("failed to parse NiFi URL")
         .danger_accept_invalid_certs(true)
         .build()
@@ -51,7 +51,7 @@ async fn login_and_connect_with_ca_cert() {
     let ca_cert = std::fs::read(&cert_path)
         .unwrap_or_else(|e| panic!("failed to read CA cert from {cert_path}: {e}"));
 
-    let mut client = nifi_rust_client::NifiClientBuilder::new(&nifi_url())
+    let client = nifi_rust_client::NifiClientBuilder::new(&nifi_url())
         .expect("failed to parse NiFi URL")
         .add_root_certificate(&ca_cert)
         .build()

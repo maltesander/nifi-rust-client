@@ -52,10 +52,8 @@ impl NifiError {
 
     /// True if this error is likely transient and worth retrying.
     pub fn is_retryable(&self) -> bool {
-        matches!(
-            self.status_code(),
-            Some(408 | 429 | 500 | 502 | 503 | 504)
-        ) || matches!(self, Self::Http { .. })
+        matches!(self.status_code(), Some(408 | 429 | 500 | 502 | 503 | 504))
+            || matches!(self, Self::Http { .. })
     }
 }
 

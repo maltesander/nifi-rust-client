@@ -4,9 +4,10 @@ pub mod builder;
 pub mod client;
 pub mod credentials;
 pub mod error;
+pub mod retry;
 pub use builder::NifiClientBuilder;
-pub use credentials::CredentialProvider;
 pub use client::NifiClient;
+pub use credentials::CredentialProvider;
 pub use error::NifiError;
 
 #[cfg(not(any(feature = "nifi-2-6-0", feature = "nifi-2-7-2", feature = "nifi-2-8-0")))]

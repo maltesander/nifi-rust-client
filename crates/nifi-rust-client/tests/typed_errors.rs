@@ -57,8 +57,7 @@ async fn returns_not_found_on_404() {
     Mock::given(method("GET"))
         .and(path("/nifi-api/flow/about"))
         .respond_with(
-            ResponseTemplate::new(404)
-                .set_body_json(serde_json::json!({"message": "Not found"})),
+            ResponseTemplate::new(404).set_body_json(serde_json::json!({"message": "Not found"})),
         )
         .mount(&mock_server)
         .await;

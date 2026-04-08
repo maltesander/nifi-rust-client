@@ -74,11 +74,11 @@ impl DynamicClient {
         &mut self.client
     }
     /// Authenticate with the NiFi instance.
-    pub async fn login(&mut self, username: &str, password: &str) -> Result<(), NifiError> {
+    pub async fn login(&self, username: &str, password: &str) -> Result<(), NifiError> {
         self.client.login(username, password).await
     }
     /// Log out from the NiFi instance.
-    pub async fn logout(&mut self) -> Result<(), NifiError> {
+    pub async fn logout(&self) -> Result<(), NifiError> {
         self.client.logout().await
     }
     /// Access the [Access API](https://nifi.apache.org/nifi-docs/rest-api.html) with dynamic dispatch.

@@ -152,13 +152,13 @@ fn emit_dynamic_client(out: &mut String, versions: &[(&str, &str, &str, &ApiSpec
 
     // login()
     out.push_str("    /// Authenticate with the NiFi instance.\n");
-    out.push_str("    pub async fn login(&mut self, username: &str, password: &str) -> Result<(), NifiError> {\n");
+    out.push_str("    pub async fn login(&self, username: &str, password: &str) -> Result<(), NifiError> {\n");
     out.push_str("        self.client.login(username, password).await\n");
     out.push_str("    }\n\n");
 
     // logout()
     out.push_str("    /// Log out from the NiFi instance.\n");
-    out.push_str("    pub async fn logout(&mut self) -> Result<(), NifiError> {\n");
+    out.push_str("    pub async fn logout(&self) -> Result<(), NifiError> {\n");
     out.push_str("        self.client.logout().await\n");
     out.push_str("    }\n\n");
 

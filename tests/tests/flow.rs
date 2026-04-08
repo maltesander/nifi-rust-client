@@ -19,7 +19,7 @@ fn nifi_password() -> String {
 #[tokio::test]
 #[ignore = "requires a running NiFi instance (use tests/run.sh)"]
 async fn current_user_identity_matches_login() {
-    let mut client = nifi_rust_client::NifiClientBuilder::new(&nifi_url())
+    let client = nifi_rust_client::NifiClientBuilder::new(&nifi_url())
         .expect("failed to parse NiFi URL")
         .danger_accept_invalid_certs(true)
         .build()
@@ -43,7 +43,7 @@ async fn current_user_identity_matches_login() {
 #[tokio::test]
 #[ignore = "requires a running NiFi instance (use tests/run.sh)"]
 async fn flow_status_succeeds_on_fresh_instance() {
-    let mut client = nifi_rust_client::NifiClientBuilder::new(&nifi_url())
+    let client = nifi_rust_client::NifiClientBuilder::new(&nifi_url())
         .expect("failed to parse NiFi URL")
         .danger_accept_invalid_certs(true)
         .build()
@@ -68,7 +68,7 @@ async fn flow_status_succeeds_on_fresh_instance() {
 #[tokio::test]
 #[ignore = "requires a running NiFi instance (use tests/run.sh)"]
 async fn logout_clears_token_and_invalidates_session() {
-    let mut client = nifi_rust_client::NifiClientBuilder::new(&nifi_url())
+    let client = nifi_rust_client::NifiClientBuilder::new(&nifi_url())
         .expect("failed to parse NiFi URL")
         .danger_accept_invalid_certs(true)
         .build()
@@ -90,7 +90,7 @@ async fn logout_clears_token_and_invalidates_session() {
 
     // After logout the token is cleared on the client.
     assert!(
-        client.token().is_none(),
+        client.token().await.is_none(),
         "expected token to be None after logout"
     );
 }

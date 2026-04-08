@@ -29,7 +29,7 @@ fn nifi_password() -> String {
 }
 
 async fn logged_in_client() -> NifiClient {
-    let mut client = NifiClientBuilder::new(&nifi_url())
+    let client = NifiClientBuilder::new(&nifi_url())
         .expect("failed to parse NiFi URL")
         .danger_accept_invalid_certs(true)
         .build()

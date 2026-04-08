@@ -67,10 +67,7 @@ impl EnvCredentials {
     }
 
     /// Create an `EnvCredentials` using custom environment variable names.
-    pub fn with_vars(
-        username_var: impl Into<String>,
-        password_var: impl Into<String>,
-    ) -> Self {
+    pub fn with_vars(username_var: impl Into<String>, password_var: impl Into<String>) -> Self {
         Self {
             username_var: username_var.into(),
             password_var: password_var.into(),
@@ -98,16 +95,10 @@ impl Default for EnvCredentials {
 impl CredentialProvider for EnvCredentials {
     async fn credentials(&self) -> Result<(String, String), NifiError> {
         let username = std::env::var(&self.username_var).map_err(|_| NifiError::Auth {
-            message: format!(
-                "environment variable {} is not set",
-                self.username_var
-            ),
+            message: format!("environment variable {} is not set", self.username_var),
         })?;
         let password = std::env::var(&self.password_var).map_err(|_| NifiError::Auth {
-            message: format!(
-                "environment variable {} is not set",
-                self.password_var
-            ),
+            message: format!("environment variable {} is not set", self.password_var),
         })?;
         Ok((username, password))
     }

@@ -41,8 +41,11 @@ fn generate_lib_rs_content(versions: &[&str]) -> String {
     out.push_str("// @generated — do not edit; run `cargo run -p nifi-openapi-gen`\n\n");
     out.push_str("pub mod builder;\n");
     out.push_str("pub mod client;\n");
+    out.push_str("pub mod credentials;\n");
     out.push_str("pub mod error;\n");
+    out.push_str("pub mod retry;\n");
     out.push_str("pub use builder::NifiClientBuilder;\n");
+    out.push_str("pub use credentials::CredentialProvider;\n");
     out.push_str("pub use client::NifiClient;\n");
     out.push_str("pub use error::NifiError;\n\n");
 
@@ -442,7 +445,7 @@ fn update_client_readme_examples(workspace_root: &Path, latest: &str) {
         "<!-- STATIC_RUST_EXAMPLE_START -->",
         "<!-- STATIC_RUST_EXAMPLE_END -->",
         &format!(
-            "```rust\nlet mut client = NifiClientBuilder::new(\"https://nifi:8443\")?.build()?;\nclient.login(\"admin\", \"password\").await?;\n\n// Full type safety — ProcessorEntity is {mod_name}::types::ProcessorEntity\nlet proc = client.processors_api().get_processor(\"id\").await?;\n```"
+            "```rust\nlet client = NifiClientBuilder::new(\"https://nifi:8443\")?.build()?;\nclient.login(\"admin\", \"password\").await?;\n\n// Full type safety — ProcessorEntity is {mod_name}::types::ProcessorEntity\nlet proc = client.processors_api().get_processor(\"id\").await?;\n```"
         ),
     );
     update_file_between_markers(
@@ -770,8 +773,11 @@ mod tests {
         let content = generate_lib_rs_content(&["2.8.0"]);
         assert!(content.contains("pub mod builder;"));
         assert!(content.contains("pub mod client;"));
+        assert!(content.contains("pub mod credentials;"));
         assert!(content.contains("pub mod error;"));
+        assert!(content.contains("pub mod retry;"));
         assert!(content.contains("pub use builder::NifiClientBuilder;"));
+        assert!(content.contains("pub use credentials::CredentialProvider;"));
         assert!(content.contains("pub use client::NifiClient;"));
         assert!(content.contains("pub use error::NifiError;"));
         assert!(content.contains("#[cfg(not(any(feature = \"nifi-2-8-0\")))]"));

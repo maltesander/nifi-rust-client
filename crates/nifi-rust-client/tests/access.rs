@@ -3,7 +3,7 @@ use nifi_rust_client::{NifiClientBuilder, NifiError};
 use wiremock::matchers::{method, path};
 use wiremock::{Mock, MockServer, ResponseTemplate};
 
-// ── login stores token on success ─────────────────────────────────────────────
+// -- login stores token on success ─────────────────────────────────────────────
 
 #[tokio::test]
 async fn login_stores_token_on_success() {
@@ -14,17 +14,20 @@ async fn login_stores_token_on_success() {
         .mount(&mock_server)
         .await;
 
-    let mut client = NifiClientBuilder::new(&mock_server.uri())
+    let client = NifiClientBuilder::new(&mock_server.uri())
         .unwrap()
         .build()
         .unwrap();
 
-    assert!(client.token().is_none());
+    assert!(client.token().await.is_none());
     client.login("admin", "password").await.unwrap();
-    assert_eq!(client.token(), Some("eyJhbGciOiJSUzI1NiJ9.test-token"));
+    assert_eq!(
+        client.token().await.as_deref(),
+        Some("eyJhbGciOiJSUzI1NiJ9.test-token")
+    );
 }
 
-// ── login returns NifiError::Auth on failure ──────────────────────────────────
+// -- login returns NifiError::Auth on failure ──────────────────────────────────
 
 #[tokio::test]
 async fn login_returns_auth_error_on_401() {
@@ -35,7 +38,7 @@ async fn login_returns_auth_error_on_401() {
         .mount(&mock_server)
         .await;
 
-    let mut client = NifiClientBuilder::new(&mock_server.uri())
+    let client = NifiClientBuilder::new(&mock_server.uri())
         .unwrap()
         .build()
         .unwrap();
@@ -45,5 +48,5 @@ async fn login_returns_auth_error_on_401() {
         matches!(err, NifiError::Auth { .. }),
         "expected NifiError::Auth, got: {err:?}"
     );
-    assert!(client.token().is_none());
+    assert!(client.token().await.is_none());
 }

@@ -23,7 +23,7 @@ pub fn nifi_password() -> String {
 }
 
 pub async fn logged_in_client() -> NifiClient {
-    let mut client = NifiClientBuilder::new(&nifi_url())
+    let client = NifiClientBuilder::new(&nifi_url())
         .expect("failed to parse NiFi URL")
         .danger_accept_invalid_certs(true)
         .build()
@@ -44,7 +44,7 @@ pub async fn logged_in_client() -> NifiClient {
     if let Ok(token) = std::fs::read_to_string(&token_path) {
         let token = token.trim().to_string();
         if !token.is_empty() {
-            client.set_token(token);
+            client.set_token(token).await;
             // Quick sanity-check: if the token is still valid, use it.
             if client.flow_api().get_about_info().await.is_ok() {
                 return client;
@@ -59,7 +59,7 @@ pub async fn logged_in_client() -> NifiClient {
         .expect("failed to log in");
 
     // Cache the fresh token for sibling tests in this run.
-    if let Some(token) = client.token() {
+    if let Some(token) = client.token().await {
         let _ = std::fs::write(&token_path, token);
     }
 

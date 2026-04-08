@@ -1,3 +1,4 @@
+use std::sync::Arc;
 use std::time::Duration;
 
 use snafu::ResultExt as _;
@@ -5,6 +6,7 @@ use url::Url;
 
 use crate::NifiClient;
 use crate::NifiError;
+use crate::credentials::CredentialProvider;
 use crate::error::{HttpSnafu, InvalidBaseUrlSnafu, InvalidCertificateSnafu};
 
 /// Builder for [`NifiClient`].
@@ -28,7 +30,6 @@ use crate::error::{HttpSnafu, InvalidBaseUrlSnafu, InvalidCertificateSnafu};
 /// # Ok(())
 /// # }
 /// ```
-#[derive(Debug)]
 pub struct NifiClientBuilder {
     base_url: Url,
     timeout: Option<Duration>,
@@ -38,6 +39,32 @@ pub struct NifiClientBuilder {
     proxy_https: Option<Url>,
     danger_accept_invalid_certs: bool,
     root_certificates: Vec<Vec<u8>>,
+    credential_provider: Option<Arc<dyn CredentialProvider>>,
+}
+
+impl std::fmt::Debug for NifiClientBuilder {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("NifiClientBuilder")
+            .field("base_url", &self.base_url)
+            .field("timeout", &self.timeout)
+            .field("connect_timeout", &self.connect_timeout)
+            .field("proxy_all", &self.proxy_all)
+            .field("proxy_http", &self.proxy_http)
+            .field("proxy_https", &self.proxy_https)
+            .field(
+                "danger_accept_invalid_certs",
+                &self.danger_accept_invalid_certs,
+            )
+            .field(
+                "root_certificates",
+                &format!("[{} certs]", self.root_certificates.len()),
+            )
+            .field(
+                "credential_provider",
+                &self.credential_provider.as_ref().map(|c| format!("{c:?}")),
+            )
+            .finish()
+    }
 }
 
 impl NifiClientBuilder {
@@ -55,6 +82,7 @@ impl NifiClientBuilder {
             proxy_https: None,
             danger_accept_invalid_certs: false,
             root_certificates: Vec::new(),
+            credential_provider: None,
         })
     }
 
@@ -107,6 +135,16 @@ impl NifiClientBuilder {
         self
     }
 
+    /// Configure a [`CredentialProvider`] for automatic token refresh.
+    ///
+    /// When set, the client will automatically re-authenticate on 401 responses
+    /// by calling the provider to obtain fresh credentials and then re-issuing
+    /// the failed request.
+    pub fn credential_provider(mut self, provider: impl CredentialProvider + 'static) -> Self {
+        self.credential_provider = Some(Arc::new(provider));
+        self
+    }
+
     /// Build the [`NifiClient`].
     pub fn build(self) -> Result<NifiClient, NifiError> {
         let mut builder = reqwest::Client::builder()
@@ -138,7 +176,12 @@ impl NifiClientBuilder {
         }
 
         let http = builder.build().context(HttpSnafu)?;
-        Ok(NifiClient::from_parts(self.base_url, http))
+        Ok(NifiClient::from_parts(
+            self.base_url,
+            http,
+            self.credential_provider,
+            None,
+        ))
     }
 
     /// Build a [`DynamicClient`](crate::dynamic::DynamicClient) that auto-detects the NiFi version.
@@ -153,7 +196,7 @@ impl NifiClientBuilder {
     /// # async fn example() -> Result<(), nifi_rust_client::NifiError> {
     /// use nifi_rust_client::NifiClientBuilder;
     ///
-    /// let mut client = NifiClientBuilder::new("https://nifi.example.com:8443")?
+    /// let client = NifiClientBuilder::new("https://nifi.example.com:8443")?
     ///     .danger_accept_invalid_certs(true)
     ///     .build_dynamic()
     ///     .await?;

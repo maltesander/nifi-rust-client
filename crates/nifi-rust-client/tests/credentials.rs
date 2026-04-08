@@ -1,7 +1,7 @@
 #![cfg(not(feature = "dynamic"))]
 #![allow(clippy::panic)]
-use nifi_rust_client::credentials::{EnvCredentials, StaticCredentials};
 use nifi_rust_client::CredentialProvider;
+use nifi_rust_client::credentials::{EnvCredentials, StaticCredentials};
 
 #[tokio::test]
 async fn static_credentials_returns_fixed_values() {
@@ -33,7 +33,8 @@ async fn env_credentials_reads_from_env() {
 
 #[tokio::test]
 async fn env_credentials_returns_error_when_var_missing() {
-    let creds = EnvCredentials::with_vars("NONEXISTENT_CRED_USER_XYZZY", "NONEXISTENT_CRED_PASS_XYZZY");
+    let creds =
+        EnvCredentials::with_vars("NONEXISTENT_CRED_USER_XYZZY", "NONEXISTENT_CRED_PASS_XYZZY");
     let result = creds.credentials().await;
     assert!(result.is_err());
 }
@@ -41,7 +42,10 @@ async fn env_credentials_returns_error_when_var_missing() {
 #[tokio::test]
 async fn env_credentials_default_uses_nifi_vars() {
     let creds = EnvCredentials::new();
-    let creds_missing = EnvCredentials::with_vars("DEFINITELY_NOT_SET_CRED_USER", "DEFINITELY_NOT_SET_CRED_PASS");
+    let creds_missing = EnvCredentials::with_vars(
+        "DEFINITELY_NOT_SET_CRED_USER",
+        "DEFINITELY_NOT_SET_CRED_PASS",
+    );
     assert!(creds_missing.credentials().await.is_err());
     assert_eq!(creds.username_var(), "NIFI_USERNAME");
     assert_eq!(creds.password_var(), "NIFI_PASSWORD");
