@@ -175,9 +175,7 @@ fn emit_merged_type(out: &mut String, name: &str, mt: &MergedType) {
                     out.push_str("    #[serde(default)]\n");
                 }
                 if final_ty.starts_with("Option<") {
-                    out.push_str(
-                        "    #[serde(skip_serializing_if = \"Option::is_none\")]\n",
-                    );
+                    out.push_str("    #[serde(skip_serializing_if = \"Option::is_none\")]\n");
                 }
                 out.push_str(&format!(
                     "    pub {}: {final_ty},\n",
@@ -198,9 +196,7 @@ fn emit_merged_type(out: &mut String, name: &str, mt: &MergedType) {
         }
         MergedType::StringEnum { variants } => {
             out.push_str("#[non_exhaustive]\n");
-            out.push_str(
-                "#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]\n",
-            );
+            out.push_str("#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]\n");
             out.push_str(&format!("pub enum {name} {{\n"));
             for wire in variants {
                 let pascal = wire_to_pascal(wire);
@@ -490,7 +486,11 @@ mod tests {
 
     /// Concatenate all file contents from emit_dynamic_types output.
     fn all_content(files: &[(String, String)]) -> String {
-        files.iter().map(|(_, c)| c.as_str()).collect::<Vec<_>>().join("\n")
+        files
+            .iter()
+            .map(|(_, c)| c.as_str())
+            .collect::<Vec<_>>()
+            .join("\n")
     }
 
     #[test]
@@ -621,7 +621,11 @@ mod tests {
             name: "AboutDto".to_string(),
             kind: TypeKind::Dto,
             fields: vec![
-                make_field_with_doc("version", FieldType::Opt(Box::new(FieldType::Str)), "The NiFi version"),
+                make_field_with_doc(
+                    "version",
+                    FieldType::Opt(Box::new(FieldType::Str)),
+                    "The NiFi version",
+                ),
                 make_field("title", FieldType::Str),
             ],
             doc: Some("Information about the NiFi instance".to_string()),
@@ -630,13 +634,25 @@ mod tests {
         let files = emit_dynamic_types(&[("2.8.0", &spec)]);
         let output = all_content(&files);
         // non_exhaustive attribute on struct
-        assert!(output.contains("#[non_exhaustive]"), "missing #[non_exhaustive] on struct");
+        assert!(
+            output.contains("#[non_exhaustive]"),
+            "missing #[non_exhaustive] on struct"
+        );
         // struct-level doc comment
-        assert!(output.contains("/// Information about the NiFi instance"), "missing struct doc comment");
+        assert!(
+            output.contains("/// Information about the NiFi instance"),
+            "missing struct doc comment"
+        );
         // field-level doc comment
-        assert!(output.contains("/// The NiFi version"), "missing field doc comment");
+        assert!(
+            output.contains("/// The NiFi version"),
+            "missing field doc comment"
+        );
         // skip_serializing_if on Option fields
-        assert!(output.contains("#[serde(skip_serializing_if = \"Option::is_none\")]"), "missing skip_serializing_if");
+        assert!(
+            output.contains("#[serde(skip_serializing_if = \"Option::is_none\")]"),
+            "missing skip_serializing_if"
+        );
     }
 
     #[test]
@@ -650,8 +666,14 @@ mod tests {
         let spec = make_spec(vec![td]);
         let files = emit_dynamic_types(&[("2.8.0", &spec)]);
         let output = all_content(&files);
-        assert!(output.contains("pub enum DiagnosticLevel"), "missing enum declaration");
-        assert!(output.contains("#[non_exhaustive]"), "missing #[non_exhaustive] on enum");
+        assert!(
+            output.contains("pub enum DiagnosticLevel"),
+            "missing enum declaration"
+        );
+        assert!(
+            output.contains("#[non_exhaustive]"),
+            "missing #[non_exhaustive] on enum"
+        );
     }
 
     #[test]
@@ -661,7 +683,10 @@ mod tests {
         let about_dto = TypeDef {
             name: "AboutDto".to_string(),
             kind: TypeKind::Dto,
-            fields: vec![make_field("version", FieldType::Opt(Box::new(FieldType::Str)))],
+            fields: vec![make_field(
+                "version",
+                FieldType::Opt(Box::new(FieldType::Str)),
+            )],
             doc: None,
         };
         let about_entity = TypeDef {
@@ -681,27 +706,52 @@ mod tests {
         };
 
         let flow_tag = make_tag("flow", vec!["AboutEntity"]);
-        let spec = make_spec_with_tags(
-            vec![about_dto, about_entity, position_dto],
-            vec![flow_tag],
-        );
+        let spec = make_spec_with_tags(vec![about_dto, about_entity, position_dto], vec![flow_tag]);
 
         let files = emit_dynamic_types(&[("2.8.0", &spec)]);
         let filenames: Vec<&str> = files.iter().map(|(n, _)| n.as_str()).collect();
 
         // Must contain mod.rs, flow.rs, and common.rs
-        assert!(filenames.contains(&"mod.rs"), "missing mod.rs; got: {filenames:?}");
-        assert!(filenames.contains(&"flow.rs"), "missing flow.rs; got: {filenames:?}");
-        assert!(filenames.contains(&"common.rs"), "missing common.rs; got: {filenames:?}");
+        assert!(
+            filenames.contains(&"mod.rs"),
+            "missing mod.rs; got: {filenames:?}"
+        );
+        assert!(
+            filenames.contains(&"flow.rs"),
+            "missing flow.rs; got: {filenames:?}"
+        );
+        assert!(
+            filenames.contains(&"common.rs"),
+            "missing common.rs; got: {filenames:?}"
+        );
 
-        let flow_content = files.iter().find(|(n, _)| n == "flow.rs").unwrap().1.as_str();
-        let common_content = files.iter().find(|(n, _)| n == "common.rs").unwrap().1.as_str();
+        let flow_content = files
+            .iter()
+            .find(|(n, _)| n == "flow.rs")
+            .unwrap()
+            .1
+            .as_str();
+        let common_content = files
+            .iter()
+            .find(|(n, _)| n == "common.rs")
+            .unwrap()
+            .1
+            .as_str();
 
         // AboutEntity is exclusively referenced by flow -> flow.rs
-        assert!(flow_content.contains("AboutEntity"), "flow.rs should contain AboutEntity");
+        assert!(
+            flow_content.contains("AboutEntity"),
+            "flow.rs should contain AboutEntity"
+        );
         // PositionDto is not referenced by any tag -> common.rs
-        assert!(common_content.contains("PositionDto"), "common.rs should contain PositionDto");
+        assert!(
+            common_content.contains("PositionDto"),
+            "common.rs should contain PositionDto"
+        );
         // AboutDto is not directly referenced (AboutEntity is, not AboutDto itself) -> common.rs
-        assert!(common_content.contains("AboutDto"), "common.rs should contain AboutDto");
+        assert!(
+            common_content.contains("AboutDto"),
+            "common.rs should contain AboutDto"
+        );
     }
 }

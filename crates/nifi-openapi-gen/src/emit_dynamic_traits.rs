@@ -2,8 +2,8 @@ use std::collections::BTreeMap;
 
 use crate::parser::{ApiSpec, HttpMethod, RequestBodyKind};
 use crate::util::{
-    collect_all_tags, collect_tag_endpoints, dynamic_query_param_type, escape_keyword,
-    format_source, merge_query_params, EndpointInfo,
+    EndpointInfo, collect_all_tags, collect_tag_endpoints, dynamic_query_param_type,
+    escape_keyword, format_source, merge_query_params,
 };
 
 /// Returns `Vec<(filename, content)>` for `dynamic/traits/`.
@@ -42,9 +42,7 @@ fn emit_trait_file(
     out.push_str("use crate::dynamic::types;\n\n");
 
     // Trait-level doc comment: use the tag name
-    out.push_str(&format!(
-        "/// The {tag} API.\n"
-    ));
+    out.push_str(&format!("/// The {tag} API.\n"));
 
     // Use #[allow(unused_variables)] to suppress warnings for default impls
     // Use #[allow(async_fn_in_trait)] since we don't need Send bounds
@@ -207,10 +205,7 @@ fn emit_doc_comments(
             }
         }
         for p in &ep.path_params {
-            if representative
-                .primary_param
-                .is_some_and(|pp| pp == p.name)
-            {
+            if representative.primary_param.is_some_and(|pp| pp == p.name) {
                 continue; // Already emitted above
             }
             if let Some(doc) = &p.doc {
@@ -257,8 +252,6 @@ fn emit_doc_comments(
     if available_versions.len() < total_versions {
         let ver_list = available_versions.join(", ");
         out.push_str("    ///\n");
-        out.push_str(&format!(
-            "    /// *Supported in NiFi: {ver_list}*\n"
-        ));
+        out.push_str(&format!("    /// *Supported in NiFi: {ver_list}*\n"));
     }
 }

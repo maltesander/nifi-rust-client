@@ -616,4 +616,3 @@ fn method_str(m: &HttpMethod) -> &'static str {
         HttpMethod::Delete => "DELETE",
     }
 }
-

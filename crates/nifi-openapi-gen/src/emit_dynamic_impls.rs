@@ -2,8 +2,8 @@ use std::collections::BTreeMap;
 
 use crate::parser::{ApiSpec, HttpMethod, RequestBodyKind};
 use crate::util::{
-    collect_all_tags, collect_tag_endpoints, dynamic_query_param_type, escape_keyword,
-    format_source, merge_query_params, EndpointInfo,
+    EndpointInfo, collect_all_tags, collect_tag_endpoints, dynamic_query_param_type,
+    escape_keyword, format_source, merge_query_params,
 };
 
 /// Returns `Vec<(path, content)>` for `dynamic/impls/`.
@@ -45,7 +45,9 @@ fn emit_version_impls(
     for (_tag, struct_name, module_name, _accessor_fn) in all_tags {
         let wrapper_struct = format!("{}{struct_name}", version_struct_prefix(mod_name));
         mod_out.push_str(&format!("pub(crate) mod {module_name};\n"));
-        mod_out.push_str(&format!("pub(crate) use {module_name}::{wrapper_struct};\n"));
+        mod_out.push_str(&format!(
+            "pub(crate) use {module_name}::{wrapper_struct};\n"
+        ));
     }
     files.push(("mod.rs".to_string(), format_source(&mod_out)));
 
@@ -92,9 +94,7 @@ fn emit_tag_impl_file(
 
     // Trait impl
     out.push_str("#[allow(unused_variables)]\n");
-    out.push_str(&format!(
-        "impl {struct_name} for {wrapper_struct}<'_> {{\n"
-    ));
+    out.push_str(&format!("impl {struct_name} for {wrapper_struct}<'_> {{\n"));
 
     let endpoints = collect_tag_endpoints(versions, tag);
 
@@ -331,8 +331,5 @@ fn find_tag_module_name(
         result.push(ch.to_ascii_lowercase());
     }
     // Strip trailing "_api" if present (module names don't include it)
-    result
-        .strip_suffix("_api")
-        .unwrap_or(&result)
-        .to_string()
+    result.strip_suffix("_api").unwrap_or(&result).to_string()
 }

@@ -1,8 +1,7 @@
-use nifi_openapi_gen::parser::{
-    ApiSpec, Endpoint, HttpMethod, PathParam, QueryParam, QueryParamType, RequestBodyKind,
-    TagGroup,
-};
 use nifi_openapi_gen::emit_dynamic_traits;
+use nifi_openapi_gen::parser::{
+    ApiSpec, Endpoint, HttpMethod, PathParam, QueryParam, QueryParamType, RequestBodyKind, TagGroup,
+};
 
 fn make_spec(tag: TagGroup) -> ApiSpec {
     ApiSpec {
@@ -64,7 +63,10 @@ fn emits_trait_with_doc_and_default_impl() {
     assert_eq!(files[1].0, "flow.rs");
 
     let mod_rs = &files[0].1;
-    assert!(mod_rs.contains("mod flow;"), "mod.rs should declare mod flow");
+    assert!(
+        mod_rs.contains("mod flow;"),
+        "mod.rs should declare mod flow"
+    );
     assert!(
         mod_rs.contains("pub use flow::FlowApi;"),
         "mod.rs should re-export FlowApi"

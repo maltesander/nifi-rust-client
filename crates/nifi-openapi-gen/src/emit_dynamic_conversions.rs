@@ -422,8 +422,7 @@ fn emit_dto_narrowing_conversions_for_version(
                 continue;
             }
 
-            let expr =
-                narrowing_field_expr(&escaped, field_ty, type_name, is_universal, version);
+            let expr = narrowing_field_expr(&escaped, field_ty, type_name, is_universal, version);
             out.push_str(&format!("            {escaped}: {expr},\n"));
         }
 
@@ -605,8 +604,9 @@ mod tests {
         let files =
             emit_dynamic_conversions(&[("2.7.2", "v2_7_2", &spec)], &merged, &BTreeMap::new());
         let output = get_file(&files, "v2_7_2.rs");
-        assert!(output
-            .contains("impl From<crate::v2_7_2::types::AboutDto> for super::super::types::AboutDto"));
+        assert!(output.contains(
+            "impl From<crate::v2_7_2::types::AboutDto> for super::super::types::AboutDto"
+        ));
         assert!(output.contains("title: v.title"));
         assert!(output.contains("version: None"));
     }
@@ -629,8 +629,11 @@ mod tests {
         let files =
             emit_dynamic_conversions(&[("2.8.0", "v2_8_0", &spec)], &merged, &BTreeMap::new());
         let output = get_file(&files, "v2_8_0.rs");
-        assert!(output
-            .contains("impl From<crate::v2_8_0::types::MyEnum> for super::super::types::MyEnum"));
+        assert!(
+            output.contains(
+                "impl From<crate::v2_8_0::types::MyEnum> for super::super::types::MyEnum"
+            )
+        );
         assert!(output.contains("serde_json"));
     }
 
@@ -693,7 +696,10 @@ mod tests {
 
         // All expected filenames are present
         let filenames: Vec<&str> = files.iter().map(|(f, _)| f.as_str()).collect();
-        assert!(filenames.contains(&"mod.rs"), "expected mod.rs, got {filenames:?}");
+        assert!(
+            filenames.contains(&"mod.rs"),
+            "expected mod.rs, got {filenames:?}"
+        );
         assert!(filenames.contains(&"v2_7_2.rs"), "expected v2_7_2.rs");
         assert!(filenames.contains(&"v2_8_0.rs"), "expected v2_8_0.rs");
 

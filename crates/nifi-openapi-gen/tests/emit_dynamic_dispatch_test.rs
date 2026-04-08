@@ -1,7 +1,6 @@
 use nifi_openapi_gen::emit_dynamic_dispatch;
 use nifi_openapi_gen::parser::{
-    ApiSpec, Endpoint, HttpMethod, PathParam, QueryParam, QueryParamType, RequestBodyKind,
-    TagGroup,
+    ApiSpec, Endpoint, HttpMethod, PathParam, QueryParam, QueryParamType, RequestBodyKind, TagGroup,
 };
 
 fn make_spec(tag: TagGroup) -> ApiSpec {

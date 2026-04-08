@@ -2,8 +2,8 @@ use std::collections::BTreeMap;
 
 use crate::parser::{ApiSpec, HttpMethod, RequestBodyKind};
 use crate::util::{
-    collect_all_tags, collect_tag_endpoints, dynamic_query_param_type, escape_keyword,
-    format_source, merge_query_params, version_to_variant, EndpointInfo,
+    EndpointInfo, collect_all_tags, collect_tag_endpoints, dynamic_query_param_type,
+    escape_keyword, format_source, merge_query_params, version_to_variant,
 };
 
 /// Returns `Vec<(filename, content)>` for `dynamic/dispatch/`.
@@ -55,7 +55,7 @@ fn emit_dispatch_file(
     out.push_str(&format!("pub enum {dispatch_name}<'a> {{\n"));
     for (ver, mod_name, _feature, _spec) in versions {
         let variant = version_to_variant(ver);
-        let wrapper_struct = format!("{}{}",  version_struct_prefix(mod_name), struct_name);
+        let wrapper_struct = format!("{}{}", version_struct_prefix(mod_name), struct_name);
         out.push_str(&format!(
             "    {variant}(super::super::impls::{mod_name}::{wrapper_struct}<'a>),\n"
         ));
