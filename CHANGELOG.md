@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-04-08
+
+### Added
+
+- Keep crate README in sync with generator ([a3904e6](https://github.com/maltesander/nifi-rust-client/commit/a3904e6))
+
+### Changed
+
+- Tag version examples in READMEs for automated updates ([8d7f54f](https://github.com/maltesander/nifi-rust-client/commit/8d7f54f))
+
+### Fixed
+
+- Set real version in static feature example ([7d47eb3](https://github.com/maltesander/nifi-rust-client/commit/7d47eb3))
+- Move 2xx responses to # Returns doc section, fix 206 misclassified as error ([39beab2](https://github.com/maltesander/nifi-rust-client/commit/39beab2))
+
+### Documentation
+
+- Add missing integration test files to coverage table; fix clippy ([f222289](https://github.com/maltesander/nifi-rust-client/commit/f222289))
+
 ## [0.3.0] - 2026-04-08
 
 ### Added
@@ -128,7 +147,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Structured error handling** — `NifiError` via `snafu` with distinct variants for HTTP, auth, serialization, and network errors.
 - **Tracing** — all HTTP requests emit a `tracing::debug!` event with method and path before sending.
 
-[Unreleased]: https://github.com/maltesander/nifi-rust-client/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/maltesander/nifi-rust-client/compare/v0.3.1...HEAD
+[0.3.1]: https://github.com/maltesander/nifi-rust-client/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/maltesander/nifi-rust-client/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/maltesander/nifi-rust-client/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/maltesander/nifi-rust-client/compare/v0.1.1...v0.2.0
