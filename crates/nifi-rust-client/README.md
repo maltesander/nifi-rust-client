@@ -65,7 +65,7 @@ client.login("admin", "password").await?;
 let about = client.flow_api().get_about_info().await?;
 println!("NiFi version: {:?}", about.version);
 
-// Enum query params are typed — IDE autocomplete works
+// Enum query params are typed
 let diag = client.system_diagnostics_api()
     .get_system_diagnostics(Some(DiagnosticLevel::Verbose))
     .await?;
