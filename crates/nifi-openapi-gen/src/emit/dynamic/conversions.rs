@@ -1,17 +1,7 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use crate::parser::{ApiSpec, FieldType, TypeKind};
-
-fn escape_keyword(name: &str) -> String {
-    match name {
-        "type" | "ref" | "use" | "mod" | "fn" | "let" | "match" | "for" | "if" | "else"
-        | "return" | "struct" | "enum" | "impl" | "trait" | "pub" | "super" | "self" | "crate"
-        | "where" | "true" | "false" | "in" | "loop" | "while" | "break" | "continue" | "mut"
-        | "move" | "async" | "await" | "dyn" | "box" | "const" | "static" | "extern" | "unsafe"
-        | "as" => format!("r#{name}"),
-        _ => name.to_string(),
-    }
-}
+use crate::util::{escape_keyword, wire_to_pascal};
 
 /// Determine if a field type needs `.into()` conversion (i.e., contains a Ref or Enum).
 /// `serde_json::Value` refs are opaque and don't need conversion.
@@ -263,23 +253,6 @@ pub fn emit_dynamic_conversions(
     files.push(("mod.rs".to_string(), mod_rs));
 
     files
-}
-
-/// Convert a SCREAMING_SNAKE wire value to PascalCase.
-fn wire_to_pascal(wire: &str) -> String {
-    wire.split('_')
-        .map(|word| {
-            let mut chars = word.chars();
-            match chars.next() {
-                None => String::new(),
-                Some(c) => {
-                    let mut s = c.to_uppercase().to_string();
-                    s.extend(chars.map(|ch| ch.to_ascii_lowercase()));
-                    s
-                }
-            }
-        })
-        .collect()
 }
 
 /// Emit TryFrom<dynamic_enum> -> version_enum narrowing conversions for a single version.

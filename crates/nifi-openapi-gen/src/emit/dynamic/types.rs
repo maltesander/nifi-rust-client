@@ -1,6 +1,8 @@
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 
+use crate::emit::common::{InlineEnumMode, field_type_to_rust};
 use crate::parser::{ApiSpec, Field, FieldType, TagGroup, TypeKind};
+use crate::util::{escape_keyword, wire_to_pascal};
 
 /// Intermediate representation of a merged type across all API versions.
 enum MergedType {
@@ -153,7 +155,7 @@ fn emit_merged_type(out: &mut String, name: &str, mt: &MergedType) {
             out.push_str("#[serde(rename_all = \"camelCase\")]\n");
             out.push_str(&format!("pub struct {name} {{\n"));
             for field in fields.values() {
-                let rust_ty = field_type_to_rust(&field.ty, name);
+                let rust_ty = field_type_to_rust(&field.ty, name, InlineEnumMode::AsString);
                 let is_universal = universal_fields.contains(&field.rust_name);
                 let final_ty = if is_universal {
                     rust_ty
@@ -295,7 +297,7 @@ fn merge_all_types(specs: &[(&str, &ApiSpec)]) -> BTreeMap<String, MergedType> {
                     // Track field presence and type consistency
                     let type_fields = field_presence.entry(td.name.clone()).or_default();
                     for field in &td.fields {
-                        let rust_ty = field_type_to_rust(&field.ty, &td.name);
+                        let rust_ty = field_type_to_rust(&field.ty, &td.name, InlineEnumMode::AsString);
                         let entry = type_fields
                             .entry(field.rust_name.clone())
                             .or_insert_with(|| (0, rust_ty.clone(), true));
@@ -358,67 +360,12 @@ fn merge_all_types(specs: &[(&str, &ApiSpec)]) -> BTreeMap<String, MergedType> {
     merged
 }
 
-fn escape_keyword(name: &str) -> String {
-    match name {
-        "type" | "ref" | "use" | "mod" | "fn" | "let" | "match" | "for" | "if" | "else"
-        | "return" | "struct" | "enum" | "impl" | "trait" | "pub" | "super" | "self" | "crate"
-        | "where" | "true" | "false" | "in" | "loop" | "while" | "break" | "continue" | "mut"
-        | "move" | "async" | "await" | "dyn" | "box" | "const" | "static" | "extern" | "unsafe"
-        | "as" => format!("r#{name}"),
-        _ => name.to_string(),
-    }
-}
-
-fn field_type_to_rust(ty: &FieldType, struct_name: &str) -> String {
-    match ty {
-        FieldType::Str => "String".to_string(),
-        FieldType::Bool => "bool".to_string(),
-        FieldType::I32 => "i32".to_string(),
-        FieldType::I64 => "i64".to_string(),
-        FieldType::F64 => "f64".to_string(),
-        FieldType::Opt(inner) => format!("Option<{}>", field_type_to_rust(inner, struct_name)),
-        FieldType::List(inner) => format!("Vec<{}>", field_type_to_rust(inner, struct_name)),
-        FieldType::Enum(_) => "String".to_string(),
-        FieldType::Ref(name) => {
-            if name == struct_name {
-                format!("Box<{name}>")
-            } else {
-                name.clone()
-            }
-        }
-        FieldType::Map(inner) => {
-            format!(
-                "std::collections::HashMap<String, {}>",
-                field_type_to_rust(inner, struct_name)
-            )
-        }
-    }
-}
-
 /// Wrap the type in `Option<T>` unless it is already `Option<T>` (i.e. `FieldType::Opt`).
 fn wrap_in_option(ty: &FieldType, rust_str: &str) -> String {
     match ty {
         FieldType::Opt(_) => rust_str.to_string(),
         _ => format!("Option<{rust_str}>"),
     }
-}
-
-/// Convert a SCREAMING_SNAKE wire value to PascalCase.
-/// `KEEP_EXISTING` -> `KeepExisting`, `JVM` -> `Jvm`
-fn wire_to_pascal(wire: &str) -> String {
-    wire.split('_')
-        .map(|word| {
-            let mut chars = word.chars();
-            match chars.next() {
-                None => String::new(),
-                Some(c) => {
-                    let mut s = c.to_uppercase().to_string();
-                    s.extend(chars.map(|ch| ch.to_ascii_lowercase()));
-                    s
-                }
-            }
-        })
-        .collect()
 }
 
 #[cfg(test)]
