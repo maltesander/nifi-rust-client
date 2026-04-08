@@ -136,7 +136,7 @@ async fn logout_clears_token_even_on_server_error() {
 
     let err = client.logout().await.unwrap_err();
 
-    assert!(matches!(err, NifiError::Api { status: 401, .. }));
+    assert!(matches!(err, NifiError::Unauthorized { .. }));
     assert!(client.token().is_none());
 }
 

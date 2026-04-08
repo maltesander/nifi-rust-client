@@ -4,7 +4,7 @@ use snafu::ResultExt as _;
 use url::Url;
 
 use crate::NifiError;
-use crate::error::{ApiSnafu, AuthSnafu, HttpSnafu};
+use crate::error::{AuthSnafu, HttpSnafu};
 
 /// Client for the Apache NiFi REST API.
 #[derive(Debug, Clone)]
@@ -80,7 +80,7 @@ impl NifiClient {
     /// # async fn example(client: &mut nifi_rust_client::NifiClient) -> Result<(), nifi_rust_client::NifiError> {
     /// use nifi_rust_client::NifiError;
     /// match client.flow_api().get_about_info().await {
-    ///     Err(NifiError::Api { status: 401, .. }) => {
+    ///     Err(NifiError::Unauthorized { .. }) => {
     ///         client.login("admin", "password").await?;
     ///         // retry the call
     ///     }
@@ -210,11 +210,7 @@ impl NifiClient {
         tracing::debug!(method = "POST", path, status = status.as_u16(), %body, "NiFi API raw error body");
         let message = extract_error_message(&body);
         tracing::warn!(method = "POST", path, status = status.as_u16(), %message, "NiFi API error");
-        ApiSnafu {
-            status: status.as_u16(),
-            message,
-        }
-        .fail()
+        Err(crate::error::api_error(status.as_u16(), message))
     }
 
     /// PUT that ignores the response body (for endpoints with no JSON response).
@@ -246,11 +242,7 @@ impl NifiClient {
         tracing::debug!(method = "PUT", path, status = status.as_u16(), %body, "NiFi API raw error body");
         let message = extract_error_message(&body);
         tracing::warn!(method = "PUT", path, status = status.as_u16(), %message, "NiFi API error");
-        ApiSnafu {
-            status: status.as_u16(),
-            message,
-        }
-        .fail()
+        Err(crate::error::api_error(status.as_u16(), message))
     }
 
     /// POST with no request body; deserializes the JSON response.
@@ -294,11 +286,7 @@ impl NifiClient {
         tracing::debug!(method = "POST", path, status = status.as_u16(), %body, "NiFi API raw error body");
         let message = extract_error_message(&body);
         tracing::warn!(method = "POST", path, status = status.as_u16(), %message, "NiFi API error");
-        ApiSnafu {
-            status: status.as_u16(),
-            message,
-        }
-        .fail()
+        Err(crate::error::api_error(status.as_u16(), message))
     }
 
     /// PUT with no request body; deserializes the JSON response.
@@ -340,11 +328,7 @@ impl NifiClient {
         tracing::debug!(method = "PUT", path, status = status.as_u16(), %body, "NiFi API raw error body");
         let message = extract_error_message(&body);
         tracing::warn!(method = "PUT", path, status = status.as_u16(), %message, "NiFi API error");
-        ApiSnafu {
-            status: status.as_u16(),
-            message,
-        }
-        .fail()
+        Err(crate::error::api_error(status.as_u16(), message))
     }
 
     /// POST with `application/octet-stream` body.
@@ -408,11 +392,7 @@ impl NifiClient {
         tracing::debug!(method = "POST", path, status = status.as_u16(), %body, "NiFi API raw error body");
         let message = extract_error_message(&body);
         tracing::warn!(method = "POST", path, status = status.as_u16(), %message, "NiFi API error");
-        ApiSnafu {
-            status: status.as_u16(),
-            message,
-        }
-        .fail()
+        Err(crate::error::api_error(status.as_u16(), message))
     }
 
     /// POST with query parameters; ignores the response body.
@@ -447,11 +427,7 @@ impl NifiClient {
         tracing::debug!(method = "POST", path, status = status.as_u16(), %body, "NiFi API raw error body");
         let message = extract_error_message(&body);
         tracing::warn!(method = "POST", path, status = status.as_u16(), %message, "NiFi API error");
-        ApiSnafu {
-            status: status.as_u16(),
-            message,
-        }
-        .fail()
+        Err(crate::error::api_error(status.as_u16(), message))
     }
 
     /// GET that ignores the response body (for endpoints with no JSON response).
@@ -480,11 +456,7 @@ impl NifiClient {
         tracing::debug!(method = "GET", path, status = status.as_u16(), %body, "NiFi API raw error body");
         let message = extract_error_message(&body);
         tracing::warn!(method = "GET", path, status = status.as_u16(), %message, "NiFi API error");
-        ApiSnafu {
-            status: status.as_u16(),
-            message,
-        }
-        .fail()
+        Err(crate::error::api_error(status.as_u16(), message))
     }
 
     pub(crate) async fn get_with_query<T: DeserializeOwned>(
@@ -528,11 +500,7 @@ impl NifiClient {
         tracing::debug!(method = "GET", path, status = status.as_u16(), %body, "NiFi API raw error body");
         let message = extract_error_message(&body);
         tracing::warn!(method = "GET", path, status = status.as_u16(), %message, "NiFi API error");
-        ApiSnafu {
-            status: status.as_u16(),
-            message,
-        }
-        .fail()
+        Err(crate::error::api_error(status.as_u16(), message))
     }
 
     pub(crate) async fn delete_returning_with_query<T: DeserializeOwned>(
@@ -576,11 +544,7 @@ impl NifiClient {
         tracing::debug!(method = "DELETE", path, status = status.as_u16(), %body, "NiFi API raw error body");
         let message = extract_error_message(&body);
         tracing::warn!(method = "DELETE", path, status = status.as_u16(), %message, "NiFi API error");
-        ApiSnafu {
-            status: status.as_u16(),
-            message,
-        }
-        .fail()
+        Err(crate::error::api_error(status.as_u16(), message))
     }
 
     pub(crate) async fn post_with_query<B, T>(
@@ -640,11 +604,7 @@ impl NifiClient {
         tracing::debug!(method = "DELETE", path, status = status.as_u16(), %body, "NiFi API raw error body");
         let message = extract_error_message(&body);
         tracing::warn!(method = "DELETE", path, status = status.as_u16(), %message, "NiFi API error");
-        ApiSnafu {
-            status: status.as_u16(),
-            message,
-        }
-        .fail()
+        Err(crate::error::api_error(status.as_u16(), message))
     }
 
     fn authenticated(&self, req: reqwest::RequestBuilder) -> reqwest::RequestBuilder {
@@ -673,11 +633,7 @@ impl NifiClient {
         tracing::debug!(method, path, status = status.as_u16(), %body, "NiFi API raw error body");
         let message = extract_error_message(&body);
         tracing::warn!(method, path, status = status.as_u16(), %message, "NiFi API error");
-        ApiSnafu {
-            status: status.as_u16(),
-            message,
-        }
-        .fail()
+        Err(crate::error::api_error(status.as_u16(), message))
     }
 
     pub(crate) fn api_url(&self, path: &str) -> Url {

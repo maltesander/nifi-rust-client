@@ -130,13 +130,13 @@ client.set_token(token);
 
 NiFi JWTs expire after **12 hours** by default (configurable server-side via
 `nifi.security.user.login.identity.provider.expiration`). An expired token causes any API call to
-return `NifiError::Api { status: 401, .. }`. Re-call `login()` to obtain a fresh token:
+return `NifiError::Unauthorized { .. }`. Re-call `login()` to obtain a fresh token:
 
 ```rust
 use nifi_rust_client::NifiError;
 
 match client.flow_api().get_about_info().await {
-    Err(NifiError::Api { status: 401, .. }) => {
+    Err(NifiError::Unauthorized { .. }) => {
         client.login("admin", "password").await?;
         // retry the original call
     }

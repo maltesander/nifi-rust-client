@@ -44,12 +44,24 @@ mod extract_error_message_tests {
 // ── Wiremock tests for structured error responses ─────────────────────────────
 
 fn assert_api_error(err: &NifiError, expected_status: u16, expected_message: &str) {
-    match err {
-        NifiError::Api { status, message } => {
+    match (expected_status, err) {
+        (401, NifiError::Unauthorized { message }) => {
+            assert_eq!(message, expected_message, "message mismatch");
+        }
+        (403, NifiError::Forbidden { message }) => {
+            assert_eq!(message, expected_message, "message mismatch");
+        }
+        (404, NifiError::NotFound { message }) => {
+            assert_eq!(message, expected_message, "message mismatch");
+        }
+        (409, NifiError::Conflict { message }) => {
+            assert_eq!(message, expected_message, "message mismatch");
+        }
+        (_, NifiError::Api { status, message }) => {
             assert_eq!(*status, expected_status, "status mismatch");
             assert_eq!(message, expected_message, "message mismatch");
         }
-        other => panic!("expected NifiError::Api, got: {other:?}"),
+        (_, other) => panic!("expected API error with status {expected_status}, got: {other:?}"),
     }
 }
 
@@ -166,7 +178,7 @@ async fn caller_can_match_on_status_code() {
         .unwrap();
     let err = client.flow_api().get_about_info().await.unwrap_err();
 
-    assert!(matches!(err, NifiError::Api { status: 404, .. }));
+    assert!(matches!(err, NifiError::NotFound { .. }));
 }
 
 #[tokio::test]

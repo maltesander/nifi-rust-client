@@ -95,5 +95,5 @@ async fn delete_running_processor_returns_409() {
         .await
         .unwrap_err();
 
-    assert!(matches!(err, NifiError::Api { status: 409, .. }));
+    assert!(matches!(err, NifiError::Conflict { .. }));
 }

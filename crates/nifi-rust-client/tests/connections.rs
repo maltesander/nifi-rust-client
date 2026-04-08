@@ -105,5 +105,5 @@ async fn delete_connection_with_queued_data_returns_409() {
         .await
         .unwrap_err();
 
-    assert!(matches!(err, NifiError::Api { status: 409, .. }));
+    assert!(matches!(err, NifiError::Conflict { .. }));
 }
