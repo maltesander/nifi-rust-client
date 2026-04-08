@@ -237,15 +237,16 @@ The following API groups have CRUD lifecycle tests (create → get → update �
 | `tests/tests/tenants.rs` | users, user groups |
 | `tests/tests/readonly.rs` | system diagnostics, resources, site-to-site, counters, authentication (smoke only) |
 | `tests/tests/dynamic.rs` | dynamic mode: version detection, about, resources, system diagnostics, current user, process groups |
+| `tests/tests/flow_status.rs` | flow status reads |
+| `tests/tests/flowfilequeues.rs` | flow-file queue listing and drop |
+| `tests/tests/provenance.rs` | provenance search and events |
 
 The following API groups are **not yet covered** due to requiring complex setup beyond a fresh NiFi instance:
 
 | Group | Reason |
 |-------|--------|
-| `flowfilequeues` | Requires active connections with queued flow files |
 | `remoteprocessgroups` | Requires a reachable remote NiFi URL |
 | `datatransfer` | Requires active site-to-site input/output ports |
-| `provenance` / `provenanceevents` | Requires processors to have run and produced provenance events |
 | `versions` | Requires a connected flow registry |
 | `policies` | Depends on the specific authorization model of the test instance |
 | `parameterproviders` | Requires a parameter provider extension class to be installed |

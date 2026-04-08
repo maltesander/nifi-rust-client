@@ -411,12 +411,12 @@ fn read_crate_version_shorthand(workspace_root: &Path) -> String {
     let content = std::fs::read_to_string(&cargo_toml)
         .unwrap_or_else(|_| panic!("read {}", cargo_toml.display()));
     for line in content.lines() {
-        if let Some(rest) = line.strip_prefix("version = \"") {
-            if let Some(ver) = rest.strip_suffix('"') {
-                let parts: Vec<&str> = ver.splitn(3, '.').collect();
-                if parts.len() >= 2 {
-                    return format!("{}.{}", parts[0], parts[1]);
-                }
+        if let Some(rest) = line.strip_prefix("version = \"")
+            && let Some(ver) = rest.strip_suffix('"')
+        {
+            let parts: Vec<&str> = ver.splitn(3, '.').collect();
+            if parts.len() >= 2 {
+                return format!("{}.{}", parts[0], parts[1]);
             }
         }
     }
