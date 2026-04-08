@@ -1,6 +1,7 @@
 #![cfg(feature = "dynamic")]
 
 use nifi_rust_client::NifiClientBuilder;
+use nifi_rust_client::dynamic::traits::{ControllerServicesApi, FlowApi, ResourcesApi};
 use nifi_rust_client::dynamic::types::{FlowMetricsReportingStrategy, IncludedRegistries};
 use wiremock::matchers::{method, path, query_param};
 use wiremock::{Mock, MockServer, ResponseTemplate};
@@ -293,9 +294,9 @@ async fn dynamic_missing_required_field_error() {
     let mock = MockServer::start().await;
     let dynamic = dynamic_client_on(&mock, "2.8.0").await;
 
-    let body = nifi_rust_client::dynamic::types::ClearBulletinsRequestEntity {
-        from_timestamp: None, // required in v2.8.0
-    };
+    // ClearBulletinsRequestEntity is #[non_exhaustive]; use Default::default() to construct.
+    // from_timestamp is None by default, which is required in v2.8.0 and should trigger an error.
+    let body = nifi_rust_client::dynamic::types::ClearBulletinsRequestEntity::default();
 
     let err = dynamic
         .controller_services_api()

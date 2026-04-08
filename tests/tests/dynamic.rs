@@ -1,6 +1,7 @@
 #![cfg(feature = "dynamic")]
 
 use nifi_rust_client::NifiClientBuilder;
+use nifi_rust_client::dynamic::traits::{FlowApi, ProcessGroupsApi, ResourcesApi, SystemDiagnosticsApi};
 
 fn nifi_url() -> String {
     std::env::var("NIFI_URL").unwrap_or_else(|_| "https://localhost:8443".to_string())
