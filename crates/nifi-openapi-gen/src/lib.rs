@@ -28,6 +28,10 @@ pub use parser::{
     ApiSpec, Endpoint, Field, FieldType, HttpMethod, QueryParam, QueryParamType, SubGroup,
     TagGroup, TypeDef, TypeKind, load,
 };
+pub use diff::{
+    compute_diff, EndpointChanges, EndpointDiff, EndpointSummary, FieldChange, ParamChange,
+    TypeChanges, TypesDiff, VersionDiff,
+};
 
 /// Absolute path to the nifi-openapi-gen crate directory.
 /// Use this in build.rs to locate spec files:
