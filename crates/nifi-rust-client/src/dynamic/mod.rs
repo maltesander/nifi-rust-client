@@ -433,7 +433,7 @@ impl<'a> DynamicConnectionsApi<'a> {
     pub async fn update_connection(
         &self,
         id: &str,
-        body: &types::ConnectionEntity,
+        body: types::ConnectionEntity,
     ) -> Result<types::ConnectionEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -441,10 +441,7 @@ impl<'a> DynamicConnectionsApi<'a> {
                     client: self.client,
                 };
                 Ok(api
-                    .update_connection(
-                        id,
-                        &crate::v2_6_0::types::ConnectionEntity::try_from(body.clone())?,
-                    )
+                    .update_connection(id, &crate::v2_6_0::types::ConnectionEntity::try_from(body)?)
                     .await?
                     .into())
             }
@@ -453,10 +450,7 @@ impl<'a> DynamicConnectionsApi<'a> {
                     client: self.client,
                 };
                 Ok(api
-                    .update_connection(
-                        id,
-                        &crate::v2_7_2::types::ConnectionEntity::try_from(body.clone())?,
-                    )
+                    .update_connection(id, &crate::v2_7_2::types::ConnectionEntity::try_from(body)?)
                     .await?
                     .into())
             }
@@ -465,10 +459,7 @@ impl<'a> DynamicConnectionsApi<'a> {
                     client: self.client,
                 };
                 Ok(api
-                    .update_connection(
-                        id,
-                        &crate::v2_8_0::types::ConnectionEntity::try_from(body.clone())?,
-                    )
+                    .update_connection(id, &crate::v2_8_0::types::ConnectionEntity::try_from(body)?)
                     .await?
                     .into())
             }
@@ -486,7 +477,7 @@ impl<'a> DynamicControllerApi<'a> {
     pub async fn analyze_flow_analysis_rule_configuration(
         &self,
         id: &str,
-        body: &types::ConfigurationAnalysisEntity,
+        body: types::ConfigurationAnalysisEntity,
     ) -> Result<types::ConfigurationAnalysisDto, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -496,7 +487,7 @@ impl<'a> DynamicControllerApi<'a> {
                 };
                 Ok(api
                     .analyze_flow_analysis_rule_configuration(
-                        &crate::v2_6_0::types::ConfigurationAnalysisEntity::try_from(body.clone())?,
+                        &crate::v2_6_0::types::ConfigurationAnalysisEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -508,7 +499,7 @@ impl<'a> DynamicControllerApi<'a> {
                 };
                 Ok(api
                     .analyze_flow_analysis_rule_configuration(
-                        &crate::v2_7_2::types::ConfigurationAnalysisEntity::try_from(body.clone())?,
+                        &crate::v2_7_2::types::ConfigurationAnalysisEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -520,7 +511,7 @@ impl<'a> DynamicControllerApi<'a> {
                 };
                 Ok(api
                     .analyze_flow_analysis_rule_configuration(
-                        &crate::v2_8_0::types::ConfigurationAnalysisEntity::try_from(body.clone())?,
+                        &crate::v2_8_0::types::ConfigurationAnalysisEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -528,10 +519,12 @@ impl<'a> DynamicControllerApi<'a> {
         }
     }
     /// Performs analysis of the component's configuration, providing information about which attributes are referenced.
+    ///
+    /// *Supported in NiFi: 2.7.2, 2.8.0*
     pub async fn analyze_flow_registry_client_configuration(
         &self,
         id: &str,
-        body: &types::ConfigurationAnalysisEntity,
+        body: types::ConfigurationAnalysisEntity,
     ) -> Result<types::ConfigurationAnalysisDto, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => Err(NifiError::UnsupportedEndpoint {
@@ -545,7 +538,7 @@ impl<'a> DynamicControllerApi<'a> {
                 };
                 Ok(api
                     .analyze_flow_registry_client_configuration(
-                        &crate::v2_7_2::types::ConfigurationAnalysisEntity::try_from(body.clone())?,
+                        &crate::v2_7_2::types::ConfigurationAnalysisEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -557,7 +550,7 @@ impl<'a> DynamicControllerApi<'a> {
                 };
                 Ok(api
                     .analyze_flow_registry_client_configuration(
-                        &crate::v2_8_0::types::ConfigurationAnalysisEntity::try_from(body.clone())?,
+                        &crate::v2_8_0::types::ConfigurationAnalysisEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -565,10 +558,12 @@ impl<'a> DynamicControllerApi<'a> {
         }
     }
     /// Clears bulletins for a flow analysis rule
+    ///
+    /// *Supported in NiFi: 2.7.2, 2.8.0*
     pub async fn clear_flow_analysis_rule_bulletins(
         &self,
         id: &str,
-        body: &types::ClearBulletinsRequestEntity,
+        body: types::ClearBulletinsRequestEntity,
     ) -> Result<types::ClearBulletinsResultEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => Err(NifiError::UnsupportedEndpoint {
@@ -582,7 +577,7 @@ impl<'a> DynamicControllerApi<'a> {
                 };
                 Ok(api
                     .clear_flow_analysis_rule_bulletins(
-                        &crate::v2_7_2::types::ClearBulletinsRequestEntity::try_from(body.clone())?,
+                        &crate::v2_7_2::types::ClearBulletinsRequestEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -594,7 +589,7 @@ impl<'a> DynamicControllerApi<'a> {
                 };
                 Ok(api
                     .clear_flow_analysis_rule_bulletins(
-                        &crate::v2_8_0::types::ClearBulletinsRequestEntity::try_from(body.clone())?,
+                        &crate::v2_8_0::types::ClearBulletinsRequestEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -602,10 +597,12 @@ impl<'a> DynamicControllerApi<'a> {
         }
     }
     /// Clears bulletins for a parameter provider
+    ///
+    /// *Supported in NiFi: 2.7.2, 2.8.0*
     pub async fn clear_parameter_provider_bulletins(
         &self,
         id: &str,
-        body: &types::ClearBulletinsRequestEntity,
+        body: types::ClearBulletinsRequestEntity,
     ) -> Result<types::ClearBulletinsResultEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => Err(NifiError::UnsupportedEndpoint {
@@ -619,7 +616,7 @@ impl<'a> DynamicControllerApi<'a> {
                 };
                 Ok(api
                     .clear_parameter_provider_bulletins(
-                        &crate::v2_7_2::types::ClearBulletinsRequestEntity::try_from(body.clone())?,
+                        &crate::v2_7_2::types::ClearBulletinsRequestEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -631,7 +628,7 @@ impl<'a> DynamicControllerApi<'a> {
                 };
                 Ok(api
                     .clear_parameter_provider_bulletins(
-                        &crate::v2_8_0::types::ClearBulletinsRequestEntity::try_from(body.clone())?,
+                        &crate::v2_8_0::types::ClearBulletinsRequestEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -639,10 +636,12 @@ impl<'a> DynamicControllerApi<'a> {
         }
     }
     /// Clears bulletins for a registry client
+    ///
+    /// *Supported in NiFi: 2.7.2, 2.8.0*
     pub async fn clear_registry_client_bulletins(
         &self,
         id: &str,
-        body: &types::ClearBulletinsRequestEntity,
+        body: types::ClearBulletinsRequestEntity,
     ) -> Result<types::ClearBulletinsResultEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => Err(NifiError::UnsupportedEndpoint {
@@ -656,7 +655,7 @@ impl<'a> DynamicControllerApi<'a> {
                 };
                 Ok(api
                     .clear_registry_client_bulletins(
-                        &crate::v2_7_2::types::ClearBulletinsRequestEntity::try_from(body.clone())?,
+                        &crate::v2_7_2::types::ClearBulletinsRequestEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -668,7 +667,7 @@ impl<'a> DynamicControllerApi<'a> {
                 };
                 Ok(api
                     .clear_registry_client_bulletins(
-                        &crate::v2_8_0::types::ClearBulletinsRequestEntity::try_from(body.clone())?,
+                        &crate::v2_8_0::types::ClearBulletinsRequestEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -679,7 +678,7 @@ impl<'a> DynamicControllerApi<'a> {
     pub async fn clear_state(
         &self,
         id: &str,
-        body: &types::ComponentStateEntity,
+        body: types::ComponentStateEntity,
     ) -> Result<types::ComponentStateDto, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -688,9 +687,7 @@ impl<'a> DynamicControllerApi<'a> {
                     id,
                 };
                 Ok(api
-                    .clear_state(&crate::v2_6_0::types::ComponentStateEntity::try_from(
-                        body.clone(),
-                    )?)
+                    .clear_state(&crate::v2_6_0::types::ComponentStateEntity::try_from(body)?)
                     .await?
                     .into())
             }
@@ -700,9 +697,7 @@ impl<'a> DynamicControllerApi<'a> {
                     id,
                 };
                 Ok(api
-                    .clear_state(&crate::v2_7_2::types::ComponentStateEntity::try_from(
-                        body.clone(),
-                    )?)
+                    .clear_state(&crate::v2_7_2::types::ComponentStateEntity::try_from(body)?)
                     .await?
                     .into())
             }
@@ -712,9 +707,7 @@ impl<'a> DynamicControllerApi<'a> {
                     id,
                 };
                 Ok(api
-                    .clear_state(&crate::v2_8_0::types::ComponentStateEntity::try_from(
-                        body.clone(),
-                    )?)
+                    .clear_state(&crate::v2_8_0::types::ComponentStateEntity::try_from(body)?)
                     .await?
                     .into())
             }
@@ -723,7 +716,7 @@ impl<'a> DynamicControllerApi<'a> {
     /// Creates a new bulletin
     pub async fn create_bulletin(
         &self,
-        body: &types::BulletinEntity,
+        body: types::BulletinEntity,
     ) -> Result<types::BulletinEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -731,9 +724,7 @@ impl<'a> DynamicControllerApi<'a> {
                     client: self.client,
                 };
                 Ok(api
-                    .create_bulletin(&crate::v2_6_0::types::BulletinEntity::try_from(
-                        body.clone(),
-                    )?)
+                    .create_bulletin(&crate::v2_6_0::types::BulletinEntity::try_from(body)?)
                     .await?
                     .into())
             }
@@ -742,9 +733,7 @@ impl<'a> DynamicControllerApi<'a> {
                     client: self.client,
                 };
                 Ok(api
-                    .create_bulletin(&crate::v2_7_2::types::BulletinEntity::try_from(
-                        body.clone(),
-                    )?)
+                    .create_bulletin(&crate::v2_7_2::types::BulletinEntity::try_from(body)?)
                     .await?
                     .into())
             }
@@ -753,9 +742,7 @@ impl<'a> DynamicControllerApi<'a> {
                     client: self.client,
                 };
                 Ok(api
-                    .create_bulletin(&crate::v2_8_0::types::BulletinEntity::try_from(
-                        body.clone(),
-                    )?)
+                    .create_bulletin(&crate::v2_8_0::types::BulletinEntity::try_from(body)?)
                     .await?
                     .into())
             }
@@ -764,7 +751,7 @@ impl<'a> DynamicControllerApi<'a> {
     /// Creates a new controller service
     pub async fn create_controller_service(
         &self,
-        body: &types::ControllerServiceEntity,
+        body: types::ControllerServiceEntity,
     ) -> Result<types::ControllerServiceEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -773,7 +760,7 @@ impl<'a> DynamicControllerApi<'a> {
                 };
                 Ok(api
                     .create_controller_service(
-                        &crate::v2_6_0::types::ControllerServiceEntity::try_from(body.clone())?,
+                        &crate::v2_6_0::types::ControllerServiceEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -784,7 +771,7 @@ impl<'a> DynamicControllerApi<'a> {
                 };
                 Ok(api
                     .create_controller_service(
-                        &crate::v2_7_2::types::ControllerServiceEntity::try_from(body.clone())?,
+                        &crate::v2_7_2::types::ControllerServiceEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -795,7 +782,7 @@ impl<'a> DynamicControllerApi<'a> {
                 };
                 Ok(api
                     .create_controller_service(
-                        &crate::v2_8_0::types::ControllerServiceEntity::try_from(body.clone())?,
+                        &crate::v2_8_0::types::ControllerServiceEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -805,7 +792,7 @@ impl<'a> DynamicControllerApi<'a> {
     /// Creates a new flow analysis rule
     pub async fn create_flow_analysis_rule(
         &self,
-        body: &types::FlowAnalysisRuleEntity,
+        body: types::FlowAnalysisRuleEntity,
     ) -> Result<types::FlowAnalysisRuleEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -814,7 +801,7 @@ impl<'a> DynamicControllerApi<'a> {
                 };
                 Ok(api
                     .create_flow_analysis_rule(
-                        &crate::v2_6_0::types::FlowAnalysisRuleEntity::try_from(body.clone())?,
+                        &crate::v2_6_0::types::FlowAnalysisRuleEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -825,7 +812,7 @@ impl<'a> DynamicControllerApi<'a> {
                 };
                 Ok(api
                     .create_flow_analysis_rule(
-                        &crate::v2_7_2::types::FlowAnalysisRuleEntity::try_from(body.clone())?,
+                        &crate::v2_7_2::types::FlowAnalysisRuleEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -836,7 +823,7 @@ impl<'a> DynamicControllerApi<'a> {
                 };
                 Ok(api
                     .create_flow_analysis_rule(
-                        &crate::v2_8_0::types::FlowAnalysisRuleEntity::try_from(body.clone())?,
+                        &crate::v2_8_0::types::FlowAnalysisRuleEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -846,7 +833,7 @@ impl<'a> DynamicControllerApi<'a> {
     /// Creates a new flow registry client
     pub async fn create_flow_registry_client(
         &self,
-        body: &types::FlowRegistryClientEntity,
+        body: types::FlowRegistryClientEntity,
     ) -> Result<types::FlowRegistryClientEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -855,7 +842,7 @@ impl<'a> DynamicControllerApi<'a> {
                 };
                 Ok(api
                     .create_flow_registry_client(
-                        &crate::v2_6_0::types::FlowRegistryClientEntity::try_from(body.clone())?,
+                        &crate::v2_6_0::types::FlowRegistryClientEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -866,7 +853,7 @@ impl<'a> DynamicControllerApi<'a> {
                 };
                 Ok(api
                     .create_flow_registry_client(
-                        &crate::v2_7_2::types::FlowRegistryClientEntity::try_from(body.clone())?,
+                        &crate::v2_7_2::types::FlowRegistryClientEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -877,7 +864,7 @@ impl<'a> DynamicControllerApi<'a> {
                 };
                 Ok(api
                     .create_flow_registry_client(
-                        &crate::v2_8_0::types::FlowRegistryClientEntity::try_from(body.clone())?,
+                        &crate::v2_8_0::types::FlowRegistryClientEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -887,7 +874,7 @@ impl<'a> DynamicControllerApi<'a> {
     /// Creates a new parameter provider
     pub async fn create_parameter_provider(
         &self,
-        body: &types::ParameterProviderEntity,
+        body: types::ParameterProviderEntity,
     ) -> Result<types::ParameterProviderEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -896,7 +883,7 @@ impl<'a> DynamicControllerApi<'a> {
                 };
                 Ok(api
                     .create_parameter_provider(
-                        &crate::v2_6_0::types::ParameterProviderEntity::try_from(body.clone())?,
+                        &crate::v2_6_0::types::ParameterProviderEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -907,7 +894,7 @@ impl<'a> DynamicControllerApi<'a> {
                 };
                 Ok(api
                     .create_parameter_provider(
-                        &crate::v2_7_2::types::ParameterProviderEntity::try_from(body.clone())?,
+                        &crate::v2_7_2::types::ParameterProviderEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -918,7 +905,7 @@ impl<'a> DynamicControllerApi<'a> {
                 };
                 Ok(api
                     .create_parameter_provider(
-                        &crate::v2_8_0::types::ParameterProviderEntity::try_from(body.clone())?,
+                        &crate::v2_8_0::types::ParameterProviderEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -928,7 +915,7 @@ impl<'a> DynamicControllerApi<'a> {
     /// Creates a new reporting task
     pub async fn create_reporting_task(
         &self,
-        body: &types::ReportingTaskEntity,
+        body: types::ReportingTaskEntity,
     ) -> Result<types::ReportingTaskEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -937,7 +924,7 @@ impl<'a> DynamicControllerApi<'a> {
                 };
                 Ok(api
                     .create_reporting_task(&crate::v2_6_0::types::ReportingTaskEntity::try_from(
-                        body.clone(),
+                        body,
                     )?)
                     .await?
                     .into())
@@ -948,7 +935,7 @@ impl<'a> DynamicControllerApi<'a> {
                 };
                 Ok(api
                     .create_reporting_task(&crate::v2_7_2::types::ReportingTaskEntity::try_from(
-                        body.clone(),
+                        body,
                     )?)
                     .await?
                     .into())
@@ -959,7 +946,7 @@ impl<'a> DynamicControllerApi<'a> {
                 };
                 Ok(api
                     .create_reporting_task(&crate::v2_8_0::types::ReportingTaskEntity::try_from(
-                        body.clone(),
+                        body,
                     )?)
                     .await?
                     .into())
@@ -1142,6 +1129,8 @@ impl<'a> DynamicControllerApi<'a> {
         }
     }
     /// Deletes the Verification Request with the given ID
+    ///
+    /// *Supported in NiFi: 2.7.2, 2.8.0*
     pub async fn delete_registry_client_verification_request(
         &self,
         id: &str,
@@ -1642,6 +1631,8 @@ impl<'a> DynamicControllerApi<'a> {
         }
     }
     /// Returns the Verification Request with the given ID
+    ///
+    /// *Supported in NiFi: 2.7.2, 2.8.0*
     pub async fn get_registry_client_verification_request(
         &self,
         id: &str,
@@ -1677,7 +1668,7 @@ impl<'a> DynamicControllerApi<'a> {
     /// Imports a reporting task snapshot
     pub async fn import_reporting_task_snapshot(
         &self,
-        body: &types::VersionedReportingTaskImportRequestEntity,
+        body: types::VersionedReportingTaskImportRequestEntity,
     ) -> Result<types::VersionedReportingTaskImportResponseEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -1687,7 +1678,7 @@ impl<'a> DynamicControllerApi<'a> {
                 Ok(api
                     .import_reporting_task_snapshot(
                         &crate::v2_6_0::types::VersionedReportingTaskImportRequestEntity::try_from(
-                            body.clone(),
+                            body,
                         )?,
                     )
                     .await?
@@ -1700,7 +1691,7 @@ impl<'a> DynamicControllerApi<'a> {
                 Ok(api
                     .import_reporting_task_snapshot(
                         &crate::v2_7_2::types::VersionedReportingTaskImportRequestEntity::try_from(
-                            body.clone(),
+                            body,
                         )?,
                     )
                     .await?
@@ -1713,7 +1704,7 @@ impl<'a> DynamicControllerApi<'a> {
                 Ok(api
                     .import_reporting_task_snapshot(
                         &crate::v2_8_0::types::VersionedReportingTaskImportRequestEntity::try_from(
-                            body.clone(),
+                            body,
                         )?,
                     )
                     .await?
@@ -1778,7 +1769,7 @@ impl<'a> DynamicControllerApi<'a> {
     pub async fn submit_flow_analysis_rule_config_verification_request(
         &self,
         id: &str,
-        body: &types::VerifyConfigRequestEntity,
+        body: types::VerifyConfigRequestEntity,
     ) -> Result<types::VerifyConfigRequestDto, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -1788,7 +1779,7 @@ impl<'a> DynamicControllerApi<'a> {
                 };
                 Ok(api
                     .submit_flow_analysis_rule_config_verification_request(
-                        &crate::v2_6_0::types::VerifyConfigRequestEntity::try_from(body.clone())?,
+                        &crate::v2_6_0::types::VerifyConfigRequestEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -1800,7 +1791,7 @@ impl<'a> DynamicControllerApi<'a> {
                 };
                 Ok(api
                     .submit_flow_analysis_rule_config_verification_request(
-                        &crate::v2_7_2::types::VerifyConfigRequestEntity::try_from(body.clone())?,
+                        &crate::v2_7_2::types::VerifyConfigRequestEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -1812,7 +1803,7 @@ impl<'a> DynamicControllerApi<'a> {
                 };
                 Ok(api
                     .submit_flow_analysis_rule_config_verification_request(
-                        &crate::v2_8_0::types::VerifyConfigRequestEntity::try_from(body.clone())?,
+                        &crate::v2_8_0::types::VerifyConfigRequestEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -1820,10 +1811,12 @@ impl<'a> DynamicControllerApi<'a> {
         }
     }
     /// Performs verification of the Registry Client's configuration
+    ///
+    /// *Supported in NiFi: 2.7.2, 2.8.0*
     pub async fn submit_registry_client_config_verification_request(
         &self,
         id: &str,
-        body: &types::VerifyConfigRequestEntity,
+        body: types::VerifyConfigRequestEntity,
     ) -> Result<types::VerifyConfigRequestDto, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => Err(NifiError::UnsupportedEndpoint {
@@ -1837,7 +1830,7 @@ impl<'a> DynamicControllerApi<'a> {
                 };
                 Ok(api
                     .submit_registry_client_config_verification_request(
-                        &crate::v2_7_2::types::VerifyConfigRequestEntity::try_from(body.clone())?,
+                        &crate::v2_7_2::types::VerifyConfigRequestEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -1849,7 +1842,7 @@ impl<'a> DynamicControllerApi<'a> {
                 };
                 Ok(api
                     .submit_registry_client_config_verification_request(
-                        &crate::v2_8_0::types::VerifyConfigRequestEntity::try_from(body.clone())?,
+                        &crate::v2_8_0::types::VerifyConfigRequestEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -1859,7 +1852,7 @@ impl<'a> DynamicControllerApi<'a> {
     /// Retrieves the configuration for this NiFi
     pub async fn update_controller_config(
         &self,
-        body: &types::ControllerConfigurationEntity,
+        body: types::ControllerConfigurationEntity,
     ) -> Result<types::ControllerConfigurationEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -1868,9 +1861,7 @@ impl<'a> DynamicControllerApi<'a> {
                 };
                 Ok(api
                     .update_controller_config(
-                        &crate::v2_6_0::types::ControllerConfigurationEntity::try_from(
-                            body.clone(),
-                        )?,
+                        &crate::v2_6_0::types::ControllerConfigurationEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -1881,9 +1872,7 @@ impl<'a> DynamicControllerApi<'a> {
                 };
                 Ok(api
                     .update_controller_config(
-                        &crate::v2_7_2::types::ControllerConfigurationEntity::try_from(
-                            body.clone(),
-                        )?,
+                        &crate::v2_7_2::types::ControllerConfigurationEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -1894,9 +1883,7 @@ impl<'a> DynamicControllerApi<'a> {
                 };
                 Ok(api
                     .update_controller_config(
-                        &crate::v2_8_0::types::ControllerConfigurationEntity::try_from(
-                            body.clone(),
-                        )?,
+                        &crate::v2_8_0::types::ControllerConfigurationEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -1907,7 +1894,7 @@ impl<'a> DynamicControllerApi<'a> {
     pub async fn update_flow_analysis_rule(
         &self,
         id: &str,
-        body: &types::FlowAnalysisRuleEntity,
+        body: types::FlowAnalysisRuleEntity,
     ) -> Result<types::FlowAnalysisRuleEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -1917,7 +1904,7 @@ impl<'a> DynamicControllerApi<'a> {
                 Ok(api
                     .update_flow_analysis_rule(
                         id,
-                        &crate::v2_6_0::types::FlowAnalysisRuleEntity::try_from(body.clone())?,
+                        &crate::v2_6_0::types::FlowAnalysisRuleEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -1929,7 +1916,7 @@ impl<'a> DynamicControllerApi<'a> {
                 Ok(api
                     .update_flow_analysis_rule(
                         id,
-                        &crate::v2_7_2::types::FlowAnalysisRuleEntity::try_from(body.clone())?,
+                        &crate::v2_7_2::types::FlowAnalysisRuleEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -1941,7 +1928,7 @@ impl<'a> DynamicControllerApi<'a> {
                 Ok(api
                     .update_flow_analysis_rule(
                         id,
-                        &crate::v2_8_0::types::FlowAnalysisRuleEntity::try_from(body.clone())?,
+                        &crate::v2_8_0::types::FlowAnalysisRuleEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -1952,7 +1939,7 @@ impl<'a> DynamicControllerApi<'a> {
     pub async fn update_flow_registry_client(
         &self,
         id: &str,
-        body: &types::FlowRegistryClientEntity,
+        body: types::FlowRegistryClientEntity,
     ) -> Result<types::FlowRegistryClientEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -1962,7 +1949,7 @@ impl<'a> DynamicControllerApi<'a> {
                 Ok(api
                     .update_flow_registry_client(
                         id,
-                        &crate::v2_6_0::types::FlowRegistryClientEntity::try_from(body.clone())?,
+                        &crate::v2_6_0::types::FlowRegistryClientEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -1974,7 +1961,7 @@ impl<'a> DynamicControllerApi<'a> {
                 Ok(api
                     .update_flow_registry_client(
                         id,
-                        &crate::v2_7_2::types::FlowRegistryClientEntity::try_from(body.clone())?,
+                        &crate::v2_7_2::types::FlowRegistryClientEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -1986,7 +1973,7 @@ impl<'a> DynamicControllerApi<'a> {
                 Ok(api
                     .update_flow_registry_client(
                         id,
-                        &crate::v2_8_0::types::FlowRegistryClientEntity::try_from(body.clone())?,
+                        &crate::v2_8_0::types::FlowRegistryClientEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -1997,7 +1984,7 @@ impl<'a> DynamicControllerApi<'a> {
     pub async fn update_node(
         &self,
         id: &str,
-        body: &types::NodeEntity,
+        body: types::NodeEntity,
     ) -> Result<types::NodeDto, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -2005,10 +1992,7 @@ impl<'a> DynamicControllerApi<'a> {
                     client: self.client,
                 };
                 Ok(api
-                    .update_node(
-                        id,
-                        &crate::v2_6_0::types::NodeEntity::try_from(body.clone())?,
-                    )
+                    .update_node(id, &crate::v2_6_0::types::NodeEntity::try_from(body)?)
                     .await?
                     .into())
             }
@@ -2017,10 +2001,7 @@ impl<'a> DynamicControllerApi<'a> {
                     client: self.client,
                 };
                 Ok(api
-                    .update_node(
-                        id,
-                        &crate::v2_7_2::types::NodeEntity::try_from(body.clone())?,
-                    )
+                    .update_node(id, &crate::v2_7_2::types::NodeEntity::try_from(body)?)
                     .await?
                     .into())
             }
@@ -2029,10 +2010,7 @@ impl<'a> DynamicControllerApi<'a> {
                     client: self.client,
                 };
                 Ok(api
-                    .update_node(
-                        id,
-                        &crate::v2_8_0::types::NodeEntity::try_from(body.clone())?,
-                    )
+                    .update_node(id, &crate::v2_8_0::types::NodeEntity::try_from(body)?)
                     .await?
                     .into())
             }
@@ -2042,7 +2020,7 @@ impl<'a> DynamicControllerApi<'a> {
     pub async fn update_run_status(
         &self,
         id: &str,
-        body: &types::FlowAnalysisRuleRunStatusEntity,
+        body: types::FlowAnalysisRuleRunStatusEntity,
     ) -> Result<types::FlowAnalysisRuleEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -2052,9 +2030,7 @@ impl<'a> DynamicControllerApi<'a> {
                 };
                 Ok(api
                     .update_run_status(
-                        &crate::v2_6_0::types::FlowAnalysisRuleRunStatusEntity::try_from(
-                            body.clone(),
-                        )?,
+                        &crate::v2_6_0::types::FlowAnalysisRuleRunStatusEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -2066,9 +2042,7 @@ impl<'a> DynamicControllerApi<'a> {
                 };
                 Ok(api
                     .update_run_status(
-                        &crate::v2_7_2::types::FlowAnalysisRuleRunStatusEntity::try_from(
-                            body.clone(),
-                        )?,
+                        &crate::v2_7_2::types::FlowAnalysisRuleRunStatusEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -2080,9 +2054,7 @@ impl<'a> DynamicControllerApi<'a> {
                 };
                 Ok(api
                     .update_run_status(
-                        &crate::v2_8_0::types::FlowAnalysisRuleRunStatusEntity::try_from(
-                            body.clone(),
-                        )?,
+                        &crate::v2_8_0::types::FlowAnalysisRuleRunStatusEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -2128,7 +2100,7 @@ impl<'a> DynamicControllerServicesApi<'a> {
     pub async fn analyze_configuration(
         &self,
         id: &str,
-        body: &types::ConfigurationAnalysisEntity,
+        body: types::ConfigurationAnalysisEntity,
     ) -> Result<types::ConfigurationAnalysisDto, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -2138,7 +2110,7 @@ impl<'a> DynamicControllerServicesApi<'a> {
                 };
                 Ok(api
                     .analyze_configuration(
-                        &crate::v2_6_0::types::ConfigurationAnalysisEntity::try_from(body.clone())?,
+                        &crate::v2_6_0::types::ConfigurationAnalysisEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -2150,7 +2122,7 @@ impl<'a> DynamicControllerServicesApi<'a> {
                 };
                 Ok(api
                     .analyze_configuration(
-                        &crate::v2_7_2::types::ConfigurationAnalysisEntity::try_from(body.clone())?,
+                        &crate::v2_7_2::types::ConfigurationAnalysisEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -2162,7 +2134,7 @@ impl<'a> DynamicControllerServicesApi<'a> {
                 };
                 Ok(api
                     .analyze_configuration(
-                        &crate::v2_8_0::types::ConfigurationAnalysisEntity::try_from(body.clone())?,
+                        &crate::v2_8_0::types::ConfigurationAnalysisEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -2170,10 +2142,12 @@ impl<'a> DynamicControllerServicesApi<'a> {
         }
     }
     /// Clears bulletins for a controller service
+    ///
+    /// *Supported in NiFi: 2.7.2, 2.8.0*
     pub async fn clear_bulletins(
         &self,
         id: &str,
-        body: &types::ClearBulletinsRequestEntity,
+        body: types::ClearBulletinsRequestEntity,
     ) -> Result<types::ClearBulletinsResultEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => Err(NifiError::UnsupportedEndpoint {
@@ -2187,7 +2161,7 @@ impl<'a> DynamicControllerServicesApi<'a> {
                 };
                 Ok(api
                     .clear_bulletins(
-                        &crate::v2_7_2::types::ClearBulletinsRequestEntity::try_from(body.clone())?,
+                        &crate::v2_7_2::types::ClearBulletinsRequestEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -2199,7 +2173,7 @@ impl<'a> DynamicControllerServicesApi<'a> {
                 };
                 Ok(api
                     .clear_bulletins(
-                        &crate::v2_8_0::types::ClearBulletinsRequestEntity::try_from(body.clone())?,
+                        &crate::v2_8_0::types::ClearBulletinsRequestEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -2210,7 +2184,7 @@ impl<'a> DynamicControllerServicesApi<'a> {
     pub async fn clear_state_1(
         &self,
         id: &str,
-        body: &types::ComponentStateEntity,
+        body: types::ComponentStateEntity,
     ) -> Result<types::ComponentStateDto, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -2219,9 +2193,7 @@ impl<'a> DynamicControllerServicesApi<'a> {
                     id,
                 };
                 Ok(api
-                    .clear_state_1(&crate::v2_6_0::types::ComponentStateEntity::try_from(
-                        body.clone(),
-                    )?)
+                    .clear_state_1(&crate::v2_6_0::types::ComponentStateEntity::try_from(body)?)
                     .await?
                     .into())
             }
@@ -2231,9 +2203,7 @@ impl<'a> DynamicControllerServicesApi<'a> {
                     id,
                 };
                 Ok(api
-                    .clear_state_1(&crate::v2_7_2::types::ComponentStateEntity::try_from(
-                        body.clone(),
-                    )?)
+                    .clear_state_1(&crate::v2_7_2::types::ComponentStateEntity::try_from(body)?)
                     .await?
                     .into())
             }
@@ -2243,9 +2213,7 @@ impl<'a> DynamicControllerServicesApi<'a> {
                     id,
                 };
                 Ok(api
-                    .clear_state_1(&crate::v2_8_0::types::ComponentStateEntity::try_from(
-                        body.clone(),
-                    )?)
+                    .clear_state_1(&crate::v2_8_0::types::ComponentStateEntity::try_from(body)?)
                     .await?
                     .into())
             }
@@ -2496,7 +2464,7 @@ impl<'a> DynamicControllerServicesApi<'a> {
     pub async fn submit_config_verification_request(
         &self,
         id: &str,
-        body: &types::VerifyConfigRequestEntity,
+        body: types::VerifyConfigRequestEntity,
     ) -> Result<types::VerifyConfigRequestDto, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -2506,7 +2474,7 @@ impl<'a> DynamicControllerServicesApi<'a> {
                 };
                 Ok(api
                     .submit_config_verification_request(
-                        &crate::v2_6_0::types::VerifyConfigRequestEntity::try_from(body.clone())?,
+                        &crate::v2_6_0::types::VerifyConfigRequestEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -2518,7 +2486,7 @@ impl<'a> DynamicControllerServicesApi<'a> {
                 };
                 Ok(api
                     .submit_config_verification_request(
-                        &crate::v2_7_2::types::VerifyConfigRequestEntity::try_from(body.clone())?,
+                        &crate::v2_7_2::types::VerifyConfigRequestEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -2530,7 +2498,7 @@ impl<'a> DynamicControllerServicesApi<'a> {
                 };
                 Ok(api
                     .submit_config_verification_request(
-                        &crate::v2_8_0::types::VerifyConfigRequestEntity::try_from(body.clone())?,
+                        &crate::v2_8_0::types::VerifyConfigRequestEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -2541,7 +2509,7 @@ impl<'a> DynamicControllerServicesApi<'a> {
     pub async fn update_controller_service(
         &self,
         id: &str,
-        body: &types::ControllerServiceEntity,
+        body: types::ControllerServiceEntity,
     ) -> Result<types::ControllerServiceEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -2551,7 +2519,7 @@ impl<'a> DynamicControllerServicesApi<'a> {
                 Ok(api
                     .update_controller_service(
                         id,
-                        &crate::v2_6_0::types::ControllerServiceEntity::try_from(body.clone())?,
+                        &crate::v2_6_0::types::ControllerServiceEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -2563,7 +2531,7 @@ impl<'a> DynamicControllerServicesApi<'a> {
                 Ok(api
                     .update_controller_service(
                         id,
-                        &crate::v2_7_2::types::ControllerServiceEntity::try_from(body.clone())?,
+                        &crate::v2_7_2::types::ControllerServiceEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -2575,7 +2543,7 @@ impl<'a> DynamicControllerServicesApi<'a> {
                 Ok(api
                     .update_controller_service(
                         id,
-                        &crate::v2_8_0::types::ControllerServiceEntity::try_from(body.clone())?,
+                        &crate::v2_8_0::types::ControllerServiceEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -2586,7 +2554,7 @@ impl<'a> DynamicControllerServicesApi<'a> {
     pub async fn update_controller_service_references(
         &self,
         id: &str,
-        body: &types::UpdateControllerServiceReferenceRequestEntity,
+        body: types::UpdateControllerServiceReferenceRequestEntity,
     ) -> Result<types::ControllerServiceReferencingComponentsEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -2599,7 +2567,7 @@ impl<'a> DynamicControllerServicesApi<'a> {
                     api
                         .update_controller_service_references(
                             &crate::v2_6_0::types::UpdateControllerServiceReferenceRequestEntity::try_from(
-                                body.clone(),
+                                body,
                             )?,
                         )
                         .await?
@@ -2616,7 +2584,7 @@ impl<'a> DynamicControllerServicesApi<'a> {
                     api
                         .update_controller_service_references(
                             &crate::v2_7_2::types::UpdateControllerServiceReferenceRequestEntity::try_from(
-                                body.clone(),
+                                body,
                             )?,
                         )
                         .await?
@@ -2633,7 +2601,7 @@ impl<'a> DynamicControllerServicesApi<'a> {
                     api
                         .update_controller_service_references(
                             &crate::v2_8_0::types::UpdateControllerServiceReferenceRequestEntity::try_from(
-                                body.clone(),
+                                body,
                             )?,
                         )
                         .await?
@@ -2646,7 +2614,7 @@ impl<'a> DynamicControllerServicesApi<'a> {
     pub async fn update_run_status_1(
         &self,
         id: &str,
-        body: &types::ControllerServiceRunStatusEntity,
+        body: types::ControllerServiceRunStatusEntity,
     ) -> Result<types::ControllerServiceEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -2656,9 +2624,7 @@ impl<'a> DynamicControllerServicesApi<'a> {
                 };
                 Ok(api
                     .update_run_status_1(
-                        &crate::v2_6_0::types::ControllerServiceRunStatusEntity::try_from(
-                            body.clone(),
-                        )?,
+                        &crate::v2_6_0::types::ControllerServiceRunStatusEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -2670,9 +2636,7 @@ impl<'a> DynamicControllerServicesApi<'a> {
                 };
                 Ok(api
                     .update_run_status_1(
-                        &crate::v2_7_2::types::ControllerServiceRunStatusEntity::try_from(
-                            body.clone(),
-                        )?,
+                        &crate::v2_7_2::types::ControllerServiceRunStatusEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -2684,9 +2648,7 @@ impl<'a> DynamicControllerServicesApi<'a> {
                 };
                 Ok(api
                     .update_run_status_1(
-                        &crate::v2_8_0::types::ControllerServiceRunStatusEntity::try_from(
-                            body.clone(),
-                        )?,
+                        &crate::v2_8_0::types::ControllerServiceRunStatusEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -3045,7 +3007,7 @@ impl<'a> DynamicFlowApi<'a> {
     pub async fn activate_controller_services(
         &self,
         id: &str,
-        body: &types::ActivateControllerServicesEntity,
+        body: types::ActivateControllerServicesEntity,
     ) -> Result<types::ActivateControllerServicesEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -3055,9 +3017,7 @@ impl<'a> DynamicFlowApi<'a> {
                 };
                 Ok(api
                     .activate_controller_services(
-                        &crate::v2_6_0::types::ActivateControllerServicesEntity::try_from(
-                            body.clone(),
-                        )?,
+                        &crate::v2_6_0::types::ActivateControllerServicesEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -3069,9 +3029,7 @@ impl<'a> DynamicFlowApi<'a> {
                 };
                 Ok(api
                     .activate_controller_services(
-                        &crate::v2_7_2::types::ActivateControllerServicesEntity::try_from(
-                            body.clone(),
-                        )?,
+                        &crate::v2_7_2::types::ActivateControllerServicesEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -3083,9 +3041,7 @@ impl<'a> DynamicFlowApi<'a> {
                 };
                 Ok(api
                     .activate_controller_services(
-                        &crate::v2_8_0::types::ActivateControllerServicesEntity::try_from(
-                            body.clone(),
-                        )?,
+                        &crate::v2_8_0::types::ActivateControllerServicesEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -3093,10 +3049,12 @@ impl<'a> DynamicFlowApi<'a> {
         }
     }
     /// Clears bulletins for components in the specified Process Group.
+    ///
+    /// *Supported in NiFi: 2.7.2, 2.8.0*
     pub async fn clear_bulletins_1(
         &self,
         id: &str,
-        body: &types::ClearBulletinsForGroupRequestEntity,
+        body: types::ClearBulletinsForGroupRequestEntity,
     ) -> Result<types::ClearBulletinsForGroupResultsEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => Err(NifiError::UnsupportedEndpoint {
@@ -3110,9 +3068,7 @@ impl<'a> DynamicFlowApi<'a> {
                 };
                 Ok(api
                     .clear_bulletins_1(
-                        &crate::v2_7_2::types::ClearBulletinsForGroupRequestEntity::try_from(
-                            body.clone(),
-                        )?,
+                        &crate::v2_7_2::types::ClearBulletinsForGroupRequestEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -3124,9 +3080,7 @@ impl<'a> DynamicFlowApi<'a> {
                 };
                 Ok(api
                     .clear_bulletins_1(
-                        &crate::v2_8_0::types::ClearBulletinsForGroupRequestEntity::try_from(
-                            body.clone(),
-                        )?,
+                        &crate::v2_8_0::types::ClearBulletinsForGroupRequestEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -4179,6 +4133,8 @@ impl<'a> DynamicFlowApi<'a> {
         }
     }
     /// Retrieves the Flow Registry Client Definition for the specified component type.
+    ///
+    /// *Supported in NiFi: 2.7.2, 2.8.0*
     pub async fn get_flow_registry_client_definition(
         &self,
         group: &str,
@@ -4284,6 +4240,8 @@ impl<'a> DynamicFlowApi<'a> {
         }
     }
     /// Gets all listen ports configured on this NiFi that the current user has access to
+    ///
+    /// *Supported in NiFi: 2.7.2, 2.8.0*
     pub async fn get_listen_ports(&self) -> Result<types::ListenPortsEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => Err(NifiError::UnsupportedEndpoint {
@@ -5168,7 +5126,7 @@ impl<'a> DynamicFlowApi<'a> {
     pub async fn schedule_components(
         &self,
         id: &str,
-        body: &types::ScheduleComponentsEntity,
+        body: types::ScheduleComponentsEntity,
     ) -> Result<types::ScheduleComponentsEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -5178,7 +5136,7 @@ impl<'a> DynamicFlowApi<'a> {
                 Ok(api
                     .schedule_components(
                         id,
-                        &crate::v2_6_0::types::ScheduleComponentsEntity::try_from(body.clone())?,
+                        &crate::v2_6_0::types::ScheduleComponentsEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -5190,7 +5148,7 @@ impl<'a> DynamicFlowApi<'a> {
                 Ok(api
                     .schedule_components(
                         id,
-                        &crate::v2_7_2::types::ScheduleComponentsEntity::try_from(body.clone())?,
+                        &crate::v2_7_2::types::ScheduleComponentsEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -5202,7 +5160,7 @@ impl<'a> DynamicFlowApi<'a> {
                 Ok(api
                     .schedule_components(
                         id,
-                        &crate::v2_8_0::types::ScheduleComponentsEntity::try_from(body.clone())?,
+                        &crate::v2_8_0::types::ScheduleComponentsEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -5593,7 +5551,7 @@ impl<'a> DynamicFunnelsApi<'a> {
     pub async fn update_funnel(
         &self,
         id: &str,
-        body: &types::FunnelEntity,
+        body: types::FunnelEntity,
     ) -> Result<types::FunnelEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -5601,10 +5559,7 @@ impl<'a> DynamicFunnelsApi<'a> {
                     client: self.client,
                 };
                 Ok(api
-                    .update_funnel(
-                        id,
-                        &crate::v2_6_0::types::FunnelEntity::try_from(body.clone())?,
-                    )
+                    .update_funnel(id, &crate::v2_6_0::types::FunnelEntity::try_from(body)?)
                     .await?
                     .into())
             }
@@ -5613,10 +5568,7 @@ impl<'a> DynamicFunnelsApi<'a> {
                     client: self.client,
                 };
                 Ok(api
-                    .update_funnel(
-                        id,
-                        &crate::v2_7_2::types::FunnelEntity::try_from(body.clone())?,
-                    )
+                    .update_funnel(id, &crate::v2_7_2::types::FunnelEntity::try_from(body)?)
                     .await?
                     .into())
             }
@@ -5625,10 +5577,7 @@ impl<'a> DynamicFunnelsApi<'a> {
                     client: self.client,
                 };
                 Ok(api
-                    .update_funnel(
-                        id,
-                        &crate::v2_8_0::types::FunnelEntity::try_from(body.clone())?,
-                    )
+                    .update_funnel(id, &crate::v2_8_0::types::FunnelEntity::try_from(body)?)
                     .await?
                     .into())
             }
@@ -5643,10 +5592,12 @@ pub struct DynamicInputPortsApi<'a> {
 #[allow(clippy::too_many_arguments, clippy::vec_init_then_push)]
 impl<'a> DynamicInputPortsApi<'a> {
     /// Clears bulletins for an input port
+    ///
+    /// *Supported in NiFi: 2.7.2, 2.8.0*
     pub async fn clear_bulletins_2(
         &self,
         id: &str,
-        body: &types::ClearBulletinsRequestEntity,
+        body: types::ClearBulletinsRequestEntity,
     ) -> Result<types::ClearBulletinsResultEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => Err(NifiError::UnsupportedEndpoint {
@@ -5660,7 +5611,7 @@ impl<'a> DynamicInputPortsApi<'a> {
                 };
                 Ok(api
                     .clear_bulletins_2(
-                        &crate::v2_7_2::types::ClearBulletinsRequestEntity::try_from(body.clone())?,
+                        &crate::v2_7_2::types::ClearBulletinsRequestEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -5672,7 +5623,7 @@ impl<'a> DynamicInputPortsApi<'a> {
                 };
                 Ok(api
                     .clear_bulletins_2(
-                        &crate::v2_8_0::types::ClearBulletinsRequestEntity::try_from(body.clone())?,
+                        &crate::v2_8_0::types::ClearBulletinsRequestEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -5744,7 +5695,7 @@ impl<'a> DynamicInputPortsApi<'a> {
     pub async fn update_input_port(
         &self,
         id: &str,
-        body: &types::PortEntity,
+        body: types::PortEntity,
     ) -> Result<types::PortEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -5752,10 +5703,7 @@ impl<'a> DynamicInputPortsApi<'a> {
                     client: self.client,
                 };
                 Ok(api
-                    .update_input_port(
-                        id,
-                        &crate::v2_6_0::types::PortEntity::try_from(body.clone())?,
-                    )
+                    .update_input_port(id, &crate::v2_6_0::types::PortEntity::try_from(body)?)
                     .await?
                     .into())
             }
@@ -5764,10 +5712,7 @@ impl<'a> DynamicInputPortsApi<'a> {
                     client: self.client,
                 };
                 Ok(api
-                    .update_input_port(
-                        id,
-                        &crate::v2_7_2::types::PortEntity::try_from(body.clone())?,
-                    )
+                    .update_input_port(id, &crate::v2_7_2::types::PortEntity::try_from(body)?)
                     .await?
                     .into())
             }
@@ -5776,10 +5721,7 @@ impl<'a> DynamicInputPortsApi<'a> {
                     client: self.client,
                 };
                 Ok(api
-                    .update_input_port(
-                        id,
-                        &crate::v2_8_0::types::PortEntity::try_from(body.clone())?,
-                    )
+                    .update_input_port(id, &crate::v2_8_0::types::PortEntity::try_from(body)?)
                     .await?
                     .into())
             }
@@ -5789,7 +5731,7 @@ impl<'a> DynamicInputPortsApi<'a> {
     pub async fn update_run_status_2(
         &self,
         id: &str,
-        body: &types::PortRunStatusEntity,
+        body: types::PortRunStatusEntity,
     ) -> Result<types::ProcessorEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -5799,7 +5741,7 @@ impl<'a> DynamicInputPortsApi<'a> {
                 };
                 Ok(api
                     .update_run_status_2(&crate::v2_6_0::types::PortRunStatusEntity::try_from(
-                        body.clone(),
+                        body,
                     )?)
                     .await?
                     .into())
@@ -5811,7 +5753,7 @@ impl<'a> DynamicInputPortsApi<'a> {
                 };
                 Ok(api
                     .update_run_status_2(&crate::v2_7_2::types::PortRunStatusEntity::try_from(
-                        body.clone(),
+                        body,
                     )?)
                     .await?
                     .into())
@@ -5823,7 +5765,7 @@ impl<'a> DynamicInputPortsApi<'a> {
                 };
                 Ok(api
                     .update_run_status_2(&crate::v2_8_0::types::PortRunStatusEntity::try_from(
-                        body.clone(),
+                        body,
                     )?)
                     .await?
                     .into())
@@ -5903,7 +5845,7 @@ impl<'a> DynamicLabelsApi<'a> {
     pub async fn update_label(
         &self,
         id: &str,
-        body: &types::LabelEntity,
+        body: types::LabelEntity,
     ) -> Result<types::LabelEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -5911,10 +5853,7 @@ impl<'a> DynamicLabelsApi<'a> {
                     client: self.client,
                 };
                 Ok(api
-                    .update_label(
-                        id,
-                        &crate::v2_6_0::types::LabelEntity::try_from(body.clone())?,
-                    )
+                    .update_label(id, &crate::v2_6_0::types::LabelEntity::try_from(body)?)
                     .await?
                     .into())
             }
@@ -5923,10 +5862,7 @@ impl<'a> DynamicLabelsApi<'a> {
                     client: self.client,
                 };
                 Ok(api
-                    .update_label(
-                        id,
-                        &crate::v2_7_2::types::LabelEntity::try_from(body.clone())?,
-                    )
+                    .update_label(id, &crate::v2_7_2::types::LabelEntity::try_from(body)?)
                     .await?
                     .into())
             }
@@ -5935,10 +5871,7 @@ impl<'a> DynamicLabelsApi<'a> {
                     client: self.client,
                 };
                 Ok(api
-                    .update_label(
-                        id,
-                        &crate::v2_8_0::types::LabelEntity::try_from(body.clone())?,
-                    )
+                    .update_label(id, &crate::v2_8_0::types::LabelEntity::try_from(body)?)
                     .await?
                     .into())
             }
@@ -5953,10 +5886,12 @@ pub struct DynamicOutputPortsApi<'a> {
 #[allow(clippy::too_many_arguments, clippy::vec_init_then_push)]
 impl<'a> DynamicOutputPortsApi<'a> {
     /// Clears bulletins for an output port
+    ///
+    /// *Supported in NiFi: 2.7.2, 2.8.0*
     pub async fn clear_bulletins_3(
         &self,
         id: &str,
-        body: &types::ClearBulletinsRequestEntity,
+        body: types::ClearBulletinsRequestEntity,
     ) -> Result<types::ClearBulletinsResultEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => Err(NifiError::UnsupportedEndpoint {
@@ -5970,7 +5905,7 @@ impl<'a> DynamicOutputPortsApi<'a> {
                 };
                 Ok(api
                     .clear_bulletins_3(
-                        &crate::v2_7_2::types::ClearBulletinsRequestEntity::try_from(body.clone())?,
+                        &crate::v2_7_2::types::ClearBulletinsRequestEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -5982,7 +5917,7 @@ impl<'a> DynamicOutputPortsApi<'a> {
                 };
                 Ok(api
                     .clear_bulletins_3(
-                        &crate::v2_8_0::types::ClearBulletinsRequestEntity::try_from(body.clone())?,
+                        &crate::v2_8_0::types::ClearBulletinsRequestEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -6054,7 +5989,7 @@ impl<'a> DynamicOutputPortsApi<'a> {
     pub async fn update_output_port(
         &self,
         id: &str,
-        body: &types::PortEntity,
+        body: types::PortEntity,
     ) -> Result<types::PortEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -6062,10 +5997,7 @@ impl<'a> DynamicOutputPortsApi<'a> {
                     client: self.client,
                 };
                 Ok(api
-                    .update_output_port(
-                        id,
-                        &crate::v2_6_0::types::PortEntity::try_from(body.clone())?,
-                    )
+                    .update_output_port(id, &crate::v2_6_0::types::PortEntity::try_from(body)?)
                     .await?
                     .into())
             }
@@ -6074,10 +6006,7 @@ impl<'a> DynamicOutputPortsApi<'a> {
                     client: self.client,
                 };
                 Ok(api
-                    .update_output_port(
-                        id,
-                        &crate::v2_7_2::types::PortEntity::try_from(body.clone())?,
-                    )
+                    .update_output_port(id, &crate::v2_7_2::types::PortEntity::try_from(body)?)
                     .await?
                     .into())
             }
@@ -6086,10 +6015,7 @@ impl<'a> DynamicOutputPortsApi<'a> {
                     client: self.client,
                 };
                 Ok(api
-                    .update_output_port(
-                        id,
-                        &crate::v2_8_0::types::PortEntity::try_from(body.clone())?,
-                    )
+                    .update_output_port(id, &crate::v2_8_0::types::PortEntity::try_from(body)?)
                     .await?
                     .into())
             }
@@ -6099,7 +6025,7 @@ impl<'a> DynamicOutputPortsApi<'a> {
     pub async fn update_run_status_3(
         &self,
         id: &str,
-        body: &types::PortRunStatusEntity,
+        body: types::PortRunStatusEntity,
     ) -> Result<types::ProcessorEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -6109,7 +6035,7 @@ impl<'a> DynamicOutputPortsApi<'a> {
                 };
                 Ok(api
                     .update_run_status_3(&crate::v2_6_0::types::PortRunStatusEntity::try_from(
-                        body.clone(),
+                        body,
                     )?)
                     .await?
                     .into())
@@ -6121,7 +6047,7 @@ impl<'a> DynamicOutputPortsApi<'a> {
                 };
                 Ok(api
                     .update_run_status_3(&crate::v2_7_2::types::PortRunStatusEntity::try_from(
-                        body.clone(),
+                        body,
                     )?)
                     .await?
                     .into())
@@ -6133,7 +6059,7 @@ impl<'a> DynamicOutputPortsApi<'a> {
                 };
                 Ok(api
                     .update_run_status_3(&crate::v2_8_0::types::PortRunStatusEntity::try_from(
-                        body.clone(),
+                        body,
                     )?)
                     .await?
                     .into())
@@ -6182,7 +6108,7 @@ impl<'a> DynamicParameterContextsApi<'a> {
     /// Create a Parameter Context
     pub async fn create_parameter_context(
         &self,
-        body: &types::ParameterContextEntity,
+        body: types::ParameterContextEntity,
     ) -> Result<types::ParameterContextEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -6191,7 +6117,7 @@ impl<'a> DynamicParameterContextsApi<'a> {
                 };
                 Ok(api
                     .create_parameter_context(
-                        &crate::v2_6_0::types::ParameterContextEntity::try_from(body.clone())?,
+                        &crate::v2_6_0::types::ParameterContextEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -6202,7 +6128,7 @@ impl<'a> DynamicParameterContextsApi<'a> {
                 };
                 Ok(api
                     .create_parameter_context(
-                        &crate::v2_7_2::types::ParameterContextEntity::try_from(body.clone())?,
+                        &crate::v2_7_2::types::ParameterContextEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -6213,7 +6139,7 @@ impl<'a> DynamicParameterContextsApi<'a> {
                 };
                 Ok(api
                     .create_parameter_context(
-                        &crate::v2_8_0::types::ParameterContextEntity::try_from(body.clone())?,
+                        &crate::v2_8_0::types::ParameterContextEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -6561,7 +6487,7 @@ impl<'a> DynamicParameterContextsApi<'a> {
     pub async fn submit_parameter_context_update(
         &self,
         context_id: &str,
-        body: &types::ParameterContextEntity,
+        body: types::ParameterContextEntity,
     ) -> Result<types::ParameterContextUpdateRequestEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -6572,7 +6498,7 @@ impl<'a> DynamicParameterContextsApi<'a> {
                     };
                 Ok(api
                     .submit_parameter_context_update(
-                        &crate::v2_6_0::types::ParameterContextEntity::try_from(body.clone())?,
+                        &crate::v2_6_0::types::ParameterContextEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -6585,7 +6511,7 @@ impl<'a> DynamicParameterContextsApi<'a> {
                     };
                 Ok(api
                     .submit_parameter_context_update(
-                        &crate::v2_7_2::types::ParameterContextEntity::try_from(body.clone())?,
+                        &crate::v2_7_2::types::ParameterContextEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -6598,7 +6524,7 @@ impl<'a> DynamicParameterContextsApi<'a> {
                     };
                 Ok(api
                     .submit_parameter_context_update(
-                        &crate::v2_8_0::types::ParameterContextEntity::try_from(body.clone())?,
+                        &crate::v2_8_0::types::ParameterContextEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -6609,7 +6535,7 @@ impl<'a> DynamicParameterContextsApi<'a> {
     pub async fn submit_validation_request(
         &self,
         context_id: &str,
-        body: &types::ParameterContextValidationRequestEntity,
+        body: types::ParameterContextValidationRequestEntity,
     ) -> Result<types::ParameterContextValidationRequestEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -6621,7 +6547,7 @@ impl<'a> DynamicParameterContextsApi<'a> {
                 Ok(api
                     .submit_validation_request(
                         &crate::v2_6_0::types::ParameterContextValidationRequestEntity::try_from(
-                            body.clone(),
+                            body,
                         )?,
                     )
                     .await?
@@ -6636,7 +6562,7 @@ impl<'a> DynamicParameterContextsApi<'a> {
                 Ok(api
                     .submit_validation_request(
                         &crate::v2_7_2::types::ParameterContextValidationRequestEntity::try_from(
-                            body.clone(),
+                            body,
                         )?,
                     )
                     .await?
@@ -6651,7 +6577,7 @@ impl<'a> DynamicParameterContextsApi<'a> {
                 Ok(api
                     .submit_validation_request(
                         &crate::v2_8_0::types::ParameterContextValidationRequestEntity::try_from(
-                            body.clone(),
+                            body,
                         )?,
                     )
                     .await?
@@ -6663,7 +6589,7 @@ impl<'a> DynamicParameterContextsApi<'a> {
     pub async fn update_parameter_context(
         &self,
         id: &str,
-        body: &types::ParameterContextEntity,
+        body: types::ParameterContextEntity,
     ) -> Result<types::ParameterContextEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -6673,7 +6599,7 @@ impl<'a> DynamicParameterContextsApi<'a> {
                 Ok(api
                     .update_parameter_context(
                         id,
-                        &crate::v2_6_0::types::ParameterContextEntity::try_from(body.clone())?,
+                        &crate::v2_6_0::types::ParameterContextEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -6685,7 +6611,7 @@ impl<'a> DynamicParameterContextsApi<'a> {
                 Ok(api
                     .update_parameter_context(
                         id,
-                        &crate::v2_7_2::types::ParameterContextEntity::try_from(body.clone())?,
+                        &crate::v2_7_2::types::ParameterContextEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -6697,7 +6623,7 @@ impl<'a> DynamicParameterContextsApi<'a> {
                 Ok(api
                     .update_parameter_context(
                         id,
-                        &crate::v2_8_0::types::ParameterContextEntity::try_from(body.clone())?,
+                        &crate::v2_8_0::types::ParameterContextEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -6716,7 +6642,7 @@ impl<'a> DynamicParameterProvidersApi<'a> {
     pub async fn analyze_configuration_1(
         &self,
         id: &str,
-        body: &types::ConfigurationAnalysisEntity,
+        body: types::ConfigurationAnalysisEntity,
     ) -> Result<types::ConfigurationAnalysisDto, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -6726,7 +6652,7 @@ impl<'a> DynamicParameterProvidersApi<'a> {
                 };
                 Ok(api
                     .analyze_configuration_1(
-                        &crate::v2_6_0::types::ConfigurationAnalysisEntity::try_from(body.clone())?,
+                        &crate::v2_6_0::types::ConfigurationAnalysisEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -6738,7 +6664,7 @@ impl<'a> DynamicParameterProvidersApi<'a> {
                 };
                 Ok(api
                     .analyze_configuration_1(
-                        &crate::v2_7_2::types::ConfigurationAnalysisEntity::try_from(body.clone())?,
+                        &crate::v2_7_2::types::ConfigurationAnalysisEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -6750,7 +6676,7 @@ impl<'a> DynamicParameterProvidersApi<'a> {
                 };
                 Ok(api
                     .analyze_configuration_1(
-                        &crate::v2_8_0::types::ConfigurationAnalysisEntity::try_from(body.clone())?,
+                        &crate::v2_8_0::types::ConfigurationAnalysisEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -6758,10 +6684,12 @@ impl<'a> DynamicParameterProvidersApi<'a> {
         }
     }
     /// Clears bulletins for a parameter provider
+    ///
+    /// *Supported in NiFi: 2.7.2, 2.8.0*
     pub async fn clear_bulletins_4(
         &self,
         id: &str,
-        body: &types::ClearBulletinsRequestEntity,
+        body: types::ClearBulletinsRequestEntity,
     ) -> Result<types::ClearBulletinsResultEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => Err(NifiError::UnsupportedEndpoint {
@@ -6775,7 +6703,7 @@ impl<'a> DynamicParameterProvidersApi<'a> {
                 };
                 Ok(api
                     .clear_bulletins_4(
-                        &crate::v2_7_2::types::ClearBulletinsRequestEntity::try_from(body.clone())?,
+                        &crate::v2_7_2::types::ClearBulletinsRequestEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -6787,7 +6715,7 @@ impl<'a> DynamicParameterProvidersApi<'a> {
                 };
                 Ok(api
                     .clear_bulletins_4(
-                        &crate::v2_8_0::types::ClearBulletinsRequestEntity::try_from(body.clone())?,
+                        &crate::v2_8_0::types::ClearBulletinsRequestEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -6798,7 +6726,7 @@ impl<'a> DynamicParameterProvidersApi<'a> {
     pub async fn clear_state_2(
         &self,
         id: &str,
-        body: &types::ComponentStateEntity,
+        body: types::ComponentStateEntity,
     ) -> Result<types::ComponentStateDto, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -6807,9 +6735,7 @@ impl<'a> DynamicParameterProvidersApi<'a> {
                     id,
                 };
                 Ok(api
-                    .clear_state_2(&crate::v2_6_0::types::ComponentStateEntity::try_from(
-                        body.clone(),
-                    )?)
+                    .clear_state_2(&crate::v2_6_0::types::ComponentStateEntity::try_from(body)?)
                     .await?
                     .into())
             }
@@ -6819,9 +6745,7 @@ impl<'a> DynamicParameterProvidersApi<'a> {
                     id,
                 };
                 Ok(api
-                    .clear_state_2(&crate::v2_7_2::types::ComponentStateEntity::try_from(
-                        body.clone(),
-                    )?)
+                    .clear_state_2(&crate::v2_7_2::types::ComponentStateEntity::try_from(body)?)
                     .await?
                     .into())
             }
@@ -6831,9 +6755,7 @@ impl<'a> DynamicParameterProvidersApi<'a> {
                     id,
                 };
                 Ok(api
-                    .clear_state_2(&crate::v2_8_0::types::ComponentStateEntity::try_from(
-                        body.clone(),
-                    )?)
+                    .clear_state_2(&crate::v2_8_0::types::ComponentStateEntity::try_from(body)?)
                     .await?
                     .into())
             }
@@ -6913,7 +6835,7 @@ impl<'a> DynamicParameterProvidersApi<'a> {
     pub async fn fetch_parameters(
         &self,
         id: &str,
-        body: &types::ParameterProviderParameterFetchEntity,
+        body: types::ParameterProviderParameterFetchEntity,
     ) -> Result<types::ParameterProviderEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -6924,7 +6846,7 @@ impl<'a> DynamicParameterProvidersApi<'a> {
                 Ok(api
                     .fetch_parameters(
                         &crate::v2_6_0::types::ParameterProviderParameterFetchEntity::try_from(
-                            body.clone(),
+                            body,
                         )?,
                     )
                     .await?
@@ -6938,7 +6860,7 @@ impl<'a> DynamicParameterProvidersApi<'a> {
                 Ok(api
                     .fetch_parameters(
                         &crate::v2_7_2::types::ParameterProviderParameterFetchEntity::try_from(
-                            body.clone(),
+                            body,
                         )?,
                     )
                     .await?
@@ -6952,7 +6874,7 @@ impl<'a> DynamicParameterProvidersApi<'a> {
                 Ok(api
                     .fetch_parameters(
                         &crate::v2_8_0::types::ParameterProviderParameterFetchEntity::try_from(
-                            body.clone(),
+                            body,
                         )?,
                     )
                     .await?
@@ -7200,7 +7122,7 @@ impl<'a> DynamicParameterProvidersApi<'a> {
     pub async fn submit_apply_parameters(
         &self,
         provider_id: &str,
-        body: &types::ParameterProviderParameterApplicationEntity,
+        body: types::ParameterProviderParameterApplicationEntity,
     ) -> Result<types::ParameterProviderApplyParametersRequestDto, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -7212,7 +7134,7 @@ impl<'a> DynamicParameterProvidersApi<'a> {
                     api
                         .submit_apply_parameters(
                             &crate::v2_6_0::types::ParameterProviderParameterApplicationEntity::try_from(
-                                body.clone(),
+                                body,
                             )?,
                         )
                         .await?
@@ -7228,7 +7150,7 @@ impl<'a> DynamicParameterProvidersApi<'a> {
                     api
                         .submit_apply_parameters(
                             &crate::v2_7_2::types::ParameterProviderParameterApplicationEntity::try_from(
-                                body.clone(),
+                                body,
                             )?,
                         )
                         .await?
@@ -7244,7 +7166,7 @@ impl<'a> DynamicParameterProvidersApi<'a> {
                     api
                         .submit_apply_parameters(
                             &crate::v2_8_0::types::ParameterProviderParameterApplicationEntity::try_from(
-                                body.clone(),
+                                body,
                             )?,
                         )
                         .await?
@@ -7257,7 +7179,7 @@ impl<'a> DynamicParameterProvidersApi<'a> {
     pub async fn submit_config_verification_request_1(
         &self,
         id: &str,
-        body: &types::VerifyConfigRequestEntity,
+        body: types::VerifyConfigRequestEntity,
     ) -> Result<types::VerifyConfigRequestDto, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -7267,7 +7189,7 @@ impl<'a> DynamicParameterProvidersApi<'a> {
                 };
                 Ok(api
                     .submit_config_verification_request_1(
-                        &crate::v2_6_0::types::VerifyConfigRequestEntity::try_from(body.clone())?,
+                        &crate::v2_6_0::types::VerifyConfigRequestEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -7279,7 +7201,7 @@ impl<'a> DynamicParameterProvidersApi<'a> {
                 };
                 Ok(api
                     .submit_config_verification_request_1(
-                        &crate::v2_7_2::types::VerifyConfigRequestEntity::try_from(body.clone())?,
+                        &crate::v2_7_2::types::VerifyConfigRequestEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -7291,7 +7213,7 @@ impl<'a> DynamicParameterProvidersApi<'a> {
                 };
                 Ok(api
                     .submit_config_verification_request_1(
-                        &crate::v2_8_0::types::VerifyConfigRequestEntity::try_from(body.clone())?,
+                        &crate::v2_8_0::types::VerifyConfigRequestEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -7302,7 +7224,7 @@ impl<'a> DynamicParameterProvidersApi<'a> {
     pub async fn update_parameter_provider(
         &self,
         id: &str,
-        body: &types::ParameterProviderEntity,
+        body: types::ParameterProviderEntity,
     ) -> Result<types::ParameterProviderEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -7312,7 +7234,7 @@ impl<'a> DynamicParameterProvidersApi<'a> {
                 Ok(api
                     .update_parameter_provider(
                         id,
-                        &crate::v2_6_0::types::ParameterProviderEntity::try_from(body.clone())?,
+                        &crate::v2_6_0::types::ParameterProviderEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -7324,7 +7246,7 @@ impl<'a> DynamicParameterProvidersApi<'a> {
                 Ok(api
                     .update_parameter_provider(
                         id,
-                        &crate::v2_7_2::types::ParameterProviderEntity::try_from(body.clone())?,
+                        &crate::v2_7_2::types::ParameterProviderEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -7336,7 +7258,7 @@ impl<'a> DynamicParameterProvidersApi<'a> {
                 Ok(api
                     .update_parameter_provider(
                         id,
-                        &crate::v2_8_0::types::ParameterProviderEntity::try_from(body.clone())?,
+                        &crate::v2_8_0::types::ParameterProviderEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -7354,7 +7276,7 @@ impl<'a> DynamicPoliciesApi<'a> {
     /// Creates an access policy
     pub async fn create_access_policy(
         &self,
-        body: &types::AccessPolicyEntity,
+        body: types::AccessPolicyEntity,
     ) -> Result<types::AccessPolicyEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -7363,7 +7285,7 @@ impl<'a> DynamicPoliciesApi<'a> {
                 };
                 Ok(api
                     .create_access_policy(&crate::v2_6_0::types::AccessPolicyEntity::try_from(
-                        body.clone(),
+                        body,
                     )?)
                     .await?
                     .into())
@@ -7374,7 +7296,7 @@ impl<'a> DynamicPoliciesApi<'a> {
                 };
                 Ok(api
                     .create_access_policy(&crate::v2_7_2::types::AccessPolicyEntity::try_from(
-                        body.clone(),
+                        body,
                     )?)
                     .await?
                     .into())
@@ -7385,7 +7307,7 @@ impl<'a> DynamicPoliciesApi<'a> {
                 };
                 Ok(api
                     .create_access_policy(&crate::v2_8_0::types::AccessPolicyEntity::try_from(
-                        body.clone(),
+                        body,
                     )?)
                     .await?
                     .into())
@@ -7496,7 +7418,7 @@ impl<'a> DynamicPoliciesApi<'a> {
     pub async fn update_access_policy(
         &self,
         id: &str,
-        body: &types::AccessPolicyEntity,
+        body: types::AccessPolicyEntity,
     ) -> Result<types::AccessPolicyEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -7506,7 +7428,7 @@ impl<'a> DynamicPoliciesApi<'a> {
                 Ok(api
                     .update_access_policy(
                         id,
-                        &crate::v2_6_0::types::AccessPolicyEntity::try_from(body.clone())?,
+                        &crate::v2_6_0::types::AccessPolicyEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -7518,7 +7440,7 @@ impl<'a> DynamicPoliciesApi<'a> {
                 Ok(api
                     .update_access_policy(
                         id,
-                        &crate::v2_7_2::types::AccessPolicyEntity::try_from(body.clone())?,
+                        &crate::v2_7_2::types::AccessPolicyEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -7530,7 +7452,7 @@ impl<'a> DynamicPoliciesApi<'a> {
                 Ok(api
                     .update_access_policy(
                         id,
-                        &crate::v2_8_0::types::AccessPolicyEntity::try_from(body.clone())?,
+                        &crate::v2_8_0::types::AccessPolicyEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -7549,7 +7471,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
     pub async fn copy(
         &self,
         id: &str,
-        body: &types::CopyRequestEntity,
+        body: types::CopyRequestEntity,
     ) -> Result<types::CopyResponseEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -7558,9 +7480,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                     id,
                 };
                 Ok(api
-                    .copy(&crate::v2_6_0::types::CopyRequestEntity::try_from(
-                        body.clone(),
-                    )?)
+                    .copy(&crate::v2_6_0::types::CopyRequestEntity::try_from(body)?)
                     .await?
                     .into())
             }
@@ -7570,9 +7490,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                     id,
                 };
                 Ok(api
-                    .copy(&crate::v2_7_2::types::CopyRequestEntity::try_from(
-                        body.clone(),
-                    )?)
+                    .copy(&crate::v2_7_2::types::CopyRequestEntity::try_from(body)?)
                     .await?
                     .into())
             }
@@ -7582,9 +7500,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                     id,
                 };
                 Ok(api
-                    .copy(&crate::v2_8_0::types::CopyRequestEntity::try_from(
-                        body.clone(),
-                    )?)
+                    .copy(&crate::v2_8_0::types::CopyRequestEntity::try_from(body)?)
                     .await?
                     .into())
             }
@@ -7594,7 +7510,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
     pub async fn copy_snippet(
         &self,
         id: &str,
-        body: &types::CopySnippetRequestEntity,
+        body: types::CopySnippetRequestEntity,
     ) -> Result<types::FlowDto, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -7604,7 +7520,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                 };
                 Ok(api
                     .copy_snippet(&crate::v2_6_0::types::CopySnippetRequestEntity::try_from(
-                        body.clone(),
+                        body,
                     )?)
                     .await?
                     .into())
@@ -7616,7 +7532,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                 };
                 Ok(api
                     .copy_snippet(&crate::v2_7_2::types::CopySnippetRequestEntity::try_from(
-                        body.clone(),
+                        body,
                     )?)
                     .await?
                     .into())
@@ -7628,7 +7544,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                 };
                 Ok(api
                     .copy_snippet(&crate::v2_8_0::types::CopySnippetRequestEntity::try_from(
-                        body.clone(),
+                        body,
                     )?)
                     .await?
                     .into())
@@ -7639,7 +7555,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
     pub async fn create_connection(
         &self,
         id: &str,
-        body: &types::ConnectionEntity,
+        body: types::ConnectionEntity,
     ) -> Result<types::ConnectionEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -7648,9 +7564,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                     id,
                 };
                 Ok(api
-                    .create_connection(&crate::v2_6_0::types::ConnectionEntity::try_from(
-                        body.clone(),
-                    )?)
+                    .create_connection(&crate::v2_6_0::types::ConnectionEntity::try_from(body)?)
                     .await?
                     .into())
             }
@@ -7660,9 +7574,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                     id,
                 };
                 Ok(api
-                    .create_connection(&crate::v2_7_2::types::ConnectionEntity::try_from(
-                        body.clone(),
-                    )?)
+                    .create_connection(&crate::v2_7_2::types::ConnectionEntity::try_from(body)?)
                     .await?
                     .into())
             }
@@ -7672,9 +7584,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                     id,
                 };
                 Ok(api
-                    .create_connection(&crate::v2_8_0::types::ConnectionEntity::try_from(
-                        body.clone(),
-                    )?)
+                    .create_connection(&crate::v2_8_0::types::ConnectionEntity::try_from(body)?)
                     .await?
                     .into())
             }
@@ -7684,7 +7594,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
     pub async fn create_controller_service_1(
         &self,
         id: &str,
-        body: &types::ControllerServiceEntity,
+        body: types::ControllerServiceEntity,
     ) -> Result<types::ControllerServiceEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -7694,7 +7604,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                 };
                 Ok(api
                     .create_controller_service_1(
-                        &crate::v2_6_0::types::ControllerServiceEntity::try_from(body.clone())?,
+                        &crate::v2_6_0::types::ControllerServiceEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -7706,7 +7616,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                 };
                 Ok(api
                     .create_controller_service_1(
-                        &crate::v2_7_2::types::ControllerServiceEntity::try_from(body.clone())?,
+                        &crate::v2_7_2::types::ControllerServiceEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -7718,7 +7628,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                 };
                 Ok(api
                     .create_controller_service_1(
-                        &crate::v2_8_0::types::ControllerServiceEntity::try_from(body.clone())?,
+                        &crate::v2_8_0::types::ControllerServiceEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -7758,7 +7668,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
     pub async fn create_funnel(
         &self,
         id: &str,
-        body: &types::FunnelEntity,
+        body: types::FunnelEntity,
     ) -> Result<types::FunnelEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -7767,7 +7677,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                     id,
                 };
                 Ok(api
-                    .create_funnel(&crate::v2_6_0::types::FunnelEntity::try_from(body.clone())?)
+                    .create_funnel(&crate::v2_6_0::types::FunnelEntity::try_from(body)?)
                     .await?
                     .into())
             }
@@ -7777,7 +7687,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                     id,
                 };
                 Ok(api
-                    .create_funnel(&crate::v2_7_2::types::FunnelEntity::try_from(body.clone())?)
+                    .create_funnel(&crate::v2_7_2::types::FunnelEntity::try_from(body)?)
                     .await?
                     .into())
             }
@@ -7787,7 +7697,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                     id,
                 };
                 Ok(api
-                    .create_funnel(&crate::v2_8_0::types::FunnelEntity::try_from(body.clone())?)
+                    .create_funnel(&crate::v2_8_0::types::FunnelEntity::try_from(body)?)
                     .await?
                     .into())
             }
@@ -7797,7 +7707,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
     pub async fn create_input_port(
         &self,
         id: &str,
-        body: &types::PortEntity,
+        body: types::PortEntity,
     ) -> Result<types::PortEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -7806,7 +7716,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                     id,
                 };
                 Ok(api
-                    .create_input_port(&crate::v2_6_0::types::PortEntity::try_from(body.clone())?)
+                    .create_input_port(&crate::v2_6_0::types::PortEntity::try_from(body)?)
                     .await?
                     .into())
             }
@@ -7816,7 +7726,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                     id,
                 };
                 Ok(api
-                    .create_input_port(&crate::v2_7_2::types::PortEntity::try_from(body.clone())?)
+                    .create_input_port(&crate::v2_7_2::types::PortEntity::try_from(body)?)
                     .await?
                     .into())
             }
@@ -7826,7 +7736,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                     id,
                 };
                 Ok(api
-                    .create_input_port(&crate::v2_8_0::types::PortEntity::try_from(body.clone())?)
+                    .create_input_port(&crate::v2_8_0::types::PortEntity::try_from(body)?)
                     .await?
                     .into())
             }
@@ -7836,7 +7746,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
     pub async fn create_label(
         &self,
         id: &str,
-        body: &types::LabelEntity,
+        body: types::LabelEntity,
     ) -> Result<types::LabelEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -7845,7 +7755,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                     id,
                 };
                 Ok(api
-                    .create_label(&crate::v2_6_0::types::LabelEntity::try_from(body.clone())?)
+                    .create_label(&crate::v2_6_0::types::LabelEntity::try_from(body)?)
                     .await?
                     .into())
             }
@@ -7855,7 +7765,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                     id,
                 };
                 Ok(api
-                    .create_label(&crate::v2_7_2::types::LabelEntity::try_from(body.clone())?)
+                    .create_label(&crate::v2_7_2::types::LabelEntity::try_from(body)?)
                     .await?
                     .into())
             }
@@ -7865,7 +7775,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                     id,
                 };
                 Ok(api
-                    .create_label(&crate::v2_8_0::types::LabelEntity::try_from(body.clone())?)
+                    .create_label(&crate::v2_8_0::types::LabelEntity::try_from(body)?)
                     .await?
                     .into())
             }
@@ -7875,7 +7785,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
     pub async fn create_output_port(
         &self,
         id: &str,
-        body: &types::PortEntity,
+        body: types::PortEntity,
     ) -> Result<types::PortEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -7884,7 +7794,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                     id,
                 };
                 Ok(api
-                    .create_output_port(&crate::v2_6_0::types::PortEntity::try_from(body.clone())?)
+                    .create_output_port(&crate::v2_6_0::types::PortEntity::try_from(body)?)
                     .await?
                     .into())
             }
@@ -7894,7 +7804,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                     id,
                 };
                 Ok(api
-                    .create_output_port(&crate::v2_7_2::types::PortEntity::try_from(body.clone())?)
+                    .create_output_port(&crate::v2_7_2::types::PortEntity::try_from(body)?)
                     .await?
                     .into())
             }
@@ -7904,7 +7814,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                     id,
                 };
                 Ok(api
-                    .create_output_port(&crate::v2_8_0::types::PortEntity::try_from(body.clone())?)
+                    .create_output_port(&crate::v2_8_0::types::PortEntity::try_from(body)?)
                     .await?
                     .into())
             }
@@ -7915,7 +7825,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
         &self,
         id: &str,
         parameter_context_handling_strategy: Option<types::ParameterContextHandlingStrategy>,
-        body: &types::ProcessGroupEntity,
+        body: types::ProcessGroupEntity,
     ) -> Result<types::ProcessGroupEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -7928,7 +7838,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                         parameter_context_handling_strategy
                             .map(crate::v2_6_0::types::ParameterContextHandlingStrategy::try_from)
                             .transpose()?,
-                        &crate::v2_6_0::types::ProcessGroupEntity::try_from(body.clone())?,
+                        &crate::v2_6_0::types::ProcessGroupEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -7943,7 +7853,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                         parameter_context_handling_strategy
                             .map(crate::v2_7_2::types::ParameterContextHandlingStrategy::try_from)
                             .transpose()?,
-                        &crate::v2_7_2::types::ProcessGroupEntity::try_from(body.clone())?,
+                        &crate::v2_7_2::types::ProcessGroupEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -7958,7 +7868,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                         parameter_context_handling_strategy
                             .map(crate::v2_8_0::types::ParameterContextHandlingStrategy::try_from)
                             .transpose()?,
-                        &crate::v2_8_0::types::ProcessGroupEntity::try_from(body.clone())?,
+                        &crate::v2_8_0::types::ProcessGroupEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -7969,7 +7879,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
     pub async fn create_processor(
         &self,
         id: &str,
-        body: &types::ProcessorEntity,
+        body: types::ProcessorEntity,
     ) -> Result<types::ProcessorEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -7978,9 +7888,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                     id,
                 };
                 Ok(api
-                    .create_processor(&crate::v2_6_0::types::ProcessorEntity::try_from(
-                        body.clone(),
-                    )?)
+                    .create_processor(&crate::v2_6_0::types::ProcessorEntity::try_from(body)?)
                     .await?
                     .into())
             }
@@ -7990,9 +7898,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                     id,
                 };
                 Ok(api
-                    .create_processor(&crate::v2_7_2::types::ProcessorEntity::try_from(
-                        body.clone(),
-                    )?)
+                    .create_processor(&crate::v2_7_2::types::ProcessorEntity::try_from(body)?)
                     .await?
                     .into())
             }
@@ -8002,9 +7908,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                     id,
                 };
                 Ok(api
-                    .create_processor(&crate::v2_8_0::types::ProcessorEntity::try_from(
-                        body.clone(),
-                    )?)
+                    .create_processor(&crate::v2_8_0::types::ProcessorEntity::try_from(body)?)
                     .await?
                     .into())
             }
@@ -8014,7 +7918,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
     pub async fn create_remote_process_group(
         &self,
         id: &str,
-        body: &types::RemoteProcessGroupEntity,
+        body: types::RemoteProcessGroupEntity,
     ) -> Result<types::RemoteProcessGroupEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -8024,7 +7928,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                 };
                 Ok(api
                     .create_remote_process_group(
-                        &crate::v2_6_0::types::RemoteProcessGroupEntity::try_from(body.clone())?,
+                        &crate::v2_6_0::types::RemoteProcessGroupEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -8036,7 +7940,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                 };
                 Ok(api
                     .create_remote_process_group(
-                        &crate::v2_7_2::types::RemoteProcessGroupEntity::try_from(body.clone())?,
+                        &crate::v2_7_2::types::RemoteProcessGroupEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -8048,7 +7952,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                 };
                 Ok(api
                     .create_remote_process_group(
-                        &crate::v2_8_0::types::RemoteProcessGroupEntity::try_from(body.clone())?,
+                        &crate::v2_8_0::types::RemoteProcessGroupEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -8463,7 +8367,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
     pub async fn import_process_group(
         &self,
         id: &str,
-        body: &types::ProcessGroupUploadEntity,
+        body: types::ProcessGroupUploadEntity,
     ) -> Result<types::ProcessGroupEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -8473,7 +8377,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                 };
                 Ok(api
                     .import_process_group(
-                        &crate::v2_6_0::types::ProcessGroupUploadEntity::try_from(body.clone())?,
+                        &crate::v2_6_0::types::ProcessGroupUploadEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -8485,7 +8389,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                 };
                 Ok(api
                     .import_process_group(
-                        &crate::v2_7_2::types::ProcessGroupUploadEntity::try_from(body.clone())?,
+                        &crate::v2_7_2::types::ProcessGroupUploadEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -8497,7 +8401,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                 };
                 Ok(api
                     .import_process_group(
-                        &crate::v2_8_0::types::ProcessGroupUploadEntity::try_from(body.clone())?,
+                        &crate::v2_8_0::types::ProcessGroupUploadEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -8508,7 +8412,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
     pub async fn initiate_replace_process_group(
         &self,
         id: &str,
-        body: &types::ProcessGroupImportEntity,
+        body: types::ProcessGroupImportEntity,
     ) -> Result<types::ProcessGroupReplaceRequestEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -8518,7 +8422,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                 };
                 Ok(api
                     .initiate_replace_process_group(
-                        &crate::v2_6_0::types::ProcessGroupImportEntity::try_from(body.clone())?,
+                        &crate::v2_6_0::types::ProcessGroupImportEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -8530,7 +8434,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                 };
                 Ok(api
                     .initiate_replace_process_group(
-                        &crate::v2_7_2::types::ProcessGroupImportEntity::try_from(body.clone())?,
+                        &crate::v2_7_2::types::ProcessGroupImportEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -8542,7 +8446,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                 };
                 Ok(api
                     .initiate_replace_process_group(
-                        &crate::v2_8_0::types::ProcessGroupImportEntity::try_from(body.clone())?,
+                        &crate::v2_8_0::types::ProcessGroupImportEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -8553,7 +8457,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
     pub async fn paste(
         &self,
         id: &str,
-        body: &types::PasteRequestEntity,
+        body: types::PasteRequestEntity,
     ) -> Result<types::PasteResponseEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -8562,9 +8466,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                     id,
                 };
                 Ok(api
-                    .paste(&crate::v2_6_0::types::PasteRequestEntity::try_from(
-                        body.clone(),
-                    )?)
+                    .paste(&crate::v2_6_0::types::PasteRequestEntity::try_from(body)?)
                     .await?
                     .into())
             }
@@ -8574,9 +8476,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                     id,
                 };
                 Ok(api
-                    .paste(&crate::v2_7_2::types::PasteRequestEntity::try_from(
-                        body.clone(),
-                    )?)
+                    .paste(&crate::v2_7_2::types::PasteRequestEntity::try_from(body)?)
                     .await?
                     .into())
             }
@@ -8586,9 +8486,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                     id,
                 };
                 Ok(api
-                    .paste(&crate::v2_8_0::types::PasteRequestEntity::try_from(
-                        body.clone(),
-                    )?)
+                    .paste(&crate::v2_8_0::types::PasteRequestEntity::try_from(body)?)
                     .await?
                     .into())
             }
@@ -8666,7 +8564,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
     pub async fn replace_process_group(
         &self,
         id: &str,
-        body: &types::ProcessGroupImportEntity,
+        body: types::ProcessGroupImportEntity,
     ) -> Result<types::ProcessGroupImportEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -8676,7 +8574,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                 };
                 Ok(api
                     .replace_process_group(
-                        &crate::v2_6_0::types::ProcessGroupImportEntity::try_from(body.clone())?,
+                        &crate::v2_6_0::types::ProcessGroupImportEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -8688,7 +8586,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                 };
                 Ok(api
                     .replace_process_group(
-                        &crate::v2_7_2::types::ProcessGroupImportEntity::try_from(body.clone())?,
+                        &crate::v2_7_2::types::ProcessGroupImportEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -8700,7 +8598,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                 };
                 Ok(api
                     .replace_process_group(
-                        &crate::v2_8_0::types::ProcessGroupImportEntity::try_from(body.clone())?,
+                        &crate::v2_8_0::types::ProcessGroupImportEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -8711,7 +8609,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
     pub async fn update_process_group(
         &self,
         id: &str,
-        body: &types::ProcessGroupEntity,
+        body: types::ProcessGroupEntity,
     ) -> Result<types::ProcessGroupEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -8721,7 +8619,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                 Ok(api
                     .update_process_group(
                         id,
-                        &crate::v2_6_0::types::ProcessGroupEntity::try_from(body.clone())?,
+                        &crate::v2_6_0::types::ProcessGroupEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -8733,7 +8631,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                 Ok(api
                     .update_process_group(
                         id,
-                        &crate::v2_7_2::types::ProcessGroupEntity::try_from(body.clone())?,
+                        &crate::v2_7_2::types::ProcessGroupEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -8745,7 +8643,7 @@ impl<'a> DynamicProcessGroupsApi<'a> {
                 Ok(api
                     .update_process_group(
                         id,
-                        &crate::v2_8_0::types::ProcessGroupEntity::try_from(body.clone())?,
+                        &crate::v2_8_0::types::ProcessGroupEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -8793,7 +8691,7 @@ impl<'a> DynamicProcessorsApi<'a> {
     pub async fn analyze_configuration_2(
         &self,
         id: &str,
-        body: &types::ConfigurationAnalysisEntity,
+        body: types::ConfigurationAnalysisEntity,
     ) -> Result<types::ConfigurationAnalysisDto, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -8803,7 +8701,7 @@ impl<'a> DynamicProcessorsApi<'a> {
                 };
                 Ok(api
                     .analyze_configuration_2(
-                        &crate::v2_6_0::types::ConfigurationAnalysisEntity::try_from(body.clone())?,
+                        &crate::v2_6_0::types::ConfigurationAnalysisEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -8815,7 +8713,7 @@ impl<'a> DynamicProcessorsApi<'a> {
                 };
                 Ok(api
                     .analyze_configuration_2(
-                        &crate::v2_7_2::types::ConfigurationAnalysisEntity::try_from(body.clone())?,
+                        &crate::v2_7_2::types::ConfigurationAnalysisEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -8827,7 +8725,7 @@ impl<'a> DynamicProcessorsApi<'a> {
                 };
                 Ok(api
                     .analyze_configuration_2(
-                        &crate::v2_8_0::types::ConfigurationAnalysisEntity::try_from(body.clone())?,
+                        &crate::v2_8_0::types::ConfigurationAnalysisEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -8835,10 +8733,12 @@ impl<'a> DynamicProcessorsApi<'a> {
         }
     }
     /// Clears bulletins for a processor
+    ///
+    /// *Supported in NiFi: 2.7.2, 2.8.0*
     pub async fn clear_bulletins_5(
         &self,
         id: &str,
-        body: &types::ClearBulletinsRequestEntity,
+        body: types::ClearBulletinsRequestEntity,
     ) -> Result<types::ClearBulletinsResultEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => Err(NifiError::UnsupportedEndpoint {
@@ -8852,7 +8752,7 @@ impl<'a> DynamicProcessorsApi<'a> {
                 };
                 Ok(api
                     .clear_bulletins_5(
-                        &crate::v2_7_2::types::ClearBulletinsRequestEntity::try_from(body.clone())?,
+                        &crate::v2_7_2::types::ClearBulletinsRequestEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -8864,7 +8764,7 @@ impl<'a> DynamicProcessorsApi<'a> {
                 };
                 Ok(api
                     .clear_bulletins_5(
-                        &crate::v2_8_0::types::ClearBulletinsRequestEntity::try_from(body.clone())?,
+                        &crate::v2_8_0::types::ClearBulletinsRequestEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -8875,7 +8775,7 @@ impl<'a> DynamicProcessorsApi<'a> {
     pub async fn clear_state_3(
         &self,
         id: &str,
-        body: &types::ComponentStateEntity,
+        body: types::ComponentStateEntity,
     ) -> Result<types::ComponentStateDto, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -8884,9 +8784,7 @@ impl<'a> DynamicProcessorsApi<'a> {
                     id,
                 };
                 Ok(api
-                    .clear_state_3(&crate::v2_6_0::types::ComponentStateEntity::try_from(
-                        body.clone(),
-                    )?)
+                    .clear_state_3(&crate::v2_6_0::types::ComponentStateEntity::try_from(body)?)
                     .await?
                     .into())
             }
@@ -8896,9 +8794,7 @@ impl<'a> DynamicProcessorsApi<'a> {
                     id,
                 };
                 Ok(api
-                    .clear_state_3(&crate::v2_7_2::types::ComponentStateEntity::try_from(
-                        body.clone(),
-                    )?)
+                    .clear_state_3(&crate::v2_7_2::types::ComponentStateEntity::try_from(body)?)
                     .await?
                     .into())
             }
@@ -8908,9 +8804,7 @@ impl<'a> DynamicProcessorsApi<'a> {
                     id,
                 };
                 Ok(api
-                    .clear_state_3(&crate::v2_8_0::types::ComponentStateEntity::try_from(
-                        body.clone(),
-                    )?)
+                    .clear_state_3(&crate::v2_8_0::types::ComponentStateEntity::try_from(body)?)
                     .await?
                     .into())
             }
@@ -9039,7 +8933,7 @@ impl<'a> DynamicProcessorsApi<'a> {
     /// Submits a query to retrieve the run status details of all processors that are in the given list of Processor IDs
     pub async fn get_processor_run_status_details(
         &self,
-        body: &types::RunStatusDetailsRequestEntity,
+        body: types::RunStatusDetailsRequestEntity,
     ) -> Result<types::ProcessorsRunStatusDetailsEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -9048,9 +8942,7 @@ impl<'a> DynamicProcessorsApi<'a> {
                 };
                 Ok(api
                     .get_processor_run_status_details(
-                        &crate::v2_6_0::types::RunStatusDetailsRequestEntity::try_from(
-                            body.clone(),
-                        )?,
+                        &crate::v2_6_0::types::RunStatusDetailsRequestEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -9061,9 +8953,7 @@ impl<'a> DynamicProcessorsApi<'a> {
                 };
                 Ok(api
                     .get_processor_run_status_details(
-                        &crate::v2_7_2::types::RunStatusDetailsRequestEntity::try_from(
-                            body.clone(),
-                        )?,
+                        &crate::v2_7_2::types::RunStatusDetailsRequestEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -9074,9 +8964,7 @@ impl<'a> DynamicProcessorsApi<'a> {
                 };
                 Ok(api
                     .get_processor_run_status_details(
-                        &crate::v2_8_0::types::RunStatusDetailsRequestEntity::try_from(
-                            body.clone(),
-                        )?,
+                        &crate::v2_8_0::types::RunStatusDetailsRequestEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -9184,7 +9072,7 @@ impl<'a> DynamicProcessorsApi<'a> {
     pub async fn submit_processor_verification_request(
         &self,
         id: &str,
-        body: &types::VerifyConfigRequestEntity,
+        body: types::VerifyConfigRequestEntity,
     ) -> Result<types::VerifyConfigRequestDto, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -9194,7 +9082,7 @@ impl<'a> DynamicProcessorsApi<'a> {
                 };
                 Ok(api
                     .submit_processor_verification_request(
-                        &crate::v2_6_0::types::VerifyConfigRequestEntity::try_from(body.clone())?,
+                        &crate::v2_6_0::types::VerifyConfigRequestEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -9206,7 +9094,7 @@ impl<'a> DynamicProcessorsApi<'a> {
                 };
                 Ok(api
                     .submit_processor_verification_request(
-                        &crate::v2_7_2::types::VerifyConfigRequestEntity::try_from(body.clone())?,
+                        &crate::v2_7_2::types::VerifyConfigRequestEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -9218,7 +9106,7 @@ impl<'a> DynamicProcessorsApi<'a> {
                 };
                 Ok(api
                     .submit_processor_verification_request(
-                        &crate::v2_8_0::types::VerifyConfigRequestEntity::try_from(body.clone())?,
+                        &crate::v2_8_0::types::VerifyConfigRequestEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -9255,7 +9143,7 @@ impl<'a> DynamicProcessorsApi<'a> {
     pub async fn update_processor(
         &self,
         id: &str,
-        body: &types::ProcessorEntity,
+        body: types::ProcessorEntity,
     ) -> Result<types::ProcessorEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -9263,10 +9151,7 @@ impl<'a> DynamicProcessorsApi<'a> {
                     client: self.client,
                 };
                 Ok(api
-                    .update_processor(
-                        id,
-                        &crate::v2_6_0::types::ProcessorEntity::try_from(body.clone())?,
-                    )
+                    .update_processor(id, &crate::v2_6_0::types::ProcessorEntity::try_from(body)?)
                     .await?
                     .into())
             }
@@ -9275,10 +9160,7 @@ impl<'a> DynamicProcessorsApi<'a> {
                     client: self.client,
                 };
                 Ok(api
-                    .update_processor(
-                        id,
-                        &crate::v2_7_2::types::ProcessorEntity::try_from(body.clone())?,
-                    )
+                    .update_processor(id, &crate::v2_7_2::types::ProcessorEntity::try_from(body)?)
                     .await?
                     .into())
             }
@@ -9287,10 +9169,7 @@ impl<'a> DynamicProcessorsApi<'a> {
                     client: self.client,
                 };
                 Ok(api
-                    .update_processor(
-                        id,
-                        &crate::v2_8_0::types::ProcessorEntity::try_from(body.clone())?,
-                    )
+                    .update_processor(id, &crate::v2_8_0::types::ProcessorEntity::try_from(body)?)
                     .await?
                     .into())
             }
@@ -9300,7 +9179,7 @@ impl<'a> DynamicProcessorsApi<'a> {
     pub async fn update_run_status_4(
         &self,
         id: &str,
-        body: &types::ProcessorRunStatusEntity,
+        body: types::ProcessorRunStatusEntity,
     ) -> Result<types::ProcessorEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -9310,7 +9189,7 @@ impl<'a> DynamicProcessorsApi<'a> {
                 };
                 Ok(api
                     .update_run_status_4(&crate::v2_6_0::types::ProcessorRunStatusEntity::try_from(
-                        body.clone(),
+                        body,
                     )?)
                     .await?
                     .into())
@@ -9322,7 +9201,7 @@ impl<'a> DynamicProcessorsApi<'a> {
                 };
                 Ok(api
                     .update_run_status_4(&crate::v2_7_2::types::ProcessorRunStatusEntity::try_from(
-                        body.clone(),
+                        body,
                     )?)
                     .await?
                     .into())
@@ -9334,7 +9213,7 @@ impl<'a> DynamicProcessorsApi<'a> {
                 };
                 Ok(api
                     .update_run_status_4(&crate::v2_8_0::types::ProcessorRunStatusEntity::try_from(
-                        body.clone(),
+                        body,
                     )?)
                     .await?
                     .into())
@@ -9494,7 +9373,7 @@ impl<'a> DynamicProvenanceApi<'a> {
     /// Submits a lineage query
     pub async fn submit_lineage_request(
         &self,
-        body: &types::LineageEntity,
+        body: types::LineageEntity,
     ) -> Result<types::LineageDto, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -9502,9 +9381,7 @@ impl<'a> DynamicProvenanceApi<'a> {
                     client: self.client,
                 };
                 Ok(api
-                    .submit_lineage_request(&crate::v2_6_0::types::LineageEntity::try_from(
-                        body.clone(),
-                    )?)
+                    .submit_lineage_request(&crate::v2_6_0::types::LineageEntity::try_from(body)?)
                     .await?
                     .into())
             }
@@ -9513,9 +9390,7 @@ impl<'a> DynamicProvenanceApi<'a> {
                     client: self.client,
                 };
                 Ok(api
-                    .submit_lineage_request(&crate::v2_7_2::types::LineageEntity::try_from(
-                        body.clone(),
-                    )?)
+                    .submit_lineage_request(&crate::v2_7_2::types::LineageEntity::try_from(body)?)
                     .await?
                     .into())
             }
@@ -9524,9 +9399,7 @@ impl<'a> DynamicProvenanceApi<'a> {
                     client: self.client,
                 };
                 Ok(api
-                    .submit_lineage_request(&crate::v2_8_0::types::LineageEntity::try_from(
-                        body.clone(),
-                    )?)
+                    .submit_lineage_request(&crate::v2_8_0::types::LineageEntity::try_from(body)?)
                     .await?
                     .into())
             }
@@ -9535,7 +9408,7 @@ impl<'a> DynamicProvenanceApi<'a> {
     /// Submits a provenance query
     pub async fn submit_provenance_request(
         &self,
-        body: &types::ProvenanceEntity,
+        body: types::ProvenanceEntity,
     ) -> Result<types::ProvenanceDto, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -9544,7 +9417,7 @@ impl<'a> DynamicProvenanceApi<'a> {
                 };
                 Ok(api
                     .submit_provenance_request(&crate::v2_6_0::types::ProvenanceEntity::try_from(
-                        body.clone(),
+                        body,
                     )?)
                     .await?
                     .into())
@@ -9555,7 +9428,7 @@ impl<'a> DynamicProvenanceApi<'a> {
                 };
                 Ok(api
                     .submit_provenance_request(&crate::v2_7_2::types::ProvenanceEntity::try_from(
-                        body.clone(),
+                        body,
                     )?)
                     .await?
                     .into())
@@ -9566,7 +9439,7 @@ impl<'a> DynamicProvenanceApi<'a> {
                 };
                 Ok(api
                     .submit_provenance_request(&crate::v2_8_0::types::ProvenanceEntity::try_from(
-                        body.clone(),
+                        body,
                     )?)
                     .await?
                     .into())
@@ -9707,7 +9580,7 @@ impl<'a> DynamicProvenanceEventsApi<'a> {
     /// Replays content from a provenance event
     pub async fn submit_replay(
         &self,
-        body: &types::SubmitReplayRequestEntity,
+        body: types::SubmitReplayRequestEntity,
     ) -> Result<types::ProvenanceEventDto, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -9716,7 +9589,7 @@ impl<'a> DynamicProvenanceEventsApi<'a> {
                 };
                 Ok(api
                     .submit_replay(&crate::v2_6_0::types::SubmitReplayRequestEntity::try_from(
-                        body.clone(),
+                        body,
                     )?)
                     .await?
                     .into())
@@ -9727,7 +9600,7 @@ impl<'a> DynamicProvenanceEventsApi<'a> {
                 };
                 Ok(api
                     .submit_replay(&crate::v2_7_2::types::SubmitReplayRequestEntity::try_from(
-                        body.clone(),
+                        body,
                     )?)
                     .await?
                     .into())
@@ -9738,7 +9611,7 @@ impl<'a> DynamicProvenanceEventsApi<'a> {
                 };
                 Ok(api
                     .submit_replay(&crate::v2_8_0::types::SubmitReplayRequestEntity::try_from(
-                        body.clone(),
+                        body,
                     )?)
                     .await?
                     .into())
@@ -9748,7 +9621,7 @@ impl<'a> DynamicProvenanceEventsApi<'a> {
     /// Replays content from a provenance event
     pub async fn submit_replay_latest_event(
         &self,
-        body: &types::ReplayLastEventRequestEntity,
+        body: types::ReplayLastEventRequestEntity,
     ) -> Result<types::ReplayLastEventResponseEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -9757,9 +9630,7 @@ impl<'a> DynamicProvenanceEventsApi<'a> {
                 };
                 Ok(api
                     .submit_replay_latest_event(
-                        &crate::v2_6_0::types::ReplayLastEventRequestEntity::try_from(
-                            body.clone(),
-                        )?,
+                        &crate::v2_6_0::types::ReplayLastEventRequestEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -9770,9 +9641,7 @@ impl<'a> DynamicProvenanceEventsApi<'a> {
                 };
                 Ok(api
                     .submit_replay_latest_event(
-                        &crate::v2_7_2::types::ReplayLastEventRequestEntity::try_from(
-                            body.clone(),
-                        )?,
+                        &crate::v2_7_2::types::ReplayLastEventRequestEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -9783,9 +9652,7 @@ impl<'a> DynamicProvenanceEventsApi<'a> {
                 };
                 Ok(api
                     .submit_replay_latest_event(
-                        &crate::v2_8_0::types::ReplayLastEventRequestEntity::try_from(
-                            body.clone(),
-                        )?,
+                        &crate::v2_8_0::types::ReplayLastEventRequestEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -9801,10 +9668,12 @@ pub struct DynamicRemoteProcessGroupsApi<'a> {
 #[allow(clippy::too_many_arguments, clippy::vec_init_then_push)]
 impl<'a> DynamicRemoteProcessGroupsApi<'a> {
     /// Clears bulletins for a remote process group
+    ///
+    /// *Supported in NiFi: 2.7.2, 2.8.0*
     pub async fn clear_bulletins_6(
         &self,
         id: &str,
-        body: &types::ClearBulletinsRequestEntity,
+        body: types::ClearBulletinsRequestEntity,
     ) -> Result<types::ClearBulletinsResultEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => Err(NifiError::UnsupportedEndpoint {
@@ -9819,7 +9688,7 @@ impl<'a> DynamicRemoteProcessGroupsApi<'a> {
                     };
                 Ok(api
                     .clear_bulletins_6(
-                        &crate::v2_7_2::types::ClearBulletinsRequestEntity::try_from(body.clone())?,
+                        &crate::v2_7_2::types::ClearBulletinsRequestEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -9832,7 +9701,7 @@ impl<'a> DynamicRemoteProcessGroupsApi<'a> {
                     };
                 Ok(api
                     .clear_bulletins_6(
-                        &crate::v2_8_0::types::ClearBulletinsRequestEntity::try_from(body.clone())?,
+                        &crate::v2_8_0::types::ClearBulletinsRequestEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -9948,7 +9817,7 @@ impl<'a> DynamicRemoteProcessGroupsApi<'a> {
     pub async fn update_remote_process_group(
         &self,
         id: &str,
-        body: &types::RemoteProcessGroupEntity,
+        body: types::RemoteProcessGroupEntity,
     ) -> Result<types::RemoteProcessGroupEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -9958,7 +9827,7 @@ impl<'a> DynamicRemoteProcessGroupsApi<'a> {
                 Ok(api
                     .update_remote_process_group(
                         id,
-                        &crate::v2_6_0::types::RemoteProcessGroupEntity::try_from(body.clone())?,
+                        &crate::v2_6_0::types::RemoteProcessGroupEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -9970,7 +9839,7 @@ impl<'a> DynamicRemoteProcessGroupsApi<'a> {
                 Ok(api
                     .update_remote_process_group(
                         id,
-                        &crate::v2_7_2::types::RemoteProcessGroupEntity::try_from(body.clone())?,
+                        &crate::v2_7_2::types::RemoteProcessGroupEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -9982,7 +9851,7 @@ impl<'a> DynamicRemoteProcessGroupsApi<'a> {
                 Ok(api
                     .update_remote_process_group(
                         id,
-                        &crate::v2_8_0::types::RemoteProcessGroupEntity::try_from(body.clone())?,
+                        &crate::v2_8_0::types::RemoteProcessGroupEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -9994,7 +9863,7 @@ impl<'a> DynamicRemoteProcessGroupsApi<'a> {
         &self,
         id: &str,
         port_id: &str,
-        body: &types::RemoteProcessGroupPortEntity,
+        body: types::RemoteProcessGroupPortEntity,
     ) -> Result<types::RemoteProcessGroupPortEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -10006,9 +9875,7 @@ impl<'a> DynamicRemoteProcessGroupsApi<'a> {
                 Ok(api
                     .update_remote_process_group_input_port(
                         port_id,
-                        &crate::v2_6_0::types::RemoteProcessGroupPortEntity::try_from(
-                            body.clone(),
-                        )?,
+                        &crate::v2_6_0::types::RemoteProcessGroupPortEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -10022,9 +9889,7 @@ impl<'a> DynamicRemoteProcessGroupsApi<'a> {
                 Ok(api
                     .update_remote_process_group_input_port(
                         port_id,
-                        &crate::v2_7_2::types::RemoteProcessGroupPortEntity::try_from(
-                            body.clone(),
-                        )?,
+                        &crate::v2_7_2::types::RemoteProcessGroupPortEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -10038,9 +9903,7 @@ impl<'a> DynamicRemoteProcessGroupsApi<'a> {
                 Ok(api
                     .update_remote_process_group_input_port(
                         port_id,
-                        &crate::v2_8_0::types::RemoteProcessGroupPortEntity::try_from(
-                            body.clone(),
-                        )?,
+                        &crate::v2_8_0::types::RemoteProcessGroupPortEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -10052,7 +9915,7 @@ impl<'a> DynamicRemoteProcessGroupsApi<'a> {
         &self,
         id: &str,
         port_id: &str,
-        body: &types::RemotePortRunStatusEntity,
+        body: types::RemotePortRunStatusEntity,
     ) -> Result<types::RemoteProcessGroupPortEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -10064,7 +9927,7 @@ impl<'a> DynamicRemoteProcessGroupsApi<'a> {
                 Ok(api
                     .update_remote_process_group_input_port_run_status(
                         port_id,
-                        &crate::v2_6_0::types::RemotePortRunStatusEntity::try_from(body.clone())?,
+                        &crate::v2_6_0::types::RemotePortRunStatusEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -10078,7 +9941,7 @@ impl<'a> DynamicRemoteProcessGroupsApi<'a> {
                 Ok(api
                     .update_remote_process_group_input_port_run_status(
                         port_id,
-                        &crate::v2_7_2::types::RemotePortRunStatusEntity::try_from(body.clone())?,
+                        &crate::v2_7_2::types::RemotePortRunStatusEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -10092,7 +9955,7 @@ impl<'a> DynamicRemoteProcessGroupsApi<'a> {
                 Ok(api
                     .update_remote_process_group_input_port_run_status(
                         port_id,
-                        &crate::v2_8_0::types::RemotePortRunStatusEntity::try_from(body.clone())?,
+                        &crate::v2_8_0::types::RemotePortRunStatusEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -10104,7 +9967,7 @@ impl<'a> DynamicRemoteProcessGroupsApi<'a> {
         &self,
         id: &str,
         port_id: &str,
-        body: &types::RemoteProcessGroupPortEntity,
+        body: types::RemoteProcessGroupPortEntity,
     ) -> Result<types::RemoteProcessGroupPortEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -10116,9 +9979,7 @@ impl<'a> DynamicRemoteProcessGroupsApi<'a> {
                 Ok(api
                     .update_remote_process_group_output_port(
                         port_id,
-                        &crate::v2_6_0::types::RemoteProcessGroupPortEntity::try_from(
-                            body.clone(),
-                        )?,
+                        &crate::v2_6_0::types::RemoteProcessGroupPortEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -10132,9 +9993,7 @@ impl<'a> DynamicRemoteProcessGroupsApi<'a> {
                 Ok(api
                     .update_remote_process_group_output_port(
                         port_id,
-                        &crate::v2_7_2::types::RemoteProcessGroupPortEntity::try_from(
-                            body.clone(),
-                        )?,
+                        &crate::v2_7_2::types::RemoteProcessGroupPortEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -10148,9 +10007,7 @@ impl<'a> DynamicRemoteProcessGroupsApi<'a> {
                 Ok(api
                     .update_remote_process_group_output_port(
                         port_id,
-                        &crate::v2_8_0::types::RemoteProcessGroupPortEntity::try_from(
-                            body.clone(),
-                        )?,
+                        &crate::v2_8_0::types::RemoteProcessGroupPortEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -10162,7 +10019,7 @@ impl<'a> DynamicRemoteProcessGroupsApi<'a> {
         &self,
         id: &str,
         port_id: &str,
-        body: &types::RemotePortRunStatusEntity,
+        body: types::RemotePortRunStatusEntity,
     ) -> Result<types::RemoteProcessGroupPortEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -10174,7 +10031,7 @@ impl<'a> DynamicRemoteProcessGroupsApi<'a> {
                 Ok(api
                     .update_remote_process_group_output_port_run_status(
                         port_id,
-                        &crate::v2_6_0::types::RemotePortRunStatusEntity::try_from(body.clone())?,
+                        &crate::v2_6_0::types::RemotePortRunStatusEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -10188,7 +10045,7 @@ impl<'a> DynamicRemoteProcessGroupsApi<'a> {
                 Ok(api
                     .update_remote_process_group_output_port_run_status(
                         port_id,
-                        &crate::v2_7_2::types::RemotePortRunStatusEntity::try_from(body.clone())?,
+                        &crate::v2_7_2::types::RemotePortRunStatusEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -10202,7 +10059,7 @@ impl<'a> DynamicRemoteProcessGroupsApi<'a> {
                 Ok(api
                     .update_remote_process_group_output_port_run_status(
                         port_id,
-                        &crate::v2_8_0::types::RemotePortRunStatusEntity::try_from(body.clone())?,
+                        &crate::v2_8_0::types::RemotePortRunStatusEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -10213,7 +10070,7 @@ impl<'a> DynamicRemoteProcessGroupsApi<'a> {
     pub async fn update_remote_process_group_run_status(
         &self,
         id: &str,
-        body: &types::RemotePortRunStatusEntity,
+        body: types::RemotePortRunStatusEntity,
     ) -> Result<types::RemoteProcessGroupEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -10224,7 +10081,7 @@ impl<'a> DynamicRemoteProcessGroupsApi<'a> {
                     };
                 Ok(api
                     .update_remote_process_group_run_status(
-                        &crate::v2_6_0::types::RemotePortRunStatusEntity::try_from(body.clone())?,
+                        &crate::v2_6_0::types::RemotePortRunStatusEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -10237,7 +10094,7 @@ impl<'a> DynamicRemoteProcessGroupsApi<'a> {
                     };
                 Ok(api
                     .update_remote_process_group_run_status(
-                        &crate::v2_7_2::types::RemotePortRunStatusEntity::try_from(body.clone())?,
+                        &crate::v2_7_2::types::RemotePortRunStatusEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -10250,7 +10107,7 @@ impl<'a> DynamicRemoteProcessGroupsApi<'a> {
                     };
                 Ok(api
                     .update_remote_process_group_run_status(
-                        &crate::v2_8_0::types::RemotePortRunStatusEntity::try_from(body.clone())?,
+                        &crate::v2_8_0::types::RemotePortRunStatusEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -10261,7 +10118,7 @@ impl<'a> DynamicRemoteProcessGroupsApi<'a> {
     pub async fn update_remote_process_group_run_statuses(
         &self,
         id: &str,
-        body: &types::RemotePortRunStatusEntity,
+        body: types::RemotePortRunStatusEntity,
     ) -> Result<types::RemoteProcessGroupEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -10272,7 +10129,7 @@ impl<'a> DynamicRemoteProcessGroupsApi<'a> {
                     };
                 Ok(api
                     .update_remote_process_group_run_statuses(
-                        &crate::v2_6_0::types::RemotePortRunStatusEntity::try_from(body.clone())?,
+                        &crate::v2_6_0::types::RemotePortRunStatusEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -10285,7 +10142,7 @@ impl<'a> DynamicRemoteProcessGroupsApi<'a> {
                     };
                 Ok(api
                     .update_remote_process_group_run_statuses(
-                        &crate::v2_7_2::types::RemotePortRunStatusEntity::try_from(body.clone())?,
+                        &crate::v2_7_2::types::RemotePortRunStatusEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -10298,7 +10155,7 @@ impl<'a> DynamicRemoteProcessGroupsApi<'a> {
                     };
                 Ok(api
                     .update_remote_process_group_run_statuses(
-                        &crate::v2_8_0::types::RemotePortRunStatusEntity::try_from(body.clone())?,
+                        &crate::v2_8_0::types::RemotePortRunStatusEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -10317,7 +10174,7 @@ impl<'a> DynamicReportingTasksApi<'a> {
     pub async fn analyze_configuration_3(
         &self,
         id: &str,
-        body: &types::ConfigurationAnalysisEntity,
+        body: types::ConfigurationAnalysisEntity,
     ) -> Result<types::ConfigurationAnalysisDto, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -10327,7 +10184,7 @@ impl<'a> DynamicReportingTasksApi<'a> {
                 };
                 Ok(api
                     .analyze_configuration_3(
-                        &crate::v2_6_0::types::ConfigurationAnalysisEntity::try_from(body.clone())?,
+                        &crate::v2_6_0::types::ConfigurationAnalysisEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -10339,7 +10196,7 @@ impl<'a> DynamicReportingTasksApi<'a> {
                 };
                 Ok(api
                     .analyze_configuration_3(
-                        &crate::v2_7_2::types::ConfigurationAnalysisEntity::try_from(body.clone())?,
+                        &crate::v2_7_2::types::ConfigurationAnalysisEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -10351,7 +10208,7 @@ impl<'a> DynamicReportingTasksApi<'a> {
                 };
                 Ok(api
                     .analyze_configuration_3(
-                        &crate::v2_8_0::types::ConfigurationAnalysisEntity::try_from(body.clone())?,
+                        &crate::v2_8_0::types::ConfigurationAnalysisEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -10359,10 +10216,12 @@ impl<'a> DynamicReportingTasksApi<'a> {
         }
     }
     /// Clears bulletins for a reporting task
+    ///
+    /// *Supported in NiFi: 2.7.2, 2.8.0*
     pub async fn clear_bulletins_7(
         &self,
         id: &str,
-        body: &types::ClearBulletinsRequestEntity,
+        body: types::ClearBulletinsRequestEntity,
     ) -> Result<types::ClearBulletinsResultEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => Err(NifiError::UnsupportedEndpoint {
@@ -10376,7 +10235,7 @@ impl<'a> DynamicReportingTasksApi<'a> {
                 };
                 Ok(api
                     .clear_bulletins_7(
-                        &crate::v2_7_2::types::ClearBulletinsRequestEntity::try_from(body.clone())?,
+                        &crate::v2_7_2::types::ClearBulletinsRequestEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -10388,7 +10247,7 @@ impl<'a> DynamicReportingTasksApi<'a> {
                 };
                 Ok(api
                     .clear_bulletins_7(
-                        &crate::v2_8_0::types::ClearBulletinsRequestEntity::try_from(body.clone())?,
+                        &crate::v2_8_0::types::ClearBulletinsRequestEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -10399,7 +10258,7 @@ impl<'a> DynamicReportingTasksApi<'a> {
     pub async fn clear_state_4(
         &self,
         id: &str,
-        body: &types::ComponentStateEntity,
+        body: types::ComponentStateEntity,
     ) -> Result<types::ComponentStateDto, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -10408,9 +10267,7 @@ impl<'a> DynamicReportingTasksApi<'a> {
                     id,
                 };
                 Ok(api
-                    .clear_state_4(&crate::v2_6_0::types::ComponentStateEntity::try_from(
-                        body.clone(),
-                    )?)
+                    .clear_state_4(&crate::v2_6_0::types::ComponentStateEntity::try_from(body)?)
                     .await?
                     .into())
             }
@@ -10420,9 +10277,7 @@ impl<'a> DynamicReportingTasksApi<'a> {
                     id,
                 };
                 Ok(api
-                    .clear_state_4(&crate::v2_7_2::types::ComponentStateEntity::try_from(
-                        body.clone(),
-                    )?)
+                    .clear_state_4(&crate::v2_7_2::types::ComponentStateEntity::try_from(body)?)
                     .await?
                     .into())
             }
@@ -10432,9 +10287,7 @@ impl<'a> DynamicReportingTasksApi<'a> {
                     id,
                 };
                 Ok(api
-                    .clear_state_4(&crate::v2_8_0::types::ComponentStateEntity::try_from(
-                        body.clone(),
-                    )?)
+                    .clear_state_4(&crate::v2_8_0::types::ComponentStateEntity::try_from(body)?)
                     .await?
                     .into())
             }
@@ -10634,7 +10487,7 @@ impl<'a> DynamicReportingTasksApi<'a> {
     pub async fn submit_config_verification_request_2(
         &self,
         id: &str,
-        body: &types::VerifyConfigRequestEntity,
+        body: types::VerifyConfigRequestEntity,
     ) -> Result<types::VerifyConfigRequestDto, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -10644,7 +10497,7 @@ impl<'a> DynamicReportingTasksApi<'a> {
                 };
                 Ok(api
                     .submit_config_verification_request_2(
-                        &crate::v2_6_0::types::VerifyConfigRequestEntity::try_from(body.clone())?,
+                        &crate::v2_6_0::types::VerifyConfigRequestEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -10656,7 +10509,7 @@ impl<'a> DynamicReportingTasksApi<'a> {
                 };
                 Ok(api
                     .submit_config_verification_request_2(
-                        &crate::v2_7_2::types::VerifyConfigRequestEntity::try_from(body.clone())?,
+                        &crate::v2_7_2::types::VerifyConfigRequestEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -10668,7 +10521,7 @@ impl<'a> DynamicReportingTasksApi<'a> {
                 };
                 Ok(api
                     .submit_config_verification_request_2(
-                        &crate::v2_8_0::types::VerifyConfigRequestEntity::try_from(body.clone())?,
+                        &crate::v2_8_0::types::VerifyConfigRequestEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -10679,7 +10532,7 @@ impl<'a> DynamicReportingTasksApi<'a> {
     pub async fn update_reporting_task(
         &self,
         id: &str,
-        body: &types::ReportingTaskEntity,
+        body: types::ReportingTaskEntity,
     ) -> Result<types::ReportingTaskEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -10689,7 +10542,7 @@ impl<'a> DynamicReportingTasksApi<'a> {
                 Ok(api
                     .update_reporting_task(
                         id,
-                        &crate::v2_6_0::types::ReportingTaskEntity::try_from(body.clone())?,
+                        &crate::v2_6_0::types::ReportingTaskEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -10701,7 +10554,7 @@ impl<'a> DynamicReportingTasksApi<'a> {
                 Ok(api
                     .update_reporting_task(
                         id,
-                        &crate::v2_7_2::types::ReportingTaskEntity::try_from(body.clone())?,
+                        &crate::v2_7_2::types::ReportingTaskEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -10713,7 +10566,7 @@ impl<'a> DynamicReportingTasksApi<'a> {
                 Ok(api
                     .update_reporting_task(
                         id,
-                        &crate::v2_8_0::types::ReportingTaskEntity::try_from(body.clone())?,
+                        &crate::v2_8_0::types::ReportingTaskEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -10724,7 +10577,7 @@ impl<'a> DynamicReportingTasksApi<'a> {
     pub async fn update_run_status_5(
         &self,
         id: &str,
-        body: &types::ReportingTaskRunStatusEntity,
+        body: types::ReportingTaskRunStatusEntity,
     ) -> Result<types::ReportingTaskEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -10734,9 +10587,7 @@ impl<'a> DynamicReportingTasksApi<'a> {
                 };
                 Ok(api
                     .update_run_status_5(
-                        &crate::v2_6_0::types::ReportingTaskRunStatusEntity::try_from(
-                            body.clone(),
-                        )?,
+                        &crate::v2_6_0::types::ReportingTaskRunStatusEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -10748,9 +10599,7 @@ impl<'a> DynamicReportingTasksApi<'a> {
                 };
                 Ok(api
                     .update_run_status_5(
-                        &crate::v2_7_2::types::ReportingTaskRunStatusEntity::try_from(
-                            body.clone(),
-                        )?,
+                        &crate::v2_7_2::types::ReportingTaskRunStatusEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -10762,9 +10611,7 @@ impl<'a> DynamicReportingTasksApi<'a> {
                 };
                 Ok(api
                     .update_run_status_5(
-                        &crate::v2_8_0::types::ReportingTaskRunStatusEntity::try_from(
-                            body.clone(),
-                        )?,
+                        &crate::v2_8_0::types::ReportingTaskRunStatusEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -10867,7 +10714,7 @@ impl<'a> DynamicSnippetsApi<'a> {
     /// Creates a snippet. The snippet will be automatically discarded if not used in a subsequent request after 1 minute.
     pub async fn create_snippet(
         &self,
-        body: &types::SnippetEntity,
+        body: types::SnippetEntity,
     ) -> Result<types::SnippetEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -10875,9 +10722,7 @@ impl<'a> DynamicSnippetsApi<'a> {
                     client: self.client,
                 };
                 Ok(api
-                    .create_snippet(&crate::v2_6_0::types::SnippetEntity::try_from(
-                        body.clone(),
-                    )?)
+                    .create_snippet(&crate::v2_6_0::types::SnippetEntity::try_from(body)?)
                     .await?
                     .into())
             }
@@ -10886,9 +10731,7 @@ impl<'a> DynamicSnippetsApi<'a> {
                     client: self.client,
                 };
                 Ok(api
-                    .create_snippet(&crate::v2_7_2::types::SnippetEntity::try_from(
-                        body.clone(),
-                    )?)
+                    .create_snippet(&crate::v2_7_2::types::SnippetEntity::try_from(body)?)
                     .await?
                     .into())
             }
@@ -10897,9 +10740,7 @@ impl<'a> DynamicSnippetsApi<'a> {
                     client: self.client,
                 };
                 Ok(api
-                    .create_snippet(&crate::v2_8_0::types::SnippetEntity::try_from(
-                        body.clone(),
-                    )?)
+                    .create_snippet(&crate::v2_8_0::types::SnippetEntity::try_from(body)?)
                     .await?
                     .into())
             }
@@ -10945,7 +10786,7 @@ impl<'a> DynamicSnippetsApi<'a> {
     pub async fn update_snippet(
         &self,
         id: &str,
-        body: &types::SnippetEntity,
+        body: types::SnippetEntity,
     ) -> Result<types::SnippetEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -10953,10 +10794,7 @@ impl<'a> DynamicSnippetsApi<'a> {
                     client: self.client,
                 };
                 Ok(api
-                    .update_snippet(
-                        id,
-                        &crate::v2_6_0::types::SnippetEntity::try_from(body.clone())?,
-                    )
+                    .update_snippet(id, &crate::v2_6_0::types::SnippetEntity::try_from(body)?)
                     .await?
                     .into())
             }
@@ -10965,10 +10803,7 @@ impl<'a> DynamicSnippetsApi<'a> {
                     client: self.client,
                 };
                 Ok(api
-                    .update_snippet(
-                        id,
-                        &crate::v2_7_2::types::SnippetEntity::try_from(body.clone())?,
-                    )
+                    .update_snippet(id, &crate::v2_7_2::types::SnippetEntity::try_from(body)?)
                     .await?
                     .into())
             }
@@ -10977,10 +10812,7 @@ impl<'a> DynamicSnippetsApi<'a> {
                     client: self.client,
                 };
                 Ok(api
-                    .update_snippet(
-                        id,
-                        &crate::v2_8_0::types::SnippetEntity::try_from(body.clone())?,
-                    )
+                    .update_snippet(id, &crate::v2_8_0::types::SnippetEntity::try_from(body)?)
                     .await?
                     .into())
             }
@@ -11086,7 +10918,7 @@ impl<'a> DynamicTenantsApi<'a> {
     /// Creates a user
     pub async fn create_user(
         &self,
-        body: &types::UserEntity,
+        body: types::UserEntity,
     ) -> Result<types::UserEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -11094,7 +10926,7 @@ impl<'a> DynamicTenantsApi<'a> {
                     client: self.client,
                 };
                 Ok(api
-                    .create_user(&crate::v2_6_0::types::UserEntity::try_from(body.clone())?)
+                    .create_user(&crate::v2_6_0::types::UserEntity::try_from(body)?)
                     .await?
                     .into())
             }
@@ -11103,7 +10935,7 @@ impl<'a> DynamicTenantsApi<'a> {
                     client: self.client,
                 };
                 Ok(api
-                    .create_user(&crate::v2_7_2::types::UserEntity::try_from(body.clone())?)
+                    .create_user(&crate::v2_7_2::types::UserEntity::try_from(body)?)
                     .await?
                     .into())
             }
@@ -11112,7 +10944,7 @@ impl<'a> DynamicTenantsApi<'a> {
                     client: self.client,
                 };
                 Ok(api
-                    .create_user(&crate::v2_8_0::types::UserEntity::try_from(body.clone())?)
+                    .create_user(&crate::v2_8_0::types::UserEntity::try_from(body)?)
                     .await?
                     .into())
             }
@@ -11121,7 +10953,7 @@ impl<'a> DynamicTenantsApi<'a> {
     /// Creates a user group
     pub async fn create_user_group(
         &self,
-        body: &types::UserGroupEntity,
+        body: types::UserGroupEntity,
     ) -> Result<types::UserGroupEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -11129,9 +10961,7 @@ impl<'a> DynamicTenantsApi<'a> {
                     client: self.client,
                 };
                 Ok(api
-                    .create_user_group(&crate::v2_6_0::types::UserGroupEntity::try_from(
-                        body.clone(),
-                    )?)
+                    .create_user_group(&crate::v2_6_0::types::UserGroupEntity::try_from(body)?)
                     .await?
                     .into())
             }
@@ -11140,9 +10970,7 @@ impl<'a> DynamicTenantsApi<'a> {
                     client: self.client,
                 };
                 Ok(api
-                    .create_user_group(&crate::v2_7_2::types::UserGroupEntity::try_from(
-                        body.clone(),
-                    )?)
+                    .create_user_group(&crate::v2_7_2::types::UserGroupEntity::try_from(body)?)
                     .await?
                     .into())
             }
@@ -11151,9 +10979,7 @@ impl<'a> DynamicTenantsApi<'a> {
                     client: self.client,
                 };
                 Ok(api
-                    .create_user_group(&crate::v2_8_0::types::UserGroupEntity::try_from(
-                        body.clone(),
-                    )?)
+                    .create_user_group(&crate::v2_8_0::types::UserGroupEntity::try_from(body)?)
                     .await?
                     .into())
             }
@@ -11354,7 +11180,7 @@ impl<'a> DynamicTenantsApi<'a> {
     pub async fn update_user(
         &self,
         id: &str,
-        body: &types::UserEntity,
+        body: types::UserEntity,
     ) -> Result<types::UserEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -11362,10 +11188,7 @@ impl<'a> DynamicTenantsApi<'a> {
                     client: self.client,
                 };
                 Ok(api
-                    .update_user(
-                        id,
-                        &crate::v2_6_0::types::UserEntity::try_from(body.clone())?,
-                    )
+                    .update_user(id, &crate::v2_6_0::types::UserEntity::try_from(body)?)
                     .await?
                     .into())
             }
@@ -11374,10 +11197,7 @@ impl<'a> DynamicTenantsApi<'a> {
                     client: self.client,
                 };
                 Ok(api
-                    .update_user(
-                        id,
-                        &crate::v2_7_2::types::UserEntity::try_from(body.clone())?,
-                    )
+                    .update_user(id, &crate::v2_7_2::types::UserEntity::try_from(body)?)
                     .await?
                     .into())
             }
@@ -11386,10 +11206,7 @@ impl<'a> DynamicTenantsApi<'a> {
                     client: self.client,
                 };
                 Ok(api
-                    .update_user(
-                        id,
-                        &crate::v2_8_0::types::UserEntity::try_from(body.clone())?,
-                    )
+                    .update_user(id, &crate::v2_8_0::types::UserEntity::try_from(body)?)
                     .await?
                     .into())
             }
@@ -11399,7 +11216,7 @@ impl<'a> DynamicTenantsApi<'a> {
     pub async fn update_user_group(
         &self,
         id: &str,
-        body: &types::UserGroupEntity,
+        body: types::UserGroupEntity,
     ) -> Result<types::UserGroupEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -11407,10 +11224,7 @@ impl<'a> DynamicTenantsApi<'a> {
                     client: self.client,
                 };
                 Ok(api
-                    .update_user_group(
-                        id,
-                        &crate::v2_6_0::types::UserGroupEntity::try_from(body.clone())?,
-                    )
+                    .update_user_group(id, &crate::v2_6_0::types::UserGroupEntity::try_from(body)?)
                     .await?
                     .into())
             }
@@ -11419,10 +11233,7 @@ impl<'a> DynamicTenantsApi<'a> {
                     client: self.client,
                 };
                 Ok(api
-                    .update_user_group(
-                        id,
-                        &crate::v2_7_2::types::UserGroupEntity::try_from(body.clone())?,
-                    )
+                    .update_user_group(id, &crate::v2_7_2::types::UserGroupEntity::try_from(body)?)
                     .await?
                     .into())
             }
@@ -11431,10 +11242,7 @@ impl<'a> DynamicTenantsApi<'a> {
                     client: self.client,
                 };
                 Ok(api
-                    .update_user_group(
-                        id,
-                        &crate::v2_8_0::types::UserGroupEntity::try_from(body.clone())?,
-                    )
+                    .update_user_group(id, &crate::v2_8_0::types::UserGroupEntity::try_from(body)?)
                     .await?
                     .into())
             }
@@ -11451,7 +11259,7 @@ impl<'a> DynamicVersionsApi<'a> {
     /// Create a version control request
     pub async fn create_version_control_request(
         &self,
-        body: &types::CreateActiveRequestEntity,
+        body: types::CreateActiveRequestEntity,
     ) -> Result<(), NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -11459,7 +11267,7 @@ impl<'a> DynamicVersionsApi<'a> {
                     client: self.client,
                 };
                 api.create_version_control_request(
-                    &crate::v2_6_0::types::CreateActiveRequestEntity::try_from(body.clone())?,
+                    &crate::v2_6_0::types::CreateActiveRequestEntity::try_from(body)?,
                 )
                 .await
             }
@@ -11468,7 +11276,7 @@ impl<'a> DynamicVersionsApi<'a> {
                     client: self.client,
                 };
                 api.create_version_control_request(
-                    &crate::v2_7_2::types::CreateActiveRequestEntity::try_from(body.clone())?,
+                    &crate::v2_7_2::types::CreateActiveRequestEntity::try_from(body)?,
                 )
                 .await
             }
@@ -11477,7 +11285,7 @@ impl<'a> DynamicVersionsApi<'a> {
                     client: self.client,
                 };
                 api.create_version_control_request(
-                    &crate::v2_8_0::types::CreateActiveRequestEntity::try_from(body.clone())?,
+                    &crate::v2_8_0::types::CreateActiveRequestEntity::try_from(body)?,
                 )
                 .await
             }
@@ -11693,7 +11501,7 @@ impl<'a> DynamicVersionsApi<'a> {
     pub async fn initiate_revert_flow_version(
         &self,
         id: &str,
-        body: &types::VersionControlInformationEntity,
+        body: types::VersionControlInformationEntity,
     ) -> Result<types::VersionedFlowUpdateRequestEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -11703,9 +11511,7 @@ impl<'a> DynamicVersionsApi<'a> {
                 Ok(api
                     .initiate_revert_flow_version(
                         id,
-                        &crate::v2_6_0::types::VersionControlInformationEntity::try_from(
-                            body.clone(),
-                        )?,
+                        &crate::v2_6_0::types::VersionControlInformationEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -11717,9 +11523,7 @@ impl<'a> DynamicVersionsApi<'a> {
                 Ok(api
                     .initiate_revert_flow_version(
                         id,
-                        &crate::v2_7_2::types::VersionControlInformationEntity::try_from(
-                            body.clone(),
-                        )?,
+                        &crate::v2_7_2::types::VersionControlInformationEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -11731,9 +11535,7 @@ impl<'a> DynamicVersionsApi<'a> {
                 Ok(api
                     .initiate_revert_flow_version(
                         id,
-                        &crate::v2_8_0::types::VersionControlInformationEntity::try_from(
-                            body.clone(),
-                        )?,
+                        &crate::v2_8_0::types::VersionControlInformationEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -11744,7 +11546,7 @@ impl<'a> DynamicVersionsApi<'a> {
     pub async fn initiate_version_control_update(
         &self,
         id: &str,
-        body: &types::VersionControlInformationEntity,
+        body: types::VersionControlInformationEntity,
     ) -> Result<types::VersionedFlowUpdateRequestEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -11754,9 +11556,7 @@ impl<'a> DynamicVersionsApi<'a> {
                 Ok(api
                     .initiate_version_control_update(
                         id,
-                        &crate::v2_6_0::types::VersionControlInformationEntity::try_from(
-                            body.clone(),
-                        )?,
+                        &crate::v2_6_0::types::VersionControlInformationEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -11768,9 +11568,7 @@ impl<'a> DynamicVersionsApi<'a> {
                 Ok(api
                     .initiate_version_control_update(
                         id,
-                        &crate::v2_7_2::types::VersionControlInformationEntity::try_from(
-                            body.clone(),
-                        )?,
+                        &crate::v2_7_2::types::VersionControlInformationEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -11782,9 +11580,7 @@ impl<'a> DynamicVersionsApi<'a> {
                 Ok(api
                     .initiate_version_control_update(
                         id,
-                        &crate::v2_8_0::types::VersionControlInformationEntity::try_from(
-                            body.clone(),
-                        )?,
+                        &crate::v2_8_0::types::VersionControlInformationEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -11795,7 +11591,7 @@ impl<'a> DynamicVersionsApi<'a> {
     pub async fn save_to_flow_registry(
         &self,
         id: &str,
-        body: &types::StartVersionControlRequestEntity,
+        body: types::StartVersionControlRequestEntity,
     ) -> Result<types::VersionControlInformationEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -11805,9 +11601,7 @@ impl<'a> DynamicVersionsApi<'a> {
                 Ok(api
                     .save_to_flow_registry(
                         id,
-                        &crate::v2_6_0::types::StartVersionControlRequestEntity::try_from(
-                            body.clone(),
-                        )?,
+                        &crate::v2_6_0::types::StartVersionControlRequestEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -11819,9 +11613,7 @@ impl<'a> DynamicVersionsApi<'a> {
                 Ok(api
                     .save_to_flow_registry(
                         id,
-                        &crate::v2_7_2::types::StartVersionControlRequestEntity::try_from(
-                            body.clone(),
-                        )?,
+                        &crate::v2_7_2::types::StartVersionControlRequestEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -11833,9 +11625,7 @@ impl<'a> DynamicVersionsApi<'a> {
                 Ok(api
                     .save_to_flow_registry(
                         id,
-                        &crate::v2_8_0::types::StartVersionControlRequestEntity::try_from(
-                            body.clone(),
-                        )?,
+                        &crate::v2_8_0::types::StartVersionControlRequestEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -11884,7 +11674,7 @@ impl<'a> DynamicVersionsApi<'a> {
     pub async fn update_flow_version(
         &self,
         id: &str,
-        body: &types::VersionedFlowSnapshotEntity,
+        body: types::VersionedFlowSnapshotEntity,
     ) -> Result<types::VersionControlInformationEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -11894,7 +11684,7 @@ impl<'a> DynamicVersionsApi<'a> {
                 Ok(api
                     .update_flow_version(
                         id,
-                        &crate::v2_6_0::types::VersionedFlowSnapshotEntity::try_from(body.clone())?,
+                        &crate::v2_6_0::types::VersionedFlowSnapshotEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -11906,7 +11696,7 @@ impl<'a> DynamicVersionsApi<'a> {
                 Ok(api
                     .update_flow_version(
                         id,
-                        &crate::v2_7_2::types::VersionedFlowSnapshotEntity::try_from(body.clone())?,
+                        &crate::v2_7_2::types::VersionedFlowSnapshotEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -11918,7 +11708,7 @@ impl<'a> DynamicVersionsApi<'a> {
                 Ok(api
                     .update_flow_version(
                         id,
-                        &crate::v2_8_0::types::VersionedFlowSnapshotEntity::try_from(body.clone())?,
+                        &crate::v2_8_0::types::VersionedFlowSnapshotEntity::try_from(body)?,
                     )
                     .await?
                     .into())
@@ -11929,7 +11719,7 @@ impl<'a> DynamicVersionsApi<'a> {
     pub async fn update_version_control_request(
         &self,
         id: &str,
-        body: &types::VersionControlComponentMappingEntity,
+        body: types::VersionControlComponentMappingEntity,
     ) -> Result<types::VersionControlInformationEntity, NifiError> {
         match self.version {
             DetectedVersion::V2_6_0 => {
@@ -11940,7 +11730,7 @@ impl<'a> DynamicVersionsApi<'a> {
                     .update_version_control_request(
                         id,
                         &crate::v2_6_0::types::VersionControlComponentMappingEntity::try_from(
-                            body.clone(),
+                            body,
                         )?,
                     )
                     .await?
@@ -11954,7 +11744,7 @@ impl<'a> DynamicVersionsApi<'a> {
                     .update_version_control_request(
                         id,
                         &crate::v2_7_2::types::VersionControlComponentMappingEntity::try_from(
-                            body.clone(),
+                            body,
                         )?,
                     )
                     .await?
@@ -11968,7 +11758,7 @@ impl<'a> DynamicVersionsApi<'a> {
                     .update_version_control_request(
                         id,
                         &crate::v2_8_0::types::VersionControlComponentMappingEntity::try_from(
-                            body.clone(),
+                            body,
                         )?,
                     )
                     .await?

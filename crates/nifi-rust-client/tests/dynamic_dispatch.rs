@@ -233,3 +233,81 @@ async fn dynamic_flow_metrics_v2_7_2_passes_all_params() {
         .await
         .unwrap();
 }
+
+// ── Narrowing conversion error tests ────────────────────────────────────────
+
+#[tokio::test]
+async fn dynamic_unsupported_enum_variant() {
+    // IncludedRegistries::VersionInfo only exists in v2.8.0.
+    // Using it against v2.6.0 should return UnsupportedEnumVariant.
+    let mock = MockServer::start().await;
+    let dynamic = dynamic_client_on(&mock, "2.6.0").await;
+
+    Mock::given(method("GET"))
+        .and(path("/nifi-api/flow/metrics/prometheus"))
+        .respond_with(ResponseTemplate::new(200))
+        .mount(&mock)
+        .await;
+
+    let err = dynamic
+        .flow_api()
+        .get_flow_metrics(
+            "prometheus",
+            Some(IncludedRegistries::VersionInfo), // only in 2.8.0
+            None,
+            None,
+            None,
+            None,
+        )
+        .await
+        .unwrap_err();
+
+    assert!(
+        matches!(
+            err,
+            nifi_rust_client::NifiError::UnsupportedEnumVariant { .. }
+        ),
+        "expected UnsupportedEnumVariant, got: {err:?}"
+    );
+}
+
+#[tokio::test]
+async fn dynamic_universal_fields_not_optional() {
+    // ConnectableDto has `id`, `group_id`, and `type` as required in all versions.
+    // After the universal field optimization, these should be non-optional Strings.
+    let dto = nifi_rust_client::dynamic::types::ConnectableDto::default();
+    // Universal fields default to empty string (String::default), not None
+    assert_eq!(dto.id, "");
+    assert_eq!(dto.group_id, "");
+    assert_eq!(dto.r#type, "");
+    // Non-universal fields remain Option and default to None
+    assert!(dto.name.is_none());
+    assert!(dto.comments.is_none());
+}
+
+#[tokio::test]
+async fn dynamic_missing_required_field_error() {
+    // clear_bulletins on controller_services requires a body with from_timestamp
+    // (required in v2.7.2+). Sending from_timestamp = None should fail at the
+    // narrowing TryFrom conversion before the HTTP call.
+    let mock = MockServer::start().await;
+    let dynamic = dynamic_client_on(&mock, "2.8.0").await;
+
+    let body = nifi_rust_client::dynamic::types::ClearBulletinsRequestEntity {
+        from_timestamp: None, // required in v2.8.0
+    };
+
+    let err = dynamic
+        .controller_services_api()
+        .clear_bulletins("some-id", body)
+        .await
+        .unwrap_err();
+
+    assert!(
+        matches!(
+            err,
+            nifi_rust_client::NifiError::MissingRequiredField { .. }
+        ),
+        "expected MissingRequiredField, got: {err:?}"
+    );
+}

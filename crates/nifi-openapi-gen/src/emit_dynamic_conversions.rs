@@ -74,9 +74,7 @@ fn convert_expr(expr: &str, ty: &FieldType, struct_name: &str) -> String {
         FieldType::Enum(_) => {
             // Inline string enums are emitted as String in the dynamic type;
             // use serde round-trip since per-version enums may not impl Display
-            format!(
-                "serde_json::to_value(&{expr}).ok().and_then(|v| v.as_str().map(|s| s.to_string())).unwrap_or_default()"
-            )
+            format!("enum_to_string(&{expr})")
         }
         FieldType::Opt(inner) => {
             if needs_conversion(inner) {
@@ -86,9 +84,7 @@ fn convert_expr(expr: &str, ty: &FieldType, struct_name: &str) -> String {
                     }
                     FieldType::Ref(_) => format!("{expr}.map(Into::into)"),
                     FieldType::Enum(_) => {
-                        format!(
-                            "{expr}.map(|v| serde_json::to_value(&v).ok().and_then(|v| v.as_str().map(|s| s.to_string())).unwrap_or_default())"
-                        )
+                        format!("{expr}.map(|v| enum_to_string(&v))")
                     }
                     FieldType::List(item) if needs_conversion(item) => {
                         let list_conv =
@@ -109,9 +105,7 @@ fn convert_expr(expr: &str, ty: &FieldType, struct_name: &str) -> String {
         }
         FieldType::List(inner) if needs_conversion(inner) => match inner.as_ref() {
             FieldType::Enum(_) => {
-                format!(
-                    "{expr}.into_iter().map(|v| serde_json::to_value(&v).ok().and_then(|v| v.as_str().map(|s| s.to_string())).unwrap_or_default()).collect()"
-                )
+                format!("{expr}.into_iter().map(|v| enum_to_string(&v)).collect()")
             }
             FieldType::Ref(name) if name == struct_name => {
                 format!("{expr}.into_iter().map(|v| Box::new((*v).into())).collect()")
@@ -142,6 +136,14 @@ pub fn emit_dynamic_conversions(
 ) -> String {
     let mut out = String::new();
     out.push_str("#![allow(clippy::useless_conversion, clippy::redundant_closure)]\n\n");
+
+    // Helper to convert a serde-serializable enum to its wire string representation.
+    out.push_str("fn enum_to_string(v: &impl serde::Serialize) -> String {\n");
+    out.push_str("    serde_json::to_value(v)\n");
+    out.push_str("        .ok()\n");
+    out.push_str("        .and_then(|v| v.as_str().map(|s| s.to_string()))\n");
+    out.push_str("        .unwrap_or_default()\n");
+    out.push_str("}\n\n");
 
     for (_version, mod_name, spec) in specs {
         let type_map: BTreeMap<&str, &TypeKind> = spec

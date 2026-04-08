@@ -2,6 +2,13 @@
 
 #![allow(clippy::useless_conversion, clippy::redundant_closure)]
 
+fn enum_to_string(v: &impl serde::Serialize) -> String {
+    serde_json::to_value(v)
+        .ok()
+        .and_then(|v| v.as_str().map(|s| s.to_string()))
+        .unwrap_or_default()
+}
+
 impl From<crate::v2_6_0::types::AboutDto> for super::types::AboutDto {
     fn from(v: crate::v2_6_0::types::AboutDto) -> Self {
         Self {
@@ -29,12 +36,7 @@ impl From<crate::v2_6_0::types::AboutEntity> for super::types::AboutEntity {
 impl From<crate::v2_6_0::types::AccessPolicyDto> for super::types::AccessPolicyDto {
     fn from(v: crate::v2_6_0::types::AccessPolicyDto) -> Self {
         Self {
-            action: v.action.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            action: v.action.map(|v| enum_to_string(&v)),
             component_reference: v.component_reference.map(Into::into),
             configurable: v.configurable,
             id: v.id,
@@ -71,12 +73,7 @@ impl From<crate::v2_6_0::types::AccessPolicyEntity> for super::types::AccessPoli
 impl From<crate::v2_6_0::types::AccessPolicySummaryDto> for super::types::AccessPolicySummaryDto {
     fn from(v: crate::v2_6_0::types::AccessPolicySummaryDto) -> Self {
         Self {
-            action: v.action.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            action: v.action.map(|v| enum_to_string(&v)),
             component_reference: v.component_reference.map(Into::into),
             configurable: v.configurable,
             id: v.id,
@@ -151,12 +148,7 @@ impl From<crate::v2_6_0::types::ActivateControllerServicesEntity>
                 .map(|m| m.into_iter().map(|(k, v)| (k, v.map(Into::into))).collect()),
             disconnected_node_acknowledged: v.disconnected_node_acknowledged,
             id: v.id,
-            state: v.state.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            state: v.state.map(|v| enum_to_string(&v)),
         }
     }
 }
@@ -176,12 +168,7 @@ impl From<crate::v2_6_0::types::AffectedComponentDto> for super::types::Affected
             id: v.id,
             name: v.name,
             process_group_id: v.process_group_id,
-            reference_type: v.reference_type.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            reference_type: v.reference_type.map(|v| enum_to_string(&v)),
             state: v.state,
             validation_errors: v.validation_errors,
         }
@@ -200,12 +187,7 @@ impl From<crate::v2_6_0::types::AffectedComponentEntity> for super::types::Affec
             permissions: v.permissions.map(Into::into),
             position: v.position.map(Into::into),
             process_group: v.process_group.map(Into::into),
-            reference_type: v.reference_type.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            reference_type: v.reference_type.map(|v| enum_to_string(&v)),
             revision: v.revision.map(Into::into),
             uri: v.uri,
         }
@@ -653,12 +635,7 @@ impl From<crate::v2_6_0::types::ComponentValidationResultDto>
             id: v.id,
             name: v.name,
             process_group_id: v.process_group_id,
-            reference_type: v.reference_type.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            reference_type: v.reference_type.map(|v| enum_to_string(&v)),
             resultant_validation_errors: v.resultant_validation_errors,
             results_valid: v.results_valid,
             state: v.state,
@@ -704,12 +681,7 @@ impl From<crate::v2_6_0::types::ConfigVerificationResultDto>
     fn from(v: crate::v2_6_0::types::ConfigVerificationResultDto) -> Self {
         Self {
             explanation: v.explanation,
-            outcome: v.outcome.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            outcome: v.outcome.map(|v| enum_to_string(&v)),
             verification_step_name: v.verification_step_name,
         }
     }
@@ -746,12 +718,7 @@ impl From<crate::v2_6_0::types::ConnectableComponent> for super::types::Connecta
             id: v.id,
             instance_identifier: v.instance_identifier,
             name: v.name,
-            r#type: v.r#type.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            r#type: v.r#type.map(|v| enum_to_string(&v)),
         }
     }
 }
@@ -766,10 +733,7 @@ impl From<crate::v2_6_0::types::ConnectableDto> for super::types::ConnectableDto
             name: v.name,
             running: v.running,
             transmitting: v.transmitting,
-            r#type: serde_json::to_value(&v.r#type)
-                .ok()
-                .and_then(|v| v.as_str().map(|s| s.to_string()))
-                .unwrap_or_default(),
+            r#type: enum_to_string(&v.r#type),
             versioned_component_id: v.versioned_component_id,
         }
     }
@@ -813,10 +777,7 @@ impl From<crate::v2_6_0::types::ConnectionEntity> for super::types::ConnectionEn
             component: v.component.map(Into::into),
             destination_group_id: v.destination_group_id,
             destination_id: v.destination_id,
-            destination_type: serde_json::to_value(&v.destination_type)
-                .ok()
-                .and_then(|v| v.as_str().map(|s| s.to_string()))
-                .unwrap_or_default(),
+            destination_type: enum_to_string(&v.destination_type),
             disconnected_node_acknowledged: v.disconnected_node_acknowledged,
             getz_index: v.getz_index,
             id: v.id,
@@ -826,10 +787,7 @@ impl From<crate::v2_6_0::types::ConnectionEntity> for super::types::ConnectionEn
             revision: v.revision.map(Into::into),
             source_group_id: v.source_group_id,
             source_id: v.source_id,
-            source_type: serde_json::to_value(&v.source_type)
-                .ok()
-                .and_then(|v| v.as_str().map(|s| s.to_string()))
-                .unwrap_or_default(),
+            source_type: enum_to_string(&v.source_type),
             status: v.status.map(Into::into),
             uri: v.uri,
         }
@@ -938,12 +896,7 @@ impl From<crate::v2_6_0::types::ConnectionStatusSnapshotDto>
             group_id: v.group_id,
             id: v.id,
             input: v.input,
-            load_balance_status: v.load_balance_status.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            load_balance_status: v.load_balance_status.map(|v| enum_to_string(&v)),
             name: v.name,
             output: v.output,
             percent_use_bytes: v.percent_use_bytes,
@@ -1175,21 +1128,11 @@ impl From<crate::v2_6_0::types::ControllerServiceDto> for super::types::Controll
                 .map(|v| v.into_iter().map(|v| v.into()).collect()),
             restricted: v.restricted,
             sensitive_dynamic_property_names: v.sensitive_dynamic_property_names,
-            state: v.state.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            state: v.state.map(|v| enum_to_string(&v)),
             supports_sensitive_dynamic_properties: v.supports_sensitive_dynamic_properties,
             r#type: v.r#type,
             validation_errors: v.validation_errors,
-            validation_status: v.validation_status.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            validation_status: v.validation_status.map(|v| enum_to_string(&v)),
             versioned_component_id: v.versioned_component_id,
         }
     }
@@ -1229,12 +1172,7 @@ impl From<crate::v2_6_0::types::ControllerServiceReferencingComponentDto>
             name: v.name,
             properties: v.properties,
             reference_cycle: v.reference_cycle,
-            reference_type: v.reference_type.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            reference_type: v.reference_type.map(|v| enum_to_string(&v)),
             referencing_components: v
                 .referencing_components
                 .map(|v| v.into_iter().map(|v| v.into()).collect()),
@@ -1284,12 +1222,7 @@ impl From<crate::v2_6_0::types::ControllerServiceRunStatusEntity>
         Self {
             disconnected_node_acknowledged: v.disconnected_node_acknowledged,
             revision: v.revision.map(Into::into),
-            state: v.state.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            state: v.state.map(|v| enum_to_string(&v)),
             ui_only: v.ui_only,
         }
     }
@@ -1301,18 +1234,8 @@ impl From<crate::v2_6_0::types::ControllerServiceStatusDto>
     fn from(v: crate::v2_6_0::types::ControllerServiceStatusDto) -> Self {
         Self {
             active_thread_count: v.active_thread_count,
-            run_status: v.run_status.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
-            validation_status: v.validation_status.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            run_status: v.run_status.map(|v| enum_to_string(&v)),
+            validation_status: v.validation_status.map(|v| enum_to_string(&v)),
         }
     }
 }
@@ -1622,12 +1545,7 @@ impl From<crate::v2_6_0::types::DynamicProperty> for super::types::DynamicProper
     fn from(v: crate::v2_6_0::types::DynamicProperty) -> Self {
         Self {
             description: v.description,
-            expression_language_scope: v.expression_language_scope.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            expression_language_scope: v.expression_language_scope.map(|v| enum_to_string(&v)),
             name: v.name,
             value: v.value,
         }
@@ -1738,21 +1656,11 @@ impl From<crate::v2_6_0::types::FlowAnalysisRuleDto> for super::types::FlowAnaly
             properties: v.properties,
             restricted: v.restricted,
             sensitive_dynamic_property_names: v.sensitive_dynamic_property_names,
-            state: v.state.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            state: v.state.map(|v| enum_to_string(&v)),
             supports_sensitive_dynamic_properties: v.supports_sensitive_dynamic_properties,
             r#type: v.r#type,
             validation_errors: v.validation_errors,
-            validation_status: v.validation_status.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            validation_status: v.validation_status.map(|v| enum_to_string(&v)),
             versioned_component_id: v.versioned_component_id,
         }
     }
@@ -1784,12 +1692,7 @@ impl From<crate::v2_6_0::types::FlowAnalysisRuleRunStatusEntity>
         Self {
             disconnected_node_acknowledged: v.disconnected_node_acknowledged,
             revision: v.revision.map(Into::into),
-            state: v.state.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            state: v.state.map(|v| enum_to_string(&v)),
         }
     }
 }
@@ -1800,18 +1703,8 @@ impl From<crate::v2_6_0::types::FlowAnalysisRuleStatusDto>
     fn from(v: crate::v2_6_0::types::FlowAnalysisRuleStatusDto) -> Self {
         Self {
             active_thread_count: v.active_thread_count,
-            run_status: v.run_status.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
-            validation_status: v.validation_status.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            run_status: v.run_status.map(|v| enum_to_string(&v)),
+            validation_status: v.validation_status.map(|v| enum_to_string(&v)),
         }
     }
 }
@@ -1876,12 +1769,7 @@ impl From<crate::v2_6_0::types::FlowBreadcrumbEntity> for super::types::FlowBrea
             id: v.id,
             parent_breadcrumb: v.parent_breadcrumb.map(|v| Box::new((*v).into())),
             permissions: v.permissions.map(Into::into),
-            versioned_flow_state: v.versioned_flow_state.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            versioned_flow_state: v.versioned_flow_state.map(|v| enum_to_string(&v)),
         }
     }
 }
@@ -2100,12 +1988,7 @@ impl From<crate::v2_6_0::types::FlowRegistryClientDto> for super::types::FlowReg
             supports_sensitive_dynamic_properties: v.supports_sensitive_dynamic_properties,
             r#type: v.r#type,
             validation_errors: v.validation_errors,
-            validation_status: v.validation_status.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            validation_status: v.validation_status.map(|v| enum_to_string(&v)),
         }
     }
 }
@@ -2397,12 +2280,7 @@ impl From<crate::v2_6_0::types::LineageRequestDto> for super::types::LineageRequ
         Self {
             cluster_node_id: v.cluster_node_id,
             event_id: v.event_id,
-            lineage_request_type: v.lineage_request_type.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            lineage_request_type: v.lineage_request_type.map(|v| enum_to_string(&v)),
             uuid: v.uuid,
         }
     }
@@ -2955,17 +2833,7 @@ impl From<crate::v2_6_0::types::ParameterGroupConfigurationEntity>
             parameter_context_name: v.parameter_context_name,
             parameter_sensitivities: v.parameter_sensitivities.map(|m| {
                 m.into_iter()
-                    .map(|(k, v)| {
-                        (
-                            k,
-                            v.map(|v| {
-                                serde_json::to_value(&v)
-                                    .ok()
-                                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                                    .unwrap_or_default()
-                            }),
-                        )
-                    })
+                    .map(|(k, v)| (k, v.map(|v| enum_to_string(&v))))
                     .collect()
             }),
             synchronized: v.synchronized,
@@ -3122,12 +2990,7 @@ impl From<crate::v2_6_0::types::ParameterProviderDto> for super::types::Paramete
             restricted: v.restricted,
             r#type: v.r#type,
             validation_errors: v.validation_errors,
-            validation_status: v.validation_status.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            validation_status: v.validation_status.map(|v| enum_to_string(&v)),
             versioned_component_id: v.versioned_component_id,
         }
     }
@@ -3261,12 +3124,7 @@ impl From<crate::v2_6_0::types::ParameterStatusDto> for super::types::ParameterS
     fn from(v: crate::v2_6_0::types::ParameterStatusDto) -> Self {
         Self {
             parameter: v.parameter.map(Into::into),
-            status: v.status.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            status: v.status.map(|v| enum_to_string(&v)),
         }
     }
 }
@@ -3327,26 +3185,11 @@ impl From<crate::v2_6_0::types::PortDto> for super::types::PortDto {
             id: v.id,
             name: v.name,
             parent_group_id: v.parent_group_id,
-            port_function: v.port_function.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            port_function: v.port_function.map(|v| enum_to_string(&v)),
             position: v.position.map(Into::into),
-            state: v.state.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            state: v.state.map(|v| enum_to_string(&v)),
             transmitting: v.transmitting,
-            r#type: v.r#type.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            r#type: v.r#type.map(|v| enum_to_string(&v)),
             validation_errors: v.validation_errors,
             versioned_component_id: v.versioned_component_id,
         }
@@ -3379,12 +3222,7 @@ impl From<crate::v2_6_0::types::PortRunStatusEntity> for super::types::PortRunSt
         Self {
             disconnected_node_acknowledged: v.disconnected_node_acknowledged,
             revision: v.revision.map(Into::into),
-            state: v.state.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            state: v.state.map(|v| enum_to_string(&v)),
         }
     }
 }
@@ -3399,12 +3237,7 @@ impl From<crate::v2_6_0::types::PortStatusDto> for super::types::PortStatusDto {
             node_snapshots: v
                 .node_snapshots
                 .map(|v| v.into_iter().map(|v| v.into()).collect()),
-            run_status: v.run_status.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            run_status: v.run_status.map(|v| enum_to_string(&v)),
             stats_last_refreshed: v.stats_last_refreshed,
             transmitting: v.transmitting,
         }
@@ -3433,12 +3266,7 @@ impl From<crate::v2_6_0::types::PortStatusSnapshotDto> for super::types::PortSta
             input: v.input,
             name: v.name,
             output: v.output,
-            run_status: v.run_status.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            run_status: v.run_status.map(|v| enum_to_string(&v)),
             transmitting: v.transmitting,
         }
     }
@@ -3498,24 +3326,9 @@ impl From<crate::v2_6_0::types::ProcessGroupDto> for super::types::ProcessGroupD
             default_back_pressure_object_threshold: v.default_back_pressure_object_threshold,
             default_flow_file_expiration: v.default_flow_file_expiration,
             disabled_count: v.disabled_count,
-            execution_engine: v.execution_engine.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
-            flowfile_concurrency: v.flowfile_concurrency.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
-            flowfile_outbound_policy: v.flowfile_outbound_policy.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            execution_engine: v.execution_engine.map(|v| enum_to_string(&v)),
+            flowfile_concurrency: v.flowfile_concurrency.map(|v| enum_to_string(&v)),
+            flowfile_outbound_policy: v.flowfile_outbound_policy.map(|v| enum_to_string(&v)),
             id: v.id,
             inactive_remote_port_count: v.inactive_remote_port_count,
             input_port_count: v.input_port_count,
@@ -3536,12 +3349,9 @@ impl From<crate::v2_6_0::types::ProcessGroupDto> for super::types::ProcessGroupD
             running_count: v.running_count,
             stale_count: v.stale_count,
             stateless_flow_timeout: v.stateless_flow_timeout,
-            stateless_group_scheduled_state: v.stateless_group_scheduled_state.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            stateless_group_scheduled_state: v
+                .stateless_group_scheduled_state
+                .map(|v| enum_to_string(&v)),
             stopped_count: v.stopped_count,
             sync_failure_count: v.sync_failure_count,
             up_to_date_count: v.up_to_date_count,
@@ -3573,12 +3383,9 @@ impl From<crate::v2_6_0::types::ProcessGroupEntity> for super::types::ProcessGro
             parameter_context: v.parameter_context.map(Into::into),
             permissions: v.permissions.map(Into::into),
             position: v.position.map(Into::into),
-            process_group_update_strategy: v.process_group_update_strategy.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            process_group_update_strategy: v
+                .process_group_update_strategy
+                .map(|v| enum_to_string(&v)),
             public_input_port_count: v.public_input_port_count,
             public_output_port_count: v.public_output_port_count,
             revision: v.revision.map(Into::into),
@@ -3590,12 +3397,7 @@ impl From<crate::v2_6_0::types::ProcessGroupEntity> for super::types::ProcessGro
             up_to_date_count: v.up_to_date_count,
             uri: v.uri,
             versioned_flow_snapshot: v.versioned_flow_snapshot.map(Into::into),
-            versioned_flow_state: v.versioned_flow_state.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            versioned_flow_state: v.versioned_flow_state.map(|v| enum_to_string(&v)),
         }
     }
 }
@@ -3752,12 +3554,7 @@ impl From<crate::v2_6_0::types::ProcessGroupStatusSnapshotDto>
             stateless_active_thread_count: v.stateless_active_thread_count,
             terminated_thread_count: v.terminated_thread_count,
             transferred: v.transferred,
-            versioned_flow_state: v.versioned_flow_state.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            versioned_flow_state: v.versioned_flow_state.map(|v| enum_to_string(&v)),
             written: v.written,
         }
     }
@@ -3880,12 +3677,7 @@ impl From<crate::v2_6_0::types::ProcessorDefinition> for super::types::Processor
                 .explicit_restrictions
                 .map(|v| v.into_iter().map(|v| v.into()).collect()),
             group: v.group,
-            input_requirement: v.input_requirement.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            input_requirement: v.input_requirement.map(|v| enum_to_string(&v)),
             multi_processor_use_cases: v
                 .multi_processor_use_cases
                 .map(|v| v.into_iter().map(|v| v.into()).collect()),
@@ -3953,24 +3745,14 @@ impl From<crate::v2_6_0::types::ProcessorDto> for super::types::ProcessorDto {
                 .relationships
                 .map(|v| v.into_iter().map(|v| v.into()).collect()),
             restricted: v.restricted,
-            state: v.state.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            state: v.state.map(|v| enum_to_string(&v)),
             style: v.style,
             supports_batching: v.supports_batching,
             supports_parallel_processing: v.supports_parallel_processing,
             supports_sensitive_dynamic_properties: v.supports_sensitive_dynamic_properties,
             r#type: v.r#type,
             validation_errors: v.validation_errors,
-            validation_status: v.validation_status.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            validation_status: v.validation_status.map(|v| enum_to_string(&v)),
             versioned_component_id: v.versioned_component_id,
         }
     }
@@ -4005,12 +3787,7 @@ impl From<crate::v2_6_0::types::ProcessorRunStatusDetailsDto>
             active_thread_count: v.active_thread_count,
             id: v.id,
             name: v.name,
-            run_status: v.run_status.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            run_status: v.run_status.map(|v| enum_to_string(&v)),
             validation_errors: v.validation_errors,
         }
     }
@@ -4035,12 +3812,7 @@ impl From<crate::v2_6_0::types::ProcessorRunStatusEntity>
         Self {
             disconnected_node_acknowledged: v.disconnected_node_acknowledged,
             revision: v.revision.map(Into::into),
-            state: v.state.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            state: v.state.map(|v| enum_to_string(&v)),
         }
     }
 }
@@ -4055,12 +3827,7 @@ impl From<crate::v2_6_0::types::ProcessorStatusDto> for super::types::ProcessorS
             node_snapshots: v
                 .node_snapshots
                 .map(|v| v.into_iter().map(|v| v.into()).collect()),
-            run_status: v.run_status.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            run_status: v.run_status.map(|v| enum_to_string(&v)),
             stats_last_refreshed: v.stats_last_refreshed,
             r#type: v.r#type,
         }
@@ -4086,12 +3853,7 @@ impl From<crate::v2_6_0::types::ProcessorStatusSnapshotDto>
             bytes_out: v.bytes_out,
             bytes_read: v.bytes_read,
             bytes_written: v.bytes_written,
-            execution_node: v.execution_node.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            execution_node: v.execution_node.map(|v| enum_to_string(&v)),
             flow_files_in: v.flow_files_in,
             flow_files_out: v.flow_files_out,
             group_id: v.group_id,
@@ -4101,12 +3863,7 @@ impl From<crate::v2_6_0::types::ProcessorStatusSnapshotDto>
             output: v.output,
             processing_performance_status: v.processing_performance_status.map(Into::into),
             read: v.read,
-            run_status: v.run_status.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            run_status: v.run_status.map(|v| enum_to_string(&v)),
             task_count: v.task_count,
             tasks: v.tasks,
             tasks_duration: v.tasks_duration,
@@ -4204,12 +3961,7 @@ impl From<crate::v2_6_0::types::PropertyDescriptor> for super::types::PropertyDe
             description: v.description,
             display_name: v.display_name,
             dynamic: v.dynamic,
-            expression_language_scope: v.expression_language_scope.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            expression_language_scope: v.expression_language_scope.map(|v| enum_to_string(&v)),
             expression_language_scope_description: v.expression_language_scope_description,
             listen_port_definition: None,
             name: v.name,
@@ -4274,22 +4026,10 @@ impl From<crate::v2_6_0::types::PropertyResourceDefinition>
 {
     fn from(v: crate::v2_6_0::types::PropertyResourceDefinition) -> Self {
         Self {
-            cardinality: v.cardinality.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
-            resource_types: v.resource_types.map(|v| {
-                v.into_iter()
-                    .map(|v| {
-                        serde_json::to_value(&v)
-                            .ok()
-                            .and_then(|v| v.as_str().map(|s| s.to_string()))
-                            .unwrap_or_default()
-                    })
-                    .collect()
-            }),
+            cardinality: v.cardinality.map(|v| enum_to_string(&v)),
+            resource_types: v
+                .resource_types
+                .map(|v| v.into_iter().map(|v| enum_to_string(&v)).collect()),
         }
     }
 }
@@ -4400,12 +4140,7 @@ impl From<crate::v2_6_0::types::ProvenanceNodeDto> for super::types::ProvenanceN
             millis: v.millis,
             parent_uuids: v.parent_uuids,
             timestamp: v.timestamp,
-            r#type: v.r#type.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            r#type: v.r#type.map(|v| enum_to_string(&v)),
         }
     }
 }
@@ -4589,12 +4324,7 @@ impl From<crate::v2_6_0::types::RemotePortRunStatusEntity>
         Self {
             disconnected_node_acknowledged: v.disconnected_node_acknowledged,
             revision: v.revision.map(Into::into),
-            state: v.state.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            state: v.state.map(|v| enum_to_string(&v)),
         }
     }
 }
@@ -4729,12 +4459,7 @@ impl From<crate::v2_6_0::types::RemoteProcessGroupStatusDto>
             stats_last_refreshed: v.stats_last_refreshed,
             target_uri: v.target_uri,
             transmission_status: v.transmission_status,
-            validation_status: v.validation_status.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            validation_status: v.validation_status.map(|v| enum_to_string(&v)),
         }
     }
 }
@@ -4803,12 +4528,7 @@ impl From<crate::v2_6_0::types::ReplayLastEventRequestEntity>
     fn from(v: crate::v2_6_0::types::ReplayLastEventRequestEntity) -> Self {
         Self {
             component_id: v.component_id,
-            nodes: v.nodes.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            nodes: v.nodes.map(|v| enum_to_string(&v)),
         }
     }
 }
@@ -4823,12 +4543,7 @@ impl From<crate::v2_6_0::types::ReplayLastEventResponseEntity>
             node_snapshots: v
                 .node_snapshots
                 .map(|v| v.into_iter().map(|v| v.into()).collect()),
-            nodes: v.nodes.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            nodes: v.nodes.map(|v| enum_to_string(&v)),
         }
     }
 }
@@ -4913,21 +4628,11 @@ impl From<crate::v2_6_0::types::ReportingTaskDto> for super::types::ReportingTas
             scheduling_period: v.scheduling_period,
             scheduling_strategy: v.scheduling_strategy,
             sensitive_dynamic_property_names: v.sensitive_dynamic_property_names,
-            state: v.state.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            state: v.state.map(|v| enum_to_string(&v)),
             supports_sensitive_dynamic_properties: v.supports_sensitive_dynamic_properties,
             r#type: v.r#type,
             validation_errors: v.validation_errors,
-            validation_status: v.validation_status.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            validation_status: v.validation_status.map(|v| enum_to_string(&v)),
             versioned_component_id: v.versioned_component_id,
         }
     }
@@ -4959,12 +4664,7 @@ impl From<crate::v2_6_0::types::ReportingTaskRunStatusEntity>
         Self {
             disconnected_node_acknowledged: v.disconnected_node_acknowledged,
             revision: v.revision.map(Into::into),
-            state: v.state.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            state: v.state.map(|v| enum_to_string(&v)),
         }
     }
 }
@@ -4973,18 +4673,8 @@ impl From<crate::v2_6_0::types::ReportingTaskStatusDto> for super::types::Report
     fn from(v: crate::v2_6_0::types::ReportingTaskStatusDto) -> Self {
         Self {
             active_thread_count: v.active_thread_count,
-            run_status: v.run_status.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
-            validation_status: v.validation_status.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            run_status: v.run_status.map(|v| enum_to_string(&v)),
+            validation_status: v.validation_status.map(|v| enum_to_string(&v)),
         }
     }
 }
@@ -5114,12 +4804,7 @@ impl From<crate::v2_6_0::types::ScheduleComponentsEntity>
                 .map(|m| m.into_iter().map(|(k, v)| (k, v.map(Into::into))).collect()),
             disconnected_node_acknowledged: v.disconnected_node_acknowledged,
             id: v.id,
-            state: v.state.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            state: v.state.map(|v| enum_to_string(&v)),
         }
     }
 }
@@ -5134,12 +4819,7 @@ impl From<crate::v2_6_0::types::SchedulingDefaults> for super::types::Scheduling
             default_scheduling_period_millis: v.default_scheduling_period_millis,
             default_scheduling_periods_by_scheduling_strategy: v
                 .default_scheduling_periods_by_scheduling_strategy,
-            default_scheduling_strategy: v.default_scheduling_strategy.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            default_scheduling_strategy: v.default_scheduling_strategy.map(|v| enum_to_string(&v)),
             penalization_period_millis: v.penalization_period_millis,
             yield_duration_millis: v.yield_duration_millis,
         }
@@ -5286,16 +4966,9 @@ impl From<crate::v2_6_0::types::Stateful> for super::types::Stateful {
     fn from(v: crate::v2_6_0::types::Stateful) -> Self {
         Self {
             description: v.description,
-            scopes: v.scopes.map(|v| {
-                v.into_iter()
-                    .map(|v| {
-                        serde_json::to_value(&v)
-                            .ok()
-                            .and_then(|v| v.as_str().map(|s| s.to_string()))
-                            .unwrap_or_default()
-                    })
-                    .collect()
-            }),
+            scopes: v
+                .scopes
+                .map(|v| v.into_iter().map(|v| enum_to_string(&v)).collect()),
         }
     }
 }
@@ -5528,12 +5201,7 @@ impl From<crate::v2_6_0::types::UpdateControllerServiceReferenceRequestEntity>
             referencing_component_revisions: v
                 .referencing_component_revisions
                 .map(|m| m.into_iter().map(|(k, v)| (k, v.map(Into::into))).collect()),
-            state: v.state.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            state: v.state.map(|v| enum_to_string(&v)),
             ui_only: v.ui_only,
         }
     }
@@ -5544,12 +5212,7 @@ impl From<crate::v2_6_0::types::UseCase> for super::types::UseCase {
         Self {
             configuration: v.configuration,
             description: v.description,
-            input_requirement: v.input_requirement.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            input_requirement: v.input_requirement.map(|v| enum_to_string(&v)),
             keywords: v.keywords,
             notes: v.notes,
         }
@@ -5716,12 +5379,7 @@ impl From<crate::v2_6_0::types::VersionControlInformationDto>
             group_id: v.group_id,
             registry_id: v.registry_id,
             registry_name: v.registry_name,
-            state: v.state.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            state: v.state.map(|v| enum_to_string(&v)),
             state_explanation: v.state_explanation,
             storage_location: v.storage_location,
             version: v.version,
@@ -5774,12 +5432,7 @@ impl From<crate::v2_6_0::types::VersionedConnection> for super::types::Versioned
             back_pressure_object_threshold: v.back_pressure_object_threshold,
             bends: v.bends.map(|v| v.into_iter().map(|v| v.into()).collect()),
             comments: v.comments,
-            component_type: v.component_type.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            component_type: v.component_type.map(|v| enum_to_string(&v)),
             destination: v.destination.map(Into::into),
             flow_file_expiration: v.flow_file_expiration,
             group_identifier: v.group_identifier,
@@ -5808,12 +5461,7 @@ impl From<crate::v2_6_0::types::VersionedControllerService>
             bulletin_level: v.bulletin_level,
             bundle: v.bundle.map(Into::into),
             comments: v.comments,
-            component_type: v.component_type.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            component_type: v.component_type.map(|v| enum_to_string(&v)),
             controller_service_apis: v
                 .controller_service_apis
                 .map(|v| v.into_iter().map(|v| v.into()).collect()),
@@ -5826,12 +5474,7 @@ impl From<crate::v2_6_0::types::VersionedControllerService>
             property_descriptors: v
                 .property_descriptors
                 .map(|m| m.into_iter().map(|(k, v)| (k, v.map(Into::into))).collect()),
-            scheduled_state: v.scheduled_state.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            scheduled_state: v.scheduled_state.map(|v| enum_to_string(&v)),
             r#type: v.r#type,
         }
     }
@@ -5856,12 +5499,7 @@ impl From<crate::v2_6_0::types::VersionedFlowCoordinates>
 impl From<crate::v2_6_0::types::VersionedFlowDto> for super::types::VersionedFlowDto {
     fn from(v: crate::v2_6_0::types::VersionedFlowDto) -> Self {
         Self {
-            action: v.action.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            action: v.action.map(|v| enum_to_string(&v)),
             branch: v.branch,
             bucket_id: v.bucket_id,
             comments: v.comments,
@@ -5962,12 +5600,7 @@ impl From<crate::v2_6_0::types::VersionedFunnel> for super::types::VersionedFunn
     fn from(v: crate::v2_6_0::types::VersionedFunnel) -> Self {
         Self {
             comments: v.comments,
-            component_type: v.component_type.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            component_type: v.component_type.map(|v| enum_to_string(&v)),
             group_identifier: v.group_identifier,
             identifier: v.identifier,
             instance_identifier: v.instance_identifier,
@@ -5981,12 +5614,7 @@ impl From<crate::v2_6_0::types::VersionedLabel> for super::types::VersionedLabel
     fn from(v: crate::v2_6_0::types::VersionedLabel) -> Self {
         Self {
             comments: v.comments,
-            component_type: v.component_type.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            component_type: v.component_type.map(|v| enum_to_string(&v)),
             group_identifier: v.group_identifier,
             height: v.height,
             identifier: v.identifier,
@@ -6022,12 +5650,7 @@ impl From<crate::v2_6_0::types::VersionedParameterContext>
     fn from(v: crate::v2_6_0::types::VersionedParameterContext) -> Self {
         Self {
             comments: v.comments,
-            component_type: v.component_type.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            component_type: v.component_type.map(|v| enum_to_string(&v)),
             description: v.description,
             group_identifier: v.group_identifier,
             identifier: v.identifier,
@@ -6050,36 +5673,16 @@ impl From<crate::v2_6_0::types::VersionedPort> for super::types::VersionedPort {
         Self {
             allow_remote_access: v.allow_remote_access,
             comments: v.comments,
-            component_type: v.component_type.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            component_type: v.component_type.map(|v| enum_to_string(&v)),
             concurrently_schedulable_task_count: v.concurrently_schedulable_task_count,
             group_identifier: v.group_identifier,
             identifier: v.identifier,
             instance_identifier: v.instance_identifier,
             name: v.name,
-            port_function: v.port_function.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            port_function: v.port_function.map(|v| enum_to_string(&v)),
             position: v.position.map(Into::into),
-            scheduled_state: v.scheduled_state.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
-            r#type: v.r#type.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            scheduled_state: v.scheduled_state.map(|v| enum_to_string(&v)),
+            r#type: v.r#type.map(|v| enum_to_string(&v)),
         }
     }
 }
@@ -6088,12 +5691,7 @@ impl From<crate::v2_6_0::types::VersionedProcessGroup> for super::types::Version
     fn from(v: crate::v2_6_0::types::VersionedProcessGroup) -> Self {
         Self {
             comments: v.comments,
-            component_type: v.component_type.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            component_type: v.component_type.map(|v| enum_to_string(&v)),
             connections: v
                 .connections
                 .map(|v| v.into_iter().map(|v| v.into()).collect()),
@@ -6103,12 +5701,7 @@ impl From<crate::v2_6_0::types::VersionedProcessGroup> for super::types::Version
             default_back_pressure_data_size_threshold: v.default_back_pressure_data_size_threshold,
             default_back_pressure_object_threshold: v.default_back_pressure_object_threshold,
             default_flow_file_expiration: v.default_flow_file_expiration,
-            execution_engine: v.execution_engine.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            execution_engine: v.execution_engine.map(|v| enum_to_string(&v)),
             flow_file_concurrency: v.flow_file_concurrency,
             flow_file_outbound_policy: v.flow_file_outbound_policy,
             funnels: v.funnels.map(|v| v.into_iter().map(|v| v.into()).collect()),
@@ -6136,12 +5729,7 @@ impl From<crate::v2_6_0::types::VersionedProcessGroup> for super::types::Version
             remote_process_groups: v
                 .remote_process_groups
                 .map(|v| v.into_iter().map(|v| v.into()).collect()),
-            scheduled_state: v.scheduled_state.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            scheduled_state: v.scheduled_state.map(|v| enum_to_string(&v)),
             stateless_flow_timeout: v.stateless_flow_timeout,
             versioned_flow_coordinates: v.versioned_flow_coordinates.map(Into::into),
         }
@@ -6157,12 +5745,7 @@ impl From<crate::v2_6_0::types::VersionedProcessor> for super::types::VersionedP
             bulletin_level: v.bulletin_level,
             bundle: v.bundle.map(Into::into),
             comments: v.comments,
-            component_type: v.component_type.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            component_type: v.component_type.map(|v| enum_to_string(&v)),
             concurrently_schedulable_task_count: v.concurrently_schedulable_task_count,
             execution_node: v.execution_node,
             group_identifier: v.group_identifier,
@@ -6179,12 +5762,7 @@ impl From<crate::v2_6_0::types::VersionedProcessor> for super::types::VersionedP
             retried_relationships: v.retried_relationships,
             retry_count: v.retry_count,
             run_duration_millis: v.run_duration_millis,
-            scheduled_state: v.scheduled_state.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            scheduled_state: v.scheduled_state.map(|v| enum_to_string(&v)),
             scheduling_period: v.scheduling_period,
             scheduling_strategy: v.scheduling_strategy,
             style: v.style,
@@ -6217,12 +5795,7 @@ impl From<crate::v2_6_0::types::VersionedRemoteGroupPort>
         Self {
             batch_size: v.batch_size.map(Into::into),
             comments: v.comments,
-            component_type: v.component_type.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            component_type: v.component_type.map(|v| enum_to_string(&v)),
             concurrently_schedulable_task_count: v.concurrently_schedulable_task_count,
             group_identifier: v.group_identifier,
             identifier: v.identifier,
@@ -6230,12 +5803,7 @@ impl From<crate::v2_6_0::types::VersionedRemoteGroupPort>
             name: v.name,
             position: v.position.map(Into::into),
             remote_group_id: v.remote_group_id,
-            scheduled_state: v.scheduled_state.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            scheduled_state: v.scheduled_state.map(|v| enum_to_string(&v)),
             target_id: v.target_id,
             use_compression: v.use_compression,
         }
@@ -6249,12 +5817,7 @@ impl From<crate::v2_6_0::types::VersionedRemoteProcessGroup>
         Self {
             comments: v.comments,
             communications_timeout: v.communications_timeout,
-            component_type: v.component_type.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            component_type: v.component_type.map(|v| enum_to_string(&v)),
             group_identifier: v.group_identifier,
             identifier: v.identifier,
             input_ports: v
@@ -6284,12 +5847,7 @@ impl From<crate::v2_6_0::types::VersionedReportingTask> for super::types::Versio
             annotation_data: v.annotation_data,
             bundle: v.bundle.map(Into::into),
             comments: v.comments,
-            component_type: v.component_type.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            component_type: v.component_type.map(|v| enum_to_string(&v)),
             group_identifier: v.group_identifier,
             identifier: v.identifier,
             instance_identifier: v.instance_identifier,
@@ -6299,12 +5857,7 @@ impl From<crate::v2_6_0::types::VersionedReportingTask> for super::types::Versio
             property_descriptors: v
                 .property_descriptors
                 .map(|m| m.into_iter().map(|(k, v)| (k, v.map(Into::into))).collect()),
-            scheduled_state: v.scheduled_state.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            scheduled_state: v.scheduled_state.map(|v| enum_to_string(&v)),
             scheduling_period: v.scheduling_period,
             scheduling_strategy: v.scheduling_strategy,
             r#type: v.r#type,
@@ -6358,22 +5911,10 @@ impl From<crate::v2_6_0::types::VersionedResourceDefinition>
 {
     fn from(v: crate::v2_6_0::types::VersionedResourceDefinition) -> Self {
         Self {
-            cardinality: v.cardinality.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
-            resource_types: v.resource_types.map(|v| {
-                v.into_iter()
-                    .map(|v| {
-                        serde_json::to_value(&v)
-                            .ok()
-                            .and_then(|v| v.as_str().map(|s| s.to_string()))
-                            .unwrap_or_default()
-                    })
-                    .collect()
-            }),
+            cardinality: v.cardinality.map(|v| enum_to_string(&v)),
+            resource_types: v
+                .resource_types
+                .map(|v| v.into_iter().map(|v| enum_to_string(&v)).collect()),
         }
     }
 }
@@ -6405,12 +5946,7 @@ impl From<crate::v2_7_2::types::AboutEntity> for super::types::AboutEntity {
 impl From<crate::v2_7_2::types::AccessPolicyDto> for super::types::AccessPolicyDto {
     fn from(v: crate::v2_7_2::types::AccessPolicyDto) -> Self {
         Self {
-            action: v.action.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            action: v.action.map(|v| enum_to_string(&v)),
             component_reference: v.component_reference.map(Into::into),
             configurable: v.configurable,
             id: v.id,
@@ -6447,12 +5983,7 @@ impl From<crate::v2_7_2::types::AccessPolicyEntity> for super::types::AccessPoli
 impl From<crate::v2_7_2::types::AccessPolicySummaryDto> for super::types::AccessPolicySummaryDto {
     fn from(v: crate::v2_7_2::types::AccessPolicySummaryDto) -> Self {
         Self {
-            action: v.action.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            action: v.action.map(|v| enum_to_string(&v)),
             component_reference: v.component_reference.map(Into::into),
             configurable: v.configurable,
             id: v.id,
@@ -6527,12 +6058,7 @@ impl From<crate::v2_7_2::types::ActivateControllerServicesEntity>
                 .map(|m| m.into_iter().map(|(k, v)| (k, v.map(Into::into))).collect()),
             disconnected_node_acknowledged: v.disconnected_node_acknowledged,
             id: v.id,
-            state: v.state.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            state: v.state.map(|v| enum_to_string(&v)),
         }
     }
 }
@@ -6552,12 +6078,7 @@ impl From<crate::v2_7_2::types::AffectedComponentDto> for super::types::Affected
             id: v.id,
             name: v.name,
             process_group_id: v.process_group_id,
-            reference_type: v.reference_type.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            reference_type: v.reference_type.map(|v| enum_to_string(&v)),
             state: v.state,
             validation_errors: v.validation_errors,
         }
@@ -6576,12 +6097,7 @@ impl From<crate::v2_7_2::types::AffectedComponentEntity> for super::types::Affec
             permissions: v.permissions.map(Into::into),
             position: v.position.map(Into::into),
             process_group: v.process_group.map(Into::into),
-            reference_type: v.reference_type.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            reference_type: v.reference_type.map(|v| enum_to_string(&v)),
             revision: v.revision.map(Into::into),
             uri: v.uri,
         }
@@ -7077,12 +6593,7 @@ impl From<crate::v2_7_2::types::ComponentValidationResultDto>
             id: v.id,
             name: v.name,
             process_group_id: v.process_group_id,
-            reference_type: v.reference_type.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            reference_type: v.reference_type.map(|v| enum_to_string(&v)),
             resultant_validation_errors: v.resultant_validation_errors,
             results_valid: v.results_valid,
             state: v.state,
@@ -7128,12 +6639,7 @@ impl From<crate::v2_7_2::types::ConfigVerificationResultDto>
     fn from(v: crate::v2_7_2::types::ConfigVerificationResultDto) -> Self {
         Self {
             explanation: v.explanation,
-            outcome: v.outcome.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            outcome: v.outcome.map(|v| enum_to_string(&v)),
             verification_step_name: v.verification_step_name,
         }
     }
@@ -7170,12 +6676,7 @@ impl From<crate::v2_7_2::types::ConnectableComponent> for super::types::Connecta
             id: v.id,
             instance_identifier: v.instance_identifier,
             name: v.name,
-            r#type: v.r#type.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            r#type: v.r#type.map(|v| enum_to_string(&v)),
         }
     }
 }
@@ -7190,10 +6691,7 @@ impl From<crate::v2_7_2::types::ConnectableDto> for super::types::ConnectableDto
             name: v.name,
             running: v.running,
             transmitting: v.transmitting,
-            r#type: serde_json::to_value(&v.r#type)
-                .ok()
-                .and_then(|v| v.as_str().map(|s| s.to_string()))
-                .unwrap_or_default(),
+            r#type: enum_to_string(&v.r#type),
             versioned_component_id: v.versioned_component_id,
         }
     }
@@ -7237,10 +6735,7 @@ impl From<crate::v2_7_2::types::ConnectionEntity> for super::types::ConnectionEn
             component: v.component.map(Into::into),
             destination_group_id: v.destination_group_id,
             destination_id: v.destination_id,
-            destination_type: serde_json::to_value(&v.destination_type)
-                .ok()
-                .and_then(|v| v.as_str().map(|s| s.to_string()))
-                .unwrap_or_default(),
+            destination_type: enum_to_string(&v.destination_type),
             disconnected_node_acknowledged: v.disconnected_node_acknowledged,
             getz_index: v.getz_index,
             id: v.id,
@@ -7250,10 +6745,7 @@ impl From<crate::v2_7_2::types::ConnectionEntity> for super::types::ConnectionEn
             revision: v.revision.map(Into::into),
             source_group_id: v.source_group_id,
             source_id: v.source_id,
-            source_type: serde_json::to_value(&v.source_type)
-                .ok()
-                .and_then(|v| v.as_str().map(|s| s.to_string()))
-                .unwrap_or_default(),
+            source_type: enum_to_string(&v.source_type),
             status: v.status.map(Into::into),
             uri: v.uri,
         }
@@ -7362,12 +6854,7 @@ impl From<crate::v2_7_2::types::ConnectionStatusSnapshotDto>
             group_id: v.group_id,
             id: v.id,
             input: v.input,
-            load_balance_status: v.load_balance_status.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            load_balance_status: v.load_balance_status.map(|v| enum_to_string(&v)),
             name: v.name,
             output: v.output,
             percent_use_bytes: v.percent_use_bytes,
@@ -7599,21 +7086,11 @@ impl From<crate::v2_7_2::types::ControllerServiceDto> for super::types::Controll
                 .map(|v| v.into_iter().map(|v| v.into()).collect()),
             restricted: v.restricted,
             sensitive_dynamic_property_names: v.sensitive_dynamic_property_names,
-            state: v.state.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            state: v.state.map(|v| enum_to_string(&v)),
             supports_sensitive_dynamic_properties: v.supports_sensitive_dynamic_properties,
             r#type: v.r#type,
             validation_errors: v.validation_errors,
-            validation_status: v.validation_status.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            validation_status: v.validation_status.map(|v| enum_to_string(&v)),
             versioned_component_id: v.versioned_component_id,
         }
     }
@@ -7653,12 +7130,7 @@ impl From<crate::v2_7_2::types::ControllerServiceReferencingComponentDto>
             name: v.name,
             properties: v.properties,
             reference_cycle: v.reference_cycle,
-            reference_type: v.reference_type.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            reference_type: v.reference_type.map(|v| enum_to_string(&v)),
             referencing_components: v
                 .referencing_components
                 .map(|v| v.into_iter().map(|v| v.into()).collect()),
@@ -7708,12 +7180,7 @@ impl From<crate::v2_7_2::types::ControllerServiceRunStatusEntity>
         Self {
             disconnected_node_acknowledged: v.disconnected_node_acknowledged,
             revision: v.revision.map(Into::into),
-            state: v.state.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            state: v.state.map(|v| enum_to_string(&v)),
             ui_only: v.ui_only,
         }
     }
@@ -7725,18 +7192,8 @@ impl From<crate::v2_7_2::types::ControllerServiceStatusDto>
     fn from(v: crate::v2_7_2::types::ControllerServiceStatusDto) -> Self {
         Self {
             active_thread_count: v.active_thread_count,
-            run_status: v.run_status.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
-            validation_status: v.validation_status.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            run_status: v.run_status.map(|v| enum_to_string(&v)),
+            validation_status: v.validation_status.map(|v| enum_to_string(&v)),
         }
     }
 }
@@ -8046,12 +7503,7 @@ impl From<crate::v2_7_2::types::DynamicProperty> for super::types::DynamicProper
     fn from(v: crate::v2_7_2::types::DynamicProperty) -> Self {
         Self {
             description: v.description,
-            expression_language_scope: v.expression_language_scope.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            expression_language_scope: v.expression_language_scope.map(|v| enum_to_string(&v)),
             name: v.name,
             value: v.value,
         }
@@ -8162,21 +7614,11 @@ impl From<crate::v2_7_2::types::FlowAnalysisRuleDto> for super::types::FlowAnaly
             properties: v.properties,
             restricted: v.restricted,
             sensitive_dynamic_property_names: v.sensitive_dynamic_property_names,
-            state: v.state.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            state: v.state.map(|v| enum_to_string(&v)),
             supports_sensitive_dynamic_properties: v.supports_sensitive_dynamic_properties,
             r#type: v.r#type,
             validation_errors: v.validation_errors,
-            validation_status: v.validation_status.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            validation_status: v.validation_status.map(|v| enum_to_string(&v)),
             versioned_component_id: v.versioned_component_id,
         }
     }
@@ -8208,12 +7650,7 @@ impl From<crate::v2_7_2::types::FlowAnalysisRuleRunStatusEntity>
         Self {
             disconnected_node_acknowledged: v.disconnected_node_acknowledged,
             revision: v.revision.map(Into::into),
-            state: v.state.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            state: v.state.map(|v| enum_to_string(&v)),
         }
     }
 }
@@ -8224,18 +7661,8 @@ impl From<crate::v2_7_2::types::FlowAnalysisRuleStatusDto>
     fn from(v: crate::v2_7_2::types::FlowAnalysisRuleStatusDto) -> Self {
         Self {
             active_thread_count: v.active_thread_count,
-            run_status: v.run_status.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
-            validation_status: v.validation_status.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            run_status: v.run_status.map(|v| enum_to_string(&v)),
+            validation_status: v.validation_status.map(|v| enum_to_string(&v)),
         }
     }
 }
@@ -8300,12 +7727,7 @@ impl From<crate::v2_7_2::types::FlowBreadcrumbEntity> for super::types::FlowBrea
             id: v.id,
             parent_breadcrumb: v.parent_breadcrumb.map(|v| Box::new((*v).into())),
             permissions: v.permissions.map(Into::into),
-            versioned_flow_state: v.versioned_flow_state.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            versioned_flow_state: v.versioned_flow_state.map(|v| enum_to_string(&v)),
         }
     }
 }
@@ -8574,12 +7996,7 @@ impl From<crate::v2_7_2::types::FlowRegistryClientDto> for super::types::FlowReg
             supports_sensitive_dynamic_properties: v.supports_sensitive_dynamic_properties,
             r#type: v.r#type,
             validation_errors: v.validation_errors,
-            validation_status: v.validation_status.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            validation_status: v.validation_status.map(|v| enum_to_string(&v)),
         }
     }
 }
@@ -8871,12 +8288,7 @@ impl From<crate::v2_7_2::types::LineageRequestDto> for super::types::LineageRequ
         Self {
             cluster_node_id: v.cluster_node_id,
             event_id: v.event_id,
-            lineage_request_type: v.lineage_request_type.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            lineage_request_type: v.lineage_request_type.map(|v| enum_to_string(&v)),
             uuid: v.uuid,
         }
     }
@@ -9456,17 +8868,7 @@ impl From<crate::v2_7_2::types::ParameterGroupConfigurationEntity>
             parameter_context_name: v.parameter_context_name,
             parameter_sensitivities: v.parameter_sensitivities.map(|m| {
                 m.into_iter()
-                    .map(|(k, v)| {
-                        (
-                            k,
-                            v.map(|v| {
-                                serde_json::to_value(&v)
-                                    .ok()
-                                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                                    .unwrap_or_default()
-                            }),
-                        )
-                    })
+                    .map(|(k, v)| (k, v.map(|v| enum_to_string(&v))))
                     .collect()
             }),
             synchronized: v.synchronized,
@@ -9623,12 +9025,7 @@ impl From<crate::v2_7_2::types::ParameterProviderDto> for super::types::Paramete
             restricted: v.restricted,
             r#type: v.r#type,
             validation_errors: v.validation_errors,
-            validation_status: v.validation_status.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            validation_status: v.validation_status.map(|v| enum_to_string(&v)),
             versioned_component_id: v.versioned_component_id,
         }
     }
@@ -9762,12 +9159,7 @@ impl From<crate::v2_7_2::types::ParameterStatusDto> for super::types::ParameterS
     fn from(v: crate::v2_7_2::types::ParameterStatusDto) -> Self {
         Self {
             parameter: v.parameter.map(Into::into),
-            status: v.status.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            status: v.status.map(|v| enum_to_string(&v)),
         }
     }
 }
@@ -9828,26 +9220,11 @@ impl From<crate::v2_7_2::types::PortDto> for super::types::PortDto {
             id: v.id,
             name: v.name,
             parent_group_id: v.parent_group_id,
-            port_function: v.port_function.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            port_function: v.port_function.map(|v| enum_to_string(&v)),
             position: v.position.map(Into::into),
-            state: v.state.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            state: v.state.map(|v| enum_to_string(&v)),
             transmitting: v.transmitting,
-            r#type: v.r#type.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            r#type: v.r#type.map(|v| enum_to_string(&v)),
             validation_errors: v.validation_errors,
             versioned_component_id: v.versioned_component_id,
         }
@@ -9880,12 +9257,7 @@ impl From<crate::v2_7_2::types::PortRunStatusEntity> for super::types::PortRunSt
         Self {
             disconnected_node_acknowledged: v.disconnected_node_acknowledged,
             revision: v.revision.map(Into::into),
-            state: v.state.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            state: v.state.map(|v| enum_to_string(&v)),
         }
     }
 }
@@ -9900,12 +9272,7 @@ impl From<crate::v2_7_2::types::PortStatusDto> for super::types::PortStatusDto {
             node_snapshots: v
                 .node_snapshots
                 .map(|v| v.into_iter().map(|v| v.into()).collect()),
-            run_status: v.run_status.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            run_status: v.run_status.map(|v| enum_to_string(&v)),
             stats_last_refreshed: v.stats_last_refreshed,
             transmitting: v.transmitting,
         }
@@ -9934,12 +9301,7 @@ impl From<crate::v2_7_2::types::PortStatusSnapshotDto> for super::types::PortSta
             input: v.input,
             name: v.name,
             output: v.output,
-            run_status: v.run_status.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            run_status: v.run_status.map(|v| enum_to_string(&v)),
             transmitting: v.transmitting,
         }
     }
@@ -9999,24 +9361,9 @@ impl From<crate::v2_7_2::types::ProcessGroupDto> for super::types::ProcessGroupD
             default_back_pressure_object_threshold: v.default_back_pressure_object_threshold,
             default_flow_file_expiration: v.default_flow_file_expiration,
             disabled_count: v.disabled_count,
-            execution_engine: v.execution_engine.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
-            flowfile_concurrency: v.flowfile_concurrency.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
-            flowfile_outbound_policy: v.flowfile_outbound_policy.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            execution_engine: v.execution_engine.map(|v| enum_to_string(&v)),
+            flowfile_concurrency: v.flowfile_concurrency.map(|v| enum_to_string(&v)),
+            flowfile_outbound_policy: v.flowfile_outbound_policy.map(|v| enum_to_string(&v)),
             id: v.id,
             inactive_remote_port_count: v.inactive_remote_port_count,
             input_port_count: v.input_port_count,
@@ -10037,12 +9384,9 @@ impl From<crate::v2_7_2::types::ProcessGroupDto> for super::types::ProcessGroupD
             running_count: v.running_count,
             stale_count: v.stale_count,
             stateless_flow_timeout: v.stateless_flow_timeout,
-            stateless_group_scheduled_state: v.stateless_group_scheduled_state.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            stateless_group_scheduled_state: v
+                .stateless_group_scheduled_state
+                .map(|v| enum_to_string(&v)),
             stopped_count: v.stopped_count,
             sync_failure_count: v.sync_failure_count,
             up_to_date_count: v.up_to_date_count,
@@ -10074,12 +9418,9 @@ impl From<crate::v2_7_2::types::ProcessGroupEntity> for super::types::ProcessGro
             parameter_context: v.parameter_context.map(Into::into),
             permissions: v.permissions.map(Into::into),
             position: v.position.map(Into::into),
-            process_group_update_strategy: v.process_group_update_strategy.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            process_group_update_strategy: v
+                .process_group_update_strategy
+                .map(|v| enum_to_string(&v)),
             public_input_port_count: v.public_input_port_count,
             public_output_port_count: v.public_output_port_count,
             revision: v.revision.map(Into::into),
@@ -10091,12 +9432,7 @@ impl From<crate::v2_7_2::types::ProcessGroupEntity> for super::types::ProcessGro
             up_to_date_count: v.up_to_date_count,
             uri: v.uri,
             versioned_flow_snapshot: v.versioned_flow_snapshot.map(Into::into),
-            versioned_flow_state: v.versioned_flow_state.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            versioned_flow_state: v.versioned_flow_state.map(|v| enum_to_string(&v)),
         }
     }
 }
@@ -10253,12 +9589,7 @@ impl From<crate::v2_7_2::types::ProcessGroupStatusSnapshotDto>
             stateless_active_thread_count: v.stateless_active_thread_count,
             terminated_thread_count: v.terminated_thread_count,
             transferred: v.transferred,
-            versioned_flow_state: v.versioned_flow_state.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            versioned_flow_state: v.versioned_flow_state.map(|v| enum_to_string(&v)),
             written: v.written,
         }
     }
@@ -10381,12 +9712,7 @@ impl From<crate::v2_7_2::types::ProcessorDefinition> for super::types::Processor
                 .explicit_restrictions
                 .map(|v| v.into_iter().map(|v| v.into()).collect()),
             group: v.group,
-            input_requirement: v.input_requirement.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            input_requirement: v.input_requirement.map(|v| enum_to_string(&v)),
             multi_processor_use_cases: v
                 .multi_processor_use_cases
                 .map(|v| v.into_iter().map(|v| v.into()).collect()),
@@ -10448,35 +9774,20 @@ impl From<crate::v2_7_2::types::ProcessorDto> for super::types::ProcessorDto {
             name: v.name,
             parent_group_id: v.parent_group_id,
             persists_state: v.persists_state,
-            physical_state: v.physical_state.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            physical_state: v.physical_state.map(|v| enum_to_string(&v)),
             position: v.position.map(Into::into),
             relationships: v
                 .relationships
                 .map(|v| v.into_iter().map(|v| v.into()).collect()),
             restricted: v.restricted,
-            state: v.state.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            state: v.state.map(|v| enum_to_string(&v)),
             style: v.style,
             supports_batching: v.supports_batching,
             supports_parallel_processing: v.supports_parallel_processing,
             supports_sensitive_dynamic_properties: v.supports_sensitive_dynamic_properties,
             r#type: v.r#type,
             validation_errors: v.validation_errors,
-            validation_status: v.validation_status.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            validation_status: v.validation_status.map(|v| enum_to_string(&v)),
             versioned_component_id: v.versioned_component_id,
         }
     }
@@ -10494,12 +9805,7 @@ impl From<crate::v2_7_2::types::ProcessorEntity> for super::types::ProcessorEnti
             input_requirement: v.input_requirement,
             operate_permissions: v.operate_permissions.map(Into::into),
             permissions: v.permissions.map(Into::into),
-            physical_state: v.physical_state.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            physical_state: v.physical_state.map(|v| enum_to_string(&v)),
             position: v.position.map(Into::into),
             revision: v.revision.map(Into::into),
             status: v.status.map(Into::into),
@@ -10516,12 +9822,7 @@ impl From<crate::v2_7_2::types::ProcessorRunStatusDetailsDto>
             active_thread_count: v.active_thread_count,
             id: v.id,
             name: v.name,
-            run_status: v.run_status.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            run_status: v.run_status.map(|v| enum_to_string(&v)),
             validation_errors: v.validation_errors,
         }
     }
@@ -10546,12 +9847,7 @@ impl From<crate::v2_7_2::types::ProcessorRunStatusEntity>
         Self {
             disconnected_node_acknowledged: v.disconnected_node_acknowledged,
             revision: v.revision.map(Into::into),
-            state: v.state.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            state: v.state.map(|v| enum_to_string(&v)),
         }
     }
 }
@@ -10566,12 +9862,7 @@ impl From<crate::v2_7_2::types::ProcessorStatusDto> for super::types::ProcessorS
             node_snapshots: v
                 .node_snapshots
                 .map(|v| v.into_iter().map(|v| v.into()).collect()),
-            run_status: v.run_status.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            run_status: v.run_status.map(|v| enum_to_string(&v)),
             stats_last_refreshed: v.stats_last_refreshed,
             r#type: v.r#type,
         }
@@ -10597,12 +9888,7 @@ impl From<crate::v2_7_2::types::ProcessorStatusSnapshotDto>
             bytes_out: v.bytes_out,
             bytes_read: v.bytes_read,
             bytes_written: v.bytes_written,
-            execution_node: v.execution_node.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            execution_node: v.execution_node.map(|v| enum_to_string(&v)),
             flow_files_in: v.flow_files_in,
             flow_files_out: v.flow_files_out,
             group_id: v.group_id,
@@ -10612,12 +9898,7 @@ impl From<crate::v2_7_2::types::ProcessorStatusSnapshotDto>
             output: v.output,
             processing_performance_status: v.processing_performance_status.map(Into::into),
             read: v.read,
-            run_status: v.run_status.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            run_status: v.run_status.map(|v| enum_to_string(&v)),
             task_count: v.task_count,
             tasks: v.tasks,
             tasks_duration: v.tasks_duration,
@@ -10715,12 +9996,7 @@ impl From<crate::v2_7_2::types::PropertyDescriptor> for super::types::PropertyDe
             description: v.description,
             display_name: v.display_name,
             dynamic: v.dynamic,
-            expression_language_scope: v.expression_language_scope.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            expression_language_scope: v.expression_language_scope.map(|v| enum_to_string(&v)),
             expression_language_scope_description: v.expression_language_scope_description,
             listen_port_definition: v.listen_port_definition.map(Into::into),
             name: v.name,
@@ -10786,12 +10062,7 @@ impl From<crate::v2_7_2::types::PropertyListenPortDefinition>
     fn from(v: crate::v2_7_2::types::PropertyListenPortDefinition) -> Self {
         Self {
             application_protocols: v.application_protocols,
-            transport_protocol: v.transport_protocol.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            transport_protocol: v.transport_protocol.map(|v| enum_to_string(&v)),
         }
     }
 }
@@ -10801,22 +10072,10 @@ impl From<crate::v2_7_2::types::PropertyResourceDefinition>
 {
     fn from(v: crate::v2_7_2::types::PropertyResourceDefinition) -> Self {
         Self {
-            cardinality: v.cardinality.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
-            resource_types: v.resource_types.map(|v| {
-                v.into_iter()
-                    .map(|v| {
-                        serde_json::to_value(&v)
-                            .ok()
-                            .and_then(|v| v.as_str().map(|s| s.to_string()))
-                            .unwrap_or_default()
-                    })
-                    .collect()
-            }),
+            cardinality: v.cardinality.map(|v| enum_to_string(&v)),
+            resource_types: v
+                .resource_types
+                .map(|v| v.into_iter().map(|v| enum_to_string(&v)).collect()),
         }
     }
 }
@@ -10927,12 +10186,7 @@ impl From<crate::v2_7_2::types::ProvenanceNodeDto> for super::types::ProvenanceN
             millis: v.millis,
             parent_uuids: v.parent_uuids,
             timestamp: v.timestamp,
-            r#type: v.r#type.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            r#type: v.r#type.map(|v| enum_to_string(&v)),
         }
     }
 }
@@ -11116,12 +10370,7 @@ impl From<crate::v2_7_2::types::RemotePortRunStatusEntity>
         Self {
             disconnected_node_acknowledged: v.disconnected_node_acknowledged,
             revision: v.revision.map(Into::into),
-            state: v.state.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            state: v.state.map(|v| enum_to_string(&v)),
         }
     }
 }
@@ -11256,12 +10505,7 @@ impl From<crate::v2_7_2::types::RemoteProcessGroupStatusDto>
             stats_last_refreshed: v.stats_last_refreshed,
             target_uri: v.target_uri,
             transmission_status: v.transmission_status,
-            validation_status: v.validation_status.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            validation_status: v.validation_status.map(|v| enum_to_string(&v)),
         }
     }
 }
@@ -11330,12 +10574,7 @@ impl From<crate::v2_7_2::types::ReplayLastEventRequestEntity>
     fn from(v: crate::v2_7_2::types::ReplayLastEventRequestEntity) -> Self {
         Self {
             component_id: v.component_id,
-            nodes: v.nodes.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            nodes: v.nodes.map(|v| enum_to_string(&v)),
         }
     }
 }
@@ -11350,12 +10589,7 @@ impl From<crate::v2_7_2::types::ReplayLastEventResponseEntity>
             node_snapshots: v
                 .node_snapshots
                 .map(|v| v.into_iter().map(|v| v.into()).collect()),
-            nodes: v.nodes.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            nodes: v.nodes.map(|v| enum_to_string(&v)),
         }
     }
 }
@@ -11440,21 +10674,11 @@ impl From<crate::v2_7_2::types::ReportingTaskDto> for super::types::ReportingTas
             scheduling_period: v.scheduling_period,
             scheduling_strategy: v.scheduling_strategy,
             sensitive_dynamic_property_names: v.sensitive_dynamic_property_names,
-            state: v.state.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            state: v.state.map(|v| enum_to_string(&v)),
             supports_sensitive_dynamic_properties: v.supports_sensitive_dynamic_properties,
             r#type: v.r#type,
             validation_errors: v.validation_errors,
-            validation_status: v.validation_status.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            validation_status: v.validation_status.map(|v| enum_to_string(&v)),
             versioned_component_id: v.versioned_component_id,
         }
     }
@@ -11486,12 +10710,7 @@ impl From<crate::v2_7_2::types::ReportingTaskRunStatusEntity>
         Self {
             disconnected_node_acknowledged: v.disconnected_node_acknowledged,
             revision: v.revision.map(Into::into),
-            state: v.state.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            state: v.state.map(|v| enum_to_string(&v)),
         }
     }
 }
@@ -11500,18 +10719,8 @@ impl From<crate::v2_7_2::types::ReportingTaskStatusDto> for super::types::Report
     fn from(v: crate::v2_7_2::types::ReportingTaskStatusDto) -> Self {
         Self {
             active_thread_count: v.active_thread_count,
-            run_status: v.run_status.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
-            validation_status: v.validation_status.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            run_status: v.run_status.map(|v| enum_to_string(&v)),
+            validation_status: v.validation_status.map(|v| enum_to_string(&v)),
         }
     }
 }
@@ -11641,12 +10850,7 @@ impl From<crate::v2_7_2::types::ScheduleComponentsEntity>
                 .map(|m| m.into_iter().map(|(k, v)| (k, v.map(Into::into))).collect()),
             disconnected_node_acknowledged: v.disconnected_node_acknowledged,
             id: v.id,
-            state: v.state.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            state: v.state.map(|v| enum_to_string(&v)),
         }
     }
 }
@@ -11661,12 +10865,7 @@ impl From<crate::v2_7_2::types::SchedulingDefaults> for super::types::Scheduling
             default_scheduling_period_millis: v.default_scheduling_period_millis,
             default_scheduling_periods_by_scheduling_strategy: v
                 .default_scheduling_periods_by_scheduling_strategy,
-            default_scheduling_strategy: v.default_scheduling_strategy.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            default_scheduling_strategy: v.default_scheduling_strategy.map(|v| enum_to_string(&v)),
             penalization_period_millis: v.penalization_period_millis,
             yield_duration_millis: v.yield_duration_millis,
         }
@@ -11813,16 +11012,9 @@ impl From<crate::v2_7_2::types::Stateful> for super::types::Stateful {
     fn from(v: crate::v2_7_2::types::Stateful) -> Self {
         Self {
             description: v.description,
-            scopes: v.scopes.map(|v| {
-                v.into_iter()
-                    .map(|v| {
-                        serde_json::to_value(&v)
-                            .ok()
-                            .and_then(|v| v.as_str().map(|s| s.to_string()))
-                            .unwrap_or_default()
-                    })
-                    .collect()
-            }),
+            scopes: v
+                .scopes
+                .map(|v| v.into_iter().map(|v| enum_to_string(&v)).collect()),
         }
     }
 }
@@ -12055,12 +11247,7 @@ impl From<crate::v2_7_2::types::UpdateControllerServiceReferenceRequestEntity>
             referencing_component_revisions: v
                 .referencing_component_revisions
                 .map(|m| m.into_iter().map(|(k, v)| (k, v.map(Into::into))).collect()),
-            state: v.state.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            state: v.state.map(|v| enum_to_string(&v)),
             ui_only: v.ui_only,
         }
     }
@@ -12071,12 +11258,7 @@ impl From<crate::v2_7_2::types::UseCase> for super::types::UseCase {
         Self {
             configuration: v.configuration,
             description: v.description,
-            input_requirement: v.input_requirement.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            input_requirement: v.input_requirement.map(|v| enum_to_string(&v)),
             keywords: v.keywords,
             notes: v.notes,
         }
@@ -12243,12 +11425,7 @@ impl From<crate::v2_7_2::types::VersionControlInformationDto>
             group_id: v.group_id,
             registry_id: v.registry_id,
             registry_name: v.registry_name,
-            state: v.state.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            state: v.state.map(|v| enum_to_string(&v)),
             state_explanation: v.state_explanation,
             storage_location: v.storage_location,
             version: v.version,
@@ -12301,12 +11478,7 @@ impl From<crate::v2_7_2::types::VersionedConnection> for super::types::Versioned
             back_pressure_object_threshold: v.back_pressure_object_threshold,
             bends: v.bends.map(|v| v.into_iter().map(|v| v.into()).collect()),
             comments: v.comments,
-            component_type: v.component_type.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            component_type: v.component_type.map(|v| enum_to_string(&v)),
             destination: v.destination.map(Into::into),
             flow_file_expiration: v.flow_file_expiration,
             group_identifier: v.group_identifier,
@@ -12335,12 +11507,7 @@ impl From<crate::v2_7_2::types::VersionedControllerService>
             bulletin_level: v.bulletin_level,
             bundle: v.bundle.map(Into::into),
             comments: v.comments,
-            component_type: v.component_type.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            component_type: v.component_type.map(|v| enum_to_string(&v)),
             controller_service_apis: v
                 .controller_service_apis
                 .map(|v| v.into_iter().map(|v| v.into()).collect()),
@@ -12353,12 +11520,7 @@ impl From<crate::v2_7_2::types::VersionedControllerService>
             property_descriptors: v
                 .property_descriptors
                 .map(|m| m.into_iter().map(|(k, v)| (k, v.map(Into::into))).collect()),
-            scheduled_state: v.scheduled_state.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            scheduled_state: v.scheduled_state.map(|v| enum_to_string(&v)),
             r#type: v.r#type,
         }
     }
@@ -12383,12 +11545,7 @@ impl From<crate::v2_7_2::types::VersionedFlowCoordinates>
 impl From<crate::v2_7_2::types::VersionedFlowDto> for super::types::VersionedFlowDto {
     fn from(v: crate::v2_7_2::types::VersionedFlowDto) -> Self {
         Self {
-            action: v.action.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            action: v.action.map(|v| enum_to_string(&v)),
             branch: v.branch,
             bucket_id: v.bucket_id,
             comments: v.comments,
@@ -12489,12 +11646,7 @@ impl From<crate::v2_7_2::types::VersionedFunnel> for super::types::VersionedFunn
     fn from(v: crate::v2_7_2::types::VersionedFunnel) -> Self {
         Self {
             comments: v.comments,
-            component_type: v.component_type.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            component_type: v.component_type.map(|v| enum_to_string(&v)),
             group_identifier: v.group_identifier,
             identifier: v.identifier,
             instance_identifier: v.instance_identifier,
@@ -12508,12 +11660,7 @@ impl From<crate::v2_7_2::types::VersionedLabel> for super::types::VersionedLabel
     fn from(v: crate::v2_7_2::types::VersionedLabel) -> Self {
         Self {
             comments: v.comments,
-            component_type: v.component_type.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            component_type: v.component_type.map(|v| enum_to_string(&v)),
             group_identifier: v.group_identifier,
             height: v.height,
             identifier: v.identifier,
@@ -12534,12 +11681,7 @@ impl From<crate::v2_7_2::types::VersionedListenPortDefinition>
     fn from(v: crate::v2_7_2::types::VersionedListenPortDefinition) -> Self {
         Self {
             application_protocols: v.application_protocols,
-            transport_protocol: v.transport_protocol.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            transport_protocol: v.transport_protocol.map(|v| enum_to_string(&v)),
         }
     }
 }
@@ -12565,12 +11707,7 @@ impl From<crate::v2_7_2::types::VersionedParameterContext>
     fn from(v: crate::v2_7_2::types::VersionedParameterContext) -> Self {
         Self {
             comments: v.comments,
-            component_type: v.component_type.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            component_type: v.component_type.map(|v| enum_to_string(&v)),
             description: v.description,
             group_identifier: v.group_identifier,
             identifier: v.identifier,
@@ -12593,36 +11730,16 @@ impl From<crate::v2_7_2::types::VersionedPort> for super::types::VersionedPort {
         Self {
             allow_remote_access: v.allow_remote_access,
             comments: v.comments,
-            component_type: v.component_type.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            component_type: v.component_type.map(|v| enum_to_string(&v)),
             concurrently_schedulable_task_count: v.concurrently_schedulable_task_count,
             group_identifier: v.group_identifier,
             identifier: v.identifier,
             instance_identifier: v.instance_identifier,
             name: v.name,
-            port_function: v.port_function.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            port_function: v.port_function.map(|v| enum_to_string(&v)),
             position: v.position.map(Into::into),
-            scheduled_state: v.scheduled_state.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
-            r#type: v.r#type.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            scheduled_state: v.scheduled_state.map(|v| enum_to_string(&v)),
+            r#type: v.r#type.map(|v| enum_to_string(&v)),
         }
     }
 }
@@ -12631,12 +11748,7 @@ impl From<crate::v2_7_2::types::VersionedProcessGroup> for super::types::Version
     fn from(v: crate::v2_7_2::types::VersionedProcessGroup) -> Self {
         Self {
             comments: v.comments,
-            component_type: v.component_type.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            component_type: v.component_type.map(|v| enum_to_string(&v)),
             connections: v
                 .connections
                 .map(|v| v.into_iter().map(|v| v.into()).collect()),
@@ -12646,12 +11758,7 @@ impl From<crate::v2_7_2::types::VersionedProcessGroup> for super::types::Version
             default_back_pressure_data_size_threshold: v.default_back_pressure_data_size_threshold,
             default_back_pressure_object_threshold: v.default_back_pressure_object_threshold,
             default_flow_file_expiration: v.default_flow_file_expiration,
-            execution_engine: v.execution_engine.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            execution_engine: v.execution_engine.map(|v| enum_to_string(&v)),
             flow_file_concurrency: v.flow_file_concurrency,
             flow_file_outbound_policy: v.flow_file_outbound_policy,
             funnels: v.funnels.map(|v| v.into_iter().map(|v| v.into()).collect()),
@@ -12679,12 +11786,7 @@ impl From<crate::v2_7_2::types::VersionedProcessGroup> for super::types::Version
             remote_process_groups: v
                 .remote_process_groups
                 .map(|v| v.into_iter().map(|v| v.into()).collect()),
-            scheduled_state: v.scheduled_state.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            scheduled_state: v.scheduled_state.map(|v| enum_to_string(&v)),
             stateless_flow_timeout: v.stateless_flow_timeout,
             versioned_flow_coordinates: v.versioned_flow_coordinates.map(Into::into),
         }
@@ -12700,12 +11802,7 @@ impl From<crate::v2_7_2::types::VersionedProcessor> for super::types::VersionedP
             bulletin_level: v.bulletin_level,
             bundle: v.bundle.map(Into::into),
             comments: v.comments,
-            component_type: v.component_type.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            component_type: v.component_type.map(|v| enum_to_string(&v)),
             concurrently_schedulable_task_count: v.concurrently_schedulable_task_count,
             execution_node: v.execution_node,
             group_identifier: v.group_identifier,
@@ -12722,12 +11819,7 @@ impl From<crate::v2_7_2::types::VersionedProcessor> for super::types::VersionedP
             retried_relationships: v.retried_relationships,
             retry_count: v.retry_count,
             run_duration_millis: v.run_duration_millis,
-            scheduled_state: v.scheduled_state.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            scheduled_state: v.scheduled_state.map(|v| enum_to_string(&v)),
             scheduling_period: v.scheduling_period,
             scheduling_strategy: v.scheduling_strategy,
             style: v.style,
@@ -12760,12 +11852,7 @@ impl From<crate::v2_7_2::types::VersionedRemoteGroupPort>
         Self {
             batch_size: v.batch_size.map(Into::into),
             comments: v.comments,
-            component_type: v.component_type.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            component_type: v.component_type.map(|v| enum_to_string(&v)),
             concurrently_schedulable_task_count: v.concurrently_schedulable_task_count,
             group_identifier: v.group_identifier,
             identifier: v.identifier,
@@ -12773,12 +11860,7 @@ impl From<crate::v2_7_2::types::VersionedRemoteGroupPort>
             name: v.name,
             position: v.position.map(Into::into),
             remote_group_id: v.remote_group_id,
-            scheduled_state: v.scheduled_state.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            scheduled_state: v.scheduled_state.map(|v| enum_to_string(&v)),
             target_id: v.target_id,
             use_compression: v.use_compression,
         }
@@ -12792,12 +11874,7 @@ impl From<crate::v2_7_2::types::VersionedRemoteProcessGroup>
         Self {
             comments: v.comments,
             communications_timeout: v.communications_timeout,
-            component_type: v.component_type.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            component_type: v.component_type.map(|v| enum_to_string(&v)),
             group_identifier: v.group_identifier,
             identifier: v.identifier,
             input_ports: v
@@ -12827,12 +11904,7 @@ impl From<crate::v2_7_2::types::VersionedReportingTask> for super::types::Versio
             annotation_data: v.annotation_data,
             bundle: v.bundle.map(Into::into),
             comments: v.comments,
-            component_type: v.component_type.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            component_type: v.component_type.map(|v| enum_to_string(&v)),
             group_identifier: v.group_identifier,
             identifier: v.identifier,
             instance_identifier: v.instance_identifier,
@@ -12842,12 +11914,7 @@ impl From<crate::v2_7_2::types::VersionedReportingTask> for super::types::Versio
             property_descriptors: v
                 .property_descriptors
                 .map(|m| m.into_iter().map(|(k, v)| (k, v.map(Into::into))).collect()),
-            scheduled_state: v.scheduled_state.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            scheduled_state: v.scheduled_state.map(|v| enum_to_string(&v)),
             scheduling_period: v.scheduling_period,
             scheduling_strategy: v.scheduling_strategy,
             r#type: v.r#type,
@@ -12901,22 +11968,10 @@ impl From<crate::v2_7_2::types::VersionedResourceDefinition>
 {
     fn from(v: crate::v2_7_2::types::VersionedResourceDefinition) -> Self {
         Self {
-            cardinality: v.cardinality.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
-            resource_types: v.resource_types.map(|v| {
-                v.into_iter()
-                    .map(|v| {
-                        serde_json::to_value(&v)
-                            .ok()
-                            .and_then(|v| v.as_str().map(|s| s.to_string()))
-                            .unwrap_or_default()
-                    })
-                    .collect()
-            }),
+            cardinality: v.cardinality.map(|v| enum_to_string(&v)),
+            resource_types: v
+                .resource_types
+                .map(|v| v.into_iter().map(|v| enum_to_string(&v)).collect()),
         }
     }
 }
@@ -12948,12 +12003,7 @@ impl From<crate::v2_8_0::types::AboutEntity> for super::types::AboutEntity {
 impl From<crate::v2_8_0::types::AccessPolicyDto> for super::types::AccessPolicyDto {
     fn from(v: crate::v2_8_0::types::AccessPolicyDto) -> Self {
         Self {
-            action: v.action.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            action: v.action.map(|v| enum_to_string(&v)),
             component_reference: v.component_reference.map(Into::into),
             configurable: v.configurable,
             id: v.id,
@@ -12990,12 +12040,7 @@ impl From<crate::v2_8_0::types::AccessPolicyEntity> for super::types::AccessPoli
 impl From<crate::v2_8_0::types::AccessPolicySummaryDto> for super::types::AccessPolicySummaryDto {
     fn from(v: crate::v2_8_0::types::AccessPolicySummaryDto) -> Self {
         Self {
-            action: v.action.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            action: v.action.map(|v| enum_to_string(&v)),
             component_reference: v.component_reference.map(Into::into),
             configurable: v.configurable,
             id: v.id,
@@ -13070,12 +12115,7 @@ impl From<crate::v2_8_0::types::ActivateControllerServicesEntity>
                 .map(|m| m.into_iter().map(|(k, v)| (k, v.map(Into::into))).collect()),
             disconnected_node_acknowledged: v.disconnected_node_acknowledged,
             id: v.id,
-            state: v.state.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            state: v.state.map(|v| enum_to_string(&v)),
         }
     }
 }
@@ -13095,12 +12135,7 @@ impl From<crate::v2_8_0::types::AffectedComponentDto> for super::types::Affected
             id: v.id,
             name: v.name,
             process_group_id: v.process_group_id,
-            reference_type: v.reference_type.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            reference_type: v.reference_type.map(|v| enum_to_string(&v)),
             state: v.state,
             validation_errors: v.validation_errors,
         }
@@ -13119,12 +12154,7 @@ impl From<crate::v2_8_0::types::AffectedComponentEntity> for super::types::Affec
             permissions: v.permissions.map(Into::into),
             position: v.position.map(Into::into),
             process_group: v.process_group.map(Into::into),
-            reference_type: v.reference_type.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            reference_type: v.reference_type.map(|v| enum_to_string(&v)),
             revision: v.revision.map(Into::into),
             uri: v.uri,
         }
@@ -13620,12 +12650,7 @@ impl From<crate::v2_8_0::types::ComponentValidationResultDto>
             id: v.id,
             name: v.name,
             process_group_id: v.process_group_id,
-            reference_type: v.reference_type.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            reference_type: v.reference_type.map(|v| enum_to_string(&v)),
             resultant_validation_errors: v.resultant_validation_errors,
             results_valid: v.results_valid,
             state: v.state,
@@ -13671,12 +12696,7 @@ impl From<crate::v2_8_0::types::ConfigVerificationResultDto>
     fn from(v: crate::v2_8_0::types::ConfigVerificationResultDto) -> Self {
         Self {
             explanation: v.explanation,
-            outcome: v.outcome.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            outcome: v.outcome.map(|v| enum_to_string(&v)),
             verification_step_name: v.verification_step_name,
         }
     }
@@ -13713,12 +12733,7 @@ impl From<crate::v2_8_0::types::ConnectableComponent> for super::types::Connecta
             id: v.id,
             instance_identifier: v.instance_identifier,
             name: v.name,
-            r#type: v.r#type.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            r#type: v.r#type.map(|v| enum_to_string(&v)),
         }
     }
 }
@@ -13733,10 +12748,7 @@ impl From<crate::v2_8_0::types::ConnectableDto> for super::types::ConnectableDto
             name: v.name,
             running: v.running,
             transmitting: v.transmitting,
-            r#type: serde_json::to_value(&v.r#type)
-                .ok()
-                .and_then(|v| v.as_str().map(|s| s.to_string()))
-                .unwrap_or_default(),
+            r#type: enum_to_string(&v.r#type),
             versioned_component_id: v.versioned_component_id,
         }
     }
@@ -13780,10 +12792,7 @@ impl From<crate::v2_8_0::types::ConnectionEntity> for super::types::ConnectionEn
             component: v.component.map(Into::into),
             destination_group_id: v.destination_group_id,
             destination_id: v.destination_id,
-            destination_type: serde_json::to_value(&v.destination_type)
-                .ok()
-                .and_then(|v| v.as_str().map(|s| s.to_string()))
-                .unwrap_or_default(),
+            destination_type: enum_to_string(&v.destination_type),
             disconnected_node_acknowledged: v.disconnected_node_acknowledged,
             getz_index: v.getz_index,
             id: v.id,
@@ -13793,10 +12802,7 @@ impl From<crate::v2_8_0::types::ConnectionEntity> for super::types::ConnectionEn
             revision: v.revision.map(Into::into),
             source_group_id: v.source_group_id,
             source_id: v.source_id,
-            source_type: serde_json::to_value(&v.source_type)
-                .ok()
-                .and_then(|v| v.as_str().map(|s| s.to_string()))
-                .unwrap_or_default(),
+            source_type: enum_to_string(&v.source_type),
             status: v.status.map(Into::into),
             uri: v.uri,
         }
@@ -13905,12 +12911,7 @@ impl From<crate::v2_8_0::types::ConnectionStatusSnapshotDto>
             group_id: v.group_id,
             id: v.id,
             input: v.input,
-            load_balance_status: v.load_balance_status.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            load_balance_status: v.load_balance_status.map(|v| enum_to_string(&v)),
             name: v.name,
             output: v.output,
             percent_use_bytes: v.percent_use_bytes,
@@ -14142,21 +13143,11 @@ impl From<crate::v2_8_0::types::ControllerServiceDto> for super::types::Controll
                 .map(|v| v.into_iter().map(|v| v.into()).collect()),
             restricted: v.restricted,
             sensitive_dynamic_property_names: v.sensitive_dynamic_property_names,
-            state: v.state.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            state: v.state.map(|v| enum_to_string(&v)),
             supports_sensitive_dynamic_properties: v.supports_sensitive_dynamic_properties,
             r#type: v.r#type,
             validation_errors: v.validation_errors,
-            validation_status: v.validation_status.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            validation_status: v.validation_status.map(|v| enum_to_string(&v)),
             versioned_component_id: v.versioned_component_id,
         }
     }
@@ -14196,12 +13187,7 @@ impl From<crate::v2_8_0::types::ControllerServiceReferencingComponentDto>
             name: v.name,
             properties: v.properties,
             reference_cycle: v.reference_cycle,
-            reference_type: v.reference_type.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            reference_type: v.reference_type.map(|v| enum_to_string(&v)),
             referencing_components: v
                 .referencing_components
                 .map(|v| v.into_iter().map(|v| v.into()).collect()),
@@ -14251,12 +13237,7 @@ impl From<crate::v2_8_0::types::ControllerServiceRunStatusEntity>
         Self {
             disconnected_node_acknowledged: v.disconnected_node_acknowledged,
             revision: v.revision.map(Into::into),
-            state: v.state.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            state: v.state.map(|v| enum_to_string(&v)),
             ui_only: v.ui_only,
         }
     }
@@ -14268,18 +13249,8 @@ impl From<crate::v2_8_0::types::ControllerServiceStatusDto>
     fn from(v: crate::v2_8_0::types::ControllerServiceStatusDto) -> Self {
         Self {
             active_thread_count: v.active_thread_count,
-            run_status: v.run_status.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
-            validation_status: v.validation_status.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            run_status: v.run_status.map(|v| enum_to_string(&v)),
+            validation_status: v.validation_status.map(|v| enum_to_string(&v)),
         }
     }
 }
@@ -14589,12 +13560,7 @@ impl From<crate::v2_8_0::types::DynamicProperty> for super::types::DynamicProper
     fn from(v: crate::v2_8_0::types::DynamicProperty) -> Self {
         Self {
             description: v.description,
-            expression_language_scope: v.expression_language_scope.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            expression_language_scope: v.expression_language_scope.map(|v| enum_to_string(&v)),
             name: v.name,
             value: v.value,
         }
@@ -14705,21 +13671,11 @@ impl From<crate::v2_8_0::types::FlowAnalysisRuleDto> for super::types::FlowAnaly
             properties: v.properties,
             restricted: v.restricted,
             sensitive_dynamic_property_names: v.sensitive_dynamic_property_names,
-            state: v.state.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            state: v.state.map(|v| enum_to_string(&v)),
             supports_sensitive_dynamic_properties: v.supports_sensitive_dynamic_properties,
             r#type: v.r#type,
             validation_errors: v.validation_errors,
-            validation_status: v.validation_status.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            validation_status: v.validation_status.map(|v| enum_to_string(&v)),
             versioned_component_id: v.versioned_component_id,
         }
     }
@@ -14751,12 +13707,7 @@ impl From<crate::v2_8_0::types::FlowAnalysisRuleRunStatusEntity>
         Self {
             disconnected_node_acknowledged: v.disconnected_node_acknowledged,
             revision: v.revision.map(Into::into),
-            state: v.state.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            state: v.state.map(|v| enum_to_string(&v)),
         }
     }
 }
@@ -14767,18 +13718,8 @@ impl From<crate::v2_8_0::types::FlowAnalysisRuleStatusDto>
     fn from(v: crate::v2_8_0::types::FlowAnalysisRuleStatusDto) -> Self {
         Self {
             active_thread_count: v.active_thread_count,
-            run_status: v.run_status.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
-            validation_status: v.validation_status.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            run_status: v.run_status.map(|v| enum_to_string(&v)),
+            validation_status: v.validation_status.map(|v| enum_to_string(&v)),
         }
     }
 }
@@ -14843,12 +13784,7 @@ impl From<crate::v2_8_0::types::FlowBreadcrumbEntity> for super::types::FlowBrea
             id: v.id,
             parent_breadcrumb: v.parent_breadcrumb.map(|v| Box::new((*v).into())),
             permissions: v.permissions.map(Into::into),
-            versioned_flow_state: v.versioned_flow_state.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            versioned_flow_state: v.versioned_flow_state.map(|v| enum_to_string(&v)),
         }
     }
 }
@@ -15117,12 +14053,7 @@ impl From<crate::v2_8_0::types::FlowRegistryClientDto> for super::types::FlowReg
             supports_sensitive_dynamic_properties: v.supports_sensitive_dynamic_properties,
             r#type: v.r#type,
             validation_errors: v.validation_errors,
-            validation_status: v.validation_status.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            validation_status: v.validation_status.map(|v| enum_to_string(&v)),
         }
     }
 }
@@ -15414,12 +14345,7 @@ impl From<crate::v2_8_0::types::LineageRequestDto> for super::types::LineageRequ
         Self {
             cluster_node_id: v.cluster_node_id,
             event_id: v.event_id,
-            lineage_request_type: v.lineage_request_type.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            lineage_request_type: v.lineage_request_type.map(|v| enum_to_string(&v)),
             uuid: v.uuid,
         }
     }
@@ -15999,17 +14925,7 @@ impl From<crate::v2_8_0::types::ParameterGroupConfigurationEntity>
             parameter_context_name: v.parameter_context_name,
             parameter_sensitivities: v.parameter_sensitivities.map(|m| {
                 m.into_iter()
-                    .map(|(k, v)| {
-                        (
-                            k,
-                            v.map(|v| {
-                                serde_json::to_value(&v)
-                                    .ok()
-                                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                                    .unwrap_or_default()
-                            }),
-                        )
-                    })
+                    .map(|(k, v)| (k, v.map(|v| enum_to_string(&v))))
                     .collect()
             }),
             synchronized: v.synchronized,
@@ -16166,12 +15082,7 @@ impl From<crate::v2_8_0::types::ParameterProviderDto> for super::types::Paramete
             restricted: v.restricted,
             r#type: v.r#type,
             validation_errors: v.validation_errors,
-            validation_status: v.validation_status.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            validation_status: v.validation_status.map(|v| enum_to_string(&v)),
             versioned_component_id: v.versioned_component_id,
         }
     }
@@ -16305,12 +15216,7 @@ impl From<crate::v2_8_0::types::ParameterStatusDto> for super::types::ParameterS
     fn from(v: crate::v2_8_0::types::ParameterStatusDto) -> Self {
         Self {
             parameter: v.parameter.map(Into::into),
-            status: v.status.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            status: v.status.map(|v| enum_to_string(&v)),
         }
     }
 }
@@ -16371,26 +15277,11 @@ impl From<crate::v2_8_0::types::PortDto> for super::types::PortDto {
             id: v.id,
             name: v.name,
             parent_group_id: v.parent_group_id,
-            port_function: v.port_function.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            port_function: v.port_function.map(|v| enum_to_string(&v)),
             position: v.position.map(Into::into),
-            state: v.state.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            state: v.state.map(|v| enum_to_string(&v)),
             transmitting: v.transmitting,
-            r#type: v.r#type.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            r#type: v.r#type.map(|v| enum_to_string(&v)),
             validation_errors: v.validation_errors,
             versioned_component_id: v.versioned_component_id,
         }
@@ -16423,12 +15314,7 @@ impl From<crate::v2_8_0::types::PortRunStatusEntity> for super::types::PortRunSt
         Self {
             disconnected_node_acknowledged: v.disconnected_node_acknowledged,
             revision: v.revision.map(Into::into),
-            state: v.state.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            state: v.state.map(|v| enum_to_string(&v)),
         }
     }
 }
@@ -16443,12 +15329,7 @@ impl From<crate::v2_8_0::types::PortStatusDto> for super::types::PortStatusDto {
             node_snapshots: v
                 .node_snapshots
                 .map(|v| v.into_iter().map(|v| v.into()).collect()),
-            run_status: v.run_status.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            run_status: v.run_status.map(|v| enum_to_string(&v)),
             stats_last_refreshed: v.stats_last_refreshed,
             transmitting: v.transmitting,
         }
@@ -16477,12 +15358,7 @@ impl From<crate::v2_8_0::types::PortStatusSnapshotDto> for super::types::PortSta
             input: v.input,
             name: v.name,
             output: v.output,
-            run_status: v.run_status.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            run_status: v.run_status.map(|v| enum_to_string(&v)),
             transmitting: v.transmitting,
         }
     }
@@ -16542,24 +15418,9 @@ impl From<crate::v2_8_0::types::ProcessGroupDto> for super::types::ProcessGroupD
             default_back_pressure_object_threshold: v.default_back_pressure_object_threshold,
             default_flow_file_expiration: v.default_flow_file_expiration,
             disabled_count: v.disabled_count,
-            execution_engine: v.execution_engine.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
-            flowfile_concurrency: v.flowfile_concurrency.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
-            flowfile_outbound_policy: v.flowfile_outbound_policy.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            execution_engine: v.execution_engine.map(|v| enum_to_string(&v)),
+            flowfile_concurrency: v.flowfile_concurrency.map(|v| enum_to_string(&v)),
+            flowfile_outbound_policy: v.flowfile_outbound_policy.map(|v| enum_to_string(&v)),
             id: v.id,
             inactive_remote_port_count: v.inactive_remote_port_count,
             input_port_count: v.input_port_count,
@@ -16580,12 +15441,9 @@ impl From<crate::v2_8_0::types::ProcessGroupDto> for super::types::ProcessGroupD
             running_count: v.running_count,
             stale_count: v.stale_count,
             stateless_flow_timeout: v.stateless_flow_timeout,
-            stateless_group_scheduled_state: v.stateless_group_scheduled_state.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            stateless_group_scheduled_state: v
+                .stateless_group_scheduled_state
+                .map(|v| enum_to_string(&v)),
             stopped_count: v.stopped_count,
             sync_failure_count: v.sync_failure_count,
             up_to_date_count: v.up_to_date_count,
@@ -16617,12 +15475,9 @@ impl From<crate::v2_8_0::types::ProcessGroupEntity> for super::types::ProcessGro
             parameter_context: v.parameter_context.map(Into::into),
             permissions: v.permissions.map(Into::into),
             position: v.position.map(Into::into),
-            process_group_update_strategy: v.process_group_update_strategy.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            process_group_update_strategy: v
+                .process_group_update_strategy
+                .map(|v| enum_to_string(&v)),
             public_input_port_count: v.public_input_port_count,
             public_output_port_count: v.public_output_port_count,
             revision: v.revision.map(Into::into),
@@ -16634,12 +15489,7 @@ impl From<crate::v2_8_0::types::ProcessGroupEntity> for super::types::ProcessGro
             up_to_date_count: v.up_to_date_count,
             uri: v.uri,
             versioned_flow_snapshot: v.versioned_flow_snapshot.map(Into::into),
-            versioned_flow_state: v.versioned_flow_state.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            versioned_flow_state: v.versioned_flow_state.map(|v| enum_to_string(&v)),
         }
     }
 }
@@ -16796,12 +15646,7 @@ impl From<crate::v2_8_0::types::ProcessGroupStatusSnapshotDto>
             stateless_active_thread_count: v.stateless_active_thread_count,
             terminated_thread_count: v.terminated_thread_count,
             transferred: v.transferred,
-            versioned_flow_state: v.versioned_flow_state.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            versioned_flow_state: v.versioned_flow_state.map(|v| enum_to_string(&v)),
             written: v.written,
         }
     }
@@ -16924,12 +15769,7 @@ impl From<crate::v2_8_0::types::ProcessorDefinition> for super::types::Processor
                 .explicit_restrictions
                 .map(|v| v.into_iter().map(|v| v.into()).collect()),
             group: v.group,
-            input_requirement: v.input_requirement.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            input_requirement: v.input_requirement.map(|v| enum_to_string(&v)),
             multi_processor_use_cases: v
                 .multi_processor_use_cases
                 .map(|v| v.into_iter().map(|v| v.into()).collect()),
@@ -16991,35 +15831,20 @@ impl From<crate::v2_8_0::types::ProcessorDto> for super::types::ProcessorDto {
             name: v.name,
             parent_group_id: v.parent_group_id,
             persists_state: v.persists_state,
-            physical_state: v.physical_state.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            physical_state: v.physical_state.map(|v| enum_to_string(&v)),
             position: v.position.map(Into::into),
             relationships: v
                 .relationships
                 .map(|v| v.into_iter().map(|v| v.into()).collect()),
             restricted: v.restricted,
-            state: v.state.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            state: v.state.map(|v| enum_to_string(&v)),
             style: v.style,
             supports_batching: v.supports_batching,
             supports_parallel_processing: v.supports_parallel_processing,
             supports_sensitive_dynamic_properties: v.supports_sensitive_dynamic_properties,
             r#type: v.r#type,
             validation_errors: v.validation_errors,
-            validation_status: v.validation_status.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            validation_status: v.validation_status.map(|v| enum_to_string(&v)),
             versioned_component_id: v.versioned_component_id,
         }
     }
@@ -17037,12 +15862,7 @@ impl From<crate::v2_8_0::types::ProcessorEntity> for super::types::ProcessorEnti
             input_requirement: v.input_requirement,
             operate_permissions: v.operate_permissions.map(Into::into),
             permissions: v.permissions.map(Into::into),
-            physical_state: v.physical_state.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            physical_state: v.physical_state.map(|v| enum_to_string(&v)),
             position: v.position.map(Into::into),
             revision: v.revision.map(Into::into),
             status: v.status.map(Into::into),
@@ -17059,12 +15879,7 @@ impl From<crate::v2_8_0::types::ProcessorRunStatusDetailsDto>
             active_thread_count: v.active_thread_count,
             id: v.id,
             name: v.name,
-            run_status: v.run_status.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            run_status: v.run_status.map(|v| enum_to_string(&v)),
             validation_errors: v.validation_errors,
         }
     }
@@ -17089,12 +15904,7 @@ impl From<crate::v2_8_0::types::ProcessorRunStatusEntity>
         Self {
             disconnected_node_acknowledged: v.disconnected_node_acknowledged,
             revision: v.revision.map(Into::into),
-            state: v.state.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            state: v.state.map(|v| enum_to_string(&v)),
         }
     }
 }
@@ -17109,12 +15919,7 @@ impl From<crate::v2_8_0::types::ProcessorStatusDto> for super::types::ProcessorS
             node_snapshots: v
                 .node_snapshots
                 .map(|v| v.into_iter().map(|v| v.into()).collect()),
-            run_status: v.run_status.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            run_status: v.run_status.map(|v| enum_to_string(&v)),
             stats_last_refreshed: v.stats_last_refreshed,
             r#type: v.r#type,
         }
@@ -17140,12 +15945,7 @@ impl From<crate::v2_8_0::types::ProcessorStatusSnapshotDto>
             bytes_out: v.bytes_out,
             bytes_read: v.bytes_read,
             bytes_written: v.bytes_written,
-            execution_node: v.execution_node.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            execution_node: v.execution_node.map(|v| enum_to_string(&v)),
             flow_files_in: v.flow_files_in,
             flow_files_out: v.flow_files_out,
             group_id: v.group_id,
@@ -17155,12 +15955,7 @@ impl From<crate::v2_8_0::types::ProcessorStatusSnapshotDto>
             output: v.output,
             processing_performance_status: v.processing_performance_status.map(Into::into),
             read: v.read,
-            run_status: v.run_status.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            run_status: v.run_status.map(|v| enum_to_string(&v)),
             task_count: v.task_count,
             tasks: v.tasks,
             tasks_duration: v.tasks_duration,
@@ -17258,12 +16053,7 @@ impl From<crate::v2_8_0::types::PropertyDescriptor> for super::types::PropertyDe
             description: v.description,
             display_name: v.display_name,
             dynamic: v.dynamic,
-            expression_language_scope: v.expression_language_scope.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            expression_language_scope: v.expression_language_scope.map(|v| enum_to_string(&v)),
             expression_language_scope_description: v.expression_language_scope_description,
             listen_port_definition: v.listen_port_definition.map(Into::into),
             name: v.name,
@@ -17329,12 +16119,7 @@ impl From<crate::v2_8_0::types::PropertyListenPortDefinition>
     fn from(v: crate::v2_8_0::types::PropertyListenPortDefinition) -> Self {
         Self {
             application_protocols: v.application_protocols,
-            transport_protocol: v.transport_protocol.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            transport_protocol: v.transport_protocol.map(|v| enum_to_string(&v)),
         }
     }
 }
@@ -17344,22 +16129,10 @@ impl From<crate::v2_8_0::types::PropertyResourceDefinition>
 {
     fn from(v: crate::v2_8_0::types::PropertyResourceDefinition) -> Self {
         Self {
-            cardinality: v.cardinality.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
-            resource_types: v.resource_types.map(|v| {
-                v.into_iter()
-                    .map(|v| {
-                        serde_json::to_value(&v)
-                            .ok()
-                            .and_then(|v| v.as_str().map(|s| s.to_string()))
-                            .unwrap_or_default()
-                    })
-                    .collect()
-            }),
+            cardinality: v.cardinality.map(|v| enum_to_string(&v)),
+            resource_types: v
+                .resource_types
+                .map(|v| v.into_iter().map(|v| enum_to_string(&v)).collect()),
         }
     }
 }
@@ -17470,12 +16243,7 @@ impl From<crate::v2_8_0::types::ProvenanceNodeDto> for super::types::ProvenanceN
             millis: v.millis,
             parent_uuids: v.parent_uuids,
             timestamp: v.timestamp,
-            r#type: v.r#type.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            r#type: v.r#type.map(|v| enum_to_string(&v)),
         }
     }
 }
@@ -17659,12 +16427,7 @@ impl From<crate::v2_8_0::types::RemotePortRunStatusEntity>
         Self {
             disconnected_node_acknowledged: v.disconnected_node_acknowledged,
             revision: v.revision.map(Into::into),
-            state: v.state.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            state: v.state.map(|v| enum_to_string(&v)),
         }
     }
 }
@@ -17799,12 +16562,7 @@ impl From<crate::v2_8_0::types::RemoteProcessGroupStatusDto>
             stats_last_refreshed: v.stats_last_refreshed,
             target_uri: v.target_uri,
             transmission_status: v.transmission_status,
-            validation_status: v.validation_status.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            validation_status: v.validation_status.map(|v| enum_to_string(&v)),
         }
     }
 }
@@ -17873,12 +16631,7 @@ impl From<crate::v2_8_0::types::ReplayLastEventRequestEntity>
     fn from(v: crate::v2_8_0::types::ReplayLastEventRequestEntity) -> Self {
         Self {
             component_id: v.component_id,
-            nodes: v.nodes.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            nodes: v.nodes.map(|v| enum_to_string(&v)),
         }
     }
 }
@@ -17893,12 +16646,7 @@ impl From<crate::v2_8_0::types::ReplayLastEventResponseEntity>
             node_snapshots: v
                 .node_snapshots
                 .map(|v| v.into_iter().map(|v| v.into()).collect()),
-            nodes: v.nodes.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            nodes: v.nodes.map(|v| enum_to_string(&v)),
         }
     }
 }
@@ -17983,21 +16731,11 @@ impl From<crate::v2_8_0::types::ReportingTaskDto> for super::types::ReportingTas
             scheduling_period: v.scheduling_period,
             scheduling_strategy: v.scheduling_strategy,
             sensitive_dynamic_property_names: v.sensitive_dynamic_property_names,
-            state: v.state.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            state: v.state.map(|v| enum_to_string(&v)),
             supports_sensitive_dynamic_properties: v.supports_sensitive_dynamic_properties,
             r#type: v.r#type,
             validation_errors: v.validation_errors,
-            validation_status: v.validation_status.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            validation_status: v.validation_status.map(|v| enum_to_string(&v)),
             versioned_component_id: v.versioned_component_id,
         }
     }
@@ -18029,12 +16767,7 @@ impl From<crate::v2_8_0::types::ReportingTaskRunStatusEntity>
         Self {
             disconnected_node_acknowledged: v.disconnected_node_acknowledged,
             revision: v.revision.map(Into::into),
-            state: v.state.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            state: v.state.map(|v| enum_to_string(&v)),
         }
     }
 }
@@ -18043,18 +16776,8 @@ impl From<crate::v2_8_0::types::ReportingTaskStatusDto> for super::types::Report
     fn from(v: crate::v2_8_0::types::ReportingTaskStatusDto) -> Self {
         Self {
             active_thread_count: v.active_thread_count,
-            run_status: v.run_status.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
-            validation_status: v.validation_status.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            run_status: v.run_status.map(|v| enum_to_string(&v)),
+            validation_status: v.validation_status.map(|v| enum_to_string(&v)),
         }
     }
 }
@@ -18184,12 +16907,7 @@ impl From<crate::v2_8_0::types::ScheduleComponentsEntity>
                 .map(|m| m.into_iter().map(|(k, v)| (k, v.map(Into::into))).collect()),
             disconnected_node_acknowledged: v.disconnected_node_acknowledged,
             id: v.id,
-            state: v.state.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            state: v.state.map(|v| enum_to_string(&v)),
         }
     }
 }
@@ -18204,12 +16922,7 @@ impl From<crate::v2_8_0::types::SchedulingDefaults> for super::types::Scheduling
             default_scheduling_period_millis: v.default_scheduling_period_millis,
             default_scheduling_periods_by_scheduling_strategy: v
                 .default_scheduling_periods_by_scheduling_strategy,
-            default_scheduling_strategy: v.default_scheduling_strategy.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            default_scheduling_strategy: v.default_scheduling_strategy.map(|v| enum_to_string(&v)),
             penalization_period_millis: v.penalization_period_millis,
             yield_duration_millis: v.yield_duration_millis,
         }
@@ -18356,16 +17069,9 @@ impl From<crate::v2_8_0::types::Stateful> for super::types::Stateful {
     fn from(v: crate::v2_8_0::types::Stateful) -> Self {
         Self {
             description: v.description,
-            scopes: v.scopes.map(|v| {
-                v.into_iter()
-                    .map(|v| {
-                        serde_json::to_value(&v)
-                            .ok()
-                            .and_then(|v| v.as_str().map(|s| s.to_string()))
-                            .unwrap_or_default()
-                    })
-                    .collect()
-            }),
+            scopes: v
+                .scopes
+                .map(|v| v.into_iter().map(|v| enum_to_string(&v)).collect()),
         }
     }
 }
@@ -18598,12 +17304,7 @@ impl From<crate::v2_8_0::types::UpdateControllerServiceReferenceRequestEntity>
             referencing_component_revisions: v
                 .referencing_component_revisions
                 .map(|m| m.into_iter().map(|(k, v)| (k, v.map(Into::into))).collect()),
-            state: v.state.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            state: v.state.map(|v| enum_to_string(&v)),
             ui_only: v.ui_only,
         }
     }
@@ -18614,12 +17315,7 @@ impl From<crate::v2_8_0::types::UseCase> for super::types::UseCase {
         Self {
             configuration: v.configuration,
             description: v.description,
-            input_requirement: v.input_requirement.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            input_requirement: v.input_requirement.map(|v| enum_to_string(&v)),
             keywords: v.keywords,
             notes: v.notes,
         }
@@ -18786,12 +17482,7 @@ impl From<crate::v2_8_0::types::VersionControlInformationDto>
             group_id: v.group_id,
             registry_id: v.registry_id,
             registry_name: v.registry_name,
-            state: v.state.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            state: v.state.map(|v| enum_to_string(&v)),
             state_explanation: v.state_explanation,
             storage_location: v.storage_location,
             version: v.version,
@@ -18844,12 +17535,7 @@ impl From<crate::v2_8_0::types::VersionedConnection> for super::types::Versioned
             back_pressure_object_threshold: v.back_pressure_object_threshold,
             bends: v.bends.map(|v| v.into_iter().map(|v| v.into()).collect()),
             comments: v.comments,
-            component_type: v.component_type.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            component_type: v.component_type.map(|v| enum_to_string(&v)),
             destination: v.destination.map(Into::into),
             flow_file_expiration: v.flow_file_expiration,
             group_identifier: v.group_identifier,
@@ -18878,12 +17564,7 @@ impl From<crate::v2_8_0::types::VersionedControllerService>
             bulletin_level: v.bulletin_level,
             bundle: v.bundle.map(Into::into),
             comments: v.comments,
-            component_type: v.component_type.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            component_type: v.component_type.map(|v| enum_to_string(&v)),
             controller_service_apis: v
                 .controller_service_apis
                 .map(|v| v.into_iter().map(|v| v.into()).collect()),
@@ -18896,12 +17577,7 @@ impl From<crate::v2_8_0::types::VersionedControllerService>
             property_descriptors: v
                 .property_descriptors
                 .map(|m| m.into_iter().map(|(k, v)| (k, v.map(Into::into))).collect()),
-            scheduled_state: v.scheduled_state.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            scheduled_state: v.scheduled_state.map(|v| enum_to_string(&v)),
             r#type: v.r#type,
         }
     }
@@ -18926,12 +17602,7 @@ impl From<crate::v2_8_0::types::VersionedFlowCoordinates>
 impl From<crate::v2_8_0::types::VersionedFlowDto> for super::types::VersionedFlowDto {
     fn from(v: crate::v2_8_0::types::VersionedFlowDto) -> Self {
         Self {
-            action: v.action.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            action: v.action.map(|v| enum_to_string(&v)),
             branch: v.branch,
             bucket_id: v.bucket_id,
             comments: v.comments,
@@ -19032,12 +17703,7 @@ impl From<crate::v2_8_0::types::VersionedFunnel> for super::types::VersionedFunn
     fn from(v: crate::v2_8_0::types::VersionedFunnel) -> Self {
         Self {
             comments: v.comments,
-            component_type: v.component_type.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            component_type: v.component_type.map(|v| enum_to_string(&v)),
             group_identifier: v.group_identifier,
             identifier: v.identifier,
             instance_identifier: v.instance_identifier,
@@ -19051,12 +17717,7 @@ impl From<crate::v2_8_0::types::VersionedLabel> for super::types::VersionedLabel
     fn from(v: crate::v2_8_0::types::VersionedLabel) -> Self {
         Self {
             comments: v.comments,
-            component_type: v.component_type.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            component_type: v.component_type.map(|v| enum_to_string(&v)),
             group_identifier: v.group_identifier,
             height: v.height,
             identifier: v.identifier,
@@ -19077,12 +17738,7 @@ impl From<crate::v2_8_0::types::VersionedListenPortDefinition>
     fn from(v: crate::v2_8_0::types::VersionedListenPortDefinition) -> Self {
         Self {
             application_protocols: v.application_protocols,
-            transport_protocol: v.transport_protocol.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            transport_protocol: v.transport_protocol.map(|v| enum_to_string(&v)),
         }
     }
 }
@@ -19108,12 +17764,7 @@ impl From<crate::v2_8_0::types::VersionedParameterContext>
     fn from(v: crate::v2_8_0::types::VersionedParameterContext) -> Self {
         Self {
             comments: v.comments,
-            component_type: v.component_type.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            component_type: v.component_type.map(|v| enum_to_string(&v)),
             description: v.description,
             group_identifier: v.group_identifier,
             identifier: v.identifier,
@@ -19136,36 +17787,16 @@ impl From<crate::v2_8_0::types::VersionedPort> for super::types::VersionedPort {
         Self {
             allow_remote_access: v.allow_remote_access,
             comments: v.comments,
-            component_type: v.component_type.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            component_type: v.component_type.map(|v| enum_to_string(&v)),
             concurrently_schedulable_task_count: v.concurrently_schedulable_task_count,
             group_identifier: v.group_identifier,
             identifier: v.identifier,
             instance_identifier: v.instance_identifier,
             name: v.name,
-            port_function: v.port_function.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            port_function: v.port_function.map(|v| enum_to_string(&v)),
             position: v.position.map(Into::into),
-            scheduled_state: v.scheduled_state.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
-            r#type: v.r#type.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            scheduled_state: v.scheduled_state.map(|v| enum_to_string(&v)),
+            r#type: v.r#type.map(|v| enum_to_string(&v)),
         }
     }
 }
@@ -19174,12 +17805,7 @@ impl From<crate::v2_8_0::types::VersionedProcessGroup> for super::types::Version
     fn from(v: crate::v2_8_0::types::VersionedProcessGroup) -> Self {
         Self {
             comments: v.comments,
-            component_type: v.component_type.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            component_type: v.component_type.map(|v| enum_to_string(&v)),
             connections: v
                 .connections
                 .map(|v| v.into_iter().map(|v| v.into()).collect()),
@@ -19189,12 +17815,7 @@ impl From<crate::v2_8_0::types::VersionedProcessGroup> for super::types::Version
             default_back_pressure_data_size_threshold: v.default_back_pressure_data_size_threshold,
             default_back_pressure_object_threshold: v.default_back_pressure_object_threshold,
             default_flow_file_expiration: v.default_flow_file_expiration,
-            execution_engine: v.execution_engine.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            execution_engine: v.execution_engine.map(|v| enum_to_string(&v)),
             flow_file_concurrency: v.flow_file_concurrency,
             flow_file_outbound_policy: v.flow_file_outbound_policy,
             funnels: v.funnels.map(|v| v.into_iter().map(|v| v.into()).collect()),
@@ -19222,12 +17843,7 @@ impl From<crate::v2_8_0::types::VersionedProcessGroup> for super::types::Version
             remote_process_groups: v
                 .remote_process_groups
                 .map(|v| v.into_iter().map(|v| v.into()).collect()),
-            scheduled_state: v.scheduled_state.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            scheduled_state: v.scheduled_state.map(|v| enum_to_string(&v)),
             stateless_flow_timeout: v.stateless_flow_timeout,
             versioned_flow_coordinates: v.versioned_flow_coordinates.map(Into::into),
         }
@@ -19243,12 +17859,7 @@ impl From<crate::v2_8_0::types::VersionedProcessor> for super::types::VersionedP
             bulletin_level: v.bulletin_level,
             bundle: v.bundle.map(Into::into),
             comments: v.comments,
-            component_type: v.component_type.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            component_type: v.component_type.map(|v| enum_to_string(&v)),
             concurrently_schedulable_task_count: v.concurrently_schedulable_task_count,
             execution_node: v.execution_node,
             group_identifier: v.group_identifier,
@@ -19265,12 +17876,7 @@ impl From<crate::v2_8_0::types::VersionedProcessor> for super::types::VersionedP
             retried_relationships: v.retried_relationships,
             retry_count: v.retry_count,
             run_duration_millis: v.run_duration_millis,
-            scheduled_state: v.scheduled_state.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            scheduled_state: v.scheduled_state.map(|v| enum_to_string(&v)),
             scheduling_period: v.scheduling_period,
             scheduling_strategy: v.scheduling_strategy,
             style: v.style,
@@ -19303,12 +17909,7 @@ impl From<crate::v2_8_0::types::VersionedRemoteGroupPort>
         Self {
             batch_size: v.batch_size.map(Into::into),
             comments: v.comments,
-            component_type: v.component_type.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            component_type: v.component_type.map(|v| enum_to_string(&v)),
             concurrently_schedulable_task_count: v.concurrently_schedulable_task_count,
             group_identifier: v.group_identifier,
             identifier: v.identifier,
@@ -19316,12 +17917,7 @@ impl From<crate::v2_8_0::types::VersionedRemoteGroupPort>
             name: v.name,
             position: v.position.map(Into::into),
             remote_group_id: v.remote_group_id,
-            scheduled_state: v.scheduled_state.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            scheduled_state: v.scheduled_state.map(|v| enum_to_string(&v)),
             target_id: v.target_id,
             use_compression: v.use_compression,
         }
@@ -19335,12 +17931,7 @@ impl From<crate::v2_8_0::types::VersionedRemoteProcessGroup>
         Self {
             comments: v.comments,
             communications_timeout: v.communications_timeout,
-            component_type: v.component_type.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            component_type: v.component_type.map(|v| enum_to_string(&v)),
             group_identifier: v.group_identifier,
             identifier: v.identifier,
             input_ports: v
@@ -19370,12 +17961,7 @@ impl From<crate::v2_8_0::types::VersionedReportingTask> for super::types::Versio
             annotation_data: v.annotation_data,
             bundle: v.bundle.map(Into::into),
             comments: v.comments,
-            component_type: v.component_type.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            component_type: v.component_type.map(|v| enum_to_string(&v)),
             group_identifier: v.group_identifier,
             identifier: v.identifier,
             instance_identifier: v.instance_identifier,
@@ -19385,12 +17971,7 @@ impl From<crate::v2_8_0::types::VersionedReportingTask> for super::types::Versio
             property_descriptors: v
                 .property_descriptors
                 .map(|m| m.into_iter().map(|(k, v)| (k, v.map(Into::into))).collect()),
-            scheduled_state: v.scheduled_state.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
+            scheduled_state: v.scheduled_state.map(|v| enum_to_string(&v)),
             scheduling_period: v.scheduling_period,
             scheduling_strategy: v.scheduling_strategy,
             r#type: v.r#type,
@@ -19444,22 +18025,10 @@ impl From<crate::v2_8_0::types::VersionedResourceDefinition>
 {
     fn from(v: crate::v2_8_0::types::VersionedResourceDefinition) -> Self {
         Self {
-            cardinality: v.cardinality.map(|v| {
-                serde_json::to_value(&v)
-                    .ok()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .unwrap_or_default()
-            }),
-            resource_types: v.resource_types.map(|v| {
-                v.into_iter()
-                    .map(|v| {
-                        serde_json::to_value(&v)
-                            .ok()
-                            .and_then(|v| v.as_str().map(|s| s.to_string()))
-                            .unwrap_or_default()
-                    })
-                    .collect()
-            }),
+            cardinality: v.cardinality.map(|v| enum_to_string(&v)),
+            resource_types: v
+                .resource_types
+                .map(|v| v.into_iter().map(|v| enum_to_string(&v)).collect()),
         }
     }
 }

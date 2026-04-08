@@ -353,7 +353,7 @@ fn emit_dynamic_method(
         match &ep.body_kind {
             Some(RequestBodyKind::Json) => {
                 let req_type = ep.request_type.as_deref().unwrap_or("serde_json::Value");
-                format!(", body: &types::{req_type}")
+                format!(", body: types::{req_type}")
             }
             Some(RequestBodyKind::OctetStream) => {
                 ", filename: Option<&str>, data: Vec<u8>".to_string()
@@ -365,6 +365,19 @@ fn emit_dynamic_method(
     // Doc comment
     if let Some(doc) = &ep.doc {
         out.push_str(&format!("    /// {doc}\n"));
+    }
+    // Version availability
+    let available_versions: Vec<&str> = versions
+        .iter()
+        .filter(|(ver, _, _, _)| ep_by_version.contains_key(ver))
+        .map(|(ver, _, _, _)| *ver)
+        .collect();
+    let total_versions = versions.len();
+    if available_versions.len() < total_versions {
+        let ver_list = available_versions.join(", ");
+        out.push_str(&format!(
+            "    ///\n    /// *Supported in NiFi: {ver_list}*\n"
+        ));
     }
 
     out.push_str(&format!(
@@ -503,7 +516,7 @@ fn emit_version_arm(
             Some(RequestBodyKind::Json) => {
                 let req_type = ep.request_type.as_deref().unwrap_or("serde_json::Value");
                 call_args.push(format!(
-                    "&crate::{mod_name}::types::{req_type}::try_from(body.clone())?",
+                    "&crate::{mod_name}::types::{req_type}::try_from(body)?",
                 ));
             }
             Some(RequestBodyKind::OctetStream) => {
