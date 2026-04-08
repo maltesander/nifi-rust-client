@@ -8,6 +8,31 @@ use std::fmt;
 
 use crate::error::NifiError;
 
+/// Wraps a value and masks it in [`fmt::Debug`] output as `[REDACTED]`.
+///
+/// Use this for sensitive fields (e.g. passwords) to prevent them from
+/// leaking into logs or debug output.
+#[derive(Clone)]
+pub struct Redacted<T>(T);
+
+impl<T> Redacted<T> {
+    /// Wrap `value` so its debug representation is hidden.
+    pub fn new(value: T) -> Self {
+        Self(value)
+    }
+
+    /// Return a reference to the wrapped value.
+    pub fn inner(&self) -> &T {
+        &self.0
+    }
+}
+
+impl<T> fmt::Debug for Redacted<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str("[REDACTED]")
+    }
+}
+
 /// Provides username/password credentials for NiFi authentication.
 ///
 /// Implement this trait to supply credentials from any source — static values,
@@ -26,7 +51,7 @@ pub trait CredentialProvider: Send + Sync + fmt::Debug {
 #[derive(Debug, Clone)]
 pub struct StaticCredentials {
     username: String,
-    password: String,
+    password: Redacted<String>,
 }
 
 impl StaticCredentials {
@@ -34,7 +59,7 @@ impl StaticCredentials {
     pub fn new(username: impl Into<String>, password: impl Into<String>) -> Self {
         Self {
             username: username.into(),
-            password: password.into(),
+            password: Redacted::new(password.into()),
         }
     }
 }
@@ -42,7 +67,7 @@ impl StaticCredentials {
 #[async_trait::async_trait]
 impl CredentialProvider for StaticCredentials {
     async fn credentials(&self) -> Result<(String, String), NifiError> {
-        Ok((self.username.clone(), self.password.clone()))
+        Ok((self.username.clone(), self.password.inner().clone()))
     }
 }
 
