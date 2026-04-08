@@ -15,7 +15,7 @@ Use this when you're building a deployment pipeline, custom processor manager, o
 <!-- STATIC_FEATURE_EXAMPLE_START -->
 ```toml
 [dependencies]
-nifi-rust-client = { version = "...", features = ["nifi-2-8-0"] }
+nifi-rust-client = { version = "0.3", features = ["nifi-2-8-0"] }
 ```
 <!-- STATIC_FEATURE_EXAMPLE_END -->
 
