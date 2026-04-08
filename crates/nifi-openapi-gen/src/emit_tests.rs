@@ -10,7 +10,7 @@ pub fn emit_tests(spec: &ApiSpec) -> String {
         out.push_str(&emit_tag_tests(tag));
     }
 
-    format_source(&out)
+    crate::util::format_source(&out)
 }
 
 fn emit_tag_tests(tag: &TagGroup) -> String {
@@ -257,9 +257,3 @@ fn method_str(m: &HttpMethod) -> &'static str {
     }
 }
 
-fn format_source(src: &str) -> String {
-    match syn::parse_file(src) {
-        Ok(file) => prettyplease::unparse(&file),
-        Err(_) => src.to_string(),
-    }
-}

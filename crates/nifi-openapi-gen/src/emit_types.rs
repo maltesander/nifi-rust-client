@@ -56,7 +56,7 @@ pub fn emit_types(spec: &ApiSpec) -> Vec<(String, String)> {
     for tag_name in &tag_names {
         mod_out.push_str(&format!("pub use {tag_name}::*;\n"));
     }
-    files.push(("mod.rs".into(), format_source(&mod_out)));
+    files.push(("mod.rs".into(), crate::util::format_source(&mod_out)));
 
     files
 }
@@ -99,7 +99,7 @@ fn emit_type_file(types: &[&TypeDef]) -> String {
         out.push_str(&emit_type(typedef));
         out.push('\n');
     }
-    format_source(&out)
+    crate::util::format_source(&out)
 }
 
 fn emit_type(t: &TypeDef) -> String {
@@ -292,11 +292,4 @@ pub(crate) fn pascal_case(s: &str) -> String {
             }
         })
         .collect()
-}
-
-fn format_source(src: &str) -> String {
-    match syn::parse_file(src) {
-        Ok(file) => prettyplease::unparse(&file),
-        Err(_) => src.to_string(),
-    }
 }

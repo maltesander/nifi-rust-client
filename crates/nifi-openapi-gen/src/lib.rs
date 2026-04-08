@@ -6,6 +6,7 @@ mod emit_dynamic_types;
 mod emit_tests;
 mod emit_types;
 pub mod parser;
+pub(crate) mod util;
 
 pub use emit_api::{emit_api, emit_api_with_prefix};
 pub use emit_dynamic::emit_dynamic;

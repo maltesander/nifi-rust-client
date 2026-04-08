@@ -41,7 +41,7 @@ fn emit_mod(spec: &ApiSpec) -> String {
         ));
     }
     out.push_str("}\n");
-    format_source(&out)
+    crate::util::format_source(&out)
 }
 
 fn emit_tag(tag: &TagGroup) -> String {
@@ -65,7 +65,7 @@ fn emit_tag(tag: &TagGroup) -> String {
     for sg in &tag.sub_groups {
         out.push_str(&emit_sub_struct(sg));
     }
-    format_source(&out)
+    crate::util::format_source(&out)
 }
 
 fn emit_sub_group_accessor(sg: &SubGroup) -> String {
@@ -617,9 +617,3 @@ fn method_str(m: &HttpMethod) -> &'static str {
     }
 }
 
-fn format_source(src: &str) -> String {
-    match syn::parse_file(src) {
-        Ok(file) => prettyplease::unparse(&file),
-        Err(_) => src.to_string(),
-    }
-}
