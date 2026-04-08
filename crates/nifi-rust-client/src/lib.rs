@@ -2,8 +2,10 @@
 
 pub mod builder;
 pub mod client;
+pub mod credentials;
 pub mod error;
 pub use builder::NifiClientBuilder;
+pub use credentials::CredentialProvider;
 pub use client::NifiClient;
 pub use error::NifiError;
 
