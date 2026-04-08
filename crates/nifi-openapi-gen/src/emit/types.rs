@@ -1,6 +1,8 @@
 use std::collections::{BTreeMap, HashMap, HashSet};
 
+use crate::emit::common::{InlineEnumMode, emit_doc_comment, field_type_to_rust};
 use crate::parser::{ApiSpec, FieldType, TagGroup, TypeDef, TypeKind};
+use crate::util::{escape_keyword, pascal_case};
 
 /// Returns a list of `(filename, content)` pairs to write into `src/types/`.
 ///
@@ -110,17 +112,6 @@ fn emit_type(t: &TypeDef) -> String {
     }
 }
 
-fn emit_doc_comment(out: &mut String, doc: &str, indent: &str) {
-    for line in doc.lines() {
-        let line = line.trim();
-        if line.is_empty() {
-            out.push_str(&format!("{indent}///\n"));
-        } else {
-            out.push_str(&format!("{indent}/// {line}\n"));
-        }
-    }
-}
-
 fn emit_dto(t: &TypeDef) -> String {
     let mut out = String::new();
     for field in &t.fields {
@@ -148,7 +139,7 @@ fn emit_dto(t: &TypeDef) -> String {
         } else if field.read_only {
             out.push_str("    /// Read-only — set by NiFi.\n");
         }
-        let ty_str = field_type_to_rust(&field.ty, &t.name, &field.rust_name);
+        let ty_str = field_type_to_rust(&field.ty, &t.name, InlineEnumMode::Extract { struct_name: &t.name, field_name: &field.rust_name });
         let field_ident = escape_keyword(&field.rust_name);
         let is_option = matches!(&field.ty, crate::parser::FieldType::Opt(_));
         if field_ident != field.rust_name && is_option {
@@ -227,40 +218,6 @@ fn emit_standalone_string_enum(name: &str, variants: &[String]) -> String {
     out
 }
 
-fn field_type_to_rust(ty: &FieldType, struct_name: &str, field_name: &str) -> String {
-    match ty {
-        FieldType::Str => "String".into(),
-        FieldType::Bool => "bool".into(),
-        FieldType::I32 => "i32".into(),
-        FieldType::I64 => "i64".into(),
-        FieldType::F64 => "f64".into(),
-        FieldType::Opt(inner) => {
-            format!(
-                "Option<{}>",
-                field_type_to_rust(inner, struct_name, field_name)
-            )
-        }
-        FieldType::List(inner) => {
-            format!(
-                "Vec<{}>",
-                field_type_to_rust(inner, struct_name, field_name)
-            )
-        }
-        FieldType::Ref(name) => {
-            if name == struct_name {
-                format!("Box<{name}>")
-            } else {
-                name.clone()
-            }
-        }
-        FieldType::Enum(_) => format!("{}{}", struct_name, pascal_case(field_name)),
-        FieldType::Map(value_ty) => format!(
-            "std::collections::HashMap<String, {}>",
-            field_type_to_rust(value_ty, struct_name, field_name)
-        ),
-    }
-}
-
 fn extract_enum(ty: &FieldType) -> Option<Vec<String>> {
     match ty {
         FieldType::Enum(v) => Some(v.clone()),
@@ -271,25 +228,3 @@ fn extract_enum(ty: &FieldType) -> Option<Vec<String>> {
     }
 }
 
-fn escape_keyword(name: &str) -> String {
-    match name {
-        "type" | "ref" | "use" | "mod" | "fn" | "let" | "match" | "for" | "if" | "else"
-        | "return" | "struct" | "enum" | "impl" | "trait" | "pub" | "super" | "self" | "crate"
-        | "where" | "true" | "false" | "in" | "loop" | "while" | "break" | "continue" | "mut"
-        | "move" | "async" | "await" | "dyn" | "box" | "const" | "static" | "extern" | "unsafe"
-        | "as" => format!("r#{name}"),
-        _ => name.to_string(),
-    }
-}
-
-pub(crate) fn pascal_case(s: &str) -> String {
-    s.split('_')
-        .map(|part| {
-            let mut c = part.chars();
-            match c.next() {
-                None => String::new(),
-                Some(f) => f.to_uppercase().collect::<String>() + &c.as_str().to_lowercase(),
-            }
-        })
-        .collect()
-}

@@ -1,4 +1,5 @@
 use crate::parser::{ApiSpec, Endpoint, HttpMethod, QueryParam, SubGroup, TagGroup};
+use crate::util::escape_keyword;
 
 /// Returns a list of `(filename, content)` pairs to write into `src/api/`.
 ///
@@ -377,17 +378,6 @@ fn camel_hyphen_to_snake(s: &str) -> String {
         out.push(ch.to_ascii_lowercase());
     }
     out
-}
-
-fn escape_keyword(name: &str) -> String {
-    match name {
-        "type" | "ref" | "use" | "mod" | "fn" | "let" | "match" | "for" | "if" | "else"
-        | "return" | "struct" | "enum" | "impl" | "trait" | "pub" | "super" | "self" | "crate"
-        | "where" | "true" | "false" | "in" | "loop" | "while" | "break" | "continue" | "mut"
-        | "move" | "async" | "await" | "dyn" | "box" | "const" | "static" | "extern" | "unsafe"
-        | "as" => format!("r#{name}"),
-        _ => name.to_string(),
-    }
 }
 
 fn query_param_rust_type(qp: &QueryParam) -> String {

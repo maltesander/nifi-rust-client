@@ -196,7 +196,7 @@ fn query_test_arg(qp: &QueryParam) -> String {
                     .enum_type_name
                     .as_deref()
                     .expect("enum param must have type name");
-                let variant = crate::emit_types::pascal_case(v);
+                let variant = crate::util::pascal_case(v);
                 format!("crate::types::{type_name}::{variant}")
             } else {
                 "\"test-value\"".to_string()
