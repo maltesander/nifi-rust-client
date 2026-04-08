@@ -264,7 +264,7 @@ fn main() {
         {
             const START: &str = "<!-- SUPPORTED_VERSIONS_START -->";
             const END: &str = "<!-- SUPPORTED_VERSIONS_END -->";
-            let content = generate_versions_table_content(&all_parsed, &latest_version);
+            let content = generate_versions_table_content(&all_parsed);
             update_file_between_markers(&workspace_root.join("README.md"), START, END, &content);
             update_file_between_markers(
                 &workspace_root.join("crates/nifi-rust-client/README.md"),

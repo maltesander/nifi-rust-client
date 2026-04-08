@@ -11,7 +11,18 @@ Supports multiple NiFi 2.x API versions via Cargo feature flags. Default (latest
 ```
 crates/
   nifi-openapi-gen/           # Code generator binary (not published)
-    src/                  # Parser + emitters for types, API, and tests
+    src/
+      bin/
+        generate.rs       # Orchestrator binary — writes generated files
+        openapi_diff.rs   # Standalone OpenAPI diff tool (--features cli)
+      emit/               # Code emitters (api, types, tests, dynamic/)
+        common.rs         # Shared emit helpers (field_type_to_rust, etc.)
+        dynamic/          # Dynamic multi-version emitters
+      docs/               # Documentation generators (README table, API changes)
+      repo/               # Repo sync (lib.rs, Cargo.toml, cleanup)
+      parser.rs           # OpenAPI spec parser
+      diff.rs             # Generic OpenAPI spec differ
+      util.rs             # Shared utilities
     scripts/
       fetch-nifi-spec.sh  # Fetch OpenAPI spec from a running NiFi instance
     specs/
@@ -100,11 +111,11 @@ raw `&str`. The full pipeline:
 1. **Parser** (`parser.rs`): detects `schema.enum` on query params, sets `QueryParam::enum_type_name`
    (e.g. `"ParameterContextHandlingStrategy"`) and `QueryParamType::Enum(variants)`, and pushes a
    `TypeDef { kind: TypeKind::StringEnum(variants) }` into `all_types`.
-2. **Emit types** (`emit_types.rs`): `TypeKind::StringEnum` is handled by `emit_standalone_string_enum`,
+2. **Emit types** (`emit/types.rs`): `TypeKind::StringEnum` is handled by `emit_standalone_string_enum`,
    which generates an enum with `#[serde(rename = "WIRE_VALUE")]` per variant and a `Display` impl
    that outputs the wire value. No `Default` derive (these types always appear as `Option<T>`).
    `types_referenced_by_tag` includes query param enum names so they land in the correct per-tag file.
-3. **Emit API** (`emit_api.rs`): `query_param_rust_type` returns `crate::types::TypeName` for enum
+3. **Emit API** (`emit/api.rs`): `query_param_rust_type` returns `crate::types::TypeName` for enum
    params; the query-building code calls `.to_string()` (which uses the `Display` impl).
 
 **Naming rules:**

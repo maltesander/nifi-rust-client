@@ -7,12 +7,14 @@ All NiFi REST API endpoints are generated from the official OpenAPI spec and exp
 ## Supported NiFi Versions
 
 <!-- SUPPORTED_VERSIONS_START -->
-| NiFi Version | Feature flag | Endpoints | Types | Changes | Default |
-|---|---|---|---|---|---|
-| 2.8.0 | `nifi-2-8-0` | 317 | 405 | +2 fields, +1 enum values vs 2.7.2 | ✓ |
-| 2.7.2 | `nifi-2-7-2` | 317 | 405 | +17 endpoints, +10 types, +8 fields vs 2.6.0 |  |
-| 2.6.0 | `nifi-2-6-0` | 300 | 395 | — |  |
+| NiFi Version | Feature flag | Endpoints | Types | Changes |
+|---|---|---|---|---|
+| 2.8.0 | `nifi-2-8-0` | 317 | 405 | +2 fields, +1 enum values vs 2.7.2 |
+| 2.7.2 | `nifi-2-7-2` | 317 | 405 | +17 endpoints, +10 types, +8 fields vs 2.6.0 |
+| 2.6.0 | `nifi-2-6-0` | 300 | 395 | — |
 <!-- SUPPORTED_VERSIONS_END -->
+
+Full changelog: [NIFI_API_CHANGES.md](../../NIFI_API_CHANGES.md)
 
 ## Modes
 

@@ -21,21 +21,15 @@ pub(crate) fn count_spec_types(spec: &ApiSpec) -> usize {
 /// Generates the Markdown rows for the supported-versions table.
 /// `all_specs` must be sorted semver-ascending (oldest first).
 /// The table is rendered newest-first so users see the current default at a glance.
-pub fn generate_versions_table_content(
-    all_specs: &[(String, ApiSpec)],
-    latest: &str,
-) -> String {
+pub fn generate_versions_table_content(all_specs: &[(String, ApiSpec)]) -> String {
     let mut rows: Vec<String> = Vec::new();
-    rows.push(
-        "| NiFi Version | Feature flag | Endpoints | Types | Changes | Default |".to_string(),
-    );
-    rows.push("|---|---|---|---|---|---|".to_string());
+    rows.push("| NiFi Version | Feature flag | Endpoints | Types | Changes |".to_string());
+    rows.push("|---|---|---|---|---|".to_string());
 
     for (i, (version, spec)) in all_specs.iter().enumerate().rev() {
         let endpoints = count_spec_endpoints(spec);
         let types = count_spec_types(spec);
         let feature = version_to_feature(version);
-        let default_mark = if version == latest { "\u{2713}" } else { "" };
 
         let changes = if i == 0 {
             "\u{2014}".to_string()
@@ -45,7 +39,7 @@ pub fn generate_versions_table_content(
         };
 
         rows.push(format!(
-            "| {version} | `{feature}` | {endpoints} | {types} | {changes} | {default_mark} |"
+            "| {version} | `{feature}` | {endpoints} | {types} | {changes} |"
         ));
     }
 
@@ -74,13 +68,11 @@ mod tests {
                 },
             ),
         ];
-        let table = generate_versions_table_content(&specs, "2.8.0");
+        let table = generate_versions_table_content(&specs);
         // Latest version appears first in the rendered table
         let pos_new = table.find("2.8.0").unwrap();
         let pos_old = table.find("2.7.2").unwrap();
         assert!(pos_new < pos_old, "latest version should appear first");
-        // Default mark only on the latest
-        assert!(table.contains("\u{2713}"), "default mark missing");
         // Both versions have equal counts -> no API changes message
         assert!(
             table.contains("no API changes vs 2.7.2"),
@@ -88,6 +80,11 @@ mod tests {
         );
         // Oldest shows em dash
         assert!(table.contains("| \u{2014} |"), "oldest version should show \u{2014}");
+        // No Default column
+        assert!(
+            !table.contains("Default"),
+            "table should not have Default column"
+        );
     }
 
     #[test]
@@ -131,7 +128,7 @@ mod tests {
             ("2.6.0".to_string(), make_spec(10)),
             ("2.7.2".to_string(), make_spec(12)),
         ];
-        let table = generate_versions_table_content(&specs, "2.7.2");
+        let table = generate_versions_table_content(&specs);
         assert!(
             table.contains("+2 endpoints vs 2.6.0"),
             "expected +2 endpoints delta"
@@ -156,7 +153,7 @@ mod tests {
             })
             .collect();
         let latest = versions.last().unwrap().as_str();
-        let content = generate_versions_table_content(&all_specs, latest);
+        let content = generate_versions_table_content(&all_specs);
         // Table has the header and separator rows plus one row per version
         assert!(content.contains("| NiFi Version |"));
         // Baseline row has em dash
