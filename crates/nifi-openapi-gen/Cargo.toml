@@ -9,9 +9,19 @@ homepage.workspace = true
 documentation.workspace = true
 publish = false
 
+[[bin]]
+name = "openapi-diff"
+path = "src/bin/openapi_diff.rs"
+required-features = ["cli"]
+
+[features]
+cli = ["dep:clap"]
+
 [dependencies]
+clap = { workspace = true, optional = true }
 prettyplease.workspace = true
 semver.workspace = true
+serde.workspace = true
 serde_json.workspace = true
 syn.workspace = true
 toml_edit.workspace = true

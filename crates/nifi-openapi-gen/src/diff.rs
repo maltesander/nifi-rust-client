@@ -1,10 +1,12 @@
 use crate::parser::{
     ApiSpec, Endpoint, Field, FieldType, HttpMethod, QueryParam, QueryParamType, TypeDef,
 };
+use serde::Serialize;
 use std::collections::HashMap;
 
 // ─── Public types ─────────────────────────────────────────────────────────────
 
+#[derive(Serialize)]
 pub struct VersionDiff {
     pub from: String,
     pub to: String,
@@ -12,12 +14,14 @@ pub struct VersionDiff {
     pub types: TypesDiff,
 }
 
+#[derive(Serialize)]
 pub struct EndpointDiff {
     pub added: Vec<EndpointSummary>,
     pub removed: Vec<EndpointSummary>,
     pub changed: Vec<EndpointChanges>,
 }
 
+#[derive(Serialize)]
 pub struct EndpointSummary {
     pub method: HttpMethod,
     pub path: String,
@@ -25,6 +29,7 @@ pub struct EndpointSummary {
     pub doc: Option<String>,
 }
 
+#[derive(Serialize)]
 pub struct EndpointChanges {
     pub method: HttpMethod,
     pub path: String,
@@ -33,18 +38,21 @@ pub struct EndpointChanges {
     pub changed_params: Vec<ParamChange>,
 }
 
+#[derive(Serialize)]
 pub struct ParamChange {
     pub name: String,
     pub added_enum_values: Vec<String>,
     pub removed_enum_values: Vec<String>,
 }
 
+#[derive(Serialize)]
 pub struct TypesDiff {
     pub added: Vec<String>,
     pub removed: Vec<String>,
     pub changed: Vec<TypeChanges>,
 }
 
+#[derive(Serialize)]
 pub struct TypeChanges {
     pub name: String,
     pub added_fields: Vec<String>,
@@ -52,6 +60,7 @@ pub struct TypeChanges {
     pub changed_fields: Vec<FieldChange>,
 }
 
+#[derive(Serialize)]
 pub struct FieldChange {
     pub name: String,
     pub description: String,
