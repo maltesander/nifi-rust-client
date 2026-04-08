@@ -394,6 +394,205 @@ fn update_readme_versions_table(
     );
 }
 
+#[allow(dead_code)]
+fn method_str(m: &nifi_openapi_gen::HttpMethod) -> &'static str {
+    use nifi_openapi_gen::HttpMethod;
+    match m {
+        HttpMethod::Get => "GET",
+        HttpMethod::Post => "POST",
+        HttpMethod::Put => "PUT",
+        HttpMethod::Delete => "DELETE",
+    }
+}
+
+#[allow(dead_code)]
+fn format_diff_body(diff: &nifi_openapi_gen::VersionDiff) -> String {
+    let mut out = String::new();
+
+    if !diff.endpoints.added.is_empty() {
+        out.push_str("### Added endpoints\n\n");
+        for ep in &diff.endpoints.added {
+            let doc = ep.doc.as_deref().map(|d| format!(" — {d}")).unwrap_or_default();
+            out.push_str(&format!(
+                "- `{} {}`{} ({})\n",
+                method_str(&ep.method),
+                ep.path,
+                doc,
+                ep.tag,
+            ));
+        }
+        out.push('\n');
+    }
+
+    if !diff.endpoints.removed.is_empty() {
+        out.push_str("### Removed endpoints\n\n");
+        for ep in &diff.endpoints.removed {
+            out.push_str(&format!(
+                "- `{} {}` ({})\n",
+                method_str(&ep.method),
+                ep.path,
+                ep.tag,
+            ));
+        }
+        out.push('\n');
+    }
+
+    let meaningful_changes: Vec<&nifi_openapi_gen::EndpointChanges> = diff
+        .endpoints
+        .changed
+        .iter()
+        .filter(|ec| {
+            !ec.added_params.is_empty()
+                || !ec.removed_params.is_empty()
+                || !ec.changed_params.is_empty()
+        })
+        .collect();
+
+    if !meaningful_changes.is_empty() {
+        out.push_str("### Changed endpoints\n\n");
+        for ec in meaningful_changes {
+            let mut parts = Vec::new();
+            if !ec.added_params.is_empty() {
+                parts.push(format!(
+                    "added params: `{}`",
+                    ec.added_params.join("`, `")
+                ));
+            }
+            if !ec.removed_params.is_empty() {
+                parts.push(format!(
+                    "removed params: `{}`",
+                    ec.removed_params.join("`, `")
+                ));
+            }
+            for pc in &ec.changed_params {
+                if !pc.added_enum_values.is_empty() {
+                    parts.push(format!(
+                        "param `{}`: +enum values (`{}`)",
+                        pc.name,
+                        pc.added_enum_values.join("`, `")
+                    ));
+                }
+                if !pc.removed_enum_values.is_empty() {
+                    parts.push(format!(
+                        "param `{}`: -enum values (`{}`)",
+                        pc.name,
+                        pc.removed_enum_values.join("`, `")
+                    ));
+                }
+            }
+            out.push_str(&format!(
+                "- `{} {}` — {}\n",
+                method_str(&ec.method),
+                ec.path,
+                parts.join("; ")
+            ));
+        }
+        out.push('\n');
+    }
+
+    if !diff.types.added.is_empty() {
+        out.push_str("### Added types\n\n");
+        for t in &diff.types.added {
+            out.push_str(&format!("- `{t}`\n"));
+        }
+        out.push('\n');
+    }
+
+    if !diff.types.removed.is_empty() {
+        out.push_str("### Removed types\n\n");
+        for t in &diff.types.removed {
+            out.push_str(&format!("- `{t}`\n"));
+        }
+        out.push('\n');
+    }
+
+    let meaningful_types: Vec<&nifi_openapi_gen::TypeChanges> = diff
+        .types
+        .changed
+        .iter()
+        .filter(|tc| {
+            !tc.added_fields.is_empty()
+                || !tc.removed_fields.is_empty()
+                || !tc.changed_fields.is_empty()
+        })
+        .collect();
+
+    if !meaningful_types.is_empty() {
+        out.push_str("### Changed types\n\n");
+        for tc in meaningful_types {
+            let mut parts = Vec::new();
+            if !tc.added_fields.is_empty() {
+                parts.push(format!(
+                    "added fields: `{}`",
+                    tc.added_fields.join("`, `")
+                ));
+            }
+            if !tc.removed_fields.is_empty() {
+                parts.push(format!(
+                    "removed fields: `{}`",
+                    tc.removed_fields.join("`, `")
+                ));
+            }
+            for fc in &tc.changed_fields {
+                parts.push(format!("`{}` {}", fc.name, fc.description));
+            }
+            out.push_str(&format!(
+                "- `{}` — {}\n",
+                tc.name,
+                parts.join("; ")
+            ));
+        }
+        out.push('\n');
+    }
+
+    if out.is_empty() {
+        out.push_str("_No API changes._\n\n");
+    }
+
+    out
+}
+
+/// Generates the full body of NIFI_API_CHANGES.md (content between the markers).
+/// `all_specs` must be sorted semver-ascending (oldest first).
+#[allow(dead_code)]
+fn generate_api_changes_content(all_specs: &[(String, nifi_openapi_gen::ApiSpec)]) -> String {
+    if all_specs.len() < 2 {
+        return String::new();
+    }
+
+    let (baseline_version, baseline_spec) = &all_specs[0];
+    let mut out = String::new();
+
+    // Iterate newest to oldest, skipping baseline
+    for i in (1..all_specs.len()).rev() {
+        let (version, spec) = &all_specs[i];
+        let (prev_version, prev_spec) = &all_specs[i - 1];
+
+        out.push_str(&format!("## {version}\n\n"));
+
+        // Consecutive diff
+        let consec = nifi_openapi_gen::compute_diff(prev_spec, spec, prev_version, version);
+        out.push_str(&format!(
+            "<details><summary>vs {prev_version} (consecutive)</summary>\n\n"
+        ));
+        out.push_str(&format_diff_body(&consec));
+        out.push_str("</details>\n\n");
+
+        // Cumulative diff — only when there is more than one step from baseline
+        if i > 1 {
+            let cumul =
+                nifi_openapi_gen::compute_diff(baseline_spec, spec, baseline_version, version);
+            out.push_str(&format!(
+                "<details><summary>vs {baseline_version} (cumulative)</summary>\n\n"
+            ));
+            out.push_str(&format_diff_body(&cumul));
+            out.push_str("</details>\n\n");
+        }
+    }
+
+    out.trim_end().to_string()
+}
+
 fn read_crate_version_shorthand(workspace_root: &Path) -> String {
     let cargo_toml = workspace_root.join("Cargo.toml");
     let content = std::fs::read_to_string(&cargo_toml)
@@ -1113,5 +1312,43 @@ mod tests {
         assert!(content.contains("| — |"));
         // Non-baseline row has "vs" in changes column
         assert!(content.contains(" vs ") || content.contains("no API changes"));
+    }
+
+    #[test]
+    fn test_generate_api_changes_content_shape() {
+        let codegen_dir = Path::new(env!("CARGO_MANIFEST_DIR"));
+        let specs_dir = codegen_dir.join("specs");
+        let versions = discover_spec_versions(&specs_dir);
+        if versions.len() < 2 {
+            return;
+        }
+        let all_specs: Vec<(String, nifi_openapi_gen::ApiSpec)> = versions
+            .iter()
+            .map(|v| {
+                let path = specs_dir.join(v).join("nifi-api.json");
+                let spec = nifi_openapi_gen::load(path.to_str().unwrap());
+                (v.clone(), spec)
+            })
+            .collect();
+
+        let content = generate_api_changes_content(&all_specs);
+
+        // Newest version heading present
+        let newest = versions.last().unwrap();
+        assert!(content.contains(&format!("## {newest}")), "missing heading for {newest}");
+
+        // Baseline version has no heading
+        let oldest = versions.first().unwrap();
+        assert!(!content.contains(&format!("## {oldest}")), "baseline should have no heading");
+
+        // Contains collapsible details blocks
+        assert!(content.contains("<details>"));
+        assert!(content.contains("</details>"));
+        assert!(content.contains("(consecutive)"));
+
+        // Newest version with 3+ versions also has cumulative block
+        if versions.len() >= 3 {
+            assert!(content.contains("(cumulative)"));
+        }
     }
 }
