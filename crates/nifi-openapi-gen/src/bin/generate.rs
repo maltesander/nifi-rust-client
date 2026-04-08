@@ -560,10 +560,13 @@ fn main() {
         let type_specs: Vec<(&str, &nifi_openapi_gen::ApiSpec)> =
             parsed_specs.iter().map(|(v, s)| (v.as_str(), s)).collect();
 
-        targets.push((
-            client.join("src/dynamic/types.rs"),
-            nifi_openapi_gen::emit_dynamic_types(&type_specs),
-        ));
+        let type_files = nifi_openapi_gen::emit_dynamic_types(&type_specs);
+        for (filename, content) in &type_files {
+            targets.push((
+                client.join(format!("src/dynamic/types/{filename}")),
+                content.clone(),
+            ));
+        }
 
         let merged_field_names = nifi_openapi_gen::collect_merged_field_names(&type_specs);
         let universal_fields = nifi_openapi_gen::collect_universal_fields(&type_specs);
@@ -578,14 +581,17 @@ fn main() {
             .map(|((v, s), m)| (v.as_str(), m.as_str(), s))
             .collect();
 
-        targets.push((
-            client.join("src/dynamic/conversions.rs"),
-            nifi_openapi_gen::emit_dynamic_conversions(
-                &conv_specs,
-                &merged_field_names,
-                &universal_fields,
-            ),
-        ));
+        let conv_files = nifi_openapi_gen::emit_dynamic_conversions(
+            &conv_specs,
+            &merged_field_names,
+            &universal_fields,
+        );
+        for (filename, content) in &conv_files {
+            targets.push((
+                client.join(format!("src/dynamic/conversions/{filename}")),
+                content.clone(),
+            ));
+        }
 
         let feature_names: Vec<String> = parsed_specs
             .iter()
@@ -596,6 +602,33 @@ fn main() {
             .zip(mod_names.iter().zip(feature_names.iter()))
             .map(|((v, s), (m, f))| (v.as_str(), m.as_str(), f.as_str(), s))
             .collect();
+
+        // Dynamic traits
+        let trait_files = nifi_openapi_gen::emit_dynamic_traits(&dispatch_specs);
+        for (filename, content) in &trait_files {
+            targets.push((
+                client.join(format!("src/dynamic/traits/{filename}")),
+                content.clone(),
+            ));
+        }
+
+        // Dynamic dispatch enums
+        let dispatch_files = nifi_openapi_gen::emit_dynamic_dispatch(&dispatch_specs);
+        for (filename, content) in &dispatch_files {
+            targets.push((
+                client.join(format!("src/dynamic/dispatch/{filename}")),
+                content.clone(),
+            ));
+        }
+
+        // Dynamic per-version impls
+        let impl_files = nifi_openapi_gen::emit_dynamic_impls(&dispatch_specs);
+        for (filename, content) in &impl_files {
+            targets.push((
+                client.join(format!("src/dynamic/impls/{filename}")),
+                content.clone(),
+            ));
+        }
 
         targets.push((
             client.join("src/dynamic/mod.rs"),
@@ -645,6 +678,69 @@ fn main() {
             std::fs::write(path, content).expect("write generated file");
             println!("  wrote {}", path.display());
             written += 1;
+        }
+    }
+
+    // 6a. Remove legacy src/dynamic/types.rs now that types live in src/dynamic/types/
+    {
+        let legacy = client.join("src/dynamic/types.rs");
+        if legacy.exists() && !written_paths.contains(&legacy) {
+            std::fs::remove_file(&legacy).expect("remove legacy types.rs");
+            println!("  removed legacy {}", legacy.display());
+        }
+    }
+
+    // 6a. Remove legacy src/dynamic/conversions.rs now that conversions live in src/dynamic/conversions/
+    {
+        let legacy = client.join("src/dynamic/conversions.rs");
+        if legacy.exists() && !written_paths.contains(&legacy) {
+            std::fs::remove_file(&legacy).expect("remove legacy conversions.rs");
+            println!("  removed legacy {}", legacy.display());
+        }
+    }
+
+    // 6a. Delete stale .rs files in dynamic subdirectories
+    for subdir in ["traits", "dispatch"] {
+        let dir = client.join("src/dynamic").join(subdir);
+        if let Ok(entries) = std::fs::read_dir(&dir) {
+            for entry in entries.flatten() {
+                let path = entry.path();
+                if path.extension().and_then(|e| e.to_str()) == Some("rs")
+                    && !written_paths.contains(&path)
+                {
+                    std::fs::remove_file(&path).expect("remove stale dynamic file");
+                    println!("  removed stale {}", path.display());
+                }
+            }
+        }
+    }
+    // impls/ has per-version subdirectories
+    {
+        let impls_dir = client.join("src/dynamic/impls");
+        if let Ok(entries) = std::fs::read_dir(&impls_dir) {
+            for entry in entries.flatten() {
+                let path = entry.path();
+                if path.is_dir() {
+                    // per-version subdir: clean stale .rs files inside
+                    if let Ok(sub_entries) = std::fs::read_dir(&path) {
+                        for sub_entry in sub_entries.flatten() {
+                            let sub_path = sub_entry.path();
+                            if sub_path.extension().and_then(|e| e.to_str()) == Some("rs")
+                                && !written_paths.contains(&sub_path)
+                            {
+                                std::fs::remove_file(&sub_path)
+                                    .expect("remove stale dynamic impls file");
+                                println!("  removed stale {}", sub_path.display());
+                            }
+                        }
+                    }
+                } else if path.extension().and_then(|e| e.to_str()) == Some("rs")
+                    && !written_paths.contains(&path)
+                {
+                    std::fs::remove_file(&path).expect("remove stale dynamic impls file");
+                    println!("  removed stale {}", path.display());
+                }
+            }
         }
     }
 
