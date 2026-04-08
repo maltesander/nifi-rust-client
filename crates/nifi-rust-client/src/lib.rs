@@ -9,7 +9,6 @@ pub use builder::NifiClientBuilder;
 pub use client::NifiClient;
 pub use credentials::CredentialProvider;
 pub use error::NifiError;
-pub use retry::RetryPolicy;
 
 #[cfg(not(any(feature = "nifi-2-6-0", feature = "nifi-2-7-2", feature = "nifi-2-8-0")))]
 compile_error!("Enable at least one NiFi version feature, e.g. features = [\"nifi-2-8-0\"]");

@@ -207,7 +207,11 @@ impl NifiClient {
         for attempt in 0..=policy.max_retries {
             if attempt > 0 {
                 let backoff = policy.backoff_for(attempt - 1);
-                tracing::info!(attempt, backoff_ms = backoff.as_millis() as u64, "retrying after transient error");
+                tracing::info!(
+                    attempt,
+                    backoff_ms = backoff.as_millis() as u64,
+                    "retrying after transient error"
+                );
                 tokio::time::sleep(backoff).await;
             }
             match self.with_auth_retry(&f).await {

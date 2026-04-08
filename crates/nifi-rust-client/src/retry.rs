@@ -55,7 +55,9 @@ impl RetryPolicy {
     /// Uses exponential backoff: `initial_backoff * 2^attempt`, capped at
     /// [`max_backoff`](Self::max_backoff).
     pub fn backoff_for(&self, attempt: u32) -> Duration {
-        let backoff = self.initial_backoff.saturating_mul(2u32.saturating_pow(attempt));
+        let backoff = self
+            .initial_backoff
+            .saturating_mul(2u32.saturating_pow(attempt));
         std::cmp::min(backoff, self.max_backoff)
     }
 }

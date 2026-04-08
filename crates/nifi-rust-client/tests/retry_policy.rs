@@ -192,6 +192,9 @@ async fn retry_composes_with_auth_refresh() {
     client.set_token("expired-jwt".to_string()).await;
 
     let result = client.flow_api().get_about_info().await;
-    assert!(result.is_ok(), "expected Ok after retry + auth refresh, got: {result:?}");
+    assert!(
+        result.is_ok(),
+        "expected Ok after retry + auth refresh, got: {result:?}"
+    );
     assert_eq!(client.token().await.as_deref(), Some("fresh-jwt-token"));
 }
