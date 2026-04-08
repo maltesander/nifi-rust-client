@@ -7,6 +7,7 @@ use wiremock::matchers::{method, path, query_param};
 use wiremock::{Mock, MockServer, ResponseTemplate};
 
 /// Helper: mount the about mock and create a DynamicClient
+#[allow(clippy::unwrap_used)]
 async fn dynamic_client_on(
     mock: &MockServer,
     version: &str,

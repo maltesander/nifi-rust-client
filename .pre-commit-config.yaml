@@ -28,15 +28,7 @@ repos:
       - id: cargo-test
         name: cargo-test
         language: system
-        entry: cargo test --workspace
-        stages: [pre-commit, pre-merge-commit]
-        pass_filenames: false
-        files: \.rs$|Cargo\.(toml|lock)
-
-      - id: cargo-test-dynamic
-        name: cargo-test-dynamic
-        language: system
-        entry: cargo test -p nifi-rust-client --features dynamic
+        entry: bash -c 'cargo test --workspace --all-features --exclude nifi-integration-tests && cargo test -p nifi-integration-tests'
         stages: [pre-commit, pre-merge-commit]
         pass_filenames: false
         files: \.rs$|Cargo\.(toml|lock)
@@ -52,15 +44,7 @@ repos:
       - id: cargo-clippy
         name: cargo-clippy
         language: system
-        entry: cargo clippy --all-targets -- -D warnings
-        stages: [pre-commit, pre-merge-commit]
-        pass_filenames: false
-        files: \.rs$
-
-      - id: cargo-clippy-dynamic
-        name: cargo-clippy-dynamic
-        language: system
-        entry: cargo clippy -p nifi-rust-client --features dynamic -- -D warnings
+        entry: bash -c 'cargo clippy --workspace --all-targets --all-features --exclude nifi-integration-tests -- -D warnings && cargo clippy -p nifi-integration-tests --all-targets -- -D warnings'
         stages: [pre-commit, pre-merge-commit]
         pass_filenames: false
         files: \.rs$
@@ -68,7 +52,7 @@ repos:
       - id: cargo-doc
         name: cargo-doc
         language: system
-        entry: bash -c 'RUSTDOCFLAGS="-D warnings" cargo doc --features dynamic --no-deps'
+        entry: bash -c 'RUSTDOCFLAGS="-D warnings" cargo doc --workspace --all-features --exclude nifi-integration-tests --no-deps'
         stages: [pre-commit, pre-merge-commit]
         pass_filenames: false
         files: \.rs$|Cargo\.(toml|lock)
