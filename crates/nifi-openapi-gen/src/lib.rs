@@ -12,6 +12,10 @@ mod emit_types;
 pub mod parser;
 pub(crate) mod util;
 
+pub use diff::{
+    EndpointChanges, EndpointDiff, EndpointSummary, FieldChange, ParamChange, TypeChanges,
+    TypesDiff, VersionDiff, compute_diff,
+};
 pub use emit_api::{emit_api, emit_api_with_prefix};
 pub use emit_dynamic::emit_dynamic;
 pub use emit_dynamic_conversions::emit_dynamic_conversions;
@@ -27,10 +31,6 @@ pub use emit_types::emit_types;
 pub use parser::{
     ApiSpec, Endpoint, Field, FieldType, HttpMethod, QueryParam, QueryParamType, SubGroup,
     TagGroup, TypeDef, TypeKind, load,
-};
-pub use diff::{
-    compute_diff, EndpointChanges, EndpointDiff, EndpointSummary, FieldChange, ParamChange,
-    TypeChanges, TypesDiff, VersionDiff,
 };
 
 /// Absolute path to the nifi-openapi-gen crate directory.
