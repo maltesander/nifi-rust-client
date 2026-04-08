@@ -631,21 +631,25 @@ mod tests {
     #[test]
     fn test_summary_with_removed_enum_values() {
         let from = make_spec(
-            vec![make_tag("Flow", vec![
-                make_endpoint_with_param(
-                    HttpMethod::Get, "/flow/about",
+            vec![make_tag(
+                "Flow",
+                vec![make_endpoint_with_param(
+                    HttpMethod::Get,
+                    "/flow/about",
                     make_enum_param("strategy", &["A", "B", "C"]),
-                ),
-            ])],
+                )],
+            )],
             vec![],
         );
         let to = make_spec(
-            vec![make_tag("Flow", vec![
-                make_endpoint_with_param(
-                    HttpMethod::Get, "/flow/about",
+            vec![make_tag(
+                "Flow",
+                vec![make_endpoint_with_param(
+                    HttpMethod::Get,
+                    "/flow/about",
                     make_enum_param("strategy", &["A", "B"]),
-                ),
-            ])],
+                )],
+            )],
             vec![],
         );
         let diff = compute_diff(&from, &to, "2.7.2", "2.8.0");
