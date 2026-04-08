@@ -1,6 +1,5 @@
 use crate::parser::{
-    ApiSpec, Endpoint, Field, FieldType, HttpMethod, QueryParam, QueryParamType, SubGroup,
-    TagGroup, TypeDef, TypeKind,
+    ApiSpec, Endpoint, Field, FieldType, HttpMethod, QueryParam, QueryParamType, TypeDef,
 };
 use std::collections::HashMap;
 
@@ -83,7 +82,7 @@ fn is_optional(ft: &FieldType) -> bool {
 }
 
 /// Collects all endpoints from a spec as (method_key, path) → (Endpoint ref, tag name).
-fn endpoint_map<'a>(spec: &'a ApiSpec) -> HashMap<(String, String), (&'a Endpoint, String)> {
+fn endpoint_map(spec: &ApiSpec) -> HashMap<(String, String), (&Endpoint, String)> {
     let mut map = HashMap::new();
     for tag in &spec.tags {
         let tag_name = tag.tag.clone();
@@ -102,7 +101,7 @@ fn endpoint_map<'a>(spec: &'a ApiSpec) -> HashMap<(String, String), (&'a Endpoin
 }
 
 /// Collects all types from a spec as name → TypeDef ref.
-fn type_map<'a>(spec: &'a ApiSpec) -> HashMap<&'a str, &'a TypeDef> {
+fn type_map(spec: &ApiSpec) -> HashMap<&str, &TypeDef> {
     spec.all_types.iter().map(|t| (t.name.as_str(), t)).collect()
 }
 
@@ -321,6 +320,7 @@ fn diff_type_fields(name: &str, from_type: &TypeDef, to_type: &TypeDef) -> TypeC
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::parser::{SubGroup, TagGroup, TypeKind};
 
     // ─── Helpers ─────────────────────────────────────────────────────────────
 
