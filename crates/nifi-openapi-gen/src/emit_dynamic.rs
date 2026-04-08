@@ -1,7 +1,10 @@
 use std::collections::BTreeMap;
 
 use crate::parser::{ApiSpec, HttpMethod, QueryParam, RequestBodyKind};
-use crate::util::{collect_all_tags, collect_tag_endpoints, version_to_variant, EndpointInfo};
+use crate::util::{
+    collect_all_tags, collect_tag_endpoints, dynamic_query_param_type, escape_keyword,
+    merge_query_params, version_to_variant, EndpointInfo,
+};
 
 /// Input tuple: `(version_str, mod_name, feature_flag, &ApiSpec)`
 /// e.g. `("2.7.2", "v2_7_2", "nifi-2-7-2", &spec)`
@@ -469,56 +472,6 @@ fn emit_version_arm(
     out.push_str("            }\n");
 }
 
-/// Merge query params from all versions of an endpoint into a superset.
-/// Returns each unique param (by rust_name) along with the count of versions it appears in.
-/// Preserves insertion order: params appear in the order first seen across versions.
-fn merge_query_params(
-    ep_by_version: &BTreeMap<&str, EndpointInfo<'_>>,
-) -> Vec<(QueryParam, usize)> {
-    let mut result: Vec<(QueryParam, usize)> = Vec::new();
-    for info in ep_by_version.values() {
-        for qp in &info.endpoint.query_params {
-            if let Some((existing, count)) =
-                result.iter_mut().find(|(q, _)| q.rust_name == qp.rust_name)
-            {
-                *count += 1;
-                // If any version marks it optional, keep it optional
-                if !qp.required {
-                    existing.required = false;
-                }
-            } else {
-                result.push((qp.clone(), 1));
-            }
-        }
-    }
-    result
-}
-
-/// For dynamic mode, enum query params use the dynamic union enum type.
-fn dynamic_query_param_type(qp: &QueryParam) -> String {
-    match &qp.ty {
-        crate::parser::QueryParamType::Str => "&str".to_string(),
-        crate::parser::QueryParamType::Bool => "bool".to_string(),
-        crate::parser::QueryParamType::I32 => "i32".to_string(),
-        crate::parser::QueryParamType::I64 => "i64".to_string(),
-        crate::parser::QueryParamType::F64 => "f64".to_string(),
-        crate::parser::QueryParamType::Enum(_) => {
-            let type_name = qp.enum_type_name.as_deref().unwrap_or("String");
-            format!("types::{type_name}")
-        }
-    }
-}
-
-fn escape_keyword(name: &str) -> String {
-    match name {
-        "type" | "ref" | "use" | "mod" | "fn" | "let" | "match" | "for" | "if" | "else"
-        | "return" | "struct" | "enum" | "impl" | "trait" | "pub" | "super" | "self" | "crate"
-        | "where" | "true" | "false" | "in" | "loop" | "while" | "break" | "continue" | "mut"
-        | "move" | "async" | "await" | "dyn" | "box" | "const" | "static" | "extern" | "unsafe"
-        | "as" => format!("r#{name}"),
-        _ => name.to_string(),
-    }
-}
 
 
 #[cfg(test)]
