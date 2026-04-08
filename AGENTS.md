@@ -263,7 +263,8 @@ git add crates/nifi-openapi-gen/specs/x.y.z/ \
         crates/nifi-rust-client/tests/vx_y_z_generated_tests.rs \
         tests/Cargo.toml \
         README.md \
-        tests/docker-compose.yml
+        tests/docker-compose.yml \
+        NIFI_API_CHANGES.md
 ```
 
 The generator uses **semver ordering** (via the `semver` crate) to determine the latest version

@@ -94,6 +94,14 @@ impl VersionDiff {
             .map(|pc| pc.added_enum_values.len())
             .sum();
 
+        let removed_enum_vals: usize = self
+            .endpoints
+            .changed
+            .iter()
+            .flat_map(|ec| ec.changed_params.iter())
+            .map(|pc| pc.removed_enum_values.len())
+            .sum();
+
         let added_types = self.types.added.len() as i64;
         let removed_types = self.types.removed.len() as i64;
 
@@ -121,6 +129,9 @@ impl VersionDiff {
         }
         if added_enum_vals > 0 {
             parts.push(format!("+{added_enum_vals} enum values"));
+        }
+        if removed_enum_vals > 0 {
+            parts.push(format!("-{removed_enum_vals} enum values"));
         }
 
         if parts.is_empty() {
@@ -615,6 +626,31 @@ mod tests {
         let change = &diff.endpoints.changed[0];
         assert_eq!(change.changed_params.len(), 1);
         assert_eq!(change.changed_params[0].added_enum_values, vec!["C"]);
+    }
+
+    #[test]
+    fn test_summary_with_removed_enum_values() {
+        let from = make_spec(
+            vec![make_tag("Flow", vec![
+                make_endpoint_with_param(
+                    HttpMethod::Get, "/flow/about",
+                    make_enum_param("strategy", &["A", "B", "C"]),
+                ),
+            ])],
+            vec![],
+        );
+        let to = make_spec(
+            vec![make_tag("Flow", vec![
+                make_endpoint_with_param(
+                    HttpMethod::Get, "/flow/about",
+                    make_enum_param("strategy", &["A", "B"]),
+                ),
+            ])],
+            vec![],
+        );
+        let diff = compute_diff(&from, &to, "2.7.2", "2.8.0");
+        let summary = diff.summary();
+        assert!(summary.contains("-1 enum values"), "got: {summary}");
     }
 
     #[test]
