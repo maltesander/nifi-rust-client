@@ -17,7 +17,7 @@ Apache NiFi 2.x REST API client library written in Rust.
 | Crate | Description |
 |-------|-------------|
 | [`nifi-rust-client`](crates/nifi-rust-client/) | Published library — API types, resource methods, auth |
-| [`nifi-openapi-gen`](crates/nifi-openapi-gen/) | Internal code generator — not published |
+| [`nifi-openapi-gen`](crates/nifi-openapi-gen/) | Internal code and documentation generator — not published |
 
 ## Quick Start
 
