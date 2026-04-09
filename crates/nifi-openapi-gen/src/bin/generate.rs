@@ -380,13 +380,18 @@ fn main() {
             }
         }
 
-        // Integration coverage in nifi-openapi-gen README
+        // Integration coverage in nifi-rust-client README
         {
             const START: &str = "<!-- INTEGRATION_COVERAGE_START -->";
             const END: &str = "<!-- INTEGRATION_COVERAGE_END -->";
             let content =
                 nifi_openapi_gen::docs::generate_integration_coverage_content(&all_parsed, &diffs);
-            update_file_between_markers(&codegen_dir.join("README.md"), START, END, &content);
+            update_file_between_markers(
+                &client.join("README.md"),
+                START,
+                END,
+                &content,
+            );
         }
     }
 
