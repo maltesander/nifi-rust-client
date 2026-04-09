@@ -3,6 +3,7 @@ pub(crate) mod common;
 pub mod dynamic;
 pub mod integration;
 mod tests;
+mod traits;
 mod types;
 
 pub use api::{emit_api, emit_api_with_prefix};
@@ -16,4 +17,5 @@ pub use integration::{
     emit_query_param_coverage_tests,
 };
 pub use tests::emit_tests;
+pub use traits::emit_static_traits;
 pub use types::emit_types;
