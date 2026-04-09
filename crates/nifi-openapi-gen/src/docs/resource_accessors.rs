@@ -15,30 +15,31 @@ fn tag_endpoint_count(tag: &TagGroup) -> usize {
 /// Splits a PascalCase tag name into a human-readable description.
 /// E.g. "ControllerServices" → "Controller services"
 fn tag_to_description(tag: &str) -> String {
+    // Split on existing spaces first, then split each PascalCase token
     let mut words = Vec::new();
-    let mut current = String::new();
-    for ch in tag.chars() {
-        if ch.is_uppercase() && !current.is_empty() {
-            words.push(current);
-            current = String::new();
+    for space_token in tag.split_whitespace() {
+        let mut current = String::new();
+        for ch in space_token.chars() {
+            if ch.is_uppercase() && !current.is_empty() {
+                words.push(current);
+                current = String::new();
+            }
+            current.push(ch);
         }
-        current.push(ch);
-    }
-    if !current.is_empty() {
-        words.push(current);
+        if !current.is_empty() {
+            words.push(current);
+        }
     }
     if words.is_empty() {
         return String::new();
     }
-    // First word keeps its original casing, rest are lowercased
     let first = words[0].clone();
     let rest: Vec<String> = words[1..].iter().map(|w| w.to_lowercase()).collect();
-    let mut result = first;
-    for w in rest {
-        result.push(' ');
-        result.push_str(&w);
+    if rest.is_empty() {
+        first
+    } else {
+        format!("{} {}", first, rest.join(" "))
     }
-    result
 }
 
 /// Maximum number of version columns to display.
@@ -234,6 +235,11 @@ mod tests {
         assert_eq!(
             tag_to_description("ProcessGroupAccess"),
             "Process group access"
+        );
+        // Tags with existing spaces (from spec)
+        assert_eq!(
+            tag_to_description("Controller Services"),
+            "Controller services"
         );
     }
 

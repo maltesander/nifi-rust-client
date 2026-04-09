@@ -259,36 +259,38 @@ client.processgroups_api().get_process_group("root").await?;
 ```
 
 <!-- RESOURCE_ACCESSORS_START -->
-| Accessor | Resource |
-|----------|----------|
-| `client.access_api()` | Token exchange, access configuration |
-| `client.authentication_api()` | Authentication configuration |
-| `client.connections_api()` | Connection CRUD, flow-file queue management |
-| `client.controller_api()` | Controller-level config and bulletins |
-| `client.controller_services_api()` | Controller service CRUD |
-| `client.counters_api()` | Counter reset and retrieval |
-| `client.datatransfer_api()` | Site-to-site data transfer |
-| `client.flow_api()` | Flow status, about, current user, registry clients, … |
-| `client.flowfilequeues_api()` | Flow-file queue inspection and purge |
-| `client.funnels_api()` | Funnel CRUD |
-| `client.inputports_api()` | Input port CRUD |
-| `client.labels_api()` | Label CRUD |
-| `client.outputports_api()` | Output port CRUD |
-| `client.parametercontexts_api()` | Parameter context CRUD |
-| `client.parameterproviders_api()` | Parameter provider CRUD |
-| `client.policies_api()` | Access policy CRUD |
-| `client.processgroups_api()` | Process group CRUD, instantiation, export |
-| `client.processors_api()` | Processor CRUD |
-| `client.provenance_api()` | Provenance queries |
-| `client.provenanceevents_api()` | Provenance event retrieval |
-| `client.remoteprocessgroups_api()` | Remote process group CRUD |
-| `client.reportingtasks_api()` | Reporting task CRUD |
-| `client.resources_api()` | Resource listing |
-| `client.sitetosite_api()` | Site-to-site configuration |
-| `client.snippets_api()` | Snippet CRUD |
-| `client.systemdiagnostics_api()` | System diagnostics |
-| `client.tenants_api()` | User and group CRUD |
-| `client.versions_api()` | Flow version control |
+| Accessor | Resource | 2.6.0 | 2.7.2 | 2.8.0 |
+|----------|----------|-------|-------|-------|
+| `client.access_api()` | Access | 3 | 3 | 3 |
+| `client.authentication_api()` | Authentication | 1 | 1 | 1 |
+| `client.connections_api()` | Connections | 3 | 3 | 3 |
+| `client.controller_api()` | Controller | 39 | 46 | 46 |
+| `client.controller_services_api()` | Controller services | 13 | 14 | 14 |
+| `client.counters_api()` | Counters | 3 | 3 | 3 |
+| `client.datatransfer_api()` | Data transfer | 7 | 7 | 7 |
+| `client.flow_api()` | Flow | 60 | 63 | 63 |
+| `client.flowfilequeues_api()` | Flow file queues | 8 | 8 | 8 |
+| `client.funnels_api()` | Funnels | 3 | 3 | 3 |
+| `client.inputports_api()` | Input ports | 4 | 5 | 5 |
+| `client.labels_api()` | Labels | 3 | 3 | 3 |
+| `client.outputports_api()` | Output ports | 4 | 5 | 5 |
+| `client.parametercontexts_api()` | Parameter contexts | 14 | 14 | 14 |
+| `client.parameterproviders_api()` | Parameter providers | 15 | 16 | 16 |
+| `client.policies_api()` | Policies | 5 | 5 | 5 |
+| `client.processgroups_api()` | Process groups | 34 | 34 | 34 |
+| `client.processors_api()` | Processors | 14 | 15 | 15 |
+| `client.provenance_api()` | Provenance | 7 | 7 | 7 |
+| `client.provenanceevents_api()` | Provenance events | 6 | 6 | 6 |
+| `client.remoteprocessgroups_api()` | Remote process groups | 10 | 11 | 11 |
+| `client.reportingtasks_api()` | Reporting tasks | 11 | 12 | 12 |
+| `client.resources_api()` | Resources | 1 | 1 | 1 |
+| `client.sitetosite_api()` | Site to site | 2 | 2 | 2 |
+| `client.snippets_api()` | Snippets | 3 | 3 | 3 |
+| `client.systemdiagnostics_api()` | System diagnostics | 2 | 2 | 2 |
+| `client.tenants_api()` | Tenants | 11 | 11 | 11 |
+| `client.versions_api()` | Versions | 14 | 14 | 14 |
+
+> Numbers indicate the endpoint count available for each accessor in that NiFi version. — means the accessor is not available in that version.
 <!-- RESOURCE_ACCESSORS_END -->
 
 ## Error handling

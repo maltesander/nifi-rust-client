@@ -9,7 +9,8 @@ use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 
 use nifi_openapi_gen::docs::{
-    generate_api_changes_content, generate_versions_table_content, update_client_readme_examples,
+    generate_api_changes_content, generate_resource_accessors_content,
+    generate_versions_table_content, update_client_readme_examples,
 };
 use nifi_openapi_gen::repo::{
     migrate_flat_layout, remove_stale_generated_files, remove_stale_version_dirs,
@@ -275,6 +276,19 @@ fn main() {
             const END: &str = "<!-- SUPPORTED_VERSIONS_END -->";
             let content = generate_versions_table_content(&all_parsed);
             update_file_between_markers(&workspace_root.join("README.md"), START, END, &content);
+            update_file_between_markers(
+                &workspace_root.join("crates/nifi-rust-client/README.md"),
+                START,
+                END,
+                &content,
+            );
+        }
+
+        // Resource accessors table
+        {
+            const START: &str = "<!-- RESOURCE_ACCESSORS_START -->";
+            const END: &str = "<!-- RESOURCE_ACCESSORS_END -->";
+            let content = generate_resource_accessors_content(&all_parsed);
             update_file_between_markers(
                 &workspace_root.join("crates/nifi-rust-client/README.md"),
                 START,
