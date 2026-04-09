@@ -258,6 +258,7 @@ client.processors_api().get_processor("some-id").await?;
 client.processgroups_api().get_process_group("root").await?;
 ```
 
+<!-- RESOURCE_ACCESSORS_START -->
 | Accessor | Resource |
 |----------|----------|
 | `client.access_api()` | Token exchange, access configuration |
@@ -288,6 +289,7 @@ client.processgroups_api().get_process_group("root").await?;
 | `client.systemdiagnostics_api()` | System diagnostics |
 | `client.tenants_api()` | User and group CRUD |
 | `client.versions_api()` | Flow version control |
+<!-- RESOURCE_ACCESSORS_END -->
 
 ## Error handling
 
