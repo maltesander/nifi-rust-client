@@ -41,12 +41,14 @@ pub struct NifiClientBuilder {
     root_certificates: Vec<Vec<u8>>,
     credential_provider: Option<Arc<dyn CredentialProvider>>,
     retry_policy: Option<crate::retry::RetryPolicy>,
+    #[cfg(feature = "dynamic")]
+    version_strategy: Option<crate::dynamic::VersionResolutionStrategy>,
 }
 
 impl std::fmt::Debug for NifiClientBuilder {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("NifiClientBuilder")
-            .field("base_url", &self.base_url)
+        let mut s = f.debug_struct("NifiClientBuilder");
+        s.field("base_url", &self.base_url)
             .field("timeout", &self.timeout)
             .field("connect_timeout", &self.connect_timeout)
             .field("proxy_all", &self.proxy_all)
@@ -64,8 +66,10 @@ impl std::fmt::Debug for NifiClientBuilder {
                 "credential_provider",
                 &self.credential_provider.as_ref().map(|c| format!("{c:?}")),
             )
-            .field("retry_policy", &self.retry_policy)
-            .finish()
+            .field("retry_policy", &self.retry_policy);
+        #[cfg(feature = "dynamic")]
+        s.field("version_strategy", &self.version_strategy);
+        s.finish()
     }
 }
 
@@ -86,6 +90,8 @@ impl NifiClientBuilder {
             root_certificates: Vec::new(),
             credential_provider: None,
             retry_policy: None,
+            #[cfg(feature = "dynamic")]
+            version_strategy: None,
         })
     }
 
@@ -157,6 +163,20 @@ impl NifiClientBuilder {
         self
     }
 
+    /// Configure a [`VersionResolutionStrategy`](crate::dynamic::VersionResolutionStrategy)
+    /// for the dynamic client.
+    ///
+    /// Controls how the client resolves a detected NiFi version to a supported
+    /// client version. Default is `Strict`.
+    #[cfg(feature = "dynamic")]
+    pub fn version_strategy(
+        mut self,
+        strategy: crate::dynamic::VersionResolutionStrategy,
+    ) -> Self {
+        self.version_strategy = Some(strategy);
+        self
+    }
+
     /// Build the [`NifiClient`].
     pub fn build(self) -> Result<NifiClient, NifiError> {
         let mut builder = reqwest::Client::builder()
@@ -201,14 +221,19 @@ impl NifiClientBuilder {
     /// Version detection happens lazily — either when `login()` is called
     /// (recommended) or when `detect_version()` is called explicitly.
     ///
+    /// Uses the configured [`VersionResolutionStrategy`](crate::dynamic::VersionResolutionStrategy)
+    /// (default: `Strict`). Set via [`.version_strategy()`](Self::version_strategy).
+    ///
     /// # Example
     ///
     /// ```no_run
     /// # async fn example() -> Result<(), nifi_rust_client::NifiError> {
     /// use nifi_rust_client::NifiClientBuilder;
+    /// use nifi_rust_client::dynamic::VersionResolutionStrategy;
     ///
     /// let client = NifiClientBuilder::new("https://nifi.example.com:8443")?
     ///     .danger_accept_invalid_certs(true)
+    ///     .version_strategy(VersionResolutionStrategy::Closest)
     ///     .build_dynamic()?;
     ///
     /// // login() authenticates AND detects the NiFi version automatically.
@@ -218,7 +243,8 @@ impl NifiClientBuilder {
     /// ```
     #[cfg(feature = "dynamic")]
     pub fn build_dynamic(self) -> Result<crate::dynamic::DynamicClient, NifiError> {
+        let strategy = self.version_strategy.unwrap_or_default();
         let client = self.build()?;
-        Ok(crate::dynamic::DynamicClient::new(client))
+        Ok(crate::dynamic::DynamicClient::with_strategy(client, strategy))
     }
 }
