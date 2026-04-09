@@ -91,6 +91,12 @@ create_policy "/process-groups/${ROOT_PG_ID}" "write"
 create_policy "/data/process-groups/${ROOT_PG_ID}" "read"
 create_policy "/data/process-groups/${ROOT_PG_ID}" "write"
 
+# Provenance data access (view provenance events per component) — cascades to all components.
+# This is separate from /data/ which covers flowfile content; /provenance-data/ controls
+# visibility of provenance events in query results.
+create_policy "/provenance-data/process-groups/${ROOT_PG_ID}" "read"
+create_policy "/provenance-data/process-groups/${ROOT_PG_ID}" "write"
+
 # Parameter contexts — required by parameter context tests.
 create_policy "/parameter-contexts" "read"
 create_policy "/parameter-contexts" "write"

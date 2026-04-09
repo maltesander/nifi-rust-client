@@ -82,6 +82,10 @@ fn field_presence_output_is_valid() {
         output.contains("get_test_processor_entity"),
         "should reference test flow helper for ProcessorEntity"
     );
+    assert!(
+        output.contains("get_test_provenance_event"),
+        "should reference test flow helper for ProvenanceEventDto"
+    );
 }
 
 #[test]
@@ -90,6 +94,10 @@ fn tested_type_names_matches_testable_types() {
     assert!(
         names.contains(&"ProcessorEntity"),
         "should include ProcessorEntity"
+    );
+    assert!(
+        names.contains(&"ProvenanceEventDto"),
+        "should include ProvenanceEventDto"
     );
 }
 

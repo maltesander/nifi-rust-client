@@ -17,10 +17,11 @@ const TESTABLE_TYPES: &[(&str, &str, &str)] = &[
         "helpers::get_test_processor_entity(&client).await",
         "item.",
     ),
-    // ProvenanceEventDto is excluded for now: NiFi's data-access policy cascade
-    // does not reliably grant provenance event visibility across all versions.
-    // The infrastructure (ensure_test_flow, get_test_provenance_event) is ready
-    // to re-enable once the policy issue is resolved.
+    (
+        "ProvenanceEventDto",
+        "helpers::get_test_provenance_event(&client).await",
+        "item.",
+    ),
 ];
 
 /// Returns the type names that have entries in TESTABLE_TYPES.
@@ -256,6 +257,7 @@ mod tests {
     fn tested_type_names_returns_all() {
         let names = tested_type_names();
         assert!(names.contains(&"ProcessorEntity"));
+        assert!(names.contains(&"ProvenanceEventDto"));
     }
 
     #[test]
