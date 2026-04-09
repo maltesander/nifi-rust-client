@@ -251,6 +251,88 @@ pub fn update_file_between_markers(
     }
 }
 
+/// Info about a sub-group collected across all versions.
+#[allow(dead_code)]
+pub(crate) struct CollectedSubGroup<'a> {
+    pub struct_name: String,
+    pub accessor_fn: String,
+    pub primary_param: String,
+    pub primary_param_doc: Option<String>,
+    /// fn_name → (version_str → EndpointInfo)
+    pub endpoints: BTreeMap<String, BTreeMap<&'a str, EndpointInfo<'a>>>,
+}
+
+/// Hierarchical grouping of endpoints for a tag across versions.
+#[allow(dead_code)]
+pub(crate) struct TagSubGroups<'a> {
+    /// Root endpoints: fn_name → (version_str → EndpointInfo)
+    pub root_endpoints: BTreeMap<String, BTreeMap<&'a str, EndpointInfo<'a>>>,
+    /// Sub-groups with their endpoints grouped
+    pub sub_groups: Vec<CollectedSubGroup<'a>>,
+}
+
+/// Like `collect_tag_endpoints`, but preserves the sub-group hierarchy instead of flattening.
+#[allow(dead_code)]
+pub(crate) fn collect_tag_sub_groups<'a>(
+    versions: &[(&'a str, &'a str, &'a str, &'a ApiSpec)],
+    tag: &str,
+) -> TagSubGroups<'a> {
+    let mut root_endpoints: BTreeMap<String, BTreeMap<&'a str, EndpointInfo<'a>>> =
+        BTreeMap::new();
+    let mut sub_map: BTreeMap<String, CollectedSubGroup<'a>> = BTreeMap::new();
+
+    for (ver, _mod_name, _feature, spec) in versions {
+        for tg in &spec.tags {
+            if tg.tag != tag {
+                continue;
+            }
+            for ep in &tg.root_endpoints {
+                root_endpoints
+                    .entry(ep.fn_name.clone())
+                    .or_default()
+                    .insert(
+                        ver,
+                        EndpointInfo {
+                            endpoint: ep,
+                            sub_struct_name: None,
+                            primary_param: None,
+                        },
+                    );
+            }
+            for sg in &tg.sub_groups {
+                let collected = sub_map.entry(sg.accessor_fn.clone()).or_insert_with(|| {
+                    CollectedSubGroup {
+                        struct_name: sg.struct_name.clone(),
+                        accessor_fn: sg.accessor_fn.clone(),
+                        primary_param: sg.primary_param.clone(),
+                        primary_param_doc: sg.primary_param_doc.clone(),
+                        endpoints: BTreeMap::new(),
+                    }
+                });
+                for ep in &sg.endpoints {
+                    collected
+                        .endpoints
+                        .entry(ep.fn_name.clone())
+                        .or_default()
+                        .insert(
+                            ver,
+                            EndpointInfo {
+                                endpoint: ep,
+                                sub_struct_name: Some(&sg.struct_name),
+                                primary_param: Some(&sg.primary_param),
+                            },
+                        );
+                }
+            }
+        }
+    }
+
+    TagSubGroups {
+        root_endpoints,
+        sub_groups: sub_map.into_values().collect(),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -490,5 +572,94 @@ mod tests {
     #[test]
     fn version_to_variant_basic() {
         assert_eq!(version_to_variant("2.8.0"), "V2_8_0");
+    }
+
+    // --- collect_tag_sub_groups ---
+
+    #[test]
+    fn collect_tag_sub_groups_separates_root_and_sub() {
+        use crate::parser::*;
+
+        let ep_root = Endpoint {
+            method: HttpMethod::Get,
+            path: "/controller-services/{id}".to_string(),
+            fn_name: "get_controller_service".to_string(),
+            doc: None,
+            description: None,
+            path_params: vec![PathParam {
+                name: "id".to_string(),
+                doc: None,
+            }],
+            request_type: None,
+            body_kind: None,
+            body_doc: None,
+            response_type: Some("ControllerServiceEntity".to_string()),
+            response_inner: None,
+            response_field: None,
+            query_params: vec![],
+            success_responses: vec![],
+            error_responses: vec![],
+            security: None,
+        };
+
+        let ep_sub = Endpoint {
+            method: HttpMethod::Post,
+            path: "/controller-services/{id}/config/analysis".to_string(),
+            fn_name: "analyze_configuration".to_string(),
+            doc: None,
+            description: None,
+            path_params: vec![PathParam {
+                name: "id".to_string(),
+                doc: None,
+            }],
+            request_type: Some("ConfigurationAnalysisEntity".to_string()),
+            body_kind: Some(RequestBodyKind::Json),
+            body_doc: None,
+            response_type: Some("ConfigurationAnalysisEntity".to_string()),
+            response_inner: Some("ConfigurationAnalysisDto".to_string()),
+            response_field: Some("configuration_analysis".to_string()),
+            query_params: vec![],
+            success_responses: vec![],
+            error_responses: vec![],
+            security: None,
+        };
+
+        let spec = ApiSpec {
+            tags: vec![TagGroup {
+                tag: "ControllerServices".to_string(),
+                struct_name: "ControllerServicesApi".to_string(),
+                module_name: "controller_services".to_string(),
+                accessor_fn: "controller_services_api".to_string(),
+                types: vec![],
+                root_endpoints: vec![ep_root],
+                sub_groups: vec![SubGroup {
+                    name: "config".to_string(),
+                    struct_name: "ControllerServicesConfigApi".to_string(),
+                    accessor_fn: "config".to_string(),
+                    primary_param: "id".to_string(),
+                    primary_param_doc: Some("The controller service id.".to_string()),
+                    endpoints: vec![ep_sub],
+                }],
+            }],
+            all_types: vec![],
+        };
+
+        let versions: Vec<(&str, &str, &str, &ApiSpec)> =
+            vec![("2.8.0", "v2_8_0", "nifi-2-8-0", &spec)];
+
+        let result = collect_tag_sub_groups(&versions, "ControllerServices");
+
+        // Root endpoints
+        assert_eq!(result.root_endpoints.len(), 1);
+        assert!(result.root_endpoints.contains_key("get_controller_service"));
+
+        // Sub-groups
+        assert_eq!(result.sub_groups.len(), 1);
+        let sg = &result.sub_groups[0];
+        assert_eq!(sg.struct_name, "ControllerServicesConfigApi");
+        assert_eq!(sg.accessor_fn, "config");
+        assert_eq!(sg.primary_param, "id");
+        assert_eq!(sg.endpoints.len(), 1);
+        assert!(sg.endpoints.contains_key("analyze_configuration"));
     }
 }
