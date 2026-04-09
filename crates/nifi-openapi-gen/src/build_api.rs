@@ -226,9 +226,18 @@ fn generate_dynamic(out_dir: &Path, all_parsed: &[(String, ApiSpec)]) {
         &with_header(&crate::emit_dynamic(&dispatch_specs)),
     );
 
+    // Strip the `#![cfg(feature = "dynamic")]` inner attribute from the test
+    // output — the wrapper file provides its own cfg gate, and inner attributes
+    // are not valid inside `include!()`.
+    let tests_content = crate::emit_dynamic_tests(&conv_specs);
+    let tests_content = tests_content
+        .lines()
+        .filter(|line| !line.starts_with("#![cfg(feature = \"dynamic\")]"))
+        .collect::<Vec<_>>()
+        .join("\n");
     write_generated(
         &out_dir.join("dynamic_tests.rs"),
-        &with_header(&crate::emit_dynamic_tests(&conv_specs)),
+        &with_header(&tests_content),
     );
 }
 
