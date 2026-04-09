@@ -1,7 +1,9 @@
 #![cfg(feature = "dynamic")]
 
 use nifi_rust_client::NifiClientBuilder;
-use nifi_rust_client::dynamic::traits::{ControllerServicesApi, FlowApi, ResourcesApi};
+use nifi_rust_client::dynamic::traits::{
+    ControllerServicesApi, ControllerServicesBulletinsApi, FlowApi, ResourcesApi,
+};
 use nifi_rust_client::dynamic::types::{FlowMetricsReportingStrategy, IncludedRegistries};
 use wiremock::matchers::{method, path, query_param};
 use wiremock::{Mock, MockServer, ResponseTemplate};
@@ -301,7 +303,8 @@ async fn dynamic_missing_required_field_error() {
 
     let err = dynamic
         .controller_services_api()
-        .clear_bulletins("some-id", body)
+        .bulletins("some-id")
+        .clear_bulletins(&body)
         .await
         .unwrap_err();
 
