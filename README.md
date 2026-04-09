@@ -25,7 +25,7 @@ Full changelog: [NIFI_API_CHANGES.md](NIFI_API_CHANGES.md)
 
 ### Static mode (default)
 
-Target a specific NiFi version with full type safety and autocompletion:
+Target a specific NiFi version with full type safety and API completeness:
 
 <!-- STATIC_FEATURE_EXAMPLE_START -->
 ```toml
