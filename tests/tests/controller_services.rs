@@ -204,6 +204,23 @@ async fn controller_service_run_status_and_state() {
         "expected controller service state DISABLED or DISABLING after disable"
     );
 
+    // ── wait for DISABLED state (NiFi transitions asynchronously) ──────────
+    for _ in 0..30 {
+        let svc = client
+            .controller_services_api()
+            .get_controller_service(&svc_id, None)
+            .await
+            .expect("failed to re-fetch service while waiting for DISABLED");
+        let state = svc.component.as_ref().and_then(|c| c.state.as_ref());
+        if matches!(
+            state,
+            Some(nifi_rust_client::types::ControllerServiceDtoState::Disabled)
+        ) {
+            break;
+        }
+        tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+    }
+
     // ── state operations ─────────────────────────────────────────────────────
     client
         .controller_services_api()
