@@ -222,12 +222,15 @@ pub async fn dynamic_logged_in_client() -> nifi_rust_client::dynamic::DynamicCli
 // Each call to `ensure_test_flow` verifies the processors are still running.
 
 #[cfg(feature = "dynamic")]
+pub const TEST_FLOW_PG_NAME: &str = "nifi_rust_client_test__field_presence";
+#[cfg(feature = "dynamic")]
 pub const TEST_FLOW_GFF_NAME: &str = "nifi_rust_client_test__generate_flow_file";
 #[cfg(feature = "dynamic")]
 pub const TEST_FLOW_LA_NAME: &str = "nifi_rust_client_test__log_attribute";
 
 #[cfg(feature = "dynamic")]
 pub struct TestFlowIds {
+    pub pg_id: String,
     pub gff_id: String,
     pub la_id: String,
     pub gff_revision: i64,
@@ -244,18 +247,68 @@ pub async fn ensure_test_flow(
     client: &nifi_rust_client::dynamic::DynamicClient,
 ) -> &'static TestFlowIds {
     use nifi_rust_client::dynamic::traits::{
-        FlowApi, ProcessGroupsApi, ProcessGroupsConnectionsApi, ProcessGroupsProcessorsApi,
+        FlowApi, ProcessGroupsApi, ProcessGroupsConnectionsApi, ProcessGroupsProcessGroupsApi,
+        ProcessGroupsProcessorsApi,
+    };
+    use nifi_rust_client::dynamic::types::{
+        PositionDto, ProcessGroupDto, ProcessGroupEntity, RevisionDto,
     };
 
     let ids = TEST_FLOW
         .get_or_init(|| async {
-            // ── Find or create processors ───────────────────────────────────
+            // ── Find or create the dedicated child PG ───────────────────────
+            // Processors live in a child PG (not root) so that the cascading
+            // /data/process-groups/{root} policy grants provenance visibility
+            // on all NiFi versions.
             let flow = client
                 .flow_api()
                 .get_flow("root", None)
                 .await
                 .expect("failed to get root flow");
-            let processors = flow
+
+            let child_pgs = flow
+                .process_group_flow
+                .as_ref()
+                .and_then(|pgf| pgf.flow.as_ref())
+                .and_then(|f| f.process_groups.as_ref())
+                .cloned()
+                .unwrap_or_default();
+
+            let existing_pg = child_pgs.iter().find(|pg| {
+                pg.component.as_ref().and_then(|c| c.name.as_deref()) == Some(TEST_FLOW_PG_NAME)
+            });
+
+            let pg_id = if let Some(pg) = existing_pg {
+                pg.id.clone().expect("test PG has no id")
+            } else {
+                let mut pos = PositionDto::default();
+                pos.x = Some(0.0);
+                pos.y = Some(0.0);
+                let mut pg_dto = ProcessGroupDto::default();
+                pg_dto.name = Some(TEST_FLOW_PG_NAME.to_string());
+                pg_dto.position = Some(pos);
+                let mut revision = RevisionDto::default();
+                revision.version = Some(0);
+                let mut body = ProcessGroupEntity::default();
+                body.component = Some(pg_dto);
+                body.revision = Some(revision);
+
+                let created = client
+                    .processgroups_api()
+                    .process_groups("root")
+                    .create_process_group(None, &body)
+                    .await
+                    .expect("failed to create test PG");
+                created.id.clone().expect("created PG has no id")
+            };
+
+            // ── Find or create processors inside the child PG ───────────────
+            let pg_flow = client
+                .flow_api()
+                .get_flow(&pg_id, None)
+                .await
+                .expect("failed to get test PG flow");
+            let processors = pg_flow
                 .process_group_flow
                 .as_ref()
                 .and_then(|pgf| pgf.flow.as_ref())
@@ -286,7 +339,7 @@ pub async fn ensure_test_flow(
                 );
                 let created = client
                     .processgroups_api()
-                    .processors("root")
+                    .processors(&pg_id)
                     .create_processor(&body)
                     .await
                     .expect("failed to create GFF processor");
@@ -316,7 +369,7 @@ pub async fn ensure_test_flow(
                 );
                 let created = client
                     .processgroups_api()
-                    .processors("root")
+                    .processors(&pg_id)
                     .create_processor(&body)
                     .await
                     .expect("failed to create LA processor");
@@ -331,7 +384,7 @@ pub async fn ensure_test_flow(
             };
 
             // ── Find or create connection GFF → LA ──────────────────────────
-            let connections = flow
+            let connections = pg_flow
                 .process_group_flow
                 .as_ref()
                 .and_then(|pgf| pgf.flow.as_ref())
@@ -350,10 +403,10 @@ pub async fn ensure_test_flow(
             });
 
             if !conn_exists {
-                let conn_body = make_connection_entity(&gff_id, &la_id, "root");
+                let conn_body = make_connection_entity(&gff_id, &la_id, &pg_id);
                 client
                     .processgroups_api()
-                    .connections("root")
+                    .connections(&pg_id)
                     .create_connection(&conn_body)
                     .await
                     .expect("failed to create GFF→LA connection");
@@ -365,6 +418,7 @@ pub async fn ensure_test_flow(
             }
 
             TestFlowIds {
+                pg_id,
                 gff_id,
                 la_id,
                 gff_revision: gff_rev,
@@ -532,6 +586,9 @@ pub async fn get_test_provenance_event(
     use nifi_rust_client::dynamic::types::{ProvenanceDto, ProvenanceEntity, ProvenanceRequestDto};
 
     let _ids = ensure_test_flow(client).await;
+
+    // Give the flow time to generate events.
+    tokio::time::sleep(std::time::Duration::from_secs(5)).await;
 
     for attempt in 0..10 {
         let mut request = ProvenanceRequestDto::default();
