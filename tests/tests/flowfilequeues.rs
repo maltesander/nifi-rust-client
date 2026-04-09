@@ -1,3 +1,4 @@
+#![cfg(not(feature = "dynamic"))]
 /// Integration tests for FlowFileQueues API — listing and drop requests.
 /// Requires a running NiFi instance — use tests/run.sh to start one.
 ///

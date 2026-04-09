@@ -1,3 +1,4 @@
+#![cfg(not(feature = "dynamic"))]
 /// Integration tests for process group and processor CRUD lifecycle.
 /// Requires a running NiFi instance — use tests/run.sh to start one.
 ///

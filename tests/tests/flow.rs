@@ -1,3 +1,4 @@
+#![cfg(not(feature = "dynamic"))]
 /// Integration tests require a running NiFi instance.
 /// Use tests/run.sh to start one, or set env vars manually:
 ///   NIFI_URL          (default: https://localhost:8443)

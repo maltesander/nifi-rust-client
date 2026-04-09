@@ -1,3 +1,4 @@
+#![cfg(not(feature = "dynamic"))]
 mod helpers;
 
 use nifi_rust_client::types::{UserDto, UserEntity, UserGroupDto, UserGroupEntity};

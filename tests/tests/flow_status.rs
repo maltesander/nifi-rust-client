@@ -1,3 +1,4 @@
+#![cfg(not(feature = "dynamic"))]
 /// Integration tests for flow status endpoint reads.
 mod helpers;
 

@@ -2,13 +2,8 @@
 // This file is auto-discovered by Cargo as a test binary with no tests of its own;
 // functions here are used via `mod helpers;` in sibling test files.
 #![allow(dead_code)]
-use nifi_rust_client::{
-    NifiClient, NifiClientBuilder,
-    types::{
-        PositionDto, ProcessGroupDto, ProcessGroupEntity, ProcessorRunStatusEntity,
-        ProcessorRunStatusEntityState, RevisionDto,
-    },
-};
+
+use nifi_rust_client::NifiClientBuilder;
 
 pub fn nifi_url() -> String {
     std::env::var("NIFI_URL").unwrap_or_else(|_| "https://localhost:8443".to_string())
@@ -22,6 +17,18 @@ pub fn nifi_password() -> String {
     std::env::var("NIFI_PASSWORD").unwrap_or_else(|_| "adminpassword123".to_string())
 }
 
+// ── Static-mode helpers (not available when `dynamic` feature is active) ─────
+
+#[cfg(not(feature = "dynamic"))]
+use nifi_rust_client::{
+    NifiClient,
+    types::{
+        PositionDto, ProcessGroupDto, ProcessGroupEntity, ProcessorRunStatusEntity,
+        ProcessorRunStatusEntityState, RevisionDto,
+    },
+};
+
+#[cfg(not(feature = "dynamic"))]
 pub async fn logged_in_client() -> NifiClient {
     let client = NifiClientBuilder::new(&nifi_url())
         .expect("failed to parse NiFi URL")
@@ -68,6 +75,7 @@ pub async fn logged_in_client() -> NifiClient {
 
 /// Create a throwaway process group under root for use as a test parent.
 /// Returns `(id, revision_version)`.
+#[cfg(not(feature = "dynamic"))]
 pub async fn create_temp_process_group(client: &NifiClient, name: &str) -> (String, i64) {
     let body = ProcessGroupEntity {
         component: Some(ProcessGroupDto {
@@ -99,6 +107,7 @@ pub async fn create_temp_process_group(client: &NifiClient, name: &str) -> (Stri
     (id, version)
 }
 
+#[cfg(not(feature = "dynamic"))]
 pub async fn delete_temp_process_group(client: &NifiClient, id: &str, version: i64) {
     client
         .processgroups_api()
@@ -107,6 +116,7 @@ pub async fn delete_temp_process_group(client: &NifiClient, id: &str, version: i
         .expect("failed to delete temp process group");
 }
 
+#[cfg(not(feature = "dynamic"))]
 pub fn revision(version: i64) -> RevisionDto {
     RevisionDto {
         version: Some(version),
@@ -115,6 +125,7 @@ pub fn revision(version: i64) -> RevisionDto {
 }
 
 /// Start a processor and return the new revision version.
+#[cfg(not(feature = "dynamic"))]
 pub async fn start_processor(client: &NifiClient, proc_id: &str, version: i64) -> i64 {
     let result = client
         .processors_api()
@@ -134,6 +145,7 @@ pub async fn start_processor(client: &NifiClient, proc_id: &str, version: i64) -
 }
 
 /// Stop a processor and return the new revision version.
+#[cfg(not(feature = "dynamic"))]
 pub async fn stop_processor(client: &NifiClient, proc_id: &str, version: i64) -> i64 {
     let result = client
         .processors_api()
@@ -151,6 +163,8 @@ pub async fn stop_processor(client: &NifiClient, proc_id: &str, version: i64) ->
         .and_then(|r| r.version)
         .expect("stopped entity has no revision version")
 }
+
+// ── Dynamic-mode helpers ─────────────────────────────────────────────────────
 
 #[cfg(feature = "dynamic")]
 pub async fn dynamic_logged_in_client() -> nifi_rust_client::dynamic::DynamicClient {

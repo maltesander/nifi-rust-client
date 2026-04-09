@@ -1,3 +1,4 @@
+#![cfg(not(feature = "dynamic"))]
 /// Smoke tests for read-only API groups.
 /// Each test just calls the endpoint and asserts it returns Ok —
 /// no mutations, no setup required beyond a running NiFi instance.
