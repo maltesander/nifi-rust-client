@@ -1,5 +1,5 @@
-use crate::parser::{ApiSpec, HttpMethod};
 use crate::diff::VersionDiff;
+use crate::parser::{ApiSpec, HttpMethod};
 
 fn method_str(m: &HttpMethod) -> &'static str {
     match m {
@@ -177,8 +177,7 @@ pub fn generate_api_changes_content(all_specs: &[(String, ApiSpec)]) -> String {
 
         // Cumulative diff — only when there is more than one step from baseline
         if i > 1 {
-            let cumul =
-                crate::compute_diff(baseline_spec, spec, baseline_version, version);
+            let cumul = crate::compute_diff(baseline_spec, spec, baseline_version, version);
             out.push_str(&format!(
                 "<details><summary>vs {baseline_version} (cumulative)</summary>\n\n"
             ));

@@ -50,10 +50,8 @@ fn main() {
 
     match cli.command {
         Commands::Compare { old, new, format } => {
-            let old_spec =
-                nifi_openapi_gen::parser::load(old.to_str().expect("UTF-8 path"));
-            let new_spec =
-                nifi_openapi_gen::parser::load(new.to_str().expect("UTF-8 path"));
+            let old_spec = nifi_openapi_gen::parser::load(old.to_str().expect("UTF-8 path"));
+            let new_spec = nifi_openapi_gen::parser::load(new.to_str().expect("UTF-8 path"));
 
             let old_version = old
                 .parent()
@@ -76,23 +74,18 @@ fn main() {
             match format {
                 OutputFormat::Markdown => {
                     println!("## {} -> {}\n", old_version, new_version);
-                    println!(
-                        "{}",
-                        nifi_openapi_gen::docs::format_diff_body(&diff)
-                    );
+                    println!("{}", nifi_openapi_gen::docs::format_diff_body(&diff));
                 }
                 OutputFormat::Json => {
                     println!(
                         "{}",
-                        serde_json::to_string_pretty(&diff)
-                            .expect("serialize diff")
+                        serde_json::to_string_pretty(&diff).expect("serialize diff")
                     );
                 }
             }
         }
         Commands::Summary { spec, format } => {
-            let parsed =
-                nifi_openapi_gen::parser::load(spec.to_str().expect("UTF-8 path"));
+            let parsed = nifi_openapi_gen::parser::load(spec.to_str().expect("UTF-8 path"));
             let endpoint_count: usize = parsed
                 .tags
                 .iter()
@@ -105,8 +98,7 @@ fn main() {
                 })
                 .sum();
             let type_count = parsed.all_types.len();
-            let tags: Vec<&str> =
-                parsed.tags.iter().map(|t| t.tag.as_str()).collect();
+            let tags: Vec<&str> = parsed.tags.iter().map(|t| t.tag.as_str()).collect();
 
             match format {
                 OutputFormat::Markdown => {
@@ -123,8 +115,7 @@ fn main() {
                     });
                     println!(
                         "{}",
-                        serde_json::to_string_pretty(&summary)
-                            .expect("serialize summary")
+                        serde_json::to_string_pretty(&summary).expect("serialize summary")
                     );
                 }
             }

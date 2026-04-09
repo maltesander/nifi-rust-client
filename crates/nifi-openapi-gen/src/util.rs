@@ -423,7 +423,10 @@ mod tests {
     fn replace_between_markers_preserves_surrounding() {
         let content = "header\n<!-- BEGIN -->\nstuff\n<!-- END -->\nfooter\n";
         let result = replace_between_markers(content, "<!-- BEGIN -->", "<!-- END -->", "replaced");
-        assert_eq!(result, "header\n<!-- BEGIN -->\nreplaced\n<!-- END -->\nfooter\n");
+        assert_eq!(
+            result,
+            "header\n<!-- BEGIN -->\nreplaced\n<!-- END -->\nfooter\n"
+        );
     }
 
     #[test]

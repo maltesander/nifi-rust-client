@@ -15,10 +15,7 @@ const TESTABLE_TYPES: &[(&str, &str, &str, &str)] = &[];
 
 /// Generates integration tests verifying fields added in a version are `Some`
 /// on that version and `None` on older versions.
-pub fn emit_field_presence_tests(
-    all_specs: &[(String, ApiSpec)],
-    diffs: &[VersionDiff],
-) -> String {
+pub fn emit_field_presence_tests(all_specs: &[(String, ApiSpec)], diffs: &[VersionDiff]) -> String {
     if all_specs.is_empty() || diffs.is_empty() {
         return String::new();
     }
@@ -33,19 +30,16 @@ pub fn emit_field_presence_tests(
                 continue;
             }
 
-            let Some((_type_name, trait_import, fetch_expr, field_prefix)) =
-                TESTABLE_TYPES.iter().find(|(name, _, _, _)| *name == tc.name)
+            let Some((_type_name, trait_import, fetch_expr, field_prefix)) = TESTABLE_TYPES
+                .iter()
+                .find(|(name, _, _, _)| *name == tc.name)
             else {
                 continue;
             };
 
             for field in &tc.added_fields {
                 let snake_field = camel_to_snake(field);
-                let test_base = format!(
-                    "field_{}_{}",
-                    tc.name.to_lowercase(),
-                    snake_field
-                );
+                let test_base = format!("field_{}_{}", tc.name.to_lowercase(), snake_field);
 
                 // Positive: field is Some on the version that added it
                 tests.push(format!(

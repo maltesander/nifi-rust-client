@@ -86,8 +86,14 @@ fn endpoint_availability_contains_added_endpoints() {
     let diffs = compute_diffs(&all_specs);
     let output = nifi_openapi_gen::emit_endpoint_availability_tests(&all_specs, &diffs);
 
-    assert!(output.contains("UnsupportedEndpoint"), "should test UnsupportedEndpoint on older versions");
-    assert!(output.contains("cfg(feature"), "should have feature-gated tests");
+    assert!(
+        output.contains("UnsupportedEndpoint"),
+        "should test UnsupportedEndpoint on older versions"
+    );
+    assert!(
+        output.contains("cfg(feature"),
+        "should have feature-gated tests"
+    );
     assert!(
         output.contains("listen_ports") || output.contains("clear_bulletins"),
         "should reference known added endpoints"
@@ -107,7 +113,10 @@ fn query_param_coverage_contains_flow_metrics_strategy() {
         output.contains("flow_metrics") || output.contains("flowMetrics"),
         "should reference the flow metrics endpoint"
     );
-    assert!(output.contains("cfg(feature"), "should have feature-gated tests");
+    assert!(
+        output.contains("cfg(feature"),
+        "should have feature-gated tests"
+    );
 }
 
 #[test]
@@ -117,10 +126,14 @@ fn integration_coverage_content_not_empty() {
         return;
     }
     let diffs = compute_diffs(&all_specs);
-    let output = nifi_openapi_gen::docs::integration_coverage::generate_integration_coverage_content(
-        &all_specs, &diffs,
-    );
+    let output =
+        nifi_openapi_gen::docs::integration_coverage::generate_integration_coverage_content(
+            &all_specs, &diffs,
+        );
 
     assert!(!output.is_empty(), "coverage content should not be empty");
-    assert!(output.contains("NiFi versions"), "should mention NiFi versions in summary");
+    assert!(
+        output.contains("NiFi versions"),
+        "should mention NiFi versions in summary"
+    );
 }

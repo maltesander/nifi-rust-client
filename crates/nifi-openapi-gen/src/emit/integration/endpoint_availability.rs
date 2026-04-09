@@ -137,7 +137,12 @@ fn is_safe_endpoint(
             .path_params
             .iter()
             .filter(|pp| baked_param != Some(pp.name.as_str()))
-            .filter(|pp| !matches!(pp.name.as_str(), "id" | "process_group_id" | "parent_group_id"))
+            .filter(|pp| {
+                !matches!(
+                    pp.name.as_str(),
+                    "id" | "process_group_id" | "parent_group_id"
+                )
+            })
             .collect();
         return extra_path_params.is_empty();
     }
@@ -228,7 +233,13 @@ mod tests {
 
     #[test]
     fn test_base_name_strips_api_suffix() {
-        assert_eq!(test_base_name("flow_api", "get_listen_ports"), "endpoint_flow_get_listen_ports");
-        assert_eq!(test_base_name("processors_api", "get_processor"), "endpoint_processors_get_processor");
+        assert_eq!(
+            test_base_name("flow_api", "get_listen_ports"),
+            "endpoint_flow_get_listen_ports"
+        );
+        assert_eq!(
+            test_base_name("processors_api", "get_processor"),
+            "endpoint_processors_get_processor"
+        );
     }
 }

@@ -297,7 +297,8 @@ fn merge_all_types(specs: &[(&str, &ApiSpec)]) -> BTreeMap<String, MergedType> {
                     // Track field presence and type consistency
                     let type_fields = field_presence.entry(td.name.clone()).or_default();
                     for field in &td.fields {
-                        let rust_ty = field_type_to_rust(&field.ty, &td.name, InlineEnumMode::AsString);
+                        let rust_ty =
+                            field_type_to_rust(&field.ty, &td.name, InlineEnumMode::AsString);
                         let entry = type_fields
                             .entry(field.rust_name.clone())
                             .or_insert_with(|| (0, rust_ty.clone(), true));

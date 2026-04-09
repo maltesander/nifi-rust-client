@@ -79,7 +79,10 @@ mod tests {
             "expected no-changes message"
         );
         // Oldest shows em dash
-        assert!(table.contains("| \u{2014} |"), "oldest version should show \u{2014}");
+        assert!(
+            table.contains("| \u{2014} |"),
+            "oldest version should show \u{2014}"
+        );
         // No Default column
         assert!(
             !table.contains("Default"),
@@ -152,7 +155,7 @@ mod tests {
                 (v.clone(), spec)
             })
             .collect();
-        let latest = versions.last().unwrap().as_str();
+        let _latest = versions.last().unwrap().as_str();
         let content = generate_versions_table_content(&all_specs);
         // Table has the header and separator rows plus one row per version
         assert!(content.contains("| NiFi Version |"));

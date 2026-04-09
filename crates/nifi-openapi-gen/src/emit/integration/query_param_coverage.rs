@@ -41,7 +41,11 @@ pub fn emit_query_param_coverage_tests(
 
             for param_name in &ep_change.added_params {
                 // Look up the query param metadata by its camelCase name.
-                let qp = match endpoint.query_params.iter().find(|qp| &qp.name == param_name) {
+                let qp = match endpoint
+                    .query_params
+                    .iter()
+                    .find(|qp| &qp.name == param_name)
+                {
                     Some(qp) => qp,
                     None => continue,
                 };
@@ -51,7 +55,8 @@ pub fn emit_query_param_coverage_tests(
                     .accessor_fn
                     .strip_suffix("_api")
                     .unwrap_or(&tag_group.accessor_fn);
-                let base_name = format!("param_{tag}_{fn_name}_{rust_name}",
+                let base_name = format!(
+                    "param_{tag}_{fn_name}_{rust_name}",
                     fn_name = endpoint.fn_name,
                     rust_name = qp.rust_name,
                 );
@@ -70,16 +75,14 @@ pub fn emit_query_param_coverage_tests(
                             .map(|v| wire_to_pascal(v))
                             .unwrap_or_else(|| "Unknown".to_string());
                         let arg = format!("Some({enum_type_name}::{first_variant})");
-                        let use_stmt = format!(
-                            "use nifi_rust_client::dynamic::types::{enum_type_name};"
-                        );
+                        let use_stmt =
+                            format!("use nifi_rust_client::dynamic::types::{enum_type_name};");
                         (arg, Some(use_stmt))
                     }
                     _ => ("Some(\"test-value\")".to_string(), None),
                 };
 
-                let call_args =
-                    build_call_args(endpoint, sub_group, &qp.rust_name, &param_arg);
+                let call_args = build_call_args(endpoint, sub_group, &qp.rust_name, &param_arg);
 
                 // Extra use statement line (if any).
                 let use_type_line = extra_use

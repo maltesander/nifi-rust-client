@@ -78,7 +78,10 @@ mod tests {
     #[test]
     fn capitalize_first_works() {
         assert_eq!(capitalize_first("includedRegistries"), "IncludedRegistries");
-        assert_eq!(capitalize_first("flowMetricsReportingStrategy"), "FlowMetricsReportingStrategy");
+        assert_eq!(
+            capitalize_first("flowMetricsReportingStrategy"),
+            "FlowMetricsReportingStrategy"
+        );
         assert_eq!(capitalize_first(""), "");
         assert_eq!(capitalize_first("a"), "A");
     }
@@ -139,11 +142,26 @@ mod tests {
 
     #[test]
     fn default_required_query_param_value_all_types() {
-        assert_eq!(default_required_query_param_value(&QueryParamType::Bool), "false");
-        assert_eq!(default_required_query_param_value(&QueryParamType::I32), "0");
-        assert_eq!(default_required_query_param_value(&QueryParamType::I64), "0");
-        assert_eq!(default_required_query_param_value(&QueryParamType::F64), "0.0");
-        assert_eq!(default_required_query_param_value(&QueryParamType::Str), "\"\"");
+        assert_eq!(
+            default_required_query_param_value(&QueryParamType::Bool),
+            "false"
+        );
+        assert_eq!(
+            default_required_query_param_value(&QueryParamType::I32),
+            "0"
+        );
+        assert_eq!(
+            default_required_query_param_value(&QueryParamType::I64),
+            "0"
+        );
+        assert_eq!(
+            default_required_query_param_value(&QueryParamType::F64),
+            "0.0"
+        );
+        assert_eq!(
+            default_required_query_param_value(&QueryParamType::Str),
+            "\"\""
+        );
         assert_eq!(
             default_required_query_param_value(&QueryParamType::Enum(vec![])),
             "None"

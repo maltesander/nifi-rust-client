@@ -88,11 +88,7 @@ pub fn generate_integration_coverage_content(
             for param in &ec.added_params {
                 rows.push((
                     "Query param".to_string(),
-                    format!(
-                        "`{} {}` +`{param}`",
-                        method_str(&ec.method),
-                        ec.path
-                    ),
+                    format!("`{} {}` +`{param}`", method_str(&ec.method), ec.path),
                 ));
             }
         }

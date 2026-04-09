@@ -1,5 +1,5 @@
-pub(crate) mod common;
 mod api;
+pub(crate) mod common;
 pub mod dynamic;
 pub mod integration;
 mod tests;
@@ -7,9 +7,9 @@ mod types;
 
 pub use api::{emit_api, emit_api_with_prefix};
 pub use dynamic::{
-    collect_merged_field_names, collect_universal_fields, emit_dynamic,
-    emit_dynamic_conversions, emit_dynamic_dispatch, emit_dynamic_impls, emit_dynamic_tests,
-    emit_dynamic_traits, emit_dynamic_types,
+    collect_merged_field_names, collect_universal_fields, emit_dynamic, emit_dynamic_conversions,
+    emit_dynamic_dispatch, emit_dynamic_impls, emit_dynamic_tests, emit_dynamic_traits,
+    emit_dynamic_types,
 };
 pub use integration::{
     emit_endpoint_availability_tests, emit_enum_coverage_tests, emit_field_presence_tests,

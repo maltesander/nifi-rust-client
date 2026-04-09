@@ -139,7 +139,14 @@ fn emit_dto(t: &TypeDef) -> String {
         } else if field.read_only {
             out.push_str("    /// Read-only — set by NiFi.\n");
         }
-        let ty_str = field_type_to_rust(&field.ty, &t.name, InlineEnumMode::Extract { struct_name: &t.name, field_name: &field.rust_name });
+        let ty_str = field_type_to_rust(
+            &field.ty,
+            &t.name,
+            InlineEnumMode::Extract {
+                struct_name: &t.name,
+                field_name: &field.rust_name,
+            },
+        );
         let field_ident = escape_keyword(&field.rust_name);
         let is_option = matches!(&field.ty, crate::parser::FieldType::Opt(_));
         if field_ident != field.rust_name && is_option {
@@ -227,4 +234,3 @@ fn extract_enum(ty: &FieldType) -> Option<Vec<String>> {
         _ => None,
     }
 }
-

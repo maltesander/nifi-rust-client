@@ -62,6 +62,7 @@ pub fn emit_dynamic_tests(specs: &[(&str, &str, &ApiSpec)]) -> String {
 }
 
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod tests {
     use super::*;
     use crate::parser::{ApiSpec, TagGroup};

@@ -199,7 +199,8 @@ fn main() {
     let targets: Vec<(PathBuf, String)> = targets
         .into_iter()
         .map(|(p, content)| {
-            if p.extension().and_then(|e| e.to_str()) != Some("rs") || content.contains("@generated")
+            if p.extension().and_then(|e| e.to_str()) != Some("rs")
+                || content.contains("@generated")
             {
                 (p, content)
             } else if content.starts_with("#![cfg") {
@@ -330,22 +331,38 @@ fn main() {
 
             let enum_tests = emit_enum_coverage_tests(&all_parsed, &diffs);
             if !enum_tests.is_empty() {
-                write_if_changed(&tests_dir.join("dynamic_enum_coverage.rs"), &enum_tests, &mut written);
+                write_if_changed(
+                    &tests_dir.join("dynamic_enum_coverage.rs"),
+                    &enum_tests,
+                    &mut written,
+                );
             }
 
             let endpoint_tests = emit_endpoint_availability_tests(&all_parsed, &diffs);
             if !endpoint_tests.is_empty() {
-                write_if_changed(&tests_dir.join("dynamic_endpoint_availability.rs"), &endpoint_tests, &mut written);
+                write_if_changed(
+                    &tests_dir.join("dynamic_endpoint_availability.rs"),
+                    &endpoint_tests,
+                    &mut written,
+                );
             }
 
             let field_tests = emit_field_presence_tests(&all_parsed, &diffs);
             if !field_tests.is_empty() {
-                write_if_changed(&tests_dir.join("dynamic_field_presence.rs"), &field_tests, &mut written);
+                write_if_changed(
+                    &tests_dir.join("dynamic_field_presence.rs"),
+                    &field_tests,
+                    &mut written,
+                );
             }
 
             let param_tests = emit_query_param_coverage_tests(&all_parsed, &diffs);
             if !param_tests.is_empty() {
-                write_if_changed(&tests_dir.join("dynamic_query_param_coverage.rs"), &param_tests, &mut written);
+                write_if_changed(
+                    &tests_dir.join("dynamic_query_param_coverage.rs"),
+                    &param_tests,
+                    &mut written,
+                );
             }
         }
 
@@ -353,13 +370,9 @@ fn main() {
         {
             const START: &str = "<!-- INTEGRATION_COVERAGE_START -->";
             const END: &str = "<!-- INTEGRATION_COVERAGE_END -->";
-            let content = nifi_openapi_gen::docs::generate_integration_coverage_content(&all_parsed, &diffs);
-            update_file_between_markers(
-                &codegen_dir.join("README.md"),
-                START,
-                END,
-                &content,
-            );
+            let content =
+                nifi_openapi_gen::docs::generate_integration_coverage_content(&all_parsed, &diffs);
+            update_file_between_markers(&codegen_dir.join("README.md"), START, END, &content);
         }
     }
 

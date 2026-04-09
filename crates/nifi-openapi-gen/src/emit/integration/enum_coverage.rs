@@ -8,10 +8,7 @@ use crate::util::{version_to_feature, wire_to_pascal};
 
 /// Generates integration tests verifying enum query-param values are accepted
 /// on their origin version and rejected (`UnsupportedEnumVariant`) on older versions.
-pub fn emit_enum_coverage_tests(
-    all_specs: &[(String, ApiSpec)],
-    diffs: &[VersionDiff],
-) -> String {
+pub fn emit_enum_coverage_tests(all_specs: &[(String, ApiSpec)], diffs: &[VersionDiff]) -> String {
     if all_specs.is_empty() || diffs.is_empty() {
         return String::new();
     }
@@ -34,8 +31,7 @@ pub fn emit_enum_coverage_tests(
                 }
 
                 // Look up the endpoint in the "to" spec.
-                let ep_info =
-                    find_endpoint(to_spec, &ep_change.method, &ep_change.path);
+                let ep_info = find_endpoint(to_spec, &ep_change.method, &ep_change.path);
                 let (endpoint, tag_group, sub_group) = match ep_info {
                     Some(info) => info,
                     None => continue,
@@ -70,15 +66,13 @@ pub fn emit_enum_coverage_tests(
                     let variant = wire_to_pascal(wire_value);
                     let type_lower = enum_type_name.to_lowercase();
                     let variant_lower = variant.to_lowercase();
-                    let base_name =
-                        format!("enum_{type_lower}_{variant_lower}");
+                    let base_name = format!("enum_{type_lower}_{variant_lower}");
 
                     let use_trait = trait_use_stmt(&tag_group.struct_name);
                     let use_type =
                         format!("use nifi_rust_client::dynamic::types::{enum_type_name};");
                     let enum_arg = format!("Some({enum_type_name}::{variant})");
-                    let call_args_filled =
-                        call_args.replace("ENUM_VALUE", &enum_arg);
+                    let call_args_filled = call_args.replace("ENUM_VALUE", &enum_arg);
 
                     // Test: accepted on the version that introduced the variant.
                     let accepted_test = format!(
