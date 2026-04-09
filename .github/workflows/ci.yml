@@ -11,19 +11,80 @@ env:
   RUST_BACKTRACE: 1
 
 jobs:
-  test:
-    name: Test
+  fmt:
+    name: Format
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          components: rustfmt
+      - run: cargo fmt --all -- --check
 
+  clippy:
+    name: Clippy (${{ matrix.name }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - name: default
+            args: "--workspace --all-targets --exclude nifi-integration-tests -- -D warnings"
+          - name: all-features
+            args: "--workspace --all-targets --all-features --exclude nifi-integration-tests -- -D warnings"
+          - name: integration
+            args: "-p nifi-integration-tests --all-targets -- -D warnings"
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo clippy ${{ matrix.args }}
+
+  test:
+    name: Test (${{ matrix.name }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - name: default
+            args: "--workspace --exclude nifi-integration-tests"
+          - name: all-features
+            args: "--workspace --all-features --exclude nifi-integration-tests"
+          - name: integration
+            args: "-p nifi-integration-tests"
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo test ${{ matrix.args }}
+
+  doc:
+    name: Documentation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - uses: Swatinem/rust-cache@v2
+      - run: RUSTDOCFLAGS="-D warnings" cargo doc --workspace --all-features --exclude nifi-integration-tests --no-deps
+
+  deny:
+    name: Dependency audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - run: cargo install cargo-deny --locked
+      - run: cargo deny check
+
+  pre-commit:
+    name: Pre-commit hooks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           components: clippy, rustfmt
-
       - uses: Swatinem/rust-cache@v2
-
-      - name: Install cargo-deny
-        run: cargo install cargo-deny --locked
-
+      - run: cargo install cargo-deny --locked
       - uses: pre-commit/action@v3.0.1
