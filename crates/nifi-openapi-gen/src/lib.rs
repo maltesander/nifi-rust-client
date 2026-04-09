@@ -1,3 +1,4 @@
+pub mod build_api;
 pub mod diff;
 pub mod docs;
 pub mod emit;
