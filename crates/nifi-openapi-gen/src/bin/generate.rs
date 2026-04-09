@@ -28,12 +28,14 @@ use nifi_openapi_gen::{
 };
 
 fn write_if_changed(path: &std::path::Path, content: &str, written: &mut usize) {
+    // Ensure exactly one trailing newline (avoids end-of-file-fixer churn).
+    let normalized = format!("{}\n", content.trim_end());
     let on_disk = std::fs::read_to_string(path).unwrap_or_default();
-    if on_disk != content {
+    if on_disk != normalized {
         if let Some(parent) = path.parent() {
             std::fs::create_dir_all(parent).expect("create parent dirs");
         }
-        std::fs::write(path, content).expect("write generated file");
+        std::fs::write(path, &normalized).expect("write generated file");
         println!("  wrote {}", path.display());
         *written += 1;
     }
@@ -98,23 +100,6 @@ fn main() {
             versioned_src.join("mod.rs"),
             "pub mod api;\npub mod types;\n".to_string(),
         ));
-
-        // Per-version wiremock stub tests disabled — they only verify that
-        // generated code compiles and calls the right URL, which `cargo check`
-        // already covers.  Real API coverage comes from the dynamic integration
-        // tests in tests/tests/dynamic_*.rs instead.
-        //
-        // let test_content = format!(
-        //     "#![cfg(all(feature = \"{feature_name}\", not(feature = \"dynamic\")))]\n\n{}",
-        //     emit_tests(spec)
-        // );
-        // targets.push((
-        //     client.join(format!(
-        //         "tests/v{}_generated_tests.rs",
-        //         version_str.replace('.', "_")
-        //     )),
-        //     test_content,
-        // ));
     }
 
     // 4. Dynamic module generation (only when processing multiple specs)
@@ -254,15 +239,17 @@ fn main() {
     update_cargo_features_tests(&client.join("src"), &tests_crate);
 
     // 9. Run cargo fmt so files are in canonical form.
-    let status = std::process::Command::new("cargo")
-        .args(["fmt", "-p", "nifi-rust-client"])
-        .current_dir(workspace_root)
-        .status()
-        .expect("cargo fmt");
+    for pkg in ["nifi-rust-client", "nifi-integration-tests"] {
+        let status = std::process::Command::new("cargo")
+            .args(["fmt", "-p", pkg])
+            .current_dir(workspace_root)
+            .status()
+            .expect("cargo fmt");
 
-    if !status.success() {
-        eprintln!("cargo fmt failed");
-        std::process::exit(1);
+        if !status.success() {
+            eprintln!("cargo fmt -p {pkg} failed");
+            std::process::exit(1);
+        }
     }
 
     // 10. Repo maintenance: update the supported-versions table in README.md and the default
@@ -367,6 +354,29 @@ fn main() {
                     &param_tests,
                     &mut written,
                 );
+            }
+        }
+
+        // Run rustfmt on generated integration test files (they live outside
+        // nifi-rust-client so `cargo fmt -p` doesn't cover them).
+        {
+            let tests_dir = workspace_root.join("tests/tests");
+            let generated: Vec<std::path::PathBuf> = [
+                "dynamic_enum_coverage.rs",
+                "dynamic_endpoint_availability.rs",
+                "dynamic_field_presence.rs",
+                "dynamic_query_param_coverage.rs",
+            ]
+            .iter()
+            .map(|f| tests_dir.join(f))
+            .filter(|p| p.exists())
+            .collect();
+            if !generated.is_empty() {
+                let args: Vec<&str> = generated.iter().filter_map(|p| p.to_str()).collect();
+                let _ = std::process::Command::new("rustfmt")
+                    .arg("--edition=2024")
+                    .args(&args)
+                    .status();
             }
         }
 

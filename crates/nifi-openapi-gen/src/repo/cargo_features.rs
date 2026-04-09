@@ -4,7 +4,7 @@ use crate::util::version_to_feature;
 
 use super::lib_rs::discover_versions;
 
-/// Patch the client crate's `Cargo.toml` [features] section to include all version features,
+/// Patch the client crate's `Cargo.toml` `[features]` section to include all version features,
 /// a `default` pointing to the latest, and a `dynamic` that depends on all versions.
 pub fn patch_client_cargo_features(toml_str: &str, versions: &[&str]) -> String {
     let mut doc = toml_str
@@ -42,7 +42,7 @@ pub fn patch_client_cargo_features(toml_str: &str, versions: &[&str]) -> String 
     doc.to_string()
 }
 
-/// Patch the integration tests crate's `Cargo.toml` [features] section to forward version
+/// Patch the integration tests crate's `Cargo.toml` `[features]` section to forward version
 /// features to the client crate dependency.
 pub fn patch_tests_cargo_features(toml_str: &str, versions: &[&str]) -> String {
     let mut doc = toml_str

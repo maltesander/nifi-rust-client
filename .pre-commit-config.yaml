@@ -68,7 +68,7 @@ repos:
       - id: openapi-gen-check
         name: openapi-gen-check
         language: system
-        entry: bash -c 'cargo run -p nifi-openapi-gen && git diff --exit-code -- crates/nifi-rust-client/src/ crates/nifi-rust-client/tests/ crates/nifi-rust-client/Cargo.toml tests/Cargo.toml'
+        entry: bash -c 'cargo run -p nifi-openapi-gen --bin generate && git diff --exit-code -- crates/nifi-rust-client/src/ crates/nifi-rust-client/tests/ crates/nifi-rust-client/Cargo.toml tests/Cargo.toml'
         stages: [pre-commit, pre-merge-commit]
         pass_filenames: false
         files: crates/nifi-openapi-gen/src/|crates/nifi-openapi-gen/specs/
