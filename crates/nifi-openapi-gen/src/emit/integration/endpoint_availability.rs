@@ -134,27 +134,19 @@ async fn {base_name}_unsupported() {{
 /// Safe means: GET with no required resource-specific path params,
 /// or POST on a process-groups path where we can use "root" as the ID.
 fn is_safe_endpoint(summary: &EndpointSummary, endpoint: &Endpoint) -> bool {
-    // GET with no path params (or only "id"-like ones we can fill with "root").
-    if summary.method == HttpMethod::Get {
-        return endpoint.path_params.iter().all(|pp| {
-            matches!(
-                pp.name.as_str(),
-                "id" | "process_group_id" | "parent_group_id" | "producer"
-            )
-        });
+    // Only GET endpoints without resource-specific path params are safe.
+    // POST/PUT/DELETE may have required body fields that Default::default()
+    // cannot satisfy, causing MissingRequiredField errors.
+    if summary.method != HttpMethod::Get {
+        return false;
     }
 
-    // POST on a process-groups path (we can use "root" for id).
-    if summary.method == HttpMethod::Post && summary.path.contains("process-groups") {
-        return endpoint.path_params.iter().all(|pp| {
-            matches!(
-                pp.name.as_str(),
-                "id" | "process_group_id" | "parent_group_id"
-            )
-        });
-    }
-
-    false
+    endpoint.path_params.iter().all(|pp| {
+        matches!(
+            pp.name.as_str(),
+            "id" | "process_group_id" | "parent_group_id" | "producer"
+        )
+    })
 }
 
 /// Build the argument list for the function call.

@@ -199,24 +199,6 @@ async fn endpoint_flow_get_listen_ports_unsupported() {
     );
 }
 
-#[cfg(feature = "nifi-2-7-2")]
-#[tokio::test]
-#[ignore = "requires a running NiFi instance (use tests/run.sh)"]
-async fn endpoint_flow_clear_bulletins_1_available() {
-    use nifi_rust_client::dynamic::traits::FlowApi;
-
-    let client = helpers::dynamic_logged_in_client().await;
-    let result = client
-        .flow_api()
-        .clear_bulletins_1("root", Default::default())
-        .await;
-    assert!(
-        result.is_ok(),
-        "expected endpoint to be available, got: {:?}",
-        result.unwrap_err()
-    );
-}
-
 #[cfg(not(any(feature = "nifi-2-7-2", feature = "nifi-2-8-0")))]
 #[tokio::test]
 #[ignore = "requires a running NiFi instance (use tests/run.sh)"]
@@ -304,24 +286,6 @@ async fn endpoint_processors_clear_bulletins_5_unsupported() {
     assert!(
         matches!(err, nifi_rust_client::NifiError::UnsupportedEndpoint { .. }),
         "expected UnsupportedEndpoint, got: {err:?}"
-    );
-}
-
-#[cfg(feature = "nifi-2-7-2")]
-#[tokio::test]
-#[ignore = "requires a running NiFi instance (use tests/run.sh)"]
-async fn endpoint_remoteprocessgroups_clear_bulletins_6_available() {
-    use nifi_rust_client::dynamic::traits::RemoteProcessGroupsApi;
-
-    let client = helpers::dynamic_logged_in_client().await;
-    let result = client
-        .remoteprocessgroups_api()
-        .clear_bulletins_6("root", Default::default())
-        .await;
-    assert!(
-        result.is_ok(),
-        "expected endpoint to be available, got: {:?}",
-        result.unwrap_err()
     );
 }
 
