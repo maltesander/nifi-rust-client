@@ -133,7 +133,9 @@ fn emit_dynamic_client(out: &mut String, versions: &[(&str, &str, &str, &ApiSpec
     out.push_str("impl DynamicClient {\n");
 
     // new()
-    out.push_str("    /// Create a new `DynamicClient` without detecting the server version yet.\n");
+    out.push_str(
+        "    /// Create a new `DynamicClient` without detecting the server version yet.\n",
+    );
     out.push_str("    /// Version detection will happen automatically on `login()` or can be\n");
     out.push_str("    /// triggered explicitly via `detect_version()`.\n");
     out.push_str("    pub fn new(client: NifiClient) -> Self {\n");
@@ -144,7 +146,9 @@ fn emit_dynamic_client(out: &mut String, versions: &[(&str, &str, &str, &ApiSpec
     out.push_str("    /// Wrap an existing `NifiClient` and detect the NiFi server version\n");
     out.push_str("    /// immediately via GET /flow/about.\n");
     out.push_str("    ///\n");
-    out.push_str("    /// The client must already be authenticated if the NiFi instance requires it.\n");
+    out.push_str(
+        "    /// The client must already be authenticated if the NiFi instance requires it.\n",
+    );
     out.push_str("    /// For unauthenticated setup, use `new()` + `login()` instead — login\n");
     out.push_str("    /// triggers version detection automatically.\n");
     out.push_str("    pub async fn from_client(client: NifiClient) -> Result<Self, NifiError> {\n");
@@ -156,15 +160,21 @@ fn emit_dynamic_client(out: &mut String, versions: &[(&str, &str, &str, &ApiSpec
     // detect_version()
     out.push_str("    /// Detect the NiFi server version via GET /flow/about.\n");
     out.push_str("    /// Returns the cached version if already detected.\n");
-    out.push_str("    pub async fn detect_version(&self) -> Result<DetectedVersion, NifiError> {\n");
+    out.push_str(
+        "    pub async fn detect_version(&self) -> Result<DetectedVersion, NifiError> {\n",
+    );
     out.push_str("        self.version.get_or_try_init(|| async {\n");
-    out.push_str("            let resp: AboutResponse = self.client.get(\"/flow/about\").await?;\n");
+    out.push_str(
+        "            let resp: AboutResponse = self.client.get(\"/flow/about\").await?;\n",
+    );
     out.push_str("            version_from_str(&resp.about.version)\n");
     out.push_str("        }).await.copied()\n");
     out.push_str("    }\n\n");
 
     // detected_version()
-    out.push_str("    /// Returns the detected NiFi server version, or `None` if not yet detected.\n");
+    out.push_str(
+        "    /// Returns the detected NiFi server version, or `None` if not yet detected.\n",
+    );
     out.push_str("    pub fn detected_version(&self) -> DetectedVersion {\n");
     out.push_str("        *self.version.get().expect(\"NiFi version not yet detected — call login() or detect_version() first\")\n");
     out.push_str("    }\n\n");

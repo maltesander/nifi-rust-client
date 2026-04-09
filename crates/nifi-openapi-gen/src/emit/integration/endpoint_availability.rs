@@ -19,7 +19,10 @@ pub fn emit_endpoint_availability_tests(
     let mut tests: Vec<String> = Vec::new();
 
     // Collect all version features for cumulative gating.
-    let all_features: Vec<String> = all_specs.iter().map(|(v, _)| version_to_feature(v)).collect();
+    let all_features: Vec<String> = all_specs
+        .iter()
+        .map(|(v, _)| version_to_feature(v))
+        .collect();
 
     for diff in diffs {
         if diff.endpoints.added.is_empty() {

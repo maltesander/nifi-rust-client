@@ -19,7 +19,10 @@ pub fn emit_query_param_coverage_tests(
     let mut tests: Vec<String> = Vec::new();
 
     // Collect all version features for cumulative gating.
-    let all_features: Vec<String> = all_specs.iter().map(|(v, _)| version_to_feature(v)).collect();
+    let all_features: Vec<String> = all_specs
+        .iter()
+        .map(|(v, _)| version_to_feature(v))
+        .collect();
 
     for diff in diffs {
         let to_feature = version_to_feature(&diff.to);

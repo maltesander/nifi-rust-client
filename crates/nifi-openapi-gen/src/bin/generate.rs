@@ -386,12 +386,7 @@ fn main() {
             const END: &str = "<!-- INTEGRATION_COVERAGE_END -->";
             let content =
                 nifi_openapi_gen::docs::generate_integration_coverage_content(&all_parsed, &diffs);
-            update_file_between_markers(
-                &client.join("README.md"),
-                START,
-                END,
-                &content,
-            );
+            update_file_between_markers(&client.join("README.md"), START, END, &content);
         }
     }
 
