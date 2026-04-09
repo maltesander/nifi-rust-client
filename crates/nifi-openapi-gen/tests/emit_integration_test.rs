@@ -93,3 +93,19 @@ fn endpoint_availability_contains_added_endpoints() {
         "should reference known added endpoints"
     );
 }
+
+#[test]
+fn query_param_coverage_contains_flow_metrics_strategy() {
+    let all_specs = load_all_specs();
+    if all_specs.len() < 2 {
+        return;
+    }
+    let diffs = compute_diffs(&all_specs);
+    let output = nifi_openapi_gen::emit_query_param_coverage_tests(&all_specs, &diffs);
+
+    assert!(
+        output.contains("flow_metrics") || output.contains("flowMetrics"),
+        "should reference the flow metrics endpoint"
+    );
+    assert!(output.contains("cfg(feature"), "should have feature-gated tests");
+}
