@@ -71,10 +71,10 @@ let diag = client.systemdiagnostics_api()
     .await?;
 ```
 
-All 28 API groups have corresponding traits in `dynamic::traits` (e.g., `FlowApi`, `ProcessorsApi`). Import the trait to call methods on a dispatch enum, or use traits for generic code:
+All 28 API groups have corresponding traits in `dynamic::traits` (e.g., `FlowApi`, `ProcessorsApi`), plus sub-resource traits for endpoints with path parameters (e.g., `ControllerServicesConfigApi`, `ProcessorsRunStatusApi`). Import the trait to call methods on a dispatch enum, or use traits for generic code:
 
 ```rust
-use nifi_rust_client::dynamic::traits::FlowApi;
+use nifi_rust_client::dynamic::traits::{FlowApi, ControllerServicesApi, ControllerServicesConfigApi};
 use nifi_rust_client::NifiError;
 
 async fn check_version(api: &impl FlowApi) -> Result<(), NifiError> {
@@ -82,6 +82,12 @@ async fn check_version(api: &impl FlowApi) -> Result<(), NifiError> {
     println!("NiFi {}", about.nifi_version.unwrap_or_default());
     Ok(())
 }
+
+// Sub-resource builder chain — same pattern as static mode
+let analysis = client.controller_services_api()
+    .config("service-id")
+    .analyze_configuration(&body)
+    .await?;
 ```
 
 Dynamic types use `#[non_exhaustive]` for forward compatibility — match arms should include a `..` fallback when destructuring fields.

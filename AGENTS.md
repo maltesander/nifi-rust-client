@@ -30,7 +30,7 @@ crates/
     tests/                # Unit tests for parser and emitters
   nifi-rust-client/       # Library crate — published to crates.io
     src/
-      vx_y_z/             # Generated per version: api/ + types/ + mod.rs
+      vx_y_z/             # Generated per version: api/ + types/ + traits/ + mod.rs
       dynamic/            # Generated: DynamicClient, common types, conversions (dynamic feature)
       lib.rs              # Generated: cfg-gated re-exports, auto-managed by generator
     tests/
@@ -235,22 +235,31 @@ API calls to the correct version's generated code. Version detection happens aut
 on `login()`, or can be triggered explicitly via `detect_version()`. Returns common union
 types with all fields as `Option<T>`.
 
-The dispatch layer is trait-based:
+The dispatch layer is trait-based with a hierarchical sub-resource pattern matching the static client:
 
-- **`dynamic::traits`** — public traits (e.g., `FlowApi`, `ProcessorsApi`) that callers import to use dispatch enum methods or write generic code
-- **`dynamic::dispatch`** — dispatch enums (e.g., `FlowApiDispatch`) that implement the traits and route to per-version code
+- **`dynamic::traits`** — public traits (e.g., `FlowApi`, `ProcessorsApi`) plus sub-resource traits (e.g., `ControllerServicesConfigApi`, `ProcessorsRunStatusApi`) that callers import to use dispatch enum methods or write generic code
+- **`dynamic::dispatch`** — dispatch enums (e.g., `FlowApiDispatch`, `ControllerServicesConfigApiDispatch`) that implement the traits and route to per-version code
 - **`dynamic::impls`** — per-version implementations generated from each spec
+- **`vx_y_z::traits`** — per-version static traits mirroring the same hierarchy, enabling mockability and generic code for static-mode users
 
-Users must import a trait to call its methods:
+Both static and dynamic modes use the same sub-resource builder pattern for path parameters:
 
 ```rust
-use nifi_rust_client::dynamic::traits::FlowApi;
+use nifi_rust_client::dynamic::traits::{FlowApi, ControllerServicesApi, ControllerServicesConfigApi};
 
 let client = NifiClientBuilder::new("https://nifi:8443")?
     .build_dynamic()?;
 // login() authenticates AND auto-detects the NiFi version.
 client.login("admin", "password").await?;
+
+// Top-level methods
 let about = client.flow_api().get_about_info().await?;
+
+// Sub-resource builder chain: .config(id) returns a sub-resource struct
+let analysis = client.controller_services_api()
+    .config("service-id")
+    .analyze_configuration(&body)
+    .await?;
 ```
 
 **Forward compatibility:** All dynamic structs and enums carry `#[non_exhaustive]`. All fields are `Option<T>`. Trait methods for endpoints that don't exist in a given version have default impls returning `NifiError::UnsupportedEndpoint`.
