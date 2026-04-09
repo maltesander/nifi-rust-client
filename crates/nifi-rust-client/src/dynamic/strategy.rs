@@ -28,9 +28,10 @@ pub(crate) fn resolve_version(
         }
     }
 
-    let detected = Version::parse(detected_str).map_err(|_| crate::NifiError::UnsupportedVersion {
-        detected: detected_str.to_string(),
-    })?;
+    let detected =
+        Version::parse(detected_str).map_err(|_| crate::NifiError::UnsupportedVersion {
+            detected: detected_str.to_string(),
+        })?;
 
     // Filter to same major version only
     let same_major: Vec<(Version, super::DetectedVersion)> = supported_versions
@@ -60,7 +61,10 @@ pub(crate) fn resolve_version(
                 .min_by(|(a, _), (b, _)| {
                     let dist_a = (detected.minor as i64 - a.minor as i64).unsigned_abs();
                     let dist_b = (detected.minor as i64 - b.minor as i64).unsigned_abs();
-                    dist_a.cmp(&dist_b).then(a.minor.cmp(&b.minor)).then(a.patch.cmp(&b.patch))
+                    dist_a
+                        .cmp(&dist_b)
+                        .then(a.minor.cmp(&b.minor))
+                        .then(a.patch.cmp(&b.patch))
                 })
                 .map(|(_, dv)| dv)
                 .expect("same_major is non-empty")
@@ -161,7 +165,11 @@ mod tests {
         let result = resolve_version(
             "2.7.0",
             VersionResolutionStrategy::Closest,
-            |v| Err(crate::NifiError::UnsupportedVersion { detected: v.to_string() }),
+            |v| {
+                Err(crate::NifiError::UnsupportedVersion {
+                    detected: v.to_string(),
+                })
+            },
             &versions,
         );
         assert_eq!(result.unwrap(), DetectedVersion::V2_6_0);

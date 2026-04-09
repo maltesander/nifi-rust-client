@@ -169,10 +169,7 @@ impl NifiClientBuilder {
     /// Controls how the client resolves a detected NiFi version to a supported
     /// client version. Default is `Strict`.
     #[cfg(feature = "dynamic")]
-    pub fn version_strategy(
-        mut self,
-        strategy: crate::dynamic::VersionResolutionStrategy,
-    ) -> Self {
+    pub fn version_strategy(mut self, strategy: crate::dynamic::VersionResolutionStrategy) -> Self {
         self.version_strategy = Some(strategy);
         self
     }
@@ -245,6 +242,8 @@ impl NifiClientBuilder {
     pub fn build_dynamic(self) -> Result<crate::dynamic::DynamicClient, NifiError> {
         let strategy = self.version_strategy.unwrap_or_default();
         let client = self.build()?;
-        Ok(crate::dynamic::DynamicClient::with_strategy(client, strategy))
+        Ok(crate::dynamic::DynamicClient::with_strategy(
+            client, strategy,
+        ))
     }
 }

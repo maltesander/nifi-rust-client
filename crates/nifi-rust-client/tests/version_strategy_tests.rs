@@ -1,7 +1,7 @@
 #![cfg(feature = "dynamic")]
 
-use nifi_rust_client::dynamic::VersionResolutionStrategy;
 use nifi_rust_client::NifiClientBuilder;
+use nifi_rust_client::dynamic::VersionResolutionStrategy;
 use wiremock::matchers::{method, path};
 use wiremock::{Mock, MockServer, ResponseTemplate};
 

@@ -161,13 +161,17 @@ fn emit_dynamic_client(out: &mut String, versions: &[(&str, &str, &str, &ApiSpec
     out.push_str("    /// triggered explicitly via `detect_version()`.\n");
     out.push_str("    ///\n");
     out.push_str("    /// Uses [`VersionResolutionStrategy::Strict`] by default.\n");
-    out.push_str("    /// Use [`with_strategy`](Self::with_strategy) to configure fallback behavior.\n");
+    out.push_str(
+        "    /// Use [`with_strategy`](Self::with_strategy) to configure fallback behavior.\n",
+    );
     out.push_str("    pub fn new(client: NifiClient) -> Self {\n");
     out.push_str("        Self { client, version: tokio::sync::OnceCell::new(), strategy: strategy::VersionResolutionStrategy::default() }\n");
     out.push_str("    }\n\n");
 
     // with_strategy()
-    out.push_str("    /// Create a new `DynamicClient` with a specific version resolution strategy.\n");
+    out.push_str(
+        "    /// Create a new `DynamicClient` with a specific version resolution strategy.\n",
+    );
     out.push_str("    ///\n");
     out.push_str("    /// See [`VersionResolutionStrategy`] for available strategies.\n");
     out.push_str("    pub fn with_strategy(client: NifiClient, strategy: strategy::VersionResolutionStrategy) -> Self {\n");
@@ -184,7 +188,9 @@ fn emit_dynamic_client(out: &mut String, versions: &[(&str, &str, &str, &ApiSpec
     out.push_str("    /// For unauthenticated setup, use `new()` + `login()` instead — login\n");
     out.push_str("    /// triggers version detection automatically.\n");
     out.push_str("    ///\n");
-    out.push_str("    /// Uses [`VersionResolutionStrategy::Strict`]. To configure fallback, use\n");
+    out.push_str(
+        "    /// Uses [`VersionResolutionStrategy::Strict`]. To configure fallback, use\n",
+    );
     out.push_str("    /// [`with_strategy`](Self::with_strategy) + [`detect_version`](Self::detect_version) instead.\n");
     out.push_str("    pub async fn from_client(client: NifiClient) -> Result<Self, NifiError> {\n");
     out.push_str("        let dc = Self::new(client);\n");
@@ -196,7 +202,9 @@ fn emit_dynamic_client(out: &mut String, versions: &[(&str, &str, &str, &ApiSpec
     out.push_str("    /// Detect the NiFi server version via GET /flow/about.\n");
     out.push_str("    /// Returns the cached version if already detected.\n");
     out.push_str("    ///\n");
-    out.push_str("    /// Resolution behavior depends on the configured [`VersionResolutionStrategy`].\n");
+    out.push_str(
+        "    /// Resolution behavior depends on the configured [`VersionResolutionStrategy`].\n",
+    );
     out.push_str(
         "    pub async fn detect_version(&self) -> Result<DetectedVersion, NifiError> {\n",
     );
