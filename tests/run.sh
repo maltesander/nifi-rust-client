@@ -62,7 +62,15 @@ echo "--- Bootstrapping authorization policies..."
 NIFI_URL="$NIFI_URL" NIFI_USERNAME="$NIFI_USERNAME" NIFI_PASSWORD="$NIFI_PASSWORD" \
     "$SCRIPT_DIR/scripts/bootstrap-policies.sh"
 
-echo "--- Running integration tests..."
+echo "--- Running integration tests (static mode)..."
+NIFI_URL="$NIFI_URL" \
+NIFI_USERNAME="$NIFI_USERNAME" \
+NIFI_PASSWORD="$NIFI_PASSWORD" \
+NIFI_CA_CERT_PATH="$CERTS_DIR/ca.crt" \
+    cargo test -p nifi-integration-tests --no-default-features --features "$NIFI_FEATURE" \
+    -- --ignored --nocapture
+
+echo "--- Running integration tests (dynamic mode)..."
 NIFI_URL="$NIFI_URL" \
 NIFI_USERNAME="$NIFI_USERNAME" \
 NIFI_PASSWORD="$NIFI_PASSWORD" \
