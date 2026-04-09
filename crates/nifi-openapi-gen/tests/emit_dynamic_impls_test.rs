@@ -295,7 +295,9 @@ fn emits_sub_group_gat_and_accessor() {
 
     // Accessor method with RPITIT return type
     assert!(
-        pg_rs.contains("fn connections<'b>(&'b self, id: &'b str) -> impl ProcessGroupConnectionsApi + 'b"),
+        pg_rs.contains(
+            "fn connections<'b>(&'b self, id: &'b str) -> impl ProcessGroupConnectionsApi + 'b"
+        ),
         "should have RPITIT accessor method: {pg_rs}"
     );
     assert!(

@@ -425,7 +425,9 @@ mod tests {
             "GAT declaration should not be present"
         );
         assert!(
-            content.contains("fn config<'b>(&'b self, id: &'b str) -> impl ControllerServicesConfigApi + 'b"),
+            content.contains(
+                "fn config<'b>(&'b self, id: &'b str) -> impl ControllerServicesConfigApi + 'b"
+            ),
             "Missing RPITIT accessor method"
         );
 

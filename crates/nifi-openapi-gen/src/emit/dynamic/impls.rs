@@ -463,7 +463,9 @@ mod tests {
 
         // Accessor method with RPITIT return type constructs dispatch struct
         assert!(
-            content.contains("fn config<'b>(&'b self, id: &'b str) -> impl ControllerServicesConfigApi + 'b"),
+            content.contains(
+                "fn config<'b>(&'b self, id: &'b str) -> impl ControllerServicesConfigApi + 'b"
+            ),
             "Missing RPITIT accessor method. Content:\n{content}"
         );
         assert!(
