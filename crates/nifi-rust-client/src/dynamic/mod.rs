@@ -1,11 +1,14 @@
 // @generated — do not edit; run `cargo run -p nifi-openapi-gen`
 
+pub mod strategy;
+
 mod conversions;
 pub mod dispatch;
 mod impls;
 pub mod traits;
 pub mod types;
 use crate::{NifiClient, NifiError};
+pub use strategy::VersionResolutionStrategy;
 /// Represents a detected NiFi server version.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum DetectedVersion {
