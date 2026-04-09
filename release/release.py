@@ -523,8 +523,9 @@ def run_checks(dry_run, skip_integration):
         ("cargo test -p nifi-integration-tests", "Tests (integration compile)"),
         ("cargo clippy --workspace --all-targets --all-features --exclude nifi-integration-tests -- -D warnings", "Clippy (all features)"),
         ("pre-commit run --all-files", "Pre-commit"),
-        ("cargo publish -p nifi-openapi-gen --dry-run --allow-dirty", "Package validation (nifi-openapi-gen)"),
-        ("cargo publish -p nifi-rust-client --dry-run --allow-dirty --no-verify", "Package validation (nifi-rust-client)"),
+        ("cargo package -p nifi-openapi-gen --allow-dirty", "Package validation (nifi-openapi-gen)"),
+        # nifi-rust-client packaging requires nifi-openapi-gen on crates.io;
+        # validated in CI after nifi-openapi-gen is published first.
     ]
 
     if skip_integration:
