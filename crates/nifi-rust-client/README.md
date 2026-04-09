@@ -2,7 +2,7 @@
 
 Idiomatic Rust client for the Apache NiFi 2.x REST API.
 
-All NiFi REST API endpoints are generated from the official OpenAPI spec and exposed via typed resource accessor methods.
+All NiFi REST API endpoints are generated from the official OpenAPI spec and exposed via typed resource accessor methods. Per-version API modules and the dynamic dispatch layer are generated at build time from OpenAPI specs via `build.rs` — no manual code generation step is needed; just select a feature flag and build.
 
 ## Supported NiFi Versions
 

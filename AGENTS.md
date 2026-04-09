@@ -10,7 +10,7 @@ Supports multiple NiFi 2.x API versions via Cargo feature flags. Default (latest
 
 ```
 crates/
-  nifi-openapi-gen/           # Code generator binary (not published)
+  nifi-openapi-gen/           # Code generator — published to crates.io as build-dependency
     src/
       bin/
         generate.rs       # Orchestrator binary — writes generated files
@@ -29,10 +29,19 @@ crates/
       x.y.z/nifi-api.json  # OpenAPI 3.0.1 spec per supported NiFi version
     tests/                # Unit tests for parser and emitters
   nifi-rust-client/       # Library crate — published to crates.io
+    build.rs              # Calls nifi-openapi-gen to generate code at build time
     src/
-      vx_y_z/             # Generated per version: api/ + types/ + traits/ + mod.rs
-      dynamic/            # Generated: traits, dispatch, impls, types, conversions (dynamic feature)
-      lib.rs              # Generated: cfg-gated re-exports, auto-managed by generator
+      lib.rs              # Hand-written: uses include!() for generated modules
+      client.rs           # Hand-written: NifiClient struct and HTTP helpers
+      builder.rs          # Hand-written: NifiClientBuilder
+      error.rs            # Hand-written: NifiError via snafu
+      credentials.rs      # Hand-written: CredentialProvider
+      retry.rs            # Hand-written: retry logic
+      dynamic/
+        strategy.rs       # Hand-written: VersionResolutionStrategy
+      # Generated at build time into $OUT_DIR (not tracked in git):
+      # vx_y_z/           — per-version api/, types/, traits/
+      # dynamic/          — dispatch, conversions, impls, traits, types
     tests/
       *.rs                        # Hand-written wiremock tests per API group
 tests/                    # Integration test crate (not published, needs Docker)
@@ -98,8 +107,9 @@ client.processors_api().get_processor("some-id").await?
 ```
 
 Resource structs, types, and wiremock tests are **fully generated** from the OpenAPI spec via
-`nifi-openapi-gen`. Run `cargo run -p nifi-openapi-gen` to regenerate; it writes one `.rs` file per NiFi
-API tag into `src/api/` and `src/types/`, plus `tests/generated_tests.rs`, and deletes stale files.
+`nifi-openapi-gen`. Code generation runs automatically via `build.rs` at build time — generated files
+go to `$OUT_DIR` and are not tracked in git. For repo maintenance (README tables, docker-compose, etc.),
+run `cargo run -p nifi-openapi-gen --bin generate`.
 To add or change endpoints, update the spec parsing logic in `crates/nifi-openapi-gen/src/`.
 
 ### Query Parameter Enum Types
@@ -169,7 +179,7 @@ Do not use `unwrap` or `expect` in non-test code — clippy denies it.
 |------|---------|
 | After small changes | `cargo check`, `cargo build` |
 | After changing a module | `cargo test -p <crate> <module>` |
-| Before committing | `cargo test --workspace` then `pre-commit run --all-files` |
+| Before committing | `cargo test --workspace --exclude nifi-integration-tests` then `pre-commit run --all-files` |
 | Test specific NiFi version | `cargo test -p nifi-rust-client --no-default-features --features nifi-2-8-0` |
 | Test dynamic mode | `cargo test -p nifi-rust-client --features dynamic` |
 | Clippy dynamic mode | `cargo clippy -p nifi-rust-client --features dynamic -- -D warnings` |
@@ -294,8 +304,9 @@ Configure via `NifiClientBuilder::version_strategy(VersionResolutionStrategy)` b
 # 1. Fetch spec from a running NiFi instance of the target version
 NIFI_VERSION=x.y.z ./crates/nifi-openapi-gen/scripts/fetch-nifi-spec.sh
 
-# 2. Run generator — writes src/vx_y_z/, updates lib.rs, both Cargo.tomls,
-#    the README versions table, and the docker-compose default tag.
+# 2. Run generator — updates Cargo.toml features, README versions table,
+#    docker-compose default tag, and API changes doc.
+#    (Code generation is handled by build.rs automatically.)
 NIFI_VERSION=x.y.z cargo run -p nifi-openapi-gen
 
 # 3. Verify all versions compile
@@ -304,10 +315,7 @@ cargo build --no-default-features --features nifi-x-y-z
 
 # 4. Commit
 git add crates/nifi-openapi-gen/specs/x.y.z/ \
-        crates/nifi-rust-client/src/vx_y_z/ \
-        crates/nifi-rust-client/src/lib.rs \
         crates/nifi-rust-client/Cargo.toml \
-        crates/nifi-rust-client/tests/vx_y_z_generated_tests.rs \
         tests/Cargo.toml \
         README.md \
         tests/docker-compose.yml \
