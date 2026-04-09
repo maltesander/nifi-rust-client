@@ -6,7 +6,7 @@ use url::Url;
 
 use crate::NifiClient;
 use crate::NifiError;
-use crate::credentials::CredentialProvider;
+use crate::config::credentials::CredentialProvider;
 use crate::error::{HttpSnafu, InvalidBaseUrlSnafu, InvalidCertificateSnafu};
 
 /// Builder for [`NifiClient`].
@@ -40,7 +40,7 @@ pub struct NifiClientBuilder {
     danger_accept_invalid_certs: bool,
     root_certificates: Vec<Vec<u8>>,
     credential_provider: Option<Arc<dyn CredentialProvider>>,
-    retry_policy: Option<crate::retry::RetryPolicy>,
+    retry_policy: Option<crate::config::retry::RetryPolicy>,
     #[cfg(feature = "dynamic")]
     version_strategy: Option<crate::dynamic::VersionResolutionStrategy>,
 }
@@ -154,11 +154,11 @@ impl NifiClientBuilder {
         self
     }
 
-    /// Configure a [`RetryPolicy`](crate::retry::RetryPolicy) for transient error retry.
+    /// Configure a [`RetryPolicy`](crate::config::retry::RetryPolicy) for transient error retry.
     ///
     /// When set, HTTP helpers automatically retry
     /// [retryable](crate::NifiError::is_retryable) errors using exponential backoff.
-    pub fn retry_policy(mut self, policy: crate::retry::RetryPolicy) -> Self {
+    pub fn retry_policy(mut self, policy: crate::config::retry::RetryPolicy) -> Self {
         self.retry_policy = Some(policy);
         self
     }

@@ -7,7 +7,7 @@ use tokio::sync::RwLock;
 use url::Url;
 
 use crate::NifiError;
-use crate::credentials::CredentialProvider;
+use crate::config::credentials::CredentialProvider;
 use crate::error::{AuthSnafu, HttpSnafu};
 
 /// Client for the Apache NiFi REST API.
@@ -17,7 +17,7 @@ pub struct NifiClient {
     token: Arc<RwLock<Option<String>>>,
     credentials: Option<Arc<dyn CredentialProvider>>,
     #[allow(dead_code)]
-    retry_policy: Option<crate::retry::RetryPolicy>,
+    retry_policy: Option<crate::config::retry::RetryPolicy>,
 }
 
 impl Clone for NifiClient {
@@ -51,7 +51,7 @@ impl NifiClient {
         base_url: Url,
         http: Client,
         credentials: Option<Arc<dyn CredentialProvider>>,
-        retry_policy: Option<crate::retry::RetryPolicy>,
+        retry_policy: Option<crate::config::retry::RetryPolicy>,
     ) -> Self {
         Self {
             base_url,
@@ -191,7 +191,7 @@ impl NifiClient {
 
     /// Execute `f` with optional transient-error retry using exponential backoff.
     ///
-    /// When a [`RetryPolicy`](crate::retry::RetryPolicy) is configured, retries
+    /// When a [`RetryPolicy`](crate::config::retry::RetryPolicy) is configured, retries
     /// [retryable](NifiError::is_retryable) errors up to `max_retries` times.
     /// Each attempt goes through [`with_auth_retry`] so 401 handling still works.
     async fn with_retry<T, F, Fut>(&self, f: F) -> Result<T, NifiError>

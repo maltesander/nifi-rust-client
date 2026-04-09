@@ -1,11 +1,10 @@
 pub mod builder;
 pub mod client;
-pub mod credentials;
+pub mod config;
 pub mod error;
-pub mod retry;
 pub use builder::NifiClientBuilder;
 pub use client::NifiClient;
-pub use credentials::CredentialProvider;
+pub use config::credentials::CredentialProvider;
 pub use error::NifiError;
 
 // Generated: version modules, re-exports, dynamic module

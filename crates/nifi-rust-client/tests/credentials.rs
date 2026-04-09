@@ -1,7 +1,7 @@
 #![cfg(not(feature = "dynamic"))]
 #![allow(clippy::panic)]
 use nifi_rust_client::CredentialProvider;
-use nifi_rust_client::credentials::{EnvCredentials, StaticCredentials};
+use nifi_rust_client::config::credentials::{EnvCredentials, StaticCredentials};
 
 #[tokio::test]
 async fn static_credentials_returns_fixed_values() {
