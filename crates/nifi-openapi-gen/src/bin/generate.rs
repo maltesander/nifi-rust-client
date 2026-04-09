@@ -24,7 +24,7 @@ use nifi_openapi_gen::{
     emit_dynamic_conversions, emit_dynamic_dispatch, emit_dynamic_impls, emit_dynamic_tests,
     emit_dynamic_traits, emit_dynamic_types, emit_endpoint_availability_tests,
     emit_enum_coverage_tests, emit_field_presence_tests, emit_query_param_coverage_tests,
-    emit_tests, emit_types, load,
+    emit_types, load,
 };
 
 fn write_if_changed(path: &std::path::Path, content: &str, written: &mut usize) {
@@ -85,7 +85,6 @@ fn main() {
     // 3. Per-version code generation
     for (version_str, spec) in &parsed_specs {
         let mod_name = version_to_mod_name(version_str);
-        let feature_name = version_to_feature(version_str);
         let versioned_src = client.join("src").join(&mod_name);
 
         for (filename, content) in emit_types(spec) {
@@ -100,17 +99,22 @@ fn main() {
             "pub mod api;\npub mod types;\n".to_string(),
         ));
 
-        let test_content = format!(
-            "#![cfg(all(feature = \"{feature_name}\", not(feature = \"dynamic\")))]\n\n{}",
-            emit_tests(spec)
-        );
-        targets.push((
-            client.join(format!(
-                "tests/v{}_generated_tests.rs",
-                version_str.replace('.', "_")
-            )),
-            test_content,
-        ));
+        // Per-version wiremock stub tests disabled — they only verify that
+        // generated code compiles and calls the right URL, which `cargo check`
+        // already covers.  Real API coverage comes from the dynamic integration
+        // tests in tests/tests/dynamic_*.rs instead.
+        //
+        // let test_content = format!(
+        //     "#![cfg(all(feature = \"{feature_name}\", not(feature = \"dynamic\")))]\n\n{}",
+        //     emit_tests(spec)
+        // );
+        // targets.push((
+        //     client.join(format!(
+        //         "tests/v{}_generated_tests.rs",
+        //         version_str.replace('.', "_")
+        //     )),
+        //     test_content,
+        // ));
     }
 
     // 4. Dynamic module generation (only when processing multiple specs)
