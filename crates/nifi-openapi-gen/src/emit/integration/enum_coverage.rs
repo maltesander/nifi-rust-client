@@ -158,6 +158,7 @@ async fn {base_name}_unsupported() {{
     }
 
     let mut out = String::new();
+    out.push_str("// @generated — do not edit; run `cargo run -p nifi-openapi-gen`\n\n");
     out.push_str("#![cfg(feature = \"dynamic\")]\n\n");
     out.push_str("mod helpers;\n\n");
     for test in tests {

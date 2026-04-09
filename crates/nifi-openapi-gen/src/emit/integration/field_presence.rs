@@ -86,7 +86,9 @@ async fn {test_base}_absent() {{
         return String::new();
     }
 
-    let mut out = String::from("#![cfg(feature = \"dynamic\")]\n\nmod helpers;\n\n");
+    let mut out = String::from(
+        "// @generated — do not edit; run `cargo run -p nifi-openapi-gen`\n\n#![cfg(feature = \"dynamic\")]\n\nmod helpers;\n\n",
+    );
     out.push_str(&tests.join("\n"));
     out
 }
