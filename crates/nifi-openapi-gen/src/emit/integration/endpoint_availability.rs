@@ -18,12 +18,32 @@ pub fn emit_endpoint_availability_tests(
 
     let mut tests: Vec<String> = Vec::new();
 
+    // Collect all version features for cumulative gating.
+    let all_features: Vec<String> = all_specs.iter().map(|(v, _)| version_to_feature(v)).collect();
+
     for diff in diffs {
         if diff.endpoints.added.is_empty() {
             continue;
         }
 
         let to_feature = version_to_feature(&diff.to);
+
+        // Features for the "to" version and all later versions — the endpoint
+        // exists in all of these, so negative tests must exclude them all.
+        let supporting_features: Vec<&str> = all_features
+            .iter()
+            .skip_while(|f| f.as_str() != to_feature)
+            .map(|f| f.as_str())
+            .collect();
+        let negative_cfg = if supporting_features.len() == 1 {
+            format!("not(feature = \"{}\")", supporting_features[0])
+        } else {
+            let any_list: Vec<String> = supporting_features
+                .iter()
+                .map(|f| format!("feature = \"{f}\""))
+                .collect();
+            format!("not(any({}))", any_list.join(", "))
+        };
 
         // Find the "to" spec so we can look up endpoint metadata.
         let to_spec = match all_specs.iter().find(|(v, _)| v == &diff.to) {
@@ -66,9 +86,9 @@ async fn {base_name}_available() {{
                 tests.push(positive_test);
             }
 
-            // Negative test — always emitted.
+            // Negative test — only on versions that lack this endpoint.
             let negative_test = format!(
-                r#"#[cfg(not(feature = "{to_feature}"))]
+                r#"#[cfg({negative_cfg})]
 #[tokio::test]
 #[ignore = "requires a running NiFi instance (use tests/run.sh)"]
 async fn {base_name}_unsupported() {{
@@ -82,7 +102,7 @@ async fn {base_name}_unsupported() {{
         "expected UnsupportedEndpoint, got: {{err:?}}"
     );
 }}"#,
-                to_feature = to_feature,
+                negative_cfg = negative_cfg,
                 use_trait = use_trait,
                 base_name = base_name,
                 accessor = accessor,

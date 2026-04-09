@@ -15,8 +15,27 @@ pub fn emit_enum_coverage_tests(all_specs: &[(String, ApiSpec)], diffs: &[Versio
 
     let mut tests: Vec<String> = Vec::new();
 
+    // Collect all version features for cumulative gating.
+    let all_features: Vec<String> = all_specs.iter().map(|(v, _)| version_to_feature(v)).collect();
+
     for diff in diffs {
         let to_feature = version_to_feature(&diff.to);
+
+        // Features for versions that have the new value (to + later).
+        let supporting_features: Vec<&str> = all_features
+            .iter()
+            .skip_while(|f| f.as_str() != to_feature)
+            .map(|f| f.as_str())
+            .collect();
+        let negative_cfg = if supporting_features.len() == 1 {
+            format!("not(feature = \"{}\")", supporting_features[0])
+        } else {
+            let any_list: Vec<String> = supporting_features
+                .iter()
+                .map(|f| format!("feature = \"{f}\""))
+                .collect();
+            format!("not(any({}))", any_list.join(", "))
+        };
 
         // Find the "to" spec so we can look up endpoint metadata.
         let to_spec = match all_specs.iter().find(|(v, _)| v == &diff.to) {
@@ -100,7 +119,7 @@ async fn {base_name}_accepted() {{
 
                     // Test: UnsupportedEnumVariant on versions that don't have this value.
                     let unsupported_test = format!(
-                        r#"#[cfg(not(feature = "{to_feature}"))]
+                        r#"#[cfg({negative_cfg})]
 #[tokio::test]
 #[ignore = "requires a running NiFi instance (use tests/run.sh)"]
 async fn {base_name}_unsupported() {{
@@ -115,7 +134,7 @@ async fn {base_name}_unsupported() {{
         "expected UnsupportedEnumVariant, got: {{err:?}}"
     );
 }}"#,
-                        to_feature = to_feature,
+                        negative_cfg = negative_cfg,
                         use_trait = use_trait,
                         use_type = use_type,
                         base_name = base_name,

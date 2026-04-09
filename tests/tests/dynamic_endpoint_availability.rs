@@ -2,7 +2,7 @@
 
 mod helpers;
 
-#[cfg(not(feature = "nifi-2-7-2"))]
+#[cfg(not(any(feature = "nifi-2-7-2", feature = "nifi-2-8-0")))]
 #[tokio::test]
 #[ignore = "requires a running NiFi instance (use tests/run.sh)"]
 async fn endpoint_controller_services_clear_bulletins_unsupported() {
@@ -20,7 +20,7 @@ async fn endpoint_controller_services_clear_bulletins_unsupported() {
     );
 }
 
-#[cfg(not(feature = "nifi-2-7-2"))]
+#[cfg(not(any(feature = "nifi-2-7-2", feature = "nifi-2-8-0")))]
 #[tokio::test]
 #[ignore = "requires a running NiFi instance (use tests/run.sh)"]
 async fn endpoint_controller_clear_flow_analysis_rule_bulletins_unsupported() {
@@ -38,7 +38,7 @@ async fn endpoint_controller_clear_flow_analysis_rule_bulletins_unsupported() {
     );
 }
 
-#[cfg(not(feature = "nifi-2-7-2"))]
+#[cfg(not(any(feature = "nifi-2-7-2", feature = "nifi-2-8-0")))]
 #[tokio::test]
 #[ignore = "requires a running NiFi instance (use tests/run.sh)"]
 async fn endpoint_controller_clear_parameter_provider_bulletins_unsupported() {
@@ -56,7 +56,7 @@ async fn endpoint_controller_clear_parameter_provider_bulletins_unsupported() {
     );
 }
 
-#[cfg(not(feature = "nifi-2-7-2"))]
+#[cfg(not(any(feature = "nifi-2-7-2", feature = "nifi-2-8-0")))]
 #[tokio::test]
 #[ignore = "requires a running NiFi instance (use tests/run.sh)"]
 async fn endpoint_controller_clear_registry_client_bulletins_unsupported() {
@@ -74,7 +74,7 @@ async fn endpoint_controller_clear_registry_client_bulletins_unsupported() {
     );
 }
 
-#[cfg(not(feature = "nifi-2-7-2"))]
+#[cfg(not(any(feature = "nifi-2-7-2", feature = "nifi-2-8-0")))]
 #[tokio::test]
 #[ignore = "requires a running NiFi instance (use tests/run.sh)"]
 async fn endpoint_controller_analyze_flow_registry_client_configuration_unsupported() {
@@ -92,7 +92,7 @@ async fn endpoint_controller_analyze_flow_registry_client_configuration_unsuppor
     );
 }
 
-#[cfg(not(feature = "nifi-2-7-2"))]
+#[cfg(not(any(feature = "nifi-2-7-2", feature = "nifi-2-8-0")))]
 #[tokio::test]
 #[ignore = "requires a running NiFi instance (use tests/run.sh)"]
 async fn endpoint_controller_submit_registry_client_config_verification_request_unsupported() {
@@ -110,7 +110,7 @@ async fn endpoint_controller_submit_registry_client_config_verification_request_
     );
 }
 
-#[cfg(not(feature = "nifi-2-7-2"))]
+#[cfg(not(any(feature = "nifi-2-7-2", feature = "nifi-2-8-0")))]
 #[tokio::test]
 #[ignore = "requires a running NiFi instance (use tests/run.sh)"]
 async fn endpoint_controller_delete_registry_client_verification_request_unsupported() {
@@ -128,7 +128,7 @@ async fn endpoint_controller_delete_registry_client_verification_request_unsuppo
     );
 }
 
-#[cfg(not(feature = "nifi-2-7-2"))]
+#[cfg(not(any(feature = "nifi-2-7-2", feature = "nifi-2-8-0")))]
 #[tokio::test]
 #[ignore = "requires a running NiFi instance (use tests/run.sh)"]
 async fn endpoint_controller_get_registry_client_verification_request_unsupported() {
@@ -146,7 +146,7 @@ async fn endpoint_controller_get_registry_client_verification_request_unsupporte
     );
 }
 
-#[cfg(not(feature = "nifi-2-7-2"))]
+#[cfg(not(any(feature = "nifi-2-7-2", feature = "nifi-2-8-0")))]
 #[tokio::test]
 #[ignore = "requires a running NiFi instance (use tests/run.sh)"]
 async fn endpoint_flow_get_flow_registry_client_definition_unsupported() {
@@ -184,7 +184,7 @@ async fn endpoint_flow_get_listen_ports_available() {
     );
 }
 
-#[cfg(not(feature = "nifi-2-7-2"))]
+#[cfg(not(any(feature = "nifi-2-7-2", feature = "nifi-2-8-0")))]
 #[tokio::test]
 #[ignore = "requires a running NiFi instance (use tests/run.sh)"]
 async fn endpoint_flow_get_listen_ports_unsupported() {
@@ -217,7 +217,7 @@ async fn endpoint_flow_clear_bulletins_1_available() {
     );
 }
 
-#[cfg(not(feature = "nifi-2-7-2"))]
+#[cfg(not(any(feature = "nifi-2-7-2", feature = "nifi-2-8-0")))]
 #[tokio::test]
 #[ignore = "requires a running NiFi instance (use tests/run.sh)"]
 async fn endpoint_flow_clear_bulletins_1_unsupported() {
@@ -235,7 +235,7 @@ async fn endpoint_flow_clear_bulletins_1_unsupported() {
     );
 }
 
-#[cfg(not(feature = "nifi-2-7-2"))]
+#[cfg(not(any(feature = "nifi-2-7-2", feature = "nifi-2-8-0")))]
 #[tokio::test]
 #[ignore = "requires a running NiFi instance (use tests/run.sh)"]
 async fn endpoint_inputports_clear_bulletins_2_unsupported() {
@@ -253,7 +253,7 @@ async fn endpoint_inputports_clear_bulletins_2_unsupported() {
     );
 }
 
-#[cfg(not(feature = "nifi-2-7-2"))]
+#[cfg(not(any(feature = "nifi-2-7-2", feature = "nifi-2-8-0")))]
 #[tokio::test]
 #[ignore = "requires a running NiFi instance (use tests/run.sh)"]
 async fn endpoint_outputports_clear_bulletins_3_unsupported() {
@@ -271,7 +271,7 @@ async fn endpoint_outputports_clear_bulletins_3_unsupported() {
     );
 }
 
-#[cfg(not(feature = "nifi-2-7-2"))]
+#[cfg(not(any(feature = "nifi-2-7-2", feature = "nifi-2-8-0")))]
 #[tokio::test]
 #[ignore = "requires a running NiFi instance (use tests/run.sh)"]
 async fn endpoint_parameterproviders_clear_bulletins_4_unsupported() {
@@ -289,7 +289,7 @@ async fn endpoint_parameterproviders_clear_bulletins_4_unsupported() {
     );
 }
 
-#[cfg(not(feature = "nifi-2-7-2"))]
+#[cfg(not(any(feature = "nifi-2-7-2", feature = "nifi-2-8-0")))]
 #[tokio::test]
 #[ignore = "requires a running NiFi instance (use tests/run.sh)"]
 async fn endpoint_processors_clear_bulletins_5_unsupported() {
@@ -325,7 +325,7 @@ async fn endpoint_remoteprocessgroups_clear_bulletins_6_available() {
     );
 }
 
-#[cfg(not(feature = "nifi-2-7-2"))]
+#[cfg(not(any(feature = "nifi-2-7-2", feature = "nifi-2-8-0")))]
 #[tokio::test]
 #[ignore = "requires a running NiFi instance (use tests/run.sh)"]
 async fn endpoint_remoteprocessgroups_clear_bulletins_6_unsupported() {
@@ -343,7 +343,7 @@ async fn endpoint_remoteprocessgroups_clear_bulletins_6_unsupported() {
     );
 }
 
-#[cfg(not(feature = "nifi-2-7-2"))]
+#[cfg(not(any(feature = "nifi-2-7-2", feature = "nifi-2-8-0")))]
 #[tokio::test]
 #[ignore = "requires a running NiFi instance (use tests/run.sh)"]
 async fn endpoint_reportingtasks_clear_bulletins_7_unsupported() {

@@ -28,7 +28,7 @@ async fn param_flow_get_flow_metrics_flow_metrics_reporting_strategy_accepted() 
     );
 }
 
-#[cfg(not(feature = "nifi-2-7-2"))]
+#[cfg(not(any(feature = "nifi-2-7-2", feature = "nifi-2-8-0")))]
 #[tokio::test]
 #[ignore = "requires a running NiFi instance (use tests/run.sh)"]
 async fn param_flow_get_flow_metrics_flow_metrics_reporting_strategy_ignored_on_older() {

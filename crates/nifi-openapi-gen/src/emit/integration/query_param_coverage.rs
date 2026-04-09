@@ -18,8 +18,27 @@ pub fn emit_query_param_coverage_tests(
 
     let mut tests: Vec<String> = Vec::new();
 
+    // Collect all version features for cumulative gating.
+    let all_features: Vec<String> = all_specs.iter().map(|(v, _)| version_to_feature(v)).collect();
+
     for diff in diffs {
         let to_feature = version_to_feature(&diff.to);
+
+        // Features for versions that have the new param (to + later).
+        let supporting_features: Vec<&str> = all_features
+            .iter()
+            .skip_while(|f| f.as_str() != to_feature)
+            .map(|f| f.as_str())
+            .collect();
+        let negative_cfg = if supporting_features.len() == 1 {
+            format!("not(feature = \"{}\")", supporting_features[0])
+        } else {
+            let any_list: Vec<String> = supporting_features
+                .iter()
+                .map(|f| format!("feature = \"{f}\""))
+                .collect();
+            format!("not(any({}))", any_list.join(", "))
+        };
 
         // Find the "to" spec so we can look up endpoint metadata.
         let to_spec = match all_specs.iter().find(|(v, _)| v == &diff.to) {
@@ -114,7 +133,7 @@ async fn {base_name}_accepted() {{
 
                 // Negative test — param silently ignored on older versions.
                 let ignored_test = format!(
-                    r#"#[cfg(not(feature = "{to_feature}"))]
+                    r#"#[cfg({negative_cfg})]
 #[tokio::test]
 #[ignore = "requires a running NiFi instance (use tests/run.sh)"]
 async fn {base_name}_ignored_on_older() {{
@@ -125,7 +144,7 @@ async fn {base_name}_ignored_on_older() {{
     // Param should be silently skipped — no error expected
     assert!(result.is_ok(), "expected param to be silently skipped, got: {{:?}}", result.unwrap_err());
 }}"#,
-                    to_feature = to_feature,
+                    negative_cfg = negative_cfg,
                     base_name = base_name,
                     use_trait = use_trait,
                     use_type_line = use_type_line,
