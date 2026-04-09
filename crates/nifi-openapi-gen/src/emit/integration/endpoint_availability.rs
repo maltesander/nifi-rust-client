@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use super::common::{
     build_accessor, default_path_param_value, default_required_query_param_value, find_endpoint,
     trait_use_stmt,
@@ -8,15 +10,19 @@ use crate::util::version_to_feature;
 
 /// Generates integration tests verifying endpoints added in a version work on that
 /// version and return `UnsupportedEndpoint` on older versions.
+///
+/// Returns `(generated_code, tested_keys)` where tested_keys contains
+/// `"{METHOD} {path}"` strings for each endpoint that got at least one test.
 pub fn emit_endpoint_availability_tests(
     all_specs: &[(String, ApiSpec)],
     diffs: &[VersionDiff],
-) -> String {
+) -> (String, HashSet<String>) {
     if all_specs.is_empty() || diffs.is_empty() {
-        return String::new();
+        return (String::new(), HashSet::new());
     }
 
     let mut tests: Vec<String> = Vec::new();
+    let mut tested: HashSet<String> = HashSet::new();
 
     // Collect all version features for cumulative gating.
     let all_features: Vec<String> = all_specs
@@ -65,6 +71,10 @@ pub fn emit_endpoint_availability_tests(
             let use_trait = trait_use_stmt(&tag_group.struct_name, sub_group);
             let accessor = build_accessor(&tag_group.accessor_fn, sub_group);
             let call_args = build_call_args(endpoint, sub_group);
+
+            // Track that this endpoint has at least one test (the negative test
+            // is always generated below, so every endpoint that reaches here is tested).
+            tested.insert(endpoint_key(&added.method, &added.path));
 
             // Positive test — only for safe endpoints (no risky required params).
             if is_safe_endpoint(added, endpoint) {
@@ -117,7 +127,7 @@ async fn {base_name}_unsupported() {{
     }
 
     if tests.is_empty() {
-        return String::new();
+        return (String::new(), tested);
     }
 
     let mut out = String::new();
@@ -128,7 +138,18 @@ async fn {base_name}_unsupported() {{
         out.push_str(&test);
         out.push_str("\n\n");
     }
-    out
+    (out, tested)
+}
+
+/// Build a key matching the format used by integration_coverage.rs for endpoints.
+fn endpoint_key(method: &HttpMethod, path: &str) -> String {
+    let m = match method {
+        HttpMethod::Get => "GET",
+        HttpMethod::Post => "POST",
+        HttpMethod::Put => "PUT",
+        HttpMethod::Delete => "DELETE",
+    };
+    format!("{m} {path}")
 }
 
 // ─── Private helpers ──────────────────────────────────────────────────────────
@@ -207,8 +228,9 @@ mod tests {
 
     #[test]
     fn empty_inputs_returns_empty_string() {
-        let result = emit_endpoint_availability_tests(&[], &[]);
+        let (result, tested) = emit_endpoint_availability_tests(&[], &[]);
         assert_eq!(result, "");
+        assert!(tested.is_empty());
     }
 
     #[test]
@@ -231,8 +253,9 @@ mod tests {
                 changed: vec![],
             },
         }];
-        let result = emit_endpoint_availability_tests(&specs, &diffs);
+        let (result, tested) = emit_endpoint_availability_tests(&specs, &diffs);
         assert_eq!(result, "");
+        assert!(tested.is_empty());
     }
 
     #[test]

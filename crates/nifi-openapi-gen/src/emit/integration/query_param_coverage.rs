@@ -1,22 +1,28 @@
+use std::collections::HashSet;
+
 use super::common::{
     build_accessor, capitalize_first, default_path_param_value, default_required_query_param_value,
     find_endpoint, trait_use_stmt,
 };
 use crate::diff::VersionDiff;
-use crate::parser::{ApiSpec, Endpoint, QueryParamType, SubGroup};
+use crate::parser::{ApiSpec, Endpoint, HttpMethod, QueryParamType, SubGroup};
 use crate::util::{version_to_feature, wire_to_pascal};
 
 /// Generates integration tests verifying added query params are passed on
 /// supporting versions and silently skipped on older versions.
+///
+/// Returns `(generated_code, tested_keys)` where tested_keys contains
+/// `"{METHOD} {path} {param_name}"` strings for each query param that got tests.
 pub fn emit_query_param_coverage_tests(
     all_specs: &[(String, ApiSpec)],
     diffs: &[VersionDiff],
-) -> String {
+) -> (String, HashSet<String>) {
     if all_specs.is_empty() || diffs.is_empty() {
-        return String::new();
+        return (String::new(), HashSet::new());
     }
 
     let mut tests: Vec<String> = Vec::new();
+    let mut tested: HashSet<String> = HashSet::new();
 
     // Collect all version features for cumulative gating.
     let all_features: Vec<String> = all_specs
@@ -158,12 +164,17 @@ async fn {base_name}_ignored_on_older() {{
 
                 tests.push(accepted_test);
                 tests.push(ignored_test);
+                tested.insert(query_param_key(
+                    &ep_change.method,
+                    &ep_change.path,
+                    param_name,
+                ));
             }
         }
     }
 
     if tests.is_empty() {
-        return String::new();
+        return (String::new(), tested);
     }
 
     let mut out = String::new();
@@ -174,7 +185,18 @@ async fn {base_name}_ignored_on_older() {{
         out.push_str(&test);
         out.push_str("\n\n");
     }
-    out
+    (out, tested)
+}
+
+/// Build a key matching the format used by integration_coverage.rs for query params.
+fn query_param_key(method: &HttpMethod, path: &str, param: &str) -> String {
+    let m = match method {
+        HttpMethod::Get => "GET",
+        HttpMethod::Post => "POST",
+        HttpMethod::Put => "PUT",
+        HttpMethod::Delete => "DELETE",
+    };
+    format!("{m} {path} {param}")
 }
 
 // ─── Private helpers ──────────────────────────────────────────────────────────
@@ -235,8 +257,9 @@ mod tests {
 
     #[test]
     fn empty_inputs_returns_empty_string() {
-        let result = emit_query_param_coverage_tests(&[], &[]);
+        let (result, tested) = emit_query_param_coverage_tests(&[], &[]);
         assert_eq!(result, "");
+        assert!(tested.is_empty());
     }
 
     #[test]
@@ -259,7 +282,8 @@ mod tests {
                 changed: vec![],
             },
         }];
-        let result = emit_query_param_coverage_tests(&specs, &diffs);
+        let (result, tested) = emit_query_param_coverage_tests(&specs, &diffs);
         assert_eq!(result, "");
+        assert!(tested.is_empty());
     }
 }

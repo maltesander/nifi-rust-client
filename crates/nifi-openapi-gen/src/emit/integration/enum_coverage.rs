@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use super::common::{
     build_accessor, capitalize_first, default_path_param_value, default_required_query_param_value,
     find_endpoint, trait_use_stmt,
@@ -8,12 +10,19 @@ use crate::util::{version_to_feature, wire_to_pascal};
 
 /// Generates integration tests verifying enum query-param values are accepted
 /// on their origin version and rejected (`UnsupportedEnumVariant`) on older versions.
-pub fn emit_enum_coverage_tests(all_specs: &[(String, ApiSpec)], diffs: &[VersionDiff]) -> String {
+///
+/// Returns `(generated_code, tested_keys)` where tested_keys contains
+/// `"{TypeName}::{Variant}"` strings for each enum value that got tests.
+pub fn emit_enum_coverage_tests(
+    all_specs: &[(String, ApiSpec)],
+    diffs: &[VersionDiff],
+) -> (String, HashSet<String>) {
     if all_specs.is_empty() || diffs.is_empty() {
-        return String::new();
+        return (String::new(), HashSet::new());
     }
 
     let mut tests: Vec<String> = Vec::new();
+    let mut tested: HashSet<String> = HashSet::new();
 
     // Collect all version features for cumulative gating.
     let all_features: Vec<String> = all_specs
@@ -148,13 +157,14 @@ async fn {base_name}_unsupported() {{
 
                     tests.push(accepted_test);
                     tests.push(unsupported_test);
+                    tested.insert(format!("{enum_type_name}::{variant}"));
                 }
             }
         }
     }
 
     if tests.is_empty() {
-        return String::new();
+        return (String::new(), tested);
     }
 
     let mut out = String::new();
@@ -165,7 +175,7 @@ async fn {base_name}_unsupported() {{
         out.push_str(&test);
         out.push_str("\n\n");
     }
-    out
+    (out, tested)
 }
 
 // ─── Private helpers ──────────────────────────────────────────────────────────
@@ -228,8 +238,9 @@ mod tests {
 
     #[test]
     fn empty_inputs_returns_empty_string() {
-        let result = emit_enum_coverage_tests(&[], &[]);
+        let (result, tested) = emit_enum_coverage_tests(&[], &[]);
         assert_eq!(result, "");
+        assert!(tested.is_empty());
     }
 
     #[test]
@@ -253,7 +264,8 @@ mod tests {
                 changed: vec![],
             },
         }];
-        let result = emit_enum_coverage_tests(&specs, &diffs);
+        let (result, tested) = emit_enum_coverage_tests(&specs, &diffs);
         assert_eq!(result, "");
+        assert!(tested.is_empty());
     }
 }

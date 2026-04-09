@@ -810,3 +810,9 @@ impl DynamicClient {
         }
     }
 }
+impl std::ops::Deref for DynamicClient {
+    type Target = NifiClient;
+    fn deref(&self) -> &NifiClient {
+        &self.client
+    }
+}

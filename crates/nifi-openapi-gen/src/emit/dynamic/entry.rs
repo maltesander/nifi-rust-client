@@ -288,6 +288,14 @@ fn emit_dynamic_client(out: &mut String, versions: &[(&str, &str, &str, &ApiSpec
     }
 
     out.push_str("}\n\n");
+
+    // Deref to NifiClient — lets callers use token(), set_token(), etc. directly.
+    out.push_str("impl std::ops::Deref for DynamicClient {\n");
+    out.push_str("    type Target = NifiClient;\n");
+    out.push_str("    fn deref(&self) -> &NifiClient {\n");
+    out.push_str("        &self.client\n");
+    out.push_str("    }\n");
+    out.push_str("}\n\n");
 }
 
 /// Build the struct prefix from the mod_name, e.g. "v2_8_0" -> "V2_8_0".

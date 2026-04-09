@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use crate::diff::VersionDiff;
 use crate::parser::{ApiSpec, HttpMethod};
 use crate::util::wire_to_pascal;
@@ -27,9 +29,19 @@ fn capitalize_first(s: &str) -> String {
 ///
 /// `all_specs` must be sorted semver-ascending (oldest first).
 /// `diffs` must be the consecutive diffs between adjacent versions.
+///
+/// The `tested_*` parameters contain keys for entries that have actual generated tests:
+/// - `tested_types`: type names with field-presence tests (e.g. `"ProcessorEntity"`)
+/// - `tested_endpoints`: `"{METHOD} {path}"` keys (e.g. `"POST /processors/{id}/bulletins/clear-requests"`)
+/// - `tested_enum_values`: `"{TypeName}::{Variant}"` keys (e.g. `"IncludedRegistries::VersionInfo"`)
+/// - `tested_query_params`: `"{METHOD} {path} {param}"` keys (e.g. `"GET /flow/metrics/{producer} flowMetricsReportingStrategy"`)
 pub fn generate_integration_coverage_content(
     all_specs: &[(String, ApiSpec)],
     diffs: &[VersionDiff],
+    tested_types: &[&str],
+    tested_endpoints: &HashSet<String>,
+    tested_enum_values: &HashSet<String>,
+    tested_query_params: &HashSet<String>,
 ) -> String {
     if all_specs.len() < 2 || diffs.is_empty() {
         return String::new();
@@ -61,9 +73,36 @@ pub fn generate_integration_coverage_content(
 
     let mut out = String::new();
 
+    // Count tested items per category
+    let tested_endpoint_count = tested_endpoints.len();
+    let tested_enum_count = tested_enum_values.len();
+    let tested_field_count: usize = diffs
+        .iter()
+        .flat_map(|d| &d.types.changed)
+        .filter(|tc| tested_types.contains(&tc.name.as_str()))
+        .map(|tc| tc.added_fields.len())
+        .sum();
+    let tested_param_count = tested_query_params.len();
+
+    fn summary_part(total: usize, tested: usize, label: &str) -> String {
+        if tested > 0 {
+            format!("**{total}** {label} ({tested} tested)")
+        } else {
+            format!("**{total}** {label}")
+        }
+    }
+
     // Summary line
     out.push_str(&format!(
-        "**{version_count}** NiFi versions tested · **{endpoint_checks}** added-endpoint checks · **{enum_checks}** enum param checks · **{field_checks}** field presence checks · **{param_checks}** query param checks\n"
+        "**{version_count}** NiFi versions tested · {} · {} · {} · {}\n",
+        summary_part(
+            endpoint_checks,
+            tested_endpoint_count,
+            "added-endpoint checks"
+        ),
+        summary_part(enum_checks, tested_enum_count, "enum param checks"),
+        summary_part(field_checks, tested_field_count, "field presence checks"),
+        summary_part(param_checks, tested_param_count, "query param checks"),
     ));
 
     // Per-version details blocks
@@ -77,18 +116,31 @@ pub fn generate_integration_coverage_content(
 
         // Added endpoints
         for ep in &diff.endpoints.added {
-            rows.push((
-                "Added endpoint".to_string(),
-                format!("`{} {}`", method_str(&ep.method), ep.path),
-            ));
+            let key = format!("{} {}", method_str(&ep.method), ep.path);
+            let marker = if tested_endpoints.contains(&key) {
+                " ✓"
+            } else {
+                ""
+            };
+            rows.push(("Added endpoint".to_string(), format!("`{key}`{marker}")));
         }
 
         // Added query params on changed endpoints
         for ec in &diff.endpoints.changed {
             for param in &ec.added_params {
+                let key = format!("{} {} {param}", method_str(&ec.method), ec.path);
+                let marker = if tested_query_params.contains(&key) {
+                    " ✓"
+                } else {
+                    ""
+                };
                 rows.push((
                     "Query param".to_string(),
-                    format!("`{} {}` +`{param}`", method_str(&ec.method), ec.path),
+                    format!(
+                        "`{} {}` +`{param}`{marker}",
+                        method_str(&ec.method),
+                        ec.path
+                    ),
                 ));
             }
         }
@@ -99,9 +151,15 @@ pub fn generate_integration_coverage_content(
                 for wire_value in &pc.added_enum_values {
                     let variant = wire_to_pascal(wire_value);
                     let type_name = capitalize_first(&pc.name);
+                    let key = format!("{type_name}::{variant}");
+                    let marker = if tested_enum_values.contains(&key) {
+                        " ✓"
+                    } else {
+                        ""
+                    };
                     rows.push((
                         "Enum value".to_string(),
-                        format!("`{type_name}::{variant}` accepted"),
+                        format!("`{key}` accepted{marker}"),
                     ));
                 }
             }
@@ -109,10 +167,12 @@ pub fn generate_integration_coverage_content(
 
         // Added fields on changed types
         for tc in &diff.types.changed {
+            let tested = tested_types.contains(&tc.name.as_str());
             for field in &tc.added_fields {
+                let marker = if tested { " ✓" } else { "" };
                 rows.push((
                     "Field presence".to_string(),
-                    format!("`{}.{field}`", tc.name),
+                    format!("`{}.{field}`{marker}", tc.name),
                 ));
             }
         }

@@ -334,10 +334,16 @@ fn main() {
             .collect();
 
         // Integration coverage tests (written to tests/tests/)
+        // Each emitter returns (code, tested_keys); we collect the keys for
+        // the coverage doc generator below.
+        let tested_endpoints;
+        let tested_enum_values;
+        let tested_query_params;
         {
             let tests_dir = workspace_root.join("tests/tests");
 
-            let enum_tests = emit_enum_coverage_tests(&all_parsed, &diffs);
+            let (enum_tests, enum_keys) = emit_enum_coverage_tests(&all_parsed, &diffs);
+            tested_enum_values = enum_keys;
             if !enum_tests.is_empty() {
                 write_if_changed(
                     &tests_dir.join("dynamic_enum_coverage.rs"),
@@ -346,7 +352,8 @@ fn main() {
                 );
             }
 
-            let endpoint_tests = emit_endpoint_availability_tests(&all_parsed, &diffs);
+            let (endpoint_tests, ep_keys) = emit_endpoint_availability_tests(&all_parsed, &diffs);
+            tested_endpoints = ep_keys;
             if !endpoint_tests.is_empty() {
                 write_if_changed(
                     &tests_dir.join("dynamic_endpoint_availability.rs"),
@@ -364,7 +371,8 @@ fn main() {
                 );
             }
 
-            let param_tests = emit_query_param_coverage_tests(&all_parsed, &diffs);
+            let (param_tests, param_keys) = emit_query_param_coverage_tests(&all_parsed, &diffs);
+            tested_query_params = param_keys;
             if !param_tests.is_empty() {
                 write_if_changed(
                     &tests_dir.join("dynamic_query_param_coverage.rs"),
@@ -401,8 +409,15 @@ fn main() {
         {
             const START: &str = "<!-- INTEGRATION_COVERAGE_START -->";
             const END: &str = "<!-- INTEGRATION_COVERAGE_END -->";
-            let content =
-                nifi_openapi_gen::docs::generate_integration_coverage_content(&all_parsed, &diffs);
+            let tested_types = nifi_openapi_gen::tested_type_names();
+            let content = nifi_openapi_gen::docs::generate_integration_coverage_content(
+                &all_parsed,
+                &diffs,
+                &tested_types,
+                &tested_endpoints,
+                &tested_enum_values,
+                &tested_query_params,
+            );
             update_file_between_markers(&client.join("README.md"), START, END, &content);
         }
     }

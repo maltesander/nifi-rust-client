@@ -14,7 +14,7 @@ pub use dynamic::{
 };
 pub use integration::{
     emit_endpoint_availability_tests, emit_enum_coverage_tests, emit_field_presence_tests,
-    emit_query_param_coverage_tests,
+    emit_query_param_coverage_tests, tested_type_names,
 };
 pub use tests::emit_tests;
 pub use traits::emit_static_traits;

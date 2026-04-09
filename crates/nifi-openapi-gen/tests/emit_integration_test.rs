@@ -33,8 +33,12 @@ fn enum_coverage_contains_version_info_test() {
         return;
     }
     let diffs = compute_diffs(&all_specs);
-    let output = nifi_openapi_gen::emit_enum_coverage_tests(&all_specs, &diffs);
+    let (output, tested_enums) = nifi_openapi_gen::emit_enum_coverage_tests(&all_specs, &diffs);
 
+    assert!(
+        !tested_enums.is_empty(),
+        "should have tracked tested enum values"
+    );
     assert!(
         output.contains("IncludedRegistries"),
         "should reference IncludedRegistries enum"
@@ -62,11 +66,10 @@ fn field_presence_output_is_valid() {
     let diffs = compute_diffs(&all_specs);
     let output = nifi_openapi_gen::emit_field_presence_tests(&all_specs, &diffs);
 
-    // TESTABLE_TYPES is empty, so output should be empty — that's OK
-    if output.is_empty() {
-        return;
-    }
-
+    assert!(
+        !output.is_empty(),
+        "TESTABLE_TYPES has entries, so output should not be empty"
+    );
     assert!(
         output.contains("#![cfg(feature = \"dynamic\")]"),
         "should have dynamic feature gate"
@@ -74,6 +77,27 @@ fn field_presence_output_is_valid() {
     assert!(
         output.contains("cfg(feature"),
         "should have version feature gates"
+    );
+    assert!(
+        output.contains("get_test_processor_entity"),
+        "should reference test flow helper for ProcessorEntity"
+    );
+    assert!(
+        output.contains("get_test_provenance_event"),
+        "should reference test flow helper for ProvenanceEventDto"
+    );
+}
+
+#[test]
+fn tested_type_names_matches_testable_types() {
+    let names = nifi_openapi_gen::tested_type_names();
+    assert!(
+        names.contains(&"ProcessorEntity"),
+        "should include ProcessorEntity"
+    );
+    assert!(
+        names.contains(&"ProvenanceEventDto"),
+        "should include ProvenanceEventDto"
     );
 }
 
@@ -84,8 +108,13 @@ fn endpoint_availability_contains_added_endpoints() {
         return;
     }
     let diffs = compute_diffs(&all_specs);
-    let output = nifi_openapi_gen::emit_endpoint_availability_tests(&all_specs, &diffs);
+    let (output, tested_endpoints) =
+        nifi_openapi_gen::emit_endpoint_availability_tests(&all_specs, &diffs);
 
+    assert!(
+        !tested_endpoints.is_empty(),
+        "should have tracked tested endpoints"
+    );
     assert!(
         output.contains("UnsupportedEndpoint"),
         "should test UnsupportedEndpoint on older versions"
@@ -107,8 +136,13 @@ fn query_param_coverage_contains_flow_metrics_strategy() {
         return;
     }
     let diffs = compute_diffs(&all_specs);
-    let output = nifi_openapi_gen::emit_query_param_coverage_tests(&all_specs, &diffs);
+    let (output, tested_params) =
+        nifi_openapi_gen::emit_query_param_coverage_tests(&all_specs, &diffs);
 
+    assert!(
+        !tested_params.is_empty(),
+        "should have tracked tested query params"
+    );
     assert!(
         output.contains("flow_metrics") || output.contains("flowMetrics"),
         "should reference the flow metrics endpoint"
@@ -126,9 +160,20 @@ fn integration_coverage_content_not_empty() {
         return;
     }
     let diffs = compute_diffs(&all_specs);
+    let tested_types = nifi_openapi_gen::tested_type_names();
+    let (_, tested_endpoints) =
+        nifi_openapi_gen::emit_endpoint_availability_tests(&all_specs, &diffs);
+    let (_, tested_enum_values) = nifi_openapi_gen::emit_enum_coverage_tests(&all_specs, &diffs);
+    let (_, tested_query_params) =
+        nifi_openapi_gen::emit_query_param_coverage_tests(&all_specs, &diffs);
     let output =
         nifi_openapi_gen::docs::integration_coverage::generate_integration_coverage_content(
-            &all_specs, &diffs,
+            &all_specs,
+            &diffs,
+            &tested_types,
+            &tested_endpoints,
+            &tested_enum_values,
+            &tested_query_params,
         );
 
     assert!(!output.is_empty(), "coverage content should not be empty");
@@ -136,4 +181,9 @@ fn integration_coverage_content_not_empty() {
         output.contains("NiFi versions"),
         "should mention NiFi versions in summary"
     );
+    assert!(
+        output.contains("tested"),
+        "should indicate tested checks in summary"
+    );
+    assert!(output.contains('✓'), "should mark tested rows with ✓");
 }
