@@ -43,6 +43,18 @@ impl GenerateConfig {
 
         Self { versions, dynamic }
     }
+
+    /// Build a `GenerateConfig` using all spec versions discovered in `specs_dir`.
+    ///
+    /// This is useful for integration test `build.rs` scripts that want to generate
+    /// tests covering all available spec versions, regardless of which Cargo feature
+    /// flags are enabled.  The `dynamic` flag is still read from the environment.
+    pub fn from_specs_dir(specs_dir: &Path) -> Self {
+        let mut versions = crate::util::discover_spec_versions(specs_dir);
+        sort_versions_semver(&mut versions);
+        let dynamic = std::env::var("CARGO_FEATURE_DYNAMIC").is_ok();
+        Self { versions, dynamic }
+    }
 }
 
 // ── Code generation ─────────────────────────────────────────────────────────
@@ -118,7 +130,7 @@ pub fn generate_integration_tests(specs_dir: &Path, out_dir: &Path, config: &Gen
     if !enum_tests.is_empty() {
         write_generated(
             &out_dir.join("dynamic_enum_coverage.rs"),
-            &with_header(&enum_tests),
+            &with_header(&strip_include_incompatible_lines(&enum_tests)),
         );
     }
 
@@ -126,7 +138,7 @@ pub fn generate_integration_tests(specs_dir: &Path, out_dir: &Path, config: &Gen
     if !endpoint_tests.is_empty() {
         write_generated(
             &out_dir.join("dynamic_endpoint_availability.rs"),
-            &with_header(&endpoint_tests),
+            &with_header(&strip_include_incompatible_lines(&endpoint_tests)),
         );
     }
 
@@ -134,7 +146,7 @@ pub fn generate_integration_tests(specs_dir: &Path, out_dir: &Path, config: &Gen
     if !field_tests.is_empty() {
         write_generated(
             &out_dir.join("dynamic_field_presence.rs"),
-            &with_header(&field_tests),
+            &with_header(&strip_include_incompatible_lines(&field_tests)),
         );
     }
 
@@ -142,9 +154,24 @@ pub fn generate_integration_tests(specs_dir: &Path, out_dir: &Path, config: &Gen
     if !param_tests.is_empty() {
         write_generated(
             &out_dir.join("dynamic_query_param_coverage.rs"),
-            &with_header(&param_tests),
+            &with_header(&strip_include_incompatible_lines(&param_tests)),
         );
     }
+}
+
+/// Strip lines that are incompatible with `include!()` usage.
+///
+/// Inner attributes (`#![...]`) are only valid at the crate/module root, not
+/// inside an `include!()` expansion. Module declarations (`mod helpers;`) are
+/// provided by the wrapper file and must not be duplicated.
+fn strip_include_incompatible_lines(content: &str) -> String {
+    content
+        .lines()
+        .filter(|line| {
+            !line.starts_with("#![") && !line.starts_with("mod helpers;")
+        })
+        .collect::<Vec<_>>()
+        .join("\n")
 }
 
 // ── Private helpers ─────────────────────────────────────────────────────────
