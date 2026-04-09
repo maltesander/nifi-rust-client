@@ -59,20 +59,20 @@ nifi-rust-client = { version = "0.3", features = ["dynamic"] }
 
 ```rust
 use nifi_rust_client::NifiClientBuilder;
+use nifi_rust_client::dynamic::traits::SystemDiagnosticsApi;
 use nifi_rust_client::dynamic::types::DiagnosticLevel;
 
 let client = NifiClientBuilder::new("https://nifi.example.com:8443")?
-    .build_dynamic().await?;
+    .build_dynamic()?;
 
+// login() authenticates AND auto-detects the NiFi version.
 client.login("admin", "password").await?;
-
 println!("Connected to NiFi {}", client.detected_version());
-let about = client.flow_api().get_about_info().await?;
-println!("NiFi title: {:?}", about.title);
 
 // Typed enum query params with IDE autocomplete
-let diag = client.system_diagnostics_api()
-    .get_system_diagnostics(Some(DiagnosticLevel::Verbose)).await?;
+let diag = client.systemdiagnostics_api()
+    .get_system_diagnostics(Some(true), Some(DiagnosticLevel::Verbose), None)
+    .await?;
 ```
 
 See [`crates/nifi-rust-client/README.md`](crates/nifi-rust-client/README.md) for the full API reference, builder options, token management, and error handling.

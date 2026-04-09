@@ -55,25 +55,20 @@ nifi-rust-client = { version = "0.3", features = ["dynamic"] }
 <!-- DYNAMIC_FEATURE_EXAMPLE_END -->
 
 ```rust
-use nifi_rust_client::dynamic::traits::FlowApi;
+use nifi_rust_client::dynamic::traits::SystemDiagnosticsApi;
 use nifi_rust_client::dynamic::types::DiagnosticLevel;
 
 let client = NifiClientBuilder::new("https://nifi:8443")?
-    .build_dynamic()
-    .await?;
+    .build_dynamic()?;
+
+// login() authenticates AND auto-detects the NiFi version.
 client.login("admin", "password").await?;
-
-// Fields present in all versions are non-optional; version-specific fields are Option<T>
-let about = client.flow_api().get_about_info().await?;
-println!("NiFi version: {:?}", about.version);
-
-// Enum query params are typed
-let diag = client.system_diagnostics_api()
-    .get_system_diagnostics(Some(DiagnosticLevel::Verbose))
-    .await?;
-
-// Request bodies use typed dynamic union structs (not serde_json::Value)
 println!("Connected to NiFi {}", client.detected_version());
+
+// Enum query params are typed — nodewise reporting with verbose diagnostics
+let diag = client.systemdiagnostics_api()
+    .get_system_diagnostics(Some(true), Some(DiagnosticLevel::Verbose), None)
+    .await?;
 ```
 
 All 28 API groups have corresponding traits in `dynamic::traits` (e.g., `FlowApi`, `ProcessorsApi`). Import the trait to call methods on a dispatch enum, or use traits for generic code:

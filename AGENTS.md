@@ -34,7 +34,6 @@ crates/
       dynamic/            # Generated: DynamicClient, common types, conversions (dynamic feature)
       lib.rs              # Generated: cfg-gated re-exports, auto-managed by generator
     tests/
-      vx_y_z_generated_tests.rs  # Generated: wiremock stubs per NiFi version
       *.rs                        # Hand-written wiremock tests per API group
 tests/                    # Integration test crate (not published, needs Docker)
   Cargo.toml
@@ -231,9 +230,10 @@ The `dynamic` feature compiles all supported versions and enables runtime versio
 nifi-rust-client = { version = "...", features = ["dynamic"] }
 ```
 
-The `DynamicClient` auto-detects the NiFi version via the `/flow/about` endpoint and dispatches
-API calls to the correct version's generated code. Returns common union types with all fields
-as `Option<T>`.
+The `DynamicClient` lazily detects the NiFi version via the `/flow/about` endpoint and dispatches
+API calls to the correct version's generated code. Version detection happens automatically
+on `login()`, or can be triggered explicitly via `detect_version()`. Returns common union
+types with all fields as `Option<T>`.
 
 The dispatch layer is trait-based:
 
@@ -247,7 +247,8 @@ Users must import a trait to call its methods:
 use nifi_rust_client::dynamic::traits::FlowApi;
 
 let client = NifiClientBuilder::new("https://nifi:8443")?
-    .build_dynamic().await?;
+    .build_dynamic()?;
+// login() authenticates AND auto-detects the NiFi version.
 client.login("admin", "password").await?;
 let about = client.flow_api().get_about_info().await?;
 ```
