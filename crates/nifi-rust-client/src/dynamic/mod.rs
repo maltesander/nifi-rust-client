@@ -1,10 +1,9 @@
 // @generated — do not edit; run `cargo run -p nifi-openapi-gen`
 
-pub mod strategy;
-
 mod conversions;
 pub mod dispatch;
 mod impls;
+pub mod strategy;
 pub mod traits;
 pub mod types;
 use crate::{NifiClient, NifiError};
@@ -53,6 +52,12 @@ struct AboutResponse {
 struct AboutInner {
     version: String,
 }
+/// All supported versions compiled into this build, used by version resolution strategies.
+const SUPPORTED_VERSIONS: &[(&str, DetectedVersion)] = &[
+    ("2.6.0", DetectedVersion::V2_6_0),
+    ("2.7.2", DetectedVersion::V2_7_2),
+    ("2.8.0", DetectedVersion::V2_8_0),
+];
 /// A dynamic NiFi client that detects the server version lazily
 /// and dispatches API calls to the correct version's generated code.
 ///
@@ -61,11 +66,13 @@ struct AboutInner {
 pub struct DynamicClient {
     client: NifiClient,
     version: tokio::sync::OnceCell<DetectedVersion>,
+    strategy: strategy::VersionResolutionStrategy,
 }
 impl std::fmt::Debug for DynamicClient {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("DynamicClient")
             .field("version", &self.version.get())
+            .field("strategy", &self.strategy)
             .finish()
     }
 }
@@ -73,10 +80,27 @@ impl DynamicClient {
     /// Create a new `DynamicClient` without detecting the server version yet.
     /// Version detection will happen automatically on `login()` or can be
     /// triggered explicitly via `detect_version()`.
+    ///
+    /// Uses [`VersionResolutionStrategy::Strict`] by default.
+    /// Use [`with_strategy`](Self::with_strategy) to configure fallback behavior.
     pub fn new(client: NifiClient) -> Self {
         Self {
             client,
             version: tokio::sync::OnceCell::new(),
+            strategy: strategy::VersionResolutionStrategy::default(),
+        }
+    }
+    /// Create a new `DynamicClient` with a specific version resolution strategy.
+    ///
+    /// See [`VersionResolutionStrategy`] for available strategies.
+    pub fn with_strategy(
+        client: NifiClient,
+        strategy: strategy::VersionResolutionStrategy,
+    ) -> Self {
+        Self {
+            client,
+            version: tokio::sync::OnceCell::new(),
+            strategy,
         }
     }
     /// Wrap an existing `NifiClient` and detect the NiFi server version
@@ -85,6 +109,9 @@ impl DynamicClient {
     /// The client must already be authenticated if the NiFi instance requires it.
     /// For unauthenticated setup, use `new()` + `login()` instead — login
     /// triggers version detection automatically.
+    ///
+    /// Uses [`VersionResolutionStrategy::Strict`]. To configure fallback, use
+    /// [`with_strategy`](Self::with_strategy) + [`detect_version`](Self::detect_version) instead.
     pub async fn from_client(client: NifiClient) -> Result<Self, NifiError> {
         let dc = Self::new(client);
         dc.detect_version().await?;
@@ -92,11 +119,19 @@ impl DynamicClient {
     }
     /// Detect the NiFi server version via GET /flow/about.
     /// Returns the cached version if already detected.
+    ///
+    /// Resolution behavior depends on the configured [`VersionResolutionStrategy`].
     pub async fn detect_version(&self) -> Result<DetectedVersion, NifiError> {
+        let strategy = self.strategy;
         self.version
             .get_or_try_init(|| async {
                 let resp: AboutResponse = self.client.get("/flow/about").await?;
-                version_from_str(&resp.about.version)
+                strategy::resolve_version(
+                    &resp.about.version,
+                    strategy,
+                    version_from_str,
+                    SUPPORTED_VERSIONS,
+                )
             })
             .await
             .copied()
@@ -115,6 +150,10 @@ impl DynamicClient {
     /// Returns a reference to the underlying `NifiClient`.
     pub fn inner(&self) -> &NifiClient {
         &self.client
+    }
+    /// Returns the configured version resolution strategy.
+    pub fn strategy(&self) -> strategy::VersionResolutionStrategy {
+        self.strategy
     }
     /// Authenticate with the NiFi instance and detect the server version.
     pub async fn login(&self, username: &str, password: &str) -> Result<(), NifiError> {
