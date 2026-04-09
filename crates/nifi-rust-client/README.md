@@ -71,6 +71,14 @@ let diag = client.systemdiagnostics_api()
     .await?;
 ```
 
+**IDE autocompletion:** For full autocompletion in dynamic mode, configure your IDE to activate the `dynamic` feature. In VS Code, add to `.vscode/settings.json`:
+
+```json
+{ "rust-analyzer.cargo.features": ["dynamic"] }
+```
+
+This switches rust-analyzer to analyze dynamic-mode code paths. To switch back to static mode, replace with `["nifi-2-8-0"]` (or your target version).
+
 All API groups have corresponding traits in `dynamic::traits` (e.g., `FlowApi`, `ProcessorsApi`), plus sub-resource traits for endpoints with path parameters (e.g., `ControllerServicesConfigApi`, `ProcessorsRunStatusApi`). Import the trait to call methods on a dispatch enum, or use traits for generic code:
 
 ```rust
