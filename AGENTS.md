@@ -264,6 +264,28 @@ let analysis = client.controller_services_api()
 
 **Forward compatibility:** All dynamic structs and enums carry `#[non_exhaustive]`. All fields are `Option<T>`. Trait methods for endpoints that don't exist in a given version have default impls returning `NifiError::UnsupportedEndpoint`.
 
+#### VersionResolutionStrategy
+
+Controls how `DynamicClient` maps a detected NiFi version to a supported API module when there is no exact match.
+
+| Variant | Behavior |
+|---------|----------|
+| `Strict` | Exact major.minor match required; returns `NifiError::UnsupportedVersion` otherwise. **Default.** |
+| `Closest` | Nearest supported minor within the same major. Ties go to the lower version. |
+| `Latest` | Highest supported minor within the same major. |
+
+Design decisions:
+- Major version boundaries are never crossed (e.g. NiFi 1.x → 2.x is always an error).
+- Non-strict resolutions emit `tracing::warn!` with both the detected and resolved versions.
+- Patch component is ignored during comparison — only major.minor is matched.
+- Uses the `semver` crate for ordering.
+
+Implementation split:
+- `crates/nifi-rust-client/src/dynamic/strategy.rs` — hand-written; contains the enum, `resolve_version()` function, and unit tests.
+- `DynamicClient` integration — generated; `detect_version()` calls `strategy.resolve()` after fetching `/flow/about`.
+
+Configure via `NifiClientBuilder::version_strategy(VersionResolutionStrategy)` before calling `.build_dynamic()`.
+
 ### Adding or bumping a NiFi version
 
 ```bash

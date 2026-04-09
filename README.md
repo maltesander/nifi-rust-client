@@ -61,8 +61,10 @@ nifi-rust-client = { version = "0.3", features = ["dynamic"] }
 use nifi_rust_client::NifiClientBuilder;
 use nifi_rust_client::dynamic::traits::SystemDiagnosticsApi;
 use nifi_rust_client::dynamic::types::DiagnosticLevel;
+use nifi_rust_client::dynamic::VersionResolutionStrategy;
 
 let client = NifiClientBuilder::new("https://nifi.example.com:8443")?
+    .version_strategy(VersionResolutionStrategy::Closest)
     .build_dynamic()?;
 
 // login() authenticates AND auto-detects the NiFi version.
@@ -73,6 +75,8 @@ let diag = client.systemdiagnostics_api()
     .get_system_diagnostics(Some(true), Some(DiagnosticLevel::Verbose), None)
     .await?;
 ```
+
+When the detected NiFi version doesn't exactly match a supported version, the configured strategy controls what happens: `Strict` (default) requires an exact major.minor match or returns an error; `Closest` picks the nearest supported minor version within the same major; `Latest` always picks the highest supported minor within the same major. All strategies refuse to cross major version boundaries.
 
 See [`crates/nifi-rust-client/README.md`](crates/nifi-rust-client/README.md) for the full API reference, builder options, token management, and error handling.
 

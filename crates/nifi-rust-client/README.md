@@ -94,6 +94,30 @@ Dynamic types use `#[non_exhaustive]` for forward compatibility — match arms s
 
 Fields present in all supported versions use their natural type (e.g., `String`); fields that only exist in some versions are `Option<T>`. Endpoints that don't exist in the connected version return `NifiError::UnsupportedEndpoint`. Enum query params and request bodies are fully typed.
 
+### Version resolution strategies
+
+When the dynamic client detects a NiFi version that doesn't exactly match a supported version, the configured strategy controls what happens:
+
+| Strategy | Behavior | Use case |
+|----------|----------|----------|
+| `Strict` | Exact major.minor match or error. Default. | Production: ensure API compatibility |
+| `Closest` | Nearest minor within same major. Ties prefer lower. | Dev/testing: tolerate minor mismatches |
+| `Latest` | Highest minor within same major. | Prototyping: always use newest API surface |
+
+All strategies refuse to cross major version boundaries (e.g. NiFi 1.x → 2.x).
+Non-strict resolutions emit a `tracing::warn!` with the detected and resolved versions.
+
+Configure via `NifiClientBuilder::version_strategy()`:
+
+```rust
+use nifi_rust_client::NifiClientBuilder;
+use nifi_rust_client::dynamic::VersionResolutionStrategy;
+
+let client = NifiClientBuilder::new("https://nifi:8443")?
+    .version_strategy(VersionResolutionStrategy::Closest)
+    .build_dynamic()?;
+```
+
 ### When to use which
 
 | Scenario | Mode |
@@ -135,7 +159,9 @@ client.login("admin", "password").await?;
 | `.add_root_certificate(pem)` | `&[u8]` | Trust an additional PEM-encoded CA cert; call multiple times |
 | `.credential_provider(p)` | `impl CredentialProvider` | Enable auto token refresh on 401 |
 | `.retry_policy(p)` | `RetryPolicy` | Enable transient error retry with backoff |
+| `.version_strategy(s)` | `VersionResolutionStrategy` | Version fallback for dynamic client: `Strict` (default), `Closest`, `Latest` |
 | `.build()` | — | Returns `Result<NifiClient, NifiError>` |
+| `.build_dynamic()` | — | Returns `Result<DynamicClient, NifiError>` (requires `dynamic` feature) |
 
 ## Authentication
 
