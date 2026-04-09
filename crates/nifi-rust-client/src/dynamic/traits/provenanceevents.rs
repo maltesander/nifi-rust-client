@@ -63,10 +63,7 @@ pub trait ProvenanceEventsApi {
     ///
     /// # Parameters
     /// - `id`: The provenance event id.
-    type ProvenanceEventsContentApi<'b>: ProvenanceEventsContentApi
-    where
-        Self: 'b;
-    fn content<'b>(&'b self, id: &'b str) -> Self::ProvenanceEventsContentApi<'b>;
+    fn content<'b>(&'b self, id: &'b str) -> impl ProvenanceEventsContentApi + 'b;
     /// Retrieves the latest cached Provenance Events for the specified component
     ///
     /// Calls `GET /nifi-api/provenance-events/latest/{componentId}`.

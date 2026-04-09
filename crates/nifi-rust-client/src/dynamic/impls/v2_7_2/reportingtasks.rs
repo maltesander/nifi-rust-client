@@ -20,55 +20,35 @@ pub(crate) struct V2_7_2ReportingTasksApi<'a> {
 }
 #[allow(unused_variables)]
 impl ReportingTasksApi for V2_7_2ReportingTasksApi<'_> {
-    type ReportingTasksBulletinsApi<'b>
-        = crate::dynamic::dispatch::ReportingTasksBulletinsApiDispatch<'b>
-    where
-        Self: 'b;
-    fn bulletins<'b>(&'b self, id: &'b str) -> Self::ReportingTasksBulletinsApi<'b> {
+    fn bulletins<'b>(&'b self, id: &'b str) -> impl ReportingTasksBulletinsApi + 'b {
         crate::dynamic::dispatch::ReportingTasksBulletinsApiDispatch {
             client: self.client,
             id: id.to_string(),
             version: crate::dynamic::DetectedVersion::V2_7_2,
         }
     }
-    type ReportingTasksConfigApi<'b>
-        = crate::dynamic::dispatch::ReportingTasksConfigApiDispatch<'b>
-    where
-        Self: 'b;
-    fn config<'b>(&'b self, id: &'b str) -> Self::ReportingTasksConfigApi<'b> {
+    fn config<'b>(&'b self, id: &'b str) -> impl ReportingTasksConfigApi + 'b {
         crate::dynamic::dispatch::ReportingTasksConfigApiDispatch {
             client: self.client,
             id: id.to_string(),
             version: crate::dynamic::DetectedVersion::V2_7_2,
         }
     }
-    type ReportingTasksDescriptorsApi<'b>
-        = crate::dynamic::dispatch::ReportingTasksDescriptorsApiDispatch<'b>
-    where
-        Self: 'b;
-    fn descriptors<'b>(&'b self, id: &'b str) -> Self::ReportingTasksDescriptorsApi<'b> {
+    fn descriptors<'b>(&'b self, id: &'b str) -> impl ReportingTasksDescriptorsApi + 'b {
         crate::dynamic::dispatch::ReportingTasksDescriptorsApiDispatch {
             client: self.client,
             id: id.to_string(),
             version: crate::dynamic::DetectedVersion::V2_7_2,
         }
     }
-    type ReportingTasksRunStatusApi<'b>
-        = crate::dynamic::dispatch::ReportingTasksRunStatusApiDispatch<'b>
-    where
-        Self: 'b;
-    fn run_status<'b>(&'b self, id: &'b str) -> Self::ReportingTasksRunStatusApi<'b> {
+    fn run_status<'b>(&'b self, id: &'b str) -> impl ReportingTasksRunStatusApi + 'b {
         crate::dynamic::dispatch::ReportingTasksRunStatusApiDispatch {
             client: self.client,
             id: id.to_string(),
             version: crate::dynamic::DetectedVersion::V2_7_2,
         }
     }
-    type ReportingTasksStateApi<'b>
-        = crate::dynamic::dispatch::ReportingTasksStateApiDispatch<'b>
-    where
-        Self: 'b;
-    fn state<'b>(&'b self, id: &'b str) -> Self::ReportingTasksStateApi<'b> {
+    fn state<'b>(&'b self, id: &'b str) -> impl ReportingTasksStateApi + 'b {
         crate::dynamic::dispatch::ReportingTasksStateApiDispatch {
             client: self.client,
             id: id.to_string(),

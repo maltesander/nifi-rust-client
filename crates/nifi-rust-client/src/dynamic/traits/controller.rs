@@ -472,58 +472,37 @@ pub trait ControllerApi {
     ///
     /// # Parameters
     /// - `id`: The flow analysis rule id.
-    type ControllerBulletinsApi<'b>: ControllerBulletinsApi
-    where
-        Self: 'b;
-    fn bulletins<'b>(&'b self, id: &'b str) -> Self::ControllerBulletinsApi<'b>;
+    fn bulletins<'b>(&'b self, id: &'b str) -> impl ControllerBulletinsApi + 'b;
     /// Returns a sub-resource accessor for config operations.
     ///
     /// # Parameters
     /// - `id`: The flow analysis rules id.
-    type ControllerConfigApi<'b>: ControllerConfigApi
-    where
-        Self: 'b;
-    fn config<'b>(&'b self, id: &'b str) -> Self::ControllerConfigApi<'b>;
+    fn config<'b>(&'b self, id: &'b str) -> impl ControllerConfigApi + 'b;
     /// Returns a sub-resource accessor for config operations.
     ///
     /// # Parameters
     /// - `id`: The id of the NAR.
-    type ControllerContentApi<'b>: ControllerContentApi
-    where
-        Self: 'b;
-    fn content<'b>(&'b self, id: &'b str) -> Self::ControllerContentApi<'b>;
+    fn content<'b>(&'b self, id: &'b str) -> impl ControllerContentApi + 'b;
     /// Returns a sub-resource accessor for config operations.
     ///
     /// # Parameters
     /// - `id`: The flow analysis rule id.
-    type ControllerDescriptorsApi<'b>: ControllerDescriptorsApi
-    where
-        Self: 'b;
-    fn descriptors<'b>(&'b self, id: &'b str) -> Self::ControllerDescriptorsApi<'b>;
+    fn descriptors<'b>(&'b self, id: &'b str) -> impl ControllerDescriptorsApi + 'b;
     /// Returns a sub-resource accessor for config operations.
     ///
     /// # Parameters
     /// - `id`: The id of the NAR.
-    type ControllerDetailsApi<'b>: ControllerDetailsApi
-    where
-        Self: 'b;
-    fn details<'b>(&'b self, id: &'b str) -> Self::ControllerDetailsApi<'b>;
+    fn details<'b>(&'b self, id: &'b str) -> impl ControllerDetailsApi + 'b;
     /// Returns a sub-resource accessor for config operations.
     ///
     /// # Parameters
     /// - `id`: The flow analysis rule id.
-    type ControllerRunStatusApi<'b>: ControllerRunStatusApi
-    where
-        Self: 'b;
-    fn run_status<'b>(&'b self, id: &'b str) -> Self::ControllerRunStatusApi<'b>;
+    fn run_status<'b>(&'b self, id: &'b str) -> impl ControllerRunStatusApi + 'b;
     /// Returns a sub-resource accessor for config operations.
     ///
     /// # Parameters
     /// - `id`: The flow analysis rule id.
-    type ControllerStateApi<'b>: ControllerStateApi
-    where
-        Self: 'b;
-    fn state<'b>(&'b self, id: &'b str) -> Self::ControllerStateApi<'b>;
+    fn state<'b>(&'b self, id: &'b str) -> impl ControllerStateApi + 'b;
     /// Creates a new bulletin
     ///
     /// Calls `POST /nifi-api/controller/bulletin`.

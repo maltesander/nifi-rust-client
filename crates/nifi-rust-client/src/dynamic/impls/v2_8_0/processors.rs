@@ -24,77 +24,49 @@ pub(crate) struct V2_8_0ProcessorsApi<'a> {
 }
 #[allow(unused_variables)]
 impl ProcessorsApi for V2_8_0ProcessorsApi<'_> {
-    type ProcessorsBulletinsApi<'b>
-        = crate::dynamic::dispatch::ProcessorsBulletinsApiDispatch<'b>
-    where
-        Self: 'b;
-    fn bulletins<'b>(&'b self, id: &'b str) -> Self::ProcessorsBulletinsApi<'b> {
+    fn bulletins<'b>(&'b self, id: &'b str) -> impl ProcessorsBulletinsApi + 'b {
         crate::dynamic::dispatch::ProcessorsBulletinsApiDispatch {
             client: self.client,
             id: id.to_string(),
             version: crate::dynamic::DetectedVersion::V2_8_0,
         }
     }
-    type ProcessorsConfigApi<'b>
-        = crate::dynamic::dispatch::ProcessorsConfigApiDispatch<'b>
-    where
-        Self: 'b;
-    fn config<'b>(&'b self, id: &'b str) -> Self::ProcessorsConfigApi<'b> {
+    fn config<'b>(&'b self, id: &'b str) -> impl ProcessorsConfigApi + 'b {
         crate::dynamic::dispatch::ProcessorsConfigApiDispatch {
             client: self.client,
             id: id.to_string(),
             version: crate::dynamic::DetectedVersion::V2_8_0,
         }
     }
-    type ProcessorsDescriptorsApi<'b>
-        = crate::dynamic::dispatch::ProcessorsDescriptorsApiDispatch<'b>
-    where
-        Self: 'b;
-    fn descriptors<'b>(&'b self, id: &'b str) -> Self::ProcessorsDescriptorsApi<'b> {
+    fn descriptors<'b>(&'b self, id: &'b str) -> impl ProcessorsDescriptorsApi + 'b {
         crate::dynamic::dispatch::ProcessorsDescriptorsApiDispatch {
             client: self.client,
             id: id.to_string(),
             version: crate::dynamic::DetectedVersion::V2_8_0,
         }
     }
-    type ProcessorsDiagnosticsApi<'b>
-        = crate::dynamic::dispatch::ProcessorsDiagnosticsApiDispatch<'b>
-    where
-        Self: 'b;
-    fn diagnostics<'b>(&'b self, id: &'b str) -> Self::ProcessorsDiagnosticsApi<'b> {
+    fn diagnostics<'b>(&'b self, id: &'b str) -> impl ProcessorsDiagnosticsApi + 'b {
         crate::dynamic::dispatch::ProcessorsDiagnosticsApiDispatch {
             client: self.client,
             id: id.to_string(),
             version: crate::dynamic::DetectedVersion::V2_8_0,
         }
     }
-    type ProcessorsRunStatusApi<'b>
-        = crate::dynamic::dispatch::ProcessorsRunStatusApiDispatch<'b>
-    where
-        Self: 'b;
-    fn run_status<'b>(&'b self, id: &'b str) -> Self::ProcessorsRunStatusApi<'b> {
+    fn run_status<'b>(&'b self, id: &'b str) -> impl ProcessorsRunStatusApi + 'b {
         crate::dynamic::dispatch::ProcessorsRunStatusApiDispatch {
             client: self.client,
             id: id.to_string(),
             version: crate::dynamic::DetectedVersion::V2_8_0,
         }
     }
-    type ProcessorsStateApi<'b>
-        = crate::dynamic::dispatch::ProcessorsStateApiDispatch<'b>
-    where
-        Self: 'b;
-    fn state<'b>(&'b self, id: &'b str) -> Self::ProcessorsStateApi<'b> {
+    fn state<'b>(&'b self, id: &'b str) -> impl ProcessorsStateApi + 'b {
         crate::dynamic::dispatch::ProcessorsStateApiDispatch {
             client: self.client,
             id: id.to_string(),
             version: crate::dynamic::DetectedVersion::V2_8_0,
         }
     }
-    type ProcessorsThreadsApi<'b>
-        = crate::dynamic::dispatch::ProcessorsThreadsApiDispatch<'b>
-    where
-        Self: 'b;
-    fn threads<'b>(&'b self, id: &'b str) -> Self::ProcessorsThreadsApi<'b> {
+    fn threads<'b>(&'b self, id: &'b str) -> impl ProcessorsThreadsApi + 'b {
         crate::dynamic::dispatch::ProcessorsThreadsApiDispatch {
             client: self.client,
             id: id.to_string(),

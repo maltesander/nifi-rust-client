@@ -20,55 +20,35 @@ pub(crate) struct V2_7_2RemoteProcessGroupsApi<'a> {
 }
 #[allow(unused_variables)]
 impl RemoteProcessGroupsApi for V2_7_2RemoteProcessGroupsApi<'_> {
-    type RemoteProcessGroupsBulletinsApi<'b>
-        = crate::dynamic::dispatch::RemoteProcessGroupsBulletinsApiDispatch<'b>
-    where
-        Self: 'b;
-    fn bulletins<'b>(&'b self, id: &'b str) -> Self::RemoteProcessGroupsBulletinsApi<'b> {
+    fn bulletins<'b>(&'b self, id: &'b str) -> impl RemoteProcessGroupsBulletinsApi + 'b {
         crate::dynamic::dispatch::RemoteProcessGroupsBulletinsApiDispatch {
             client: self.client,
             id: id.to_string(),
             version: crate::dynamic::DetectedVersion::V2_7_2,
         }
     }
-    type RemoteProcessGroupsInputPortsApi<'b>
-        = crate::dynamic::dispatch::RemoteProcessGroupsInputPortsApiDispatch<'b>
-    where
-        Self: 'b;
-    fn input_ports<'b>(&'b self, id: &'b str) -> Self::RemoteProcessGroupsInputPortsApi<'b> {
+    fn input_ports<'b>(&'b self, id: &'b str) -> impl RemoteProcessGroupsInputPortsApi + 'b {
         crate::dynamic::dispatch::RemoteProcessGroupsInputPortsApiDispatch {
             client: self.client,
             id: id.to_string(),
             version: crate::dynamic::DetectedVersion::V2_7_2,
         }
     }
-    type RemoteProcessGroupsOutputPortsApi<'b>
-        = crate::dynamic::dispatch::RemoteProcessGroupsOutputPortsApiDispatch<'b>
-    where
-        Self: 'b;
-    fn output_ports<'b>(&'b self, id: &'b str) -> Self::RemoteProcessGroupsOutputPortsApi<'b> {
+    fn output_ports<'b>(&'b self, id: &'b str) -> impl RemoteProcessGroupsOutputPortsApi + 'b {
         crate::dynamic::dispatch::RemoteProcessGroupsOutputPortsApiDispatch {
             client: self.client,
             id: id.to_string(),
             version: crate::dynamic::DetectedVersion::V2_7_2,
         }
     }
-    type RemoteProcessGroupsRunStatusApi<'b>
-        = crate::dynamic::dispatch::RemoteProcessGroupsRunStatusApiDispatch<'b>
-    where
-        Self: 'b;
-    fn run_status<'b>(&'b self, id: &'b str) -> Self::RemoteProcessGroupsRunStatusApi<'b> {
+    fn run_status<'b>(&'b self, id: &'b str) -> impl RemoteProcessGroupsRunStatusApi + 'b {
         crate::dynamic::dispatch::RemoteProcessGroupsRunStatusApiDispatch {
             client: self.client,
             id: id.to_string(),
             version: crate::dynamic::DetectedVersion::V2_7_2,
         }
     }
-    type RemoteProcessGroupsStateApi<'b>
-        = crate::dynamic::dispatch::RemoteProcessGroupsStateApiDispatch<'b>
-    where
-        Self: 'b;
-    fn state<'b>(&'b self, id: &'b str) -> Self::RemoteProcessGroupsStateApi<'b> {
+    fn state<'b>(&'b self, id: &'b str) -> impl RemoteProcessGroupsStateApi + 'b {
         crate::dynamic::dispatch::RemoteProcessGroupsStateApiDispatch {
             client: self.client,
             id: id.to_string(),

@@ -10,10 +10,7 @@ pub trait VersionsDownloadApi {
 /// The Versions API.
 #[allow(unused_variables, async_fn_in_trait, clippy::too_many_arguments)]
 pub trait VersionsApi {
-    type VersionsDownloadApi<'b>: VersionsDownloadApi
-    where
-        Self: 'b;
-    fn download<'b>(&'b self, id: &'b str) -> Self::VersionsDownloadApi<'b>;
+    fn download<'b>(&'b self, id: &'b str) -> impl VersionsDownloadApi + 'b;
     /// Create a version control request
     async fn create_version_control_request(
         &self,

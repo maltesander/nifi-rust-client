@@ -60,7 +60,7 @@ fn emit_trait_file(
     out.push_str("#[allow(unused_variables, async_fn_in_trait, clippy::too_many_arguments)]\n");
     out.push_str(&format!("pub trait {struct_name} {{\n"));
 
-    // GAT declarations and accessor methods for sub-resources
+    // Accessor methods for sub-resources (RPITIT — no GAT declarations needed)
     for sg in &sub_groups.sub_groups {
         let sub_trait_name = &sg.struct_name;
         let accessor = &sg.accessor_fn;
@@ -74,13 +74,9 @@ fn emit_trait_file(
             out.push_str(&format!("    /// - `{primary}`: {doc}\n"));
         }
 
-        // GAT declaration
+        // Accessor method (RPITIT)
         out.push_str(&format!(
-            "    type {sub_trait_name}<'b>: {sub_trait_name} where Self: 'b;\n"
-        ));
-        // Accessor method (abstract — no default impl)
-        out.push_str(&format!(
-            "    fn {accessor}<'b>(&'b self, {primary}: &'b str) -> Self::{sub_trait_name}<'b>;\n\n"
+            "    fn {accessor}<'b>(&'b self, {primary}: &'b str) -> impl {sub_trait_name} + 'b;\n\n"
         ));
     }
 
@@ -419,18 +415,18 @@ mod tests {
             .find(|(f, _)| f == "controller_services.rs")
             .unwrap();
 
-        // Root trait has GAT accessor
+        // Root trait has RPITIT accessor
         assert!(
             content.contains("pub trait ControllerServicesApi"),
             "Missing root trait"
         );
         assert!(
-            content.contains("ControllerServicesConfigApi<'b>"),
-            "Missing GAT declaration"
+            !content.contains("type ControllerServicesConfigApi<'b>"),
+            "GAT declaration should not be present"
         );
         assert!(
-            content.contains("fn config<'b>("),
-            "Missing accessor method"
+            content.contains("fn config<'b>(&'b self, id: &'b str) -> impl ControllerServicesConfigApi + 'b"),
+            "Missing RPITIT accessor method"
         );
 
         // Root method — id as method param

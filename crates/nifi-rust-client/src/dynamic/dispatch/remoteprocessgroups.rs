@@ -35,55 +35,35 @@ impl<'a> RemoteProcessGroupsApiDispatch<'a> {
     }
 }
 impl RemoteProcessGroupsApi for RemoteProcessGroupsApiDispatch<'_> {
-    type RemoteProcessGroupsBulletinsApi<'b>
-        = RemoteProcessGroupsBulletinsApiDispatch<'b>
-    where
-        Self: 'b;
-    fn bulletins<'b>(&'b self, id: &'b str) -> Self::RemoteProcessGroupsBulletinsApi<'b> {
+    fn bulletins<'b>(&'b self, id: &'b str) -> impl RemoteProcessGroupsBulletinsApi + 'b {
         RemoteProcessGroupsBulletinsApiDispatch {
             client: self.client(),
             id: id.to_string(),
             version: self.version(),
         }
     }
-    type RemoteProcessGroupsInputPortsApi<'b>
-        = RemoteProcessGroupsInputPortsApiDispatch<'b>
-    where
-        Self: 'b;
-    fn input_ports<'b>(&'b self, id: &'b str) -> Self::RemoteProcessGroupsInputPortsApi<'b> {
+    fn input_ports<'b>(&'b self, id: &'b str) -> impl RemoteProcessGroupsInputPortsApi + 'b {
         RemoteProcessGroupsInputPortsApiDispatch {
             client: self.client(),
             id: id.to_string(),
             version: self.version(),
         }
     }
-    type RemoteProcessGroupsOutputPortsApi<'b>
-        = RemoteProcessGroupsOutputPortsApiDispatch<'b>
-    where
-        Self: 'b;
-    fn output_ports<'b>(&'b self, id: &'b str) -> Self::RemoteProcessGroupsOutputPortsApi<'b> {
+    fn output_ports<'b>(&'b self, id: &'b str) -> impl RemoteProcessGroupsOutputPortsApi + 'b {
         RemoteProcessGroupsOutputPortsApiDispatch {
             client: self.client(),
             id: id.to_string(),
             version: self.version(),
         }
     }
-    type RemoteProcessGroupsRunStatusApi<'b>
-        = RemoteProcessGroupsRunStatusApiDispatch<'b>
-    where
-        Self: 'b;
-    fn run_status<'b>(&'b self, id: &'b str) -> Self::RemoteProcessGroupsRunStatusApi<'b> {
+    fn run_status<'b>(&'b self, id: &'b str) -> impl RemoteProcessGroupsRunStatusApi + 'b {
         RemoteProcessGroupsRunStatusApiDispatch {
             client: self.client(),
             id: id.to_string(),
             version: self.version(),
         }
     }
-    type RemoteProcessGroupsStateApi<'b>
-        = RemoteProcessGroupsStateApiDispatch<'b>
-    where
-        Self: 'b;
-    fn state<'b>(&'b self, id: &'b str) -> Self::RemoteProcessGroupsStateApi<'b> {
+    fn state<'b>(&'b self, id: &'b str) -> impl RemoteProcessGroupsStateApi + 'b {
         RemoteProcessGroupsStateApiDispatch {
             client: self.client(),
             id: id.to_string(),

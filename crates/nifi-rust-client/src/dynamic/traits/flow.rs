@@ -592,58 +592,37 @@ pub trait FlowApi {
     ///
     /// # Parameters
     /// - `id`: The registry id.
-    type FlowBranchesApi<'b>: FlowBranchesApi
-    where
-        Self: 'b;
-    fn branches<'b>(&'b self, id: &'b str) -> Self::FlowBranchesApi<'b>;
+    fn branches<'b>(&'b self, id: &'b str) -> impl FlowBranchesApi + 'b;
     /// Returns a sub-resource accessor for config operations.
     ///
     /// # Parameters
     /// - `id`: The process group id.
-    type FlowBreadcrumbsApi<'b>: FlowBreadcrumbsApi
-    where
-        Self: 'b;
-    fn breadcrumbs<'b>(&'b self, id: &'b str) -> Self::FlowBreadcrumbsApi<'b>;
+    fn breadcrumbs<'b>(&'b self, id: &'b str) -> impl FlowBreadcrumbsApi + 'b;
     /// Returns a sub-resource accessor for config operations.
     ///
     /// # Parameters
     /// - `id`: The registry id.
-    type FlowBucketsApi<'b>: FlowBucketsApi
-    where
-        Self: 'b;
-    fn buckets<'b>(&'b self, id: &'b str) -> Self::FlowBucketsApi<'b>;
+    fn buckets<'b>(&'b self, id: &'b str) -> impl FlowBucketsApi + 'b;
     /// Returns a sub-resource accessor for config operations.
     ///
     /// # Parameters
     /// - `id`: The process group id.
-    type FlowBulletinsApi<'b>: FlowBulletinsApi
-    where
-        Self: 'b;
-    fn bulletins<'b>(&'b self, id: &'b str) -> Self::FlowBulletinsApi<'b>;
+    fn bulletins<'b>(&'b self, id: &'b str) -> impl FlowBulletinsApi + 'b;
     /// Returns a sub-resource accessor for config operations.
     ///
     /// # Parameters
     /// - `id`: The process group id.
-    type FlowControllerServicesApi<'b>: FlowControllerServicesApi
-    where
-        Self: 'b;
-    fn controller_services<'b>(&'b self, id: &'b str) -> Self::FlowControllerServicesApi<'b>;
+    fn controller_services<'b>(&'b self, id: &'b str) -> impl FlowControllerServicesApi + 'b;
     /// Returns a sub-resource accessor for config operations.
     ///
     /// # Parameters
     /// - `id`: The connection id.
-    type FlowStatisticsApi<'b>: FlowStatisticsApi
-    where
-        Self: 'b;
-    fn statistics<'b>(&'b self, id: &'b str) -> Self::FlowStatisticsApi<'b>;
+    fn statistics<'b>(&'b self, id: &'b str) -> impl FlowStatisticsApi + 'b;
     /// Returns a sub-resource accessor for config operations.
     ///
     /// # Parameters
     /// - `id`: The connection id.
-    type FlowStatusApi<'b>: FlowStatusApi
-    where
-        Self: 'b;
-    fn status<'b>(&'b self, id: &'b str) -> Self::FlowStatusApi<'b>;
+    fn status<'b>(&'b self, id: &'b str) -> impl FlowStatusApi + 'b;
     /// Download a snapshot of the given reporting tasks and any controller services they use
     ///
     /// Calls `GET /nifi-api/flow/reporting-tasks/download`.

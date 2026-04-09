@@ -295,58 +295,37 @@ pub trait ProcessorsApi {
     ///
     /// # Parameters
     /// - `id`: The processor id.
-    type ProcessorsBulletinsApi<'b>: ProcessorsBulletinsApi
-    where
-        Self: 'b;
-    fn bulletins<'b>(&'b self, id: &'b str) -> Self::ProcessorsBulletinsApi<'b>;
+    fn bulletins<'b>(&'b self, id: &'b str) -> impl ProcessorsBulletinsApi + 'b;
     /// Returns a sub-resource accessor for config operations.
     ///
     /// # Parameters
     /// - `id`: The processor id.
-    type ProcessorsConfigApi<'b>: ProcessorsConfigApi
-    where
-        Self: 'b;
-    fn config<'b>(&'b self, id: &'b str) -> Self::ProcessorsConfigApi<'b>;
+    fn config<'b>(&'b self, id: &'b str) -> impl ProcessorsConfigApi + 'b;
     /// Returns a sub-resource accessor for config operations.
     ///
     /// # Parameters
     /// - `id`: The processor id.
-    type ProcessorsDescriptorsApi<'b>: ProcessorsDescriptorsApi
-    where
-        Self: 'b;
-    fn descriptors<'b>(&'b self, id: &'b str) -> Self::ProcessorsDescriptorsApi<'b>;
+    fn descriptors<'b>(&'b self, id: &'b str) -> impl ProcessorsDescriptorsApi + 'b;
     /// Returns a sub-resource accessor for config operations.
     ///
     /// # Parameters
     /// - `id`: The processor id.
-    type ProcessorsDiagnosticsApi<'b>: ProcessorsDiagnosticsApi
-    where
-        Self: 'b;
-    fn diagnostics<'b>(&'b self, id: &'b str) -> Self::ProcessorsDiagnosticsApi<'b>;
+    fn diagnostics<'b>(&'b self, id: &'b str) -> impl ProcessorsDiagnosticsApi + 'b;
     /// Returns a sub-resource accessor for config operations.
     ///
     /// # Parameters
     /// - `id`: The processor id.
-    type ProcessorsRunStatusApi<'b>: ProcessorsRunStatusApi
-    where
-        Self: 'b;
-    fn run_status<'b>(&'b self, id: &'b str) -> Self::ProcessorsRunStatusApi<'b>;
+    fn run_status<'b>(&'b self, id: &'b str) -> impl ProcessorsRunStatusApi + 'b;
     /// Returns a sub-resource accessor for config operations.
     ///
     /// # Parameters
     /// - `id`: The processor id.
-    type ProcessorsStateApi<'b>: ProcessorsStateApi
-    where
-        Self: 'b;
-    fn state<'b>(&'b self, id: &'b str) -> Self::ProcessorsStateApi<'b>;
+    fn state<'b>(&'b self, id: &'b str) -> impl ProcessorsStateApi + 'b;
     /// Returns a sub-resource accessor for config operations.
     ///
     /// # Parameters
     /// - `id`: The processor id.
-    type ProcessorsThreadsApi<'b>: ProcessorsThreadsApi
-    where
-        Self: 'b;
-    fn threads<'b>(&'b self, id: &'b str) -> Self::ProcessorsThreadsApi<'b>;
+    fn threads<'b>(&'b self, id: &'b str) -> impl ProcessorsThreadsApi + 'b;
     /// Deletes a processor
     ///
     /// Calls `DELETE /nifi-api/processors/{id}`.

@@ -37,77 +37,49 @@ impl<'a> ControllerApiDispatch<'a> {
     }
 }
 impl ControllerApi for ControllerApiDispatch<'_> {
-    type ControllerBulletinsApi<'b>
-        = ControllerBulletinsApiDispatch<'b>
-    where
-        Self: 'b;
-    fn bulletins<'b>(&'b self, id: &'b str) -> Self::ControllerBulletinsApi<'b> {
+    fn bulletins<'b>(&'b self, id: &'b str) -> impl ControllerBulletinsApi + 'b {
         ControllerBulletinsApiDispatch {
             client: self.client(),
             id: id.to_string(),
             version: self.version(),
         }
     }
-    type ControllerConfigApi<'b>
-        = ControllerConfigApiDispatch<'b>
-    where
-        Self: 'b;
-    fn config<'b>(&'b self, id: &'b str) -> Self::ControllerConfigApi<'b> {
+    fn config<'b>(&'b self, id: &'b str) -> impl ControllerConfigApi + 'b {
         ControllerConfigApiDispatch {
             client: self.client(),
             id: id.to_string(),
             version: self.version(),
         }
     }
-    type ControllerContentApi<'b>
-        = ControllerContentApiDispatch<'b>
-    where
-        Self: 'b;
-    fn content<'b>(&'b self, id: &'b str) -> Self::ControllerContentApi<'b> {
+    fn content<'b>(&'b self, id: &'b str) -> impl ControllerContentApi + 'b {
         ControllerContentApiDispatch {
             client: self.client(),
             id: id.to_string(),
             version: self.version(),
         }
     }
-    type ControllerDescriptorsApi<'b>
-        = ControllerDescriptorsApiDispatch<'b>
-    where
-        Self: 'b;
-    fn descriptors<'b>(&'b self, id: &'b str) -> Self::ControllerDescriptorsApi<'b> {
+    fn descriptors<'b>(&'b self, id: &'b str) -> impl ControllerDescriptorsApi + 'b {
         ControllerDescriptorsApiDispatch {
             client: self.client(),
             id: id.to_string(),
             version: self.version(),
         }
     }
-    type ControllerDetailsApi<'b>
-        = ControllerDetailsApiDispatch<'b>
-    where
-        Self: 'b;
-    fn details<'b>(&'b self, id: &'b str) -> Self::ControllerDetailsApi<'b> {
+    fn details<'b>(&'b self, id: &'b str) -> impl ControllerDetailsApi + 'b {
         ControllerDetailsApiDispatch {
             client: self.client(),
             id: id.to_string(),
             version: self.version(),
         }
     }
-    type ControllerRunStatusApi<'b>
-        = ControllerRunStatusApiDispatch<'b>
-    where
-        Self: 'b;
-    fn run_status<'b>(&'b self, id: &'b str) -> Self::ControllerRunStatusApi<'b> {
+    fn run_status<'b>(&'b self, id: &'b str) -> impl ControllerRunStatusApi + 'b {
         ControllerRunStatusApiDispatch {
             client: self.client(),
             id: id.to_string(),
             version: self.version(),
         }
     }
-    type ControllerStateApi<'b>
-        = ControllerStateApiDispatch<'b>
-    where
-        Self: 'b;
-    fn state<'b>(&'b self, id: &'b str) -> Self::ControllerStateApi<'b> {
+    fn state<'b>(&'b self, id: &'b str) -> impl ControllerStateApi + 'b {
         ControllerStateApiDispatch {
             client: self.client(),
             id: id.to_string(),

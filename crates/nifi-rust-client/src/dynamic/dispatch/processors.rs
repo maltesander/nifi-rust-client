@@ -37,77 +37,49 @@ impl<'a> ProcessorsApiDispatch<'a> {
     }
 }
 impl ProcessorsApi for ProcessorsApiDispatch<'_> {
-    type ProcessorsBulletinsApi<'b>
-        = ProcessorsBulletinsApiDispatch<'b>
-    where
-        Self: 'b;
-    fn bulletins<'b>(&'b self, id: &'b str) -> Self::ProcessorsBulletinsApi<'b> {
+    fn bulletins<'b>(&'b self, id: &'b str) -> impl ProcessorsBulletinsApi + 'b {
         ProcessorsBulletinsApiDispatch {
             client: self.client(),
             id: id.to_string(),
             version: self.version(),
         }
     }
-    type ProcessorsConfigApi<'b>
-        = ProcessorsConfigApiDispatch<'b>
-    where
-        Self: 'b;
-    fn config<'b>(&'b self, id: &'b str) -> Self::ProcessorsConfigApi<'b> {
+    fn config<'b>(&'b self, id: &'b str) -> impl ProcessorsConfigApi + 'b {
         ProcessorsConfigApiDispatch {
             client: self.client(),
             id: id.to_string(),
             version: self.version(),
         }
     }
-    type ProcessorsDescriptorsApi<'b>
-        = ProcessorsDescriptorsApiDispatch<'b>
-    where
-        Self: 'b;
-    fn descriptors<'b>(&'b self, id: &'b str) -> Self::ProcessorsDescriptorsApi<'b> {
+    fn descriptors<'b>(&'b self, id: &'b str) -> impl ProcessorsDescriptorsApi + 'b {
         ProcessorsDescriptorsApiDispatch {
             client: self.client(),
             id: id.to_string(),
             version: self.version(),
         }
     }
-    type ProcessorsDiagnosticsApi<'b>
-        = ProcessorsDiagnosticsApiDispatch<'b>
-    where
-        Self: 'b;
-    fn diagnostics<'b>(&'b self, id: &'b str) -> Self::ProcessorsDiagnosticsApi<'b> {
+    fn diagnostics<'b>(&'b self, id: &'b str) -> impl ProcessorsDiagnosticsApi + 'b {
         ProcessorsDiagnosticsApiDispatch {
             client: self.client(),
             id: id.to_string(),
             version: self.version(),
         }
     }
-    type ProcessorsRunStatusApi<'b>
-        = ProcessorsRunStatusApiDispatch<'b>
-    where
-        Self: 'b;
-    fn run_status<'b>(&'b self, id: &'b str) -> Self::ProcessorsRunStatusApi<'b> {
+    fn run_status<'b>(&'b self, id: &'b str) -> impl ProcessorsRunStatusApi + 'b {
         ProcessorsRunStatusApiDispatch {
             client: self.client(),
             id: id.to_string(),
             version: self.version(),
         }
     }
-    type ProcessorsStateApi<'b>
-        = ProcessorsStateApiDispatch<'b>
-    where
-        Self: 'b;
-    fn state<'b>(&'b self, id: &'b str) -> Self::ProcessorsStateApi<'b> {
+    fn state<'b>(&'b self, id: &'b str) -> impl ProcessorsStateApi + 'b {
         ProcessorsStateApiDispatch {
             client: self.client(),
             id: id.to_string(),
             version: self.version(),
         }
     }
-    type ProcessorsThreadsApi<'b>
-        = ProcessorsThreadsApiDispatch<'b>
-    where
-        Self: 'b;
-    fn threads<'b>(&'b self, id: &'b str) -> Self::ProcessorsThreadsApi<'b> {
+    fn threads<'b>(&'b self, id: &'b str) -> impl ProcessorsThreadsApi + 'b {
         ProcessorsThreadsApiDispatch {
             client: self.client(),
             id: id.to_string(),

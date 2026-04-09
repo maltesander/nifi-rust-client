@@ -245,42 +245,27 @@ pub trait ReportingTasksApi {
     ///
     /// # Parameters
     /// - `id`: The reporting task id.
-    type ReportingTasksBulletinsApi<'b>: ReportingTasksBulletinsApi
-    where
-        Self: 'b;
-    fn bulletins<'b>(&'b self, id: &'b str) -> Self::ReportingTasksBulletinsApi<'b>;
+    fn bulletins<'b>(&'b self, id: &'b str) -> impl ReportingTasksBulletinsApi + 'b;
     /// Returns a sub-resource accessor for config operations.
     ///
     /// # Parameters
     /// - `id`: The reporting task id.
-    type ReportingTasksConfigApi<'b>: ReportingTasksConfigApi
-    where
-        Self: 'b;
-    fn config<'b>(&'b self, id: &'b str) -> Self::ReportingTasksConfigApi<'b>;
+    fn config<'b>(&'b self, id: &'b str) -> impl ReportingTasksConfigApi + 'b;
     /// Returns a sub-resource accessor for config operations.
     ///
     /// # Parameters
     /// - `id`: The reporting task id.
-    type ReportingTasksDescriptorsApi<'b>: ReportingTasksDescriptorsApi
-    where
-        Self: 'b;
-    fn descriptors<'b>(&'b self, id: &'b str) -> Self::ReportingTasksDescriptorsApi<'b>;
+    fn descriptors<'b>(&'b self, id: &'b str) -> impl ReportingTasksDescriptorsApi + 'b;
     /// Returns a sub-resource accessor for config operations.
     ///
     /// # Parameters
     /// - `id`: The reporting task id.
-    type ReportingTasksRunStatusApi<'b>: ReportingTasksRunStatusApi
-    where
-        Self: 'b;
-    fn run_status<'b>(&'b self, id: &'b str) -> Self::ReportingTasksRunStatusApi<'b>;
+    fn run_status<'b>(&'b self, id: &'b str) -> impl ReportingTasksRunStatusApi + 'b;
     /// Returns a sub-resource accessor for config operations.
     ///
     /// # Parameters
     /// - `id`: The reporting task id.
-    type ReportingTasksStateApi<'b>: ReportingTasksStateApi
-    where
-        Self: 'b;
-    fn state<'b>(&'b self, id: &'b str) -> Self::ReportingTasksStateApi<'b>;
+    fn state<'b>(&'b self, id: &'b str) -> impl ReportingTasksStateApi + 'b;
     /// Gets a reporting task
     ///
     /// Calls `GET /nifi-api/reporting-tasks/{id}`.

@@ -200,88 +200,35 @@ pub trait ProcessGroupsSnippetInstanceApi {
 /// The ProcessGroups API.
 #[allow(unused_variables, async_fn_in_trait, clippy::too_many_arguments)]
 pub trait ProcessGroupsApi {
-    type ProcessGroupsConnectionsApi<'b>: ProcessGroupsConnectionsApi
-    where
-        Self: 'b;
-    fn connections<'b>(&'b self, id: &'b str) -> Self::ProcessGroupsConnectionsApi<'b>;
-    type ProcessGroupsControllerServicesApi<'b>: ProcessGroupsControllerServicesApi
-    where
-        Self: 'b;
+    fn connections<'b>(&'b self, id: &'b str) -> impl ProcessGroupsConnectionsApi + 'b;
     fn controller_services<'b>(
         &'b self,
         id: &'b str,
-    ) -> Self::ProcessGroupsControllerServicesApi<'b>;
-    type ProcessGroupsCopyApi<'b>: ProcessGroupsCopyApi
-    where
-        Self: 'b;
-    fn copy<'b>(&'b self, id: &'b str) -> Self::ProcessGroupsCopyApi<'b>;
-    type ProcessGroupsDownloadApi<'b>: ProcessGroupsDownloadApi
-    where
-        Self: 'b;
-    fn download<'b>(&'b self, id: &'b str) -> Self::ProcessGroupsDownloadApi<'b>;
-    type ProcessGroupsEmptyAllConnectionsRequestsApi<
-        'b,
-    >: ProcessGroupsEmptyAllConnectionsRequestsApi
-    where
-        Self: 'b;
+    ) -> impl ProcessGroupsControllerServicesApi + 'b;
+    fn copy<'b>(&'b self, id: &'b str) -> impl ProcessGroupsCopyApi + 'b;
+    fn download<'b>(&'b self, id: &'b str) -> impl ProcessGroupsDownloadApi + 'b;
     fn empty_all_connections_requests<'b>(
         &'b self,
         id: &'b str,
-    ) -> Self::ProcessGroupsEmptyAllConnectionsRequestsApi<'b>;
-    type ProcessGroupsFlowContentsApi<'b>: ProcessGroupsFlowContentsApi
-    where
-        Self: 'b;
-    fn flow_contents<'b>(&'b self, id: &'b str) -> Self::ProcessGroupsFlowContentsApi<'b>;
-    type ProcessGroupsFunnelsApi<'b>: ProcessGroupsFunnelsApi
-    where
-        Self: 'b;
-    fn funnels<'b>(&'b self, id: &'b str) -> Self::ProcessGroupsFunnelsApi<'b>;
-    type ProcessGroupsInputPortsApi<'b>: ProcessGroupsInputPortsApi
-    where
-        Self: 'b;
-    fn input_ports<'b>(&'b self, id: &'b str) -> Self::ProcessGroupsInputPortsApi<'b>;
-    type ProcessGroupsLabelsApi<'b>: ProcessGroupsLabelsApi
-    where
-        Self: 'b;
-    fn labels<'b>(&'b self, id: &'b str) -> Self::ProcessGroupsLabelsApi<'b>;
-    type ProcessGroupsLocalModificationsApi<'b>: ProcessGroupsLocalModificationsApi
-    where
-        Self: 'b;
+    ) -> impl ProcessGroupsEmptyAllConnectionsRequestsApi + 'b;
+    fn flow_contents<'b>(&'b self, id: &'b str) -> impl ProcessGroupsFlowContentsApi + 'b;
+    fn funnels<'b>(&'b self, id: &'b str) -> impl ProcessGroupsFunnelsApi + 'b;
+    fn input_ports<'b>(&'b self, id: &'b str) -> impl ProcessGroupsInputPortsApi + 'b;
+    fn labels<'b>(&'b self, id: &'b str) -> impl ProcessGroupsLabelsApi + 'b;
     fn local_modifications<'b>(
         &'b self,
         id: &'b str,
-    ) -> Self::ProcessGroupsLocalModificationsApi<'b>;
-    type ProcessGroupsOutputPortsApi<'b>: ProcessGroupsOutputPortsApi
-    where
-        Self: 'b;
-    fn output_ports<'b>(&'b self, id: &'b str) -> Self::ProcessGroupsOutputPortsApi<'b>;
-    type ProcessGroupsPasteApi<'b>: ProcessGroupsPasteApi
-    where
-        Self: 'b;
-    fn paste<'b>(&'b self, id: &'b str) -> Self::ProcessGroupsPasteApi<'b>;
-    type ProcessGroupsProcessGroupsApi<'b>: ProcessGroupsProcessGroupsApi
-    where
-        Self: 'b;
-    fn process_groups<'b>(&'b self, id: &'b str) -> Self::ProcessGroupsProcessGroupsApi<'b>;
-    type ProcessGroupsProcessorsApi<'b>: ProcessGroupsProcessorsApi
-    where
-        Self: 'b;
-    fn processors<'b>(&'b self, id: &'b str) -> Self::ProcessGroupsProcessorsApi<'b>;
-    type ProcessGroupsRemoteProcessGroupsApi<'b>: ProcessGroupsRemoteProcessGroupsApi
-    where
-        Self: 'b;
+    ) -> impl ProcessGroupsLocalModificationsApi + 'b;
+    fn output_ports<'b>(&'b self, id: &'b str) -> impl ProcessGroupsOutputPortsApi + 'b;
+    fn paste<'b>(&'b self, id: &'b str) -> impl ProcessGroupsPasteApi + 'b;
+    fn process_groups<'b>(&'b self, id: &'b str) -> impl ProcessGroupsProcessGroupsApi + 'b;
+    fn processors<'b>(&'b self, id: &'b str) -> impl ProcessGroupsProcessorsApi + 'b;
     fn remote_process_groups<'b>(
         &'b self,
         id: &'b str,
-    ) -> Self::ProcessGroupsRemoteProcessGroupsApi<'b>;
-    type ProcessGroupsReplaceRequestsApi<'b>: ProcessGroupsReplaceRequestsApi
-    where
-        Self: 'b;
-    fn replace_requests<'b>(&'b self, id: &'b str) -> Self::ProcessGroupsReplaceRequestsApi<'b>;
-    type ProcessGroupsSnippetInstanceApi<'b>: ProcessGroupsSnippetInstanceApi
-    where
-        Self: 'b;
-    fn snippet_instance<'b>(&'b self, id: &'b str) -> Self::ProcessGroupsSnippetInstanceApi<'b>;
+    ) -> impl ProcessGroupsRemoteProcessGroupsApi + 'b;
+    fn replace_requests<'b>(&'b self, id: &'b str) -> impl ProcessGroupsReplaceRequestsApi + 'b;
+    fn snippet_instance<'b>(&'b self, id: &'b str) -> impl ProcessGroupsSnippetInstanceApi + 'b;
     /// Deletes the Replace Request with the given ID
     async fn delete_replace_process_group_request(
         &self,

@@ -24,80 +24,52 @@ pub(crate) struct V2_7_2ParameterProvidersApi<'a> {
 }
 #[allow(unused_variables)]
 impl ParameterProvidersApi for V2_7_2ParameterProvidersApi<'_> {
-    type ParameterProvidersApplyParametersRequestsApi<'b>
-        = crate::dynamic::dispatch::ParameterProvidersApplyParametersRequestsApiDispatch<'b>
-    where
-        Self: 'b;
     fn apply_parameters_requests<'b>(
         &'b self,
         provider_id: &'b str,
-    ) -> Self::ParameterProvidersApplyParametersRequestsApi<'b> {
+    ) -> impl ParameterProvidersApplyParametersRequestsApi + 'b {
         crate::dynamic::dispatch::ParameterProvidersApplyParametersRequestsApiDispatch {
             client: self.client,
             provider_id: provider_id.to_string(),
             version: crate::dynamic::DetectedVersion::V2_7_2,
         }
     }
-    type ParameterProvidersBulletinsApi<'b>
-        = crate::dynamic::dispatch::ParameterProvidersBulletinsApiDispatch<'b>
-    where
-        Self: 'b;
-    fn bulletins<'b>(&'b self, id: &'b str) -> Self::ParameterProvidersBulletinsApi<'b> {
+    fn bulletins<'b>(&'b self, id: &'b str) -> impl ParameterProvidersBulletinsApi + 'b {
         crate::dynamic::dispatch::ParameterProvidersBulletinsApiDispatch {
             client: self.client,
             id: id.to_string(),
             version: crate::dynamic::DetectedVersion::V2_7_2,
         }
     }
-    type ParameterProvidersConfigApi<'b>
-        = crate::dynamic::dispatch::ParameterProvidersConfigApiDispatch<'b>
-    where
-        Self: 'b;
-    fn config<'b>(&'b self, id: &'b str) -> Self::ParameterProvidersConfigApi<'b> {
+    fn config<'b>(&'b self, id: &'b str) -> impl ParameterProvidersConfigApi + 'b {
         crate::dynamic::dispatch::ParameterProvidersConfigApiDispatch {
             client: self.client,
             id: id.to_string(),
             version: crate::dynamic::DetectedVersion::V2_7_2,
         }
     }
-    type ParameterProvidersDescriptorsApi<'b>
-        = crate::dynamic::dispatch::ParameterProvidersDescriptorsApiDispatch<'b>
-    where
-        Self: 'b;
-    fn descriptors<'b>(&'b self, id: &'b str) -> Self::ParameterProvidersDescriptorsApi<'b> {
+    fn descriptors<'b>(&'b self, id: &'b str) -> impl ParameterProvidersDescriptorsApi + 'b {
         crate::dynamic::dispatch::ParameterProvidersDescriptorsApiDispatch {
             client: self.client,
             id: id.to_string(),
             version: crate::dynamic::DetectedVersion::V2_7_2,
         }
     }
-    type ParameterProvidersParametersApi<'b>
-        = crate::dynamic::dispatch::ParameterProvidersParametersApiDispatch<'b>
-    where
-        Self: 'b;
-    fn parameters<'b>(&'b self, id: &'b str) -> Self::ParameterProvidersParametersApi<'b> {
+    fn parameters<'b>(&'b self, id: &'b str) -> impl ParameterProvidersParametersApi + 'b {
         crate::dynamic::dispatch::ParameterProvidersParametersApiDispatch {
             client: self.client,
             id: id.to_string(),
             version: crate::dynamic::DetectedVersion::V2_7_2,
         }
     }
-    type ParameterProvidersReferencesApi<'b>
-        = crate::dynamic::dispatch::ParameterProvidersReferencesApiDispatch<'b>
-    where
-        Self: 'b;
-    fn references<'b>(&'b self, id: &'b str) -> Self::ParameterProvidersReferencesApi<'b> {
+    fn references<'b>(&'b self, id: &'b str) -> impl ParameterProvidersReferencesApi + 'b {
         crate::dynamic::dispatch::ParameterProvidersReferencesApiDispatch {
             client: self.client,
             id: id.to_string(),
             version: crate::dynamic::DetectedVersion::V2_7_2,
         }
     }
-    type ParameterProvidersStateApi<'b>
-        = crate::dynamic::dispatch::ParameterProvidersStateApiDispatch<'b>
-    where
-        Self: 'b;
-    fn state<'b>(&'b self, id: &'b str) -> Self::ParameterProvidersStateApi<'b> {
+    fn state<'b>(&'b self, id: &'b str) -> impl ParameterProvidersStateApi + 'b {
         crate::dynamic::dispatch::ParameterProvidersStateApiDispatch {
             client: self.client,
             id: id.to_string(),

@@ -16,33 +16,21 @@ pub(crate) struct V2_8_0FlowFileQueuesApi<'a> {
 }
 #[allow(unused_variables)]
 impl FlowFileQueuesApi for V2_8_0FlowFileQueuesApi<'_> {
-    type FlowFileQueuesDropRequestsApi<'b>
-        = crate::dynamic::dispatch::FlowFileQueuesDropRequestsApiDispatch<'b>
-    where
-        Self: 'b;
-    fn drop_requests<'b>(&'b self, id: &'b str) -> Self::FlowFileQueuesDropRequestsApi<'b> {
+    fn drop_requests<'b>(&'b self, id: &'b str) -> impl FlowFileQueuesDropRequestsApi + 'b {
         crate::dynamic::dispatch::FlowFileQueuesDropRequestsApiDispatch {
             client: self.client,
             id: id.to_string(),
             version: crate::dynamic::DetectedVersion::V2_8_0,
         }
     }
-    type FlowFileQueuesFlowfilesApi<'b>
-        = crate::dynamic::dispatch::FlowFileQueuesFlowfilesApiDispatch<'b>
-    where
-        Self: 'b;
-    fn flowfiles<'b>(&'b self, id: &'b str) -> Self::FlowFileQueuesFlowfilesApi<'b> {
+    fn flowfiles<'b>(&'b self, id: &'b str) -> impl FlowFileQueuesFlowfilesApi + 'b {
         crate::dynamic::dispatch::FlowFileQueuesFlowfilesApiDispatch {
             client: self.client,
             id: id.to_string(),
             version: crate::dynamic::DetectedVersion::V2_8_0,
         }
     }
-    type FlowFileQueuesListingRequestsApi<'b>
-        = crate::dynamic::dispatch::FlowFileQueuesListingRequestsApiDispatch<'b>
-    where
-        Self: 'b;
-    fn listing_requests<'b>(&'b self, id: &'b str) -> Self::FlowFileQueuesListingRequestsApi<'b> {
+    fn listing_requests<'b>(&'b self, id: &'b str) -> impl FlowFileQueuesListingRequestsApi + 'b {
         crate::dynamic::dispatch::FlowFileQueuesListingRequestsApiDispatch {
             client: self.client,
             id: id.to_string(),

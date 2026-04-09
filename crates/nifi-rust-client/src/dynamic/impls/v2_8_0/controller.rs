@@ -24,77 +24,49 @@ pub(crate) struct V2_8_0ControllerApi<'a> {
 }
 #[allow(unused_variables)]
 impl ControllerApi for V2_8_0ControllerApi<'_> {
-    type ControllerBulletinsApi<'b>
-        = crate::dynamic::dispatch::ControllerBulletinsApiDispatch<'b>
-    where
-        Self: 'b;
-    fn bulletins<'b>(&'b self, id: &'b str) -> Self::ControllerBulletinsApi<'b> {
+    fn bulletins<'b>(&'b self, id: &'b str) -> impl ControllerBulletinsApi + 'b {
         crate::dynamic::dispatch::ControllerBulletinsApiDispatch {
             client: self.client,
             id: id.to_string(),
             version: crate::dynamic::DetectedVersion::V2_8_0,
         }
     }
-    type ControllerConfigApi<'b>
-        = crate::dynamic::dispatch::ControllerConfigApiDispatch<'b>
-    where
-        Self: 'b;
-    fn config<'b>(&'b self, id: &'b str) -> Self::ControllerConfigApi<'b> {
+    fn config<'b>(&'b self, id: &'b str) -> impl ControllerConfigApi + 'b {
         crate::dynamic::dispatch::ControllerConfigApiDispatch {
             client: self.client,
             id: id.to_string(),
             version: crate::dynamic::DetectedVersion::V2_8_0,
         }
     }
-    type ControllerContentApi<'b>
-        = crate::dynamic::dispatch::ControllerContentApiDispatch<'b>
-    where
-        Self: 'b;
-    fn content<'b>(&'b self, id: &'b str) -> Self::ControllerContentApi<'b> {
+    fn content<'b>(&'b self, id: &'b str) -> impl ControllerContentApi + 'b {
         crate::dynamic::dispatch::ControllerContentApiDispatch {
             client: self.client,
             id: id.to_string(),
             version: crate::dynamic::DetectedVersion::V2_8_0,
         }
     }
-    type ControllerDescriptorsApi<'b>
-        = crate::dynamic::dispatch::ControllerDescriptorsApiDispatch<'b>
-    where
-        Self: 'b;
-    fn descriptors<'b>(&'b self, id: &'b str) -> Self::ControllerDescriptorsApi<'b> {
+    fn descriptors<'b>(&'b self, id: &'b str) -> impl ControllerDescriptorsApi + 'b {
         crate::dynamic::dispatch::ControllerDescriptorsApiDispatch {
             client: self.client,
             id: id.to_string(),
             version: crate::dynamic::DetectedVersion::V2_8_0,
         }
     }
-    type ControllerDetailsApi<'b>
-        = crate::dynamic::dispatch::ControllerDetailsApiDispatch<'b>
-    where
-        Self: 'b;
-    fn details<'b>(&'b self, id: &'b str) -> Self::ControllerDetailsApi<'b> {
+    fn details<'b>(&'b self, id: &'b str) -> impl ControllerDetailsApi + 'b {
         crate::dynamic::dispatch::ControllerDetailsApiDispatch {
             client: self.client,
             id: id.to_string(),
             version: crate::dynamic::DetectedVersion::V2_8_0,
         }
     }
-    type ControllerRunStatusApi<'b>
-        = crate::dynamic::dispatch::ControllerRunStatusApiDispatch<'b>
-    where
-        Self: 'b;
-    fn run_status<'b>(&'b self, id: &'b str) -> Self::ControllerRunStatusApi<'b> {
+    fn run_status<'b>(&'b self, id: &'b str) -> impl ControllerRunStatusApi + 'b {
         crate::dynamic::dispatch::ControllerRunStatusApiDispatch {
             client: self.client,
             id: id.to_string(),
             version: crate::dynamic::DetectedVersion::V2_8_0,
         }
     }
-    type ControllerStateApi<'b>
-        = crate::dynamic::dispatch::ControllerStateApiDispatch<'b>
-    where
-        Self: 'b;
-    fn state<'b>(&'b self, id: &'b str) -> Self::ControllerStateApi<'b> {
+    fn state<'b>(&'b self, id: &'b str) -> impl ControllerStateApi + 'b {
         crate::dynamic::dispatch::ControllerStateApiDispatch {
             client: self.client,
             id: id.to_string(),

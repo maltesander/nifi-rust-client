@@ -37,80 +37,52 @@ impl<'a> ParameterProvidersApiDispatch<'a> {
     }
 }
 impl ParameterProvidersApi for ParameterProvidersApiDispatch<'_> {
-    type ParameterProvidersApplyParametersRequestsApi<'b>
-        = ParameterProvidersApplyParametersRequestsApiDispatch<'b>
-    where
-        Self: 'b;
     fn apply_parameters_requests<'b>(
         &'b self,
         provider_id: &'b str,
-    ) -> Self::ParameterProvidersApplyParametersRequestsApi<'b> {
+    ) -> impl ParameterProvidersApplyParametersRequestsApi + 'b {
         ParameterProvidersApplyParametersRequestsApiDispatch {
             client: self.client(),
             provider_id: provider_id.to_string(),
             version: self.version(),
         }
     }
-    type ParameterProvidersBulletinsApi<'b>
-        = ParameterProvidersBulletinsApiDispatch<'b>
-    where
-        Self: 'b;
-    fn bulletins<'b>(&'b self, id: &'b str) -> Self::ParameterProvidersBulletinsApi<'b> {
+    fn bulletins<'b>(&'b self, id: &'b str) -> impl ParameterProvidersBulletinsApi + 'b {
         ParameterProvidersBulletinsApiDispatch {
             client: self.client(),
             id: id.to_string(),
             version: self.version(),
         }
     }
-    type ParameterProvidersConfigApi<'b>
-        = ParameterProvidersConfigApiDispatch<'b>
-    where
-        Self: 'b;
-    fn config<'b>(&'b self, id: &'b str) -> Self::ParameterProvidersConfigApi<'b> {
+    fn config<'b>(&'b self, id: &'b str) -> impl ParameterProvidersConfigApi + 'b {
         ParameterProvidersConfigApiDispatch {
             client: self.client(),
             id: id.to_string(),
             version: self.version(),
         }
     }
-    type ParameterProvidersDescriptorsApi<'b>
-        = ParameterProvidersDescriptorsApiDispatch<'b>
-    where
-        Self: 'b;
-    fn descriptors<'b>(&'b self, id: &'b str) -> Self::ParameterProvidersDescriptorsApi<'b> {
+    fn descriptors<'b>(&'b self, id: &'b str) -> impl ParameterProvidersDescriptorsApi + 'b {
         ParameterProvidersDescriptorsApiDispatch {
             client: self.client(),
             id: id.to_string(),
             version: self.version(),
         }
     }
-    type ParameterProvidersParametersApi<'b>
-        = ParameterProvidersParametersApiDispatch<'b>
-    where
-        Self: 'b;
-    fn parameters<'b>(&'b self, id: &'b str) -> Self::ParameterProvidersParametersApi<'b> {
+    fn parameters<'b>(&'b self, id: &'b str) -> impl ParameterProvidersParametersApi + 'b {
         ParameterProvidersParametersApiDispatch {
             client: self.client(),
             id: id.to_string(),
             version: self.version(),
         }
     }
-    type ParameterProvidersReferencesApi<'b>
-        = ParameterProvidersReferencesApiDispatch<'b>
-    where
-        Self: 'b;
-    fn references<'b>(&'b self, id: &'b str) -> Self::ParameterProvidersReferencesApi<'b> {
+    fn references<'b>(&'b self, id: &'b str) -> impl ParameterProvidersReferencesApi + 'b {
         ParameterProvidersReferencesApiDispatch {
             client: self.client(),
             id: id.to_string(),
             version: self.version(),
         }
     }
-    type ParameterProvidersStateApi<'b>
-        = ParameterProvidersStateApiDispatch<'b>
-    where
-        Self: 'b;
-    fn state<'b>(&'b self, id: &'b str) -> Self::ParameterProvidersStateApi<'b> {
+    fn state<'b>(&'b self, id: &'b str) -> impl ParameterProvidersStateApi + 'b {
         ParameterProvidersStateApiDispatch {
             client: self.client(),
             id: id.to_string(),

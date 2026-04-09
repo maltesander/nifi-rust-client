@@ -287,17 +287,16 @@ fn emits_sub_group_gat_and_accessor() {
     let pg_rs = find_file(&files, "v2_8_0/process_groups.rs")
         .expect("should have v2_8_0/process_groups.rs");
 
-    // GAT type binding pointing to dispatch struct
+    // RPITIT accessor (no GAT type binding)
     assert!(
-        pg_rs.contains("type ProcessGroupConnectionsApi<'b>")
-            && pg_rs.contains("ProcessGroupConnectionsApiDispatch"),
-        "should have GAT type binding for sub-resource: {pg_rs}"
+        !pg_rs.contains("type ProcessGroupConnectionsApi<'b>"),
+        "GAT type binding should not be present: {pg_rs}"
     );
 
-    // Accessor method constructs dispatch struct
+    // Accessor method with RPITIT return type
     assert!(
-        pg_rs.contains("fn connections<'b>("),
-        "should have accessor method: {pg_rs}"
+        pg_rs.contains("fn connections<'b>(&'b self, id: &'b str) -> impl ProcessGroupConnectionsApi + 'b"),
+        "should have RPITIT accessor method: {pg_rs}"
     );
     assert!(
         pg_rs.contains("crate::dynamic::dispatch::ProcessGroupConnectionsApiDispatch {"),

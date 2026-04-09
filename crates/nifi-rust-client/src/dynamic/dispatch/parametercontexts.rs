@@ -33,39 +33,27 @@ impl<'a> ParameterContextsApiDispatch<'a> {
     }
 }
 impl ParameterContextsApi for ParameterContextsApiDispatch<'_> {
-    type ParameterContextsAssetsApi<'b>
-        = ParameterContextsAssetsApiDispatch<'b>
-    where
-        Self: 'b;
-    fn assets<'b>(&'b self, context_id: &'b str) -> Self::ParameterContextsAssetsApi<'b> {
+    fn assets<'b>(&'b self, context_id: &'b str) -> impl ParameterContextsAssetsApi + 'b {
         ParameterContextsAssetsApiDispatch {
             client: self.client(),
             context_id: context_id.to_string(),
             version: self.version(),
         }
     }
-    type ParameterContextsUpdateRequestsApi<'b>
-        = ParameterContextsUpdateRequestsApiDispatch<'b>
-    where
-        Self: 'b;
     fn update_requests<'b>(
         &'b self,
         context_id: &'b str,
-    ) -> Self::ParameterContextsUpdateRequestsApi<'b> {
+    ) -> impl ParameterContextsUpdateRequestsApi + 'b {
         ParameterContextsUpdateRequestsApiDispatch {
             client: self.client(),
             context_id: context_id.to_string(),
             version: self.version(),
         }
     }
-    type ParameterContextsValidationRequestsApi<'b>
-        = ParameterContextsValidationRequestsApiDispatch<'b>
-    where
-        Self: 'b;
     fn validation_requests<'b>(
         &'b self,
         context_id: &'b str,
-    ) -> Self::ParameterContextsValidationRequestsApi<'b> {
+    ) -> impl ParameterContextsValidationRequestsApi + 'b {
         ParameterContextsValidationRequestsApiDispatch {
             client: self.client(),
             context_id: context_id.to_string(),

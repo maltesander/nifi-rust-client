@@ -173,16 +173,13 @@ fn emit_trait_impls(tag: &TagGroup, types_prefix: &str) -> String {
         struct_name = tag.struct_name,
     ));
 
-    // GAT type bindings and accessor methods for sub-groups
+    // Accessor methods for sub-groups (RPITIT — no GAT bindings needed)
     for sg in &tag.sub_groups {
         out.push_str(&format!(
-            "    type {}<'b> = {}<'b> where Self: 'b;\n",
-            sg.struct_name, sg.struct_name,
-        ));
-        out.push_str(&format!(
-            "    fn {accessor}<'b>(&'b self, {param}: &'b str) -> Self::{struct_name}<'b> {{\n        {struct_name} {{ client: self.client, {param} }}\n    }}\n\n",
+            "    fn {accessor}<'b>(&'b self, {param}: &'b str) -> impl {types_prefix}::traits::{trait_name} + 'b {{\n        {struct_name} {{ client: self.client, {param} }}\n    }}\n\n",
             accessor = sg.accessor_fn,
             param = escape_keyword(&sg.primary_param),
+            trait_name = sg.struct_name,
             struct_name = sg.struct_name,
         ));
     }
@@ -858,11 +855,14 @@ mod tests {
             "Missing root trait impl. Content:\n{content}"
         );
 
-        // GAT binding
+        // RPITIT accessor (no GAT binding)
         assert!(
-            content
-                .contains("type ControllerServicesConfigApi<'b> = ControllerServicesConfigApi<'b>"),
-            "Missing GAT binding. Content:\n{content}"
+            !content.contains("type ControllerServicesConfigApi<'b>"),
+            "GAT binding should not be present. Content:\n{content}"
+        );
+        assert!(
+            content.contains("-> impl crate::v2_8_0::traits::ControllerServicesConfigApi + 'b"),
+            "Missing RPITIT accessor. Content:\n{content}"
         );
 
         // Sub-resource trait impl (may be split across lines by rustfmt)

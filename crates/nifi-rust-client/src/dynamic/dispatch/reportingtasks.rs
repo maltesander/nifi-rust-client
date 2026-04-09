@@ -35,55 +35,35 @@ impl<'a> ReportingTasksApiDispatch<'a> {
     }
 }
 impl ReportingTasksApi for ReportingTasksApiDispatch<'_> {
-    type ReportingTasksBulletinsApi<'b>
-        = ReportingTasksBulletinsApiDispatch<'b>
-    where
-        Self: 'b;
-    fn bulletins<'b>(&'b self, id: &'b str) -> Self::ReportingTasksBulletinsApi<'b> {
+    fn bulletins<'b>(&'b self, id: &'b str) -> impl ReportingTasksBulletinsApi + 'b {
         ReportingTasksBulletinsApiDispatch {
             client: self.client(),
             id: id.to_string(),
             version: self.version(),
         }
     }
-    type ReportingTasksConfigApi<'b>
-        = ReportingTasksConfigApiDispatch<'b>
-    where
-        Self: 'b;
-    fn config<'b>(&'b self, id: &'b str) -> Self::ReportingTasksConfigApi<'b> {
+    fn config<'b>(&'b self, id: &'b str) -> impl ReportingTasksConfigApi + 'b {
         ReportingTasksConfigApiDispatch {
             client: self.client(),
             id: id.to_string(),
             version: self.version(),
         }
     }
-    type ReportingTasksDescriptorsApi<'b>
-        = ReportingTasksDescriptorsApiDispatch<'b>
-    where
-        Self: 'b;
-    fn descriptors<'b>(&'b self, id: &'b str) -> Self::ReportingTasksDescriptorsApi<'b> {
+    fn descriptors<'b>(&'b self, id: &'b str) -> impl ReportingTasksDescriptorsApi + 'b {
         ReportingTasksDescriptorsApiDispatch {
             client: self.client(),
             id: id.to_string(),
             version: self.version(),
         }
     }
-    type ReportingTasksRunStatusApi<'b>
-        = ReportingTasksRunStatusApiDispatch<'b>
-    where
-        Self: 'b;
-    fn run_status<'b>(&'b self, id: &'b str) -> Self::ReportingTasksRunStatusApi<'b> {
+    fn run_status<'b>(&'b self, id: &'b str) -> impl ReportingTasksRunStatusApi + 'b {
         ReportingTasksRunStatusApiDispatch {
             client: self.client(),
             id: id.to_string(),
             version: self.version(),
         }
     }
-    type ReportingTasksStateApi<'b>
-        = ReportingTasksStateApiDispatch<'b>
-    where
-        Self: 'b;
-    fn state<'b>(&'b self, id: &'b str) -> Self::ReportingTasksStateApi<'b> {
+    fn state<'b>(&'b self, id: &'b str) -> impl ReportingTasksStateApi + 'b {
         ReportingTasksStateApiDispatch {
             client: self.client(),
             id: id.to_string(),

@@ -1249,183 +1249,148 @@ impl<'a> ProcessGroupsSnippetInstanceApi<'a> {
 }
 #[allow(clippy::too_many_arguments)]
 impl crate::v2_7_2::traits::ProcessGroupsApi for ProcessGroupsApi<'_> {
-    type ProcessGroupsConnectionsApi<'b>
-        = ProcessGroupsConnectionsApi<'b>
-    where
-        Self: 'b;
-    fn connections<'b>(&'b self, id: &'b str) -> Self::ProcessGroupsConnectionsApi<'b> {
+    fn connections<'b>(
+        &'b self,
+        id: &'b str,
+    ) -> impl crate::v2_7_2::traits::ProcessGroupsConnectionsApi + 'b {
         ProcessGroupsConnectionsApi {
             client: self.client,
             id,
         }
     }
-    type ProcessGroupsControllerServicesApi<'b>
-        = ProcessGroupsControllerServicesApi<'b>
-    where
-        Self: 'b;
     fn controller_services<'b>(
         &'b self,
         id: &'b str,
-    ) -> Self::ProcessGroupsControllerServicesApi<'b> {
+    ) -> impl crate::v2_7_2::traits::ProcessGroupsControllerServicesApi + 'b {
         ProcessGroupsControllerServicesApi {
             client: self.client,
             id,
         }
     }
-    type ProcessGroupsCopyApi<'b>
-        = ProcessGroupsCopyApi<'b>
-    where
-        Self: 'b;
-    fn copy<'b>(&'b self, id: &'b str) -> Self::ProcessGroupsCopyApi<'b> {
+    fn copy<'b>(&'b self, id: &'b str) -> impl crate::v2_7_2::traits::ProcessGroupsCopyApi + 'b {
         ProcessGroupsCopyApi {
             client: self.client,
             id,
         }
     }
-    type ProcessGroupsDownloadApi<'b>
-        = ProcessGroupsDownloadApi<'b>
-    where
-        Self: 'b;
-    fn download<'b>(&'b self, id: &'b str) -> Self::ProcessGroupsDownloadApi<'b> {
+    fn download<'b>(
+        &'b self,
+        id: &'b str,
+    ) -> impl crate::v2_7_2::traits::ProcessGroupsDownloadApi + 'b {
         ProcessGroupsDownloadApi {
             client: self.client,
             id,
         }
     }
-    type ProcessGroupsEmptyAllConnectionsRequestsApi<'b>
-        = ProcessGroupsEmptyAllConnectionsRequestsApi<'b>
-    where
-        Self: 'b;
     fn empty_all_connections_requests<'b>(
         &'b self,
         id: &'b str,
-    ) -> Self::ProcessGroupsEmptyAllConnectionsRequestsApi<'b> {
+    ) -> impl crate::v2_7_2::traits::ProcessGroupsEmptyAllConnectionsRequestsApi + 'b {
         ProcessGroupsEmptyAllConnectionsRequestsApi {
             client: self.client,
             id,
         }
     }
-    type ProcessGroupsFlowContentsApi<'b>
-        = ProcessGroupsFlowContentsApi<'b>
-    where
-        Self: 'b;
-    fn flow_contents<'b>(&'b self, id: &'b str) -> Self::ProcessGroupsFlowContentsApi<'b> {
+    fn flow_contents<'b>(
+        &'b self,
+        id: &'b str,
+    ) -> impl crate::v2_7_2::traits::ProcessGroupsFlowContentsApi + 'b {
         ProcessGroupsFlowContentsApi {
             client: self.client,
             id,
         }
     }
-    type ProcessGroupsFunnelsApi<'b>
-        = ProcessGroupsFunnelsApi<'b>
-    where
-        Self: 'b;
-    fn funnels<'b>(&'b self, id: &'b str) -> Self::ProcessGroupsFunnelsApi<'b> {
+    fn funnels<'b>(
+        &'b self,
+        id: &'b str,
+    ) -> impl crate::v2_7_2::traits::ProcessGroupsFunnelsApi + 'b {
         ProcessGroupsFunnelsApi {
             client: self.client,
             id,
         }
     }
-    type ProcessGroupsInputPortsApi<'b>
-        = ProcessGroupsInputPortsApi<'b>
-    where
-        Self: 'b;
-    fn input_ports<'b>(&'b self, id: &'b str) -> Self::ProcessGroupsInputPortsApi<'b> {
+    fn input_ports<'b>(
+        &'b self,
+        id: &'b str,
+    ) -> impl crate::v2_7_2::traits::ProcessGroupsInputPortsApi + 'b {
         ProcessGroupsInputPortsApi {
             client: self.client,
             id,
         }
     }
-    type ProcessGroupsLabelsApi<'b>
-        = ProcessGroupsLabelsApi<'b>
-    where
-        Self: 'b;
-    fn labels<'b>(&'b self, id: &'b str) -> Self::ProcessGroupsLabelsApi<'b> {
+    fn labels<'b>(
+        &'b self,
+        id: &'b str,
+    ) -> impl crate::v2_7_2::traits::ProcessGroupsLabelsApi + 'b {
         ProcessGroupsLabelsApi {
             client: self.client,
             id,
         }
     }
-    type ProcessGroupsLocalModificationsApi<'b>
-        = ProcessGroupsLocalModificationsApi<'b>
-    where
-        Self: 'b;
     fn local_modifications<'b>(
         &'b self,
         id: &'b str,
-    ) -> Self::ProcessGroupsLocalModificationsApi<'b> {
+    ) -> impl crate::v2_7_2::traits::ProcessGroupsLocalModificationsApi + 'b {
         ProcessGroupsLocalModificationsApi {
             client: self.client,
             id,
         }
     }
-    type ProcessGroupsOutputPortsApi<'b>
-        = ProcessGroupsOutputPortsApi<'b>
-    where
-        Self: 'b;
-    fn output_ports<'b>(&'b self, id: &'b str) -> Self::ProcessGroupsOutputPortsApi<'b> {
+    fn output_ports<'b>(
+        &'b self,
+        id: &'b str,
+    ) -> impl crate::v2_7_2::traits::ProcessGroupsOutputPortsApi + 'b {
         ProcessGroupsOutputPortsApi {
             client: self.client,
             id,
         }
     }
-    type ProcessGroupsPasteApi<'b>
-        = ProcessGroupsPasteApi<'b>
-    where
-        Self: 'b;
-    fn paste<'b>(&'b self, id: &'b str) -> Self::ProcessGroupsPasteApi<'b> {
+    fn paste<'b>(&'b self, id: &'b str) -> impl crate::v2_7_2::traits::ProcessGroupsPasteApi + 'b {
         ProcessGroupsPasteApi {
             client: self.client,
             id,
         }
     }
-    type ProcessGroupsProcessGroupsApi<'b>
-        = ProcessGroupsProcessGroupsApi<'b>
-    where
-        Self: 'b;
-    fn process_groups<'b>(&'b self, id: &'b str) -> Self::ProcessGroupsProcessGroupsApi<'b> {
+    fn process_groups<'b>(
+        &'b self,
+        id: &'b str,
+    ) -> impl crate::v2_7_2::traits::ProcessGroupsProcessGroupsApi + 'b {
         ProcessGroupsProcessGroupsApi {
             client: self.client,
             id,
         }
     }
-    type ProcessGroupsProcessorsApi<'b>
-        = ProcessGroupsProcessorsApi<'b>
-    where
-        Self: 'b;
-    fn processors<'b>(&'b self, id: &'b str) -> Self::ProcessGroupsProcessorsApi<'b> {
+    fn processors<'b>(
+        &'b self,
+        id: &'b str,
+    ) -> impl crate::v2_7_2::traits::ProcessGroupsProcessorsApi + 'b {
         ProcessGroupsProcessorsApi {
             client: self.client,
             id,
         }
     }
-    type ProcessGroupsRemoteProcessGroupsApi<'b>
-        = ProcessGroupsRemoteProcessGroupsApi<'b>
-    where
-        Self: 'b;
     fn remote_process_groups<'b>(
         &'b self,
         id: &'b str,
-    ) -> Self::ProcessGroupsRemoteProcessGroupsApi<'b> {
+    ) -> impl crate::v2_7_2::traits::ProcessGroupsRemoteProcessGroupsApi + 'b {
         ProcessGroupsRemoteProcessGroupsApi {
             client: self.client,
             id,
         }
     }
-    type ProcessGroupsReplaceRequestsApi<'b>
-        = ProcessGroupsReplaceRequestsApi<'b>
-    where
-        Self: 'b;
-    fn replace_requests<'b>(&'b self, id: &'b str) -> Self::ProcessGroupsReplaceRequestsApi<'b> {
+    fn replace_requests<'b>(
+        &'b self,
+        id: &'b str,
+    ) -> impl crate::v2_7_2::traits::ProcessGroupsReplaceRequestsApi + 'b {
         ProcessGroupsReplaceRequestsApi {
             client: self.client,
             id,
         }
     }
-    type ProcessGroupsSnippetInstanceApi<'b>
-        = ProcessGroupsSnippetInstanceApi<'b>
-    where
-        Self: 'b;
-    fn snippet_instance<'b>(&'b self, id: &'b str) -> Self::ProcessGroupsSnippetInstanceApi<'b> {
+    fn snippet_instance<'b>(
+        &'b self,
+        id: &'b str,
+    ) -> impl crate::v2_7_2::traits::ProcessGroupsSnippetInstanceApi + 'b {
         ProcessGroupsSnippetInstanceApi {
             client: self.client,
             id,

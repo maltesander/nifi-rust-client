@@ -293,32 +293,23 @@ pub trait ParameterContextsApi {
     ///
     /// # Parameters
     /// - `context_id`: The ID of the Parameter Context
-    type ParameterContextsAssetsApi<'b>: ParameterContextsAssetsApi
-    where
-        Self: 'b;
-    fn assets<'b>(&'b self, context_id: &'b str) -> Self::ParameterContextsAssetsApi<'b>;
+    fn assets<'b>(&'b self, context_id: &'b str) -> impl ParameterContextsAssetsApi + 'b;
     /// Returns a sub-resource accessor for config operations.
     ///
     /// # Parameters
     /// - `context_id`: The ID of the ParameterContext
-    type ParameterContextsUpdateRequestsApi<'b>: ParameterContextsUpdateRequestsApi
-    where
-        Self: 'b;
     fn update_requests<'b>(
         &'b self,
         context_id: &'b str,
-    ) -> Self::ParameterContextsUpdateRequestsApi<'b>;
+    ) -> impl ParameterContextsUpdateRequestsApi + 'b;
     /// Returns a sub-resource accessor for config operations.
     ///
     /// # Parameters
     /// - `context_id`: The ID of the Parameter Context
-    type ParameterContextsValidationRequestsApi<'b>: ParameterContextsValidationRequestsApi
-    where
-        Self: 'b;
     fn validation_requests<'b>(
         &'b self,
         context_id: &'b str,
-    ) -> Self::ParameterContextsValidationRequestsApi<'b>;
+    ) -> impl ParameterContextsValidationRequestsApi + 'b;
     /// Create a Parameter Context
     ///
     /// Calls `POST /nifi-api/parameter-contexts`.

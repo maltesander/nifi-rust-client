@@ -33,33 +33,21 @@ impl<'a> FlowFileQueuesApiDispatch<'a> {
     }
 }
 impl FlowFileQueuesApi for FlowFileQueuesApiDispatch<'_> {
-    type FlowFileQueuesDropRequestsApi<'b>
-        = FlowFileQueuesDropRequestsApiDispatch<'b>
-    where
-        Self: 'b;
-    fn drop_requests<'b>(&'b self, id: &'b str) -> Self::FlowFileQueuesDropRequestsApi<'b> {
+    fn drop_requests<'b>(&'b self, id: &'b str) -> impl FlowFileQueuesDropRequestsApi + 'b {
         FlowFileQueuesDropRequestsApiDispatch {
             client: self.client(),
             id: id.to_string(),
             version: self.version(),
         }
     }
-    type FlowFileQueuesFlowfilesApi<'b>
-        = FlowFileQueuesFlowfilesApiDispatch<'b>
-    where
-        Self: 'b;
-    fn flowfiles<'b>(&'b self, id: &'b str) -> Self::FlowFileQueuesFlowfilesApi<'b> {
+    fn flowfiles<'b>(&'b self, id: &'b str) -> impl FlowFileQueuesFlowfilesApi + 'b {
         FlowFileQueuesFlowfilesApiDispatch {
             client: self.client(),
             id: id.to_string(),
             version: self.version(),
         }
     }
-    type FlowFileQueuesListingRequestsApi<'b>
-        = FlowFileQueuesListingRequestsApiDispatch<'b>
-    where
-        Self: 'b;
-    fn listing_requests<'b>(&'b self, id: &'b str) -> Self::FlowFileQueuesListingRequestsApi<'b> {
+    fn listing_requests<'b>(&'b self, id: &'b str) -> impl FlowFileQueuesListingRequestsApi + 'b {
         FlowFileQueuesListingRequestsApiDispatch {
             client: self.client(),
             id: id.to_string(),

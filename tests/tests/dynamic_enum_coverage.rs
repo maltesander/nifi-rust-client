@@ -1,5 +1,7 @@
 #![cfg(feature = "dynamic")]
 
+use nifi_rust_client::client;
+
 mod helpers;
 
 #[cfg(feature = "nifi-2-8-0")]

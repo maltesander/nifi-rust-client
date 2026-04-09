@@ -50,15 +50,10 @@ fn emit_trait_file(tag_group: &crate::parser::TagGroup, types_prefix: &str) -> S
     out.push_str("#[allow(unused_variables, async_fn_in_trait, clippy::too_many_arguments)]\n");
     out.push_str(&format!("pub trait {} {{\n", tag_group.struct_name));
 
-    // GAT declarations and accessor methods for sub-groups
+    // Accessor methods for sub-groups (RPITIT — no GAT declarations needed)
     for sg in &tag_group.sub_groups {
         out.push_str(&format!(
-            "    type {}<'b>: {} where Self: 'b;\n",
-            sg.struct_name, sg.struct_name
-        ));
-        // Build accessor params: the primary param
-        out.push_str(&format!(
-            "    fn {}<'b>(&'b self, {}: &'b str) -> Self::{}<'b>;\n\n",
+            "    fn {}<'b>(&'b self, {}: &'b str) -> impl {} + 'b;\n\n",
             sg.accessor_fn,
             escape_keyword(&sg.primary_param),
             sg.struct_name
@@ -263,13 +258,14 @@ mod tests {
             .find(|(f, _)| f == "controller_services.rs")
             .unwrap();
 
-        // Root trait with GAT
+        // Root trait with RPITIT accessor
         assert!(content.contains("pub trait ControllerServicesApi"));
         assert!(
-            content.contains("type ControllerServicesConfigApi<'b>: ControllerServicesConfigApi")
+            !content.contains("type ControllerServicesConfigApi<'b>"),
+            "GAT declaration should not be present"
         );
         assert!(content.contains(
-            "fn config<'b>(&'b self, id: &'b str) -> Self::ControllerServicesConfigApi<'b>"
+            "fn config<'b>(&'b self, id: &'b str) -> impl ControllerServicesConfigApi + 'b"
         ));
 
         // Root method

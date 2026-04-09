@@ -230,42 +230,27 @@ pub trait RemoteProcessGroupsApi {
     ///
     /// # Parameters
     /// - `id`: The remote process group id.
-    type RemoteProcessGroupsBulletinsApi<'b>: RemoteProcessGroupsBulletinsApi
-    where
-        Self: 'b;
-    fn bulletins<'b>(&'b self, id: &'b str) -> Self::RemoteProcessGroupsBulletinsApi<'b>;
+    fn bulletins<'b>(&'b self, id: &'b str) -> impl RemoteProcessGroupsBulletinsApi + 'b;
     /// Returns a sub-resource accessor for config operations.
     ///
     /// # Parameters
     /// - `id`: The remote process group id.
-    type RemoteProcessGroupsInputPortsApi<'b>: RemoteProcessGroupsInputPortsApi
-    where
-        Self: 'b;
-    fn input_ports<'b>(&'b self, id: &'b str) -> Self::RemoteProcessGroupsInputPortsApi<'b>;
+    fn input_ports<'b>(&'b self, id: &'b str) -> impl RemoteProcessGroupsInputPortsApi + 'b;
     /// Returns a sub-resource accessor for config operations.
     ///
     /// # Parameters
     /// - `id`: The remote process group id.
-    type RemoteProcessGroupsOutputPortsApi<'b>: RemoteProcessGroupsOutputPortsApi
-    where
-        Self: 'b;
-    fn output_ports<'b>(&'b self, id: &'b str) -> Self::RemoteProcessGroupsOutputPortsApi<'b>;
+    fn output_ports<'b>(&'b self, id: &'b str) -> impl RemoteProcessGroupsOutputPortsApi + 'b;
     /// Returns a sub-resource accessor for config operations.
     ///
     /// # Parameters
     /// - `id`: The process group id.
-    type RemoteProcessGroupsRunStatusApi<'b>: RemoteProcessGroupsRunStatusApi
-    where
-        Self: 'b;
-    fn run_status<'b>(&'b self, id: &'b str) -> Self::RemoteProcessGroupsRunStatusApi<'b>;
+    fn run_status<'b>(&'b self, id: &'b str) -> impl RemoteProcessGroupsRunStatusApi + 'b;
     /// Returns a sub-resource accessor for config operations.
     ///
     /// # Parameters
     /// - `id`: The processor id.
-    type RemoteProcessGroupsStateApi<'b>: RemoteProcessGroupsStateApi
-    where
-        Self: 'b;
-    fn state<'b>(&'b self, id: &'b str) -> Self::RemoteProcessGroupsStateApi<'b>;
+    fn state<'b>(&'b self, id: &'b str) -> impl RemoteProcessGroupsStateApi + 'b;
     /// Gets a remote process group
     ///
     /// Calls `GET /nifi-api/remote-process-groups/{id}`.

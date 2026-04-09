@@ -12,11 +12,7 @@ pub(crate) struct V2_6_0ProvenanceEventsApi<'a> {
 }
 #[allow(unused_variables)]
 impl ProvenanceEventsApi for V2_6_0ProvenanceEventsApi<'_> {
-    type ProvenanceEventsContentApi<'b>
-        = crate::dynamic::dispatch::ProvenanceEventsContentApiDispatch<'b>
-    where
-        Self: 'b;
-    fn content<'b>(&'b self, id: &'b str) -> Self::ProvenanceEventsContentApi<'b> {
+    fn content<'b>(&'b self, id: &'b str) -> impl ProvenanceEventsContentApi + 'b {
         crate::dynamic::dispatch::ProvenanceEventsContentApiDispatch {
             client: self.client,
             id: id.to_string(),

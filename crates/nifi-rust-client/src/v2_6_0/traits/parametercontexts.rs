@@ -64,24 +64,15 @@ pub trait ParameterContextsValidationRequestsApi {
 /// The ParameterContexts API.
 #[allow(unused_variables, async_fn_in_trait, clippy::too_many_arguments)]
 pub trait ParameterContextsApi {
-    type ParameterContextsAssetsApi<'b>: ParameterContextsAssetsApi
-    where
-        Self: 'b;
-    fn assets<'b>(&'b self, context_id: &'b str) -> Self::ParameterContextsAssetsApi<'b>;
-    type ParameterContextsUpdateRequestsApi<'b>: ParameterContextsUpdateRequestsApi
-    where
-        Self: 'b;
+    fn assets<'b>(&'b self, context_id: &'b str) -> impl ParameterContextsAssetsApi + 'b;
     fn update_requests<'b>(
         &'b self,
         context_id: &'b str,
-    ) -> Self::ParameterContextsUpdateRequestsApi<'b>;
-    type ParameterContextsValidationRequestsApi<'b>: ParameterContextsValidationRequestsApi
-    where
-        Self: 'b;
+    ) -> impl ParameterContextsUpdateRequestsApi + 'b;
     fn validation_requests<'b>(
         &'b self,
         context_id: &'b str,
-    ) -> Self::ParameterContextsValidationRequestsApi<'b>;
+    ) -> impl ParameterContextsValidationRequestsApi + 'b;
     /// Create a Parameter Context
     async fn create_parameter_context(
         &self,

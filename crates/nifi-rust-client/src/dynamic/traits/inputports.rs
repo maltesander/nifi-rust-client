@@ -65,18 +65,12 @@ pub trait InputPortsApi {
     ///
     /// # Parameters
     /// - `id`: The input port id.
-    type InputPortsBulletinsApi<'b>: InputPortsBulletinsApi
-    where
-        Self: 'b;
-    fn bulletins<'b>(&'b self, id: &'b str) -> Self::InputPortsBulletinsApi<'b>;
+    fn bulletins<'b>(&'b self, id: &'b str) -> impl InputPortsBulletinsApi + 'b;
     /// Returns a sub-resource accessor for config operations.
     ///
     /// # Parameters
     /// - `id`: The port id.
-    type InputPortsRunStatusApi<'b>: InputPortsRunStatusApi
-    where
-        Self: 'b;
-    fn run_status<'b>(&'b self, id: &'b str) -> Self::InputPortsRunStatusApi<'b>;
+    fn run_status<'b>(&'b self, id: &'b str) -> impl InputPortsRunStatusApi + 'b;
     /// Gets an input port
     ///
     /// Calls `GET /nifi-api/input-ports/{id}`.

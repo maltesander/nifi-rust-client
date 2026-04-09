@@ -83,34 +83,13 @@ pub trait ProcessorsThreadsApi {
 /// The Processors API.
 #[allow(unused_variables, async_fn_in_trait, clippy::too_many_arguments)]
 pub trait ProcessorsApi {
-    type ProcessorsBulletinsApi<'b>: ProcessorsBulletinsApi
-    where
-        Self: 'b;
-    fn bulletins<'b>(&'b self, id: &'b str) -> Self::ProcessorsBulletinsApi<'b>;
-    type ProcessorsConfigApi<'b>: ProcessorsConfigApi
-    where
-        Self: 'b;
-    fn config<'b>(&'b self, id: &'b str) -> Self::ProcessorsConfigApi<'b>;
-    type ProcessorsDescriptorsApi<'b>: ProcessorsDescriptorsApi
-    where
-        Self: 'b;
-    fn descriptors<'b>(&'b self, id: &'b str) -> Self::ProcessorsDescriptorsApi<'b>;
-    type ProcessorsDiagnosticsApi<'b>: ProcessorsDiagnosticsApi
-    where
-        Self: 'b;
-    fn diagnostics<'b>(&'b self, id: &'b str) -> Self::ProcessorsDiagnosticsApi<'b>;
-    type ProcessorsRunStatusApi<'b>: ProcessorsRunStatusApi
-    where
-        Self: 'b;
-    fn run_status<'b>(&'b self, id: &'b str) -> Self::ProcessorsRunStatusApi<'b>;
-    type ProcessorsStateApi<'b>: ProcessorsStateApi
-    where
-        Self: 'b;
-    fn state<'b>(&'b self, id: &'b str) -> Self::ProcessorsStateApi<'b>;
-    type ProcessorsThreadsApi<'b>: ProcessorsThreadsApi
-    where
-        Self: 'b;
-    fn threads<'b>(&'b self, id: &'b str) -> Self::ProcessorsThreadsApi<'b>;
+    fn bulletins<'b>(&'b self, id: &'b str) -> impl ProcessorsBulletinsApi + 'b;
+    fn config<'b>(&'b self, id: &'b str) -> impl ProcessorsConfigApi + 'b;
+    fn descriptors<'b>(&'b self, id: &'b str) -> impl ProcessorsDescriptorsApi + 'b;
+    fn diagnostics<'b>(&'b self, id: &'b str) -> impl ProcessorsDiagnosticsApi + 'b;
+    fn run_status<'b>(&'b self, id: &'b str) -> impl ProcessorsRunStatusApi + 'b;
+    fn state<'b>(&'b self, id: &'b str) -> impl ProcessorsStateApi + 'b;
+    fn threads<'b>(&'b self, id: &'b str) -> impl ProcessorsThreadsApi + 'b;
     /// Submits a query to retrieve the run status details of all processors that are in the given list of Processor IDs
     async fn get_processor_run_status_details(
         &self,

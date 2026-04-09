@@ -160,34 +160,13 @@ pub trait FlowStatusApi {
 /// The Flow API.
 #[allow(unused_variables, async_fn_in_trait, clippy::too_many_arguments)]
 pub trait FlowApi {
-    type FlowBranchesApi<'b>: FlowBranchesApi
-    where
-        Self: 'b;
-    fn branches<'b>(&'b self, id: &'b str) -> Self::FlowBranchesApi<'b>;
-    type FlowBreadcrumbsApi<'b>: FlowBreadcrumbsApi
-    where
-        Self: 'b;
-    fn breadcrumbs<'b>(&'b self, id: &'b str) -> Self::FlowBreadcrumbsApi<'b>;
-    type FlowBucketsApi<'b>: FlowBucketsApi
-    where
-        Self: 'b;
-    fn buckets<'b>(&'b self, id: &'b str) -> Self::FlowBucketsApi<'b>;
-    type FlowBulletinsApi<'b>: FlowBulletinsApi
-    where
-        Self: 'b;
-    fn bulletins<'b>(&'b self, id: &'b str) -> Self::FlowBulletinsApi<'b>;
-    type FlowControllerServicesApi<'b>: FlowControllerServicesApi
-    where
-        Self: 'b;
-    fn controller_services<'b>(&'b self, id: &'b str) -> Self::FlowControllerServicesApi<'b>;
-    type FlowStatisticsApi<'b>: FlowStatisticsApi
-    where
-        Self: 'b;
-    fn statistics<'b>(&'b self, id: &'b str) -> Self::FlowStatisticsApi<'b>;
-    type FlowStatusApi<'b>: FlowStatusApi
-    where
-        Self: 'b;
-    fn status<'b>(&'b self, id: &'b str) -> Self::FlowStatusApi<'b>;
+    fn branches<'b>(&'b self, id: &'b str) -> impl FlowBranchesApi + 'b;
+    fn breadcrumbs<'b>(&'b self, id: &'b str) -> impl FlowBreadcrumbsApi + 'b;
+    fn buckets<'b>(&'b self, id: &'b str) -> impl FlowBucketsApi + 'b;
+    fn bulletins<'b>(&'b self, id: &'b str) -> impl FlowBulletinsApi + 'b;
+    fn controller_services<'b>(&'b self, id: &'b str) -> impl FlowControllerServicesApi + 'b;
+    fn statistics<'b>(&'b self, id: &'b str) -> impl FlowStatisticsApi + 'b;
+    fn status<'b>(&'b self, id: &'b str) -> impl FlowStatusApi + 'b;
     /// Retrieves details about this NiFi to put in the About dialog
     async fn get_about_info(&self) -> Result<crate::v2_7_2::types::AboutDto, NifiError>;
     /// Retrieves the additional details for the specified component type.

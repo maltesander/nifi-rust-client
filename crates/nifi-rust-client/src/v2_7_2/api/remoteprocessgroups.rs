@@ -435,51 +435,46 @@ impl<'a> RemoteProcessGroupsStateApi<'a> {
 }
 #[allow(clippy::too_many_arguments)]
 impl crate::v2_7_2::traits::RemoteProcessGroupsApi for RemoteProcessGroupsApi<'_> {
-    type RemoteProcessGroupsBulletinsApi<'b>
-        = RemoteProcessGroupsBulletinsApi<'b>
-    where
-        Self: 'b;
-    fn bulletins<'b>(&'b self, id: &'b str) -> Self::RemoteProcessGroupsBulletinsApi<'b> {
+    fn bulletins<'b>(
+        &'b self,
+        id: &'b str,
+    ) -> impl crate::v2_7_2::traits::RemoteProcessGroupsBulletinsApi + 'b {
         RemoteProcessGroupsBulletinsApi {
             client: self.client,
             id,
         }
     }
-    type RemoteProcessGroupsInputPortsApi<'b>
-        = RemoteProcessGroupsInputPortsApi<'b>
-    where
-        Self: 'b;
-    fn input_ports<'b>(&'b self, id: &'b str) -> Self::RemoteProcessGroupsInputPortsApi<'b> {
+    fn input_ports<'b>(
+        &'b self,
+        id: &'b str,
+    ) -> impl crate::v2_7_2::traits::RemoteProcessGroupsInputPortsApi + 'b {
         RemoteProcessGroupsInputPortsApi {
             client: self.client,
             id,
         }
     }
-    type RemoteProcessGroupsOutputPortsApi<'b>
-        = RemoteProcessGroupsOutputPortsApi<'b>
-    where
-        Self: 'b;
-    fn output_ports<'b>(&'b self, id: &'b str) -> Self::RemoteProcessGroupsOutputPortsApi<'b> {
+    fn output_ports<'b>(
+        &'b self,
+        id: &'b str,
+    ) -> impl crate::v2_7_2::traits::RemoteProcessGroupsOutputPortsApi + 'b {
         RemoteProcessGroupsOutputPortsApi {
             client: self.client,
             id,
         }
     }
-    type RemoteProcessGroupsRunStatusApi<'b>
-        = RemoteProcessGroupsRunStatusApi<'b>
-    where
-        Self: 'b;
-    fn run_status<'b>(&'b self, id: &'b str) -> Self::RemoteProcessGroupsRunStatusApi<'b> {
+    fn run_status<'b>(
+        &'b self,
+        id: &'b str,
+    ) -> impl crate::v2_7_2::traits::RemoteProcessGroupsRunStatusApi + 'b {
         RemoteProcessGroupsRunStatusApi {
             client: self.client,
             id,
         }
     }
-    type RemoteProcessGroupsStateApi<'b>
-        = RemoteProcessGroupsStateApi<'b>
-    where
-        Self: 'b;
-    fn state<'b>(&'b self, id: &'b str) -> Self::RemoteProcessGroupsStateApi<'b> {
+    fn state<'b>(
+        &'b self,
+        id: &'b str,
+    ) -> impl crate::v2_7_2::traits::RemoteProcessGroupsStateApi + 'b {
         RemoteProcessGroupsStateApi {
             client: self.client,
             id,

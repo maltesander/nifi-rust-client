@@ -413,41 +413,34 @@ impl<'a> ReportingTasksStateApi<'a> {
 }
 #[allow(clippy::too_many_arguments)]
 impl crate::v2_6_0::traits::ReportingTasksApi for ReportingTasksApi<'_> {
-    type ReportingTasksConfigApi<'b>
-        = ReportingTasksConfigApi<'b>
-    where
-        Self: 'b;
-    fn config<'b>(&'b self, id: &'b str) -> Self::ReportingTasksConfigApi<'b> {
+    fn config<'b>(
+        &'b self,
+        id: &'b str,
+    ) -> impl crate::v2_6_0::traits::ReportingTasksConfigApi + 'b {
         ReportingTasksConfigApi {
             client: self.client,
             id,
         }
     }
-    type ReportingTasksDescriptorsApi<'b>
-        = ReportingTasksDescriptorsApi<'b>
-    where
-        Self: 'b;
-    fn descriptors<'b>(&'b self, id: &'b str) -> Self::ReportingTasksDescriptorsApi<'b> {
+    fn descriptors<'b>(
+        &'b self,
+        id: &'b str,
+    ) -> impl crate::v2_6_0::traits::ReportingTasksDescriptorsApi + 'b {
         ReportingTasksDescriptorsApi {
             client: self.client,
             id,
         }
     }
-    type ReportingTasksRunStatusApi<'b>
-        = ReportingTasksRunStatusApi<'b>
-    where
-        Self: 'b;
-    fn run_status<'b>(&'b self, id: &'b str) -> Self::ReportingTasksRunStatusApi<'b> {
+    fn run_status<'b>(
+        &'b self,
+        id: &'b str,
+    ) -> impl crate::v2_6_0::traits::ReportingTasksRunStatusApi + 'b {
         ReportingTasksRunStatusApi {
             client: self.client,
             id,
         }
     }
-    type ReportingTasksStateApi<'b>
-        = ReportingTasksStateApi<'b>
-    where
-        Self: 'b;
-    fn state<'b>(&'b self, id: &'b str) -> Self::ReportingTasksStateApi<'b> {
+    fn state<'b>(&'b self, id: &'b str) -> impl crate::v2_6_0::traits::ReportingTasksStateApi + 'b {
         ReportingTasksStateApi {
             client: self.client,
             id,

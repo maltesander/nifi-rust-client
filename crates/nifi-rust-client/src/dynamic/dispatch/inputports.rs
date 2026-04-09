@@ -32,22 +32,14 @@ impl<'a> InputPortsApiDispatch<'a> {
     }
 }
 impl InputPortsApi for InputPortsApiDispatch<'_> {
-    type InputPortsBulletinsApi<'b>
-        = InputPortsBulletinsApiDispatch<'b>
-    where
-        Self: 'b;
-    fn bulletins<'b>(&'b self, id: &'b str) -> Self::InputPortsBulletinsApi<'b> {
+    fn bulletins<'b>(&'b self, id: &'b str) -> impl InputPortsBulletinsApi + 'b {
         InputPortsBulletinsApiDispatch {
             client: self.client(),
             id: id.to_string(),
             version: self.version(),
         }
     }
-    type InputPortsRunStatusApi<'b>
-        = InputPortsRunStatusApiDispatch<'b>
-    where
-        Self: 'b;
-    fn run_status<'b>(&'b self, id: &'b str) -> Self::InputPortsRunStatusApi<'b> {
+    fn run_status<'b>(&'b self, id: &'b str) -> impl InputPortsRunStatusApi + 'b {
         InputPortsRunStatusApiDispatch {
             client: self.client(),
             id: id.to_string(),

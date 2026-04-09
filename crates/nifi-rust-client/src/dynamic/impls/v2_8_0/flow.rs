@@ -24,77 +24,49 @@ pub(crate) struct V2_8_0FlowApi<'a> {
 }
 #[allow(unused_variables)]
 impl FlowApi for V2_8_0FlowApi<'_> {
-    type FlowBranchesApi<'b>
-        = crate::dynamic::dispatch::FlowBranchesApiDispatch<'b>
-    where
-        Self: 'b;
-    fn branches<'b>(&'b self, id: &'b str) -> Self::FlowBranchesApi<'b> {
+    fn branches<'b>(&'b self, id: &'b str) -> impl FlowBranchesApi + 'b {
         crate::dynamic::dispatch::FlowBranchesApiDispatch {
             client: self.client,
             id: id.to_string(),
             version: crate::dynamic::DetectedVersion::V2_8_0,
         }
     }
-    type FlowBreadcrumbsApi<'b>
-        = crate::dynamic::dispatch::FlowBreadcrumbsApiDispatch<'b>
-    where
-        Self: 'b;
-    fn breadcrumbs<'b>(&'b self, id: &'b str) -> Self::FlowBreadcrumbsApi<'b> {
+    fn breadcrumbs<'b>(&'b self, id: &'b str) -> impl FlowBreadcrumbsApi + 'b {
         crate::dynamic::dispatch::FlowBreadcrumbsApiDispatch {
             client: self.client,
             id: id.to_string(),
             version: crate::dynamic::DetectedVersion::V2_8_0,
         }
     }
-    type FlowBucketsApi<'b>
-        = crate::dynamic::dispatch::FlowBucketsApiDispatch<'b>
-    where
-        Self: 'b;
-    fn buckets<'b>(&'b self, id: &'b str) -> Self::FlowBucketsApi<'b> {
+    fn buckets<'b>(&'b self, id: &'b str) -> impl FlowBucketsApi + 'b {
         crate::dynamic::dispatch::FlowBucketsApiDispatch {
             client: self.client,
             id: id.to_string(),
             version: crate::dynamic::DetectedVersion::V2_8_0,
         }
     }
-    type FlowBulletinsApi<'b>
-        = crate::dynamic::dispatch::FlowBulletinsApiDispatch<'b>
-    where
-        Self: 'b;
-    fn bulletins<'b>(&'b self, id: &'b str) -> Self::FlowBulletinsApi<'b> {
+    fn bulletins<'b>(&'b self, id: &'b str) -> impl FlowBulletinsApi + 'b {
         crate::dynamic::dispatch::FlowBulletinsApiDispatch {
             client: self.client,
             id: id.to_string(),
             version: crate::dynamic::DetectedVersion::V2_8_0,
         }
     }
-    type FlowControllerServicesApi<'b>
-        = crate::dynamic::dispatch::FlowControllerServicesApiDispatch<'b>
-    where
-        Self: 'b;
-    fn controller_services<'b>(&'b self, id: &'b str) -> Self::FlowControllerServicesApi<'b> {
+    fn controller_services<'b>(&'b self, id: &'b str) -> impl FlowControllerServicesApi + 'b {
         crate::dynamic::dispatch::FlowControllerServicesApiDispatch {
             client: self.client,
             id: id.to_string(),
             version: crate::dynamic::DetectedVersion::V2_8_0,
         }
     }
-    type FlowStatisticsApi<'b>
-        = crate::dynamic::dispatch::FlowStatisticsApiDispatch<'b>
-    where
-        Self: 'b;
-    fn statistics<'b>(&'b self, id: &'b str) -> Self::FlowStatisticsApi<'b> {
+    fn statistics<'b>(&'b self, id: &'b str) -> impl FlowStatisticsApi + 'b {
         crate::dynamic::dispatch::FlowStatisticsApiDispatch {
             client: self.client,
             id: id.to_string(),
             version: crate::dynamic::DetectedVersion::V2_8_0,
         }
     }
-    type FlowStatusApi<'b>
-        = crate::dynamic::dispatch::FlowStatusApiDispatch<'b>
-    where
-        Self: 'b;
-    fn status<'b>(&'b self, id: &'b str) -> Self::FlowStatusApi<'b> {
+    fn status<'b>(&'b self, id: &'b str) -> impl FlowStatusApi + 'b {
         crate::dynamic::dispatch::FlowStatusApiDispatch {
             client: self.client,
             id: id.to_string(),

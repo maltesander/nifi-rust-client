@@ -31,11 +31,7 @@ impl<'a> VersionsApiDispatch<'a> {
     }
 }
 impl VersionsApi for VersionsApiDispatch<'_> {
-    type VersionsDownloadApi<'b>
-        = VersionsDownloadApiDispatch<'b>
-    where
-        Self: 'b;
-    fn download<'b>(&'b self, id: &'b str) -> Self::VersionsDownloadApi<'b> {
+    fn download<'b>(&'b self, id: &'b str) -> impl VersionsDownloadApi + 'b {
         VersionsDownloadApiDispatch {
             client: self.client(),
             id: id.to_string(),

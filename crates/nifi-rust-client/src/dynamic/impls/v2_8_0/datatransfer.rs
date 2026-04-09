@@ -12,11 +12,7 @@ pub(crate) struct V2_8_0DataTransferApi<'a> {
 }
 #[allow(unused_variables)]
 impl DataTransferApi for V2_8_0DataTransferApi<'_> {
-    type DataTransferTransactionsApi<'b>
-        = crate::dynamic::dispatch::DataTransferTransactionsApiDispatch<'b>
-    where
-        Self: 'b;
-    fn transactions<'b>(&'b self, port_id: &'b str) -> Self::DataTransferTransactionsApi<'b> {
+    fn transactions<'b>(&'b self, port_id: &'b str) -> impl DataTransferTransactionsApi + 'b {
         crate::dynamic::dispatch::DataTransferTransactionsApiDispatch {
             client: self.client,
             port_id: port_id.to_string(),

@@ -726,152 +726,99 @@ pub trait ProcessGroupsApi {
     ///
     /// # Parameters
     /// - `id`: The process group id.
-    type ProcessGroupsConnectionsApi<'b>: ProcessGroupsConnectionsApi
-    where
-        Self: 'b;
-    fn connections<'b>(&'b self, id: &'b str) -> Self::ProcessGroupsConnectionsApi<'b>;
+    fn connections<'b>(&'b self, id: &'b str) -> impl ProcessGroupsConnectionsApi + 'b;
     /// Returns a sub-resource accessor for config operations.
     ///
     /// # Parameters
     /// - `id`: The process group id.
-    type ProcessGroupsControllerServicesApi<'b>: ProcessGroupsControllerServicesApi
-    where
-        Self: 'b;
     fn controller_services<'b>(
         &'b self,
         id: &'b str,
-    ) -> Self::ProcessGroupsControllerServicesApi<'b>;
+    ) -> impl ProcessGroupsControllerServicesApi + 'b;
     /// Returns a sub-resource accessor for config operations.
     ///
     /// # Parameters
     /// - `id`: The process group id.
-    type ProcessGroupsCopyApi<'b>: ProcessGroupsCopyApi
-    where
-        Self: 'b;
-    fn copy<'b>(&'b self, id: &'b str) -> Self::ProcessGroupsCopyApi<'b>;
+    fn copy<'b>(&'b self, id: &'b str) -> impl ProcessGroupsCopyApi + 'b;
     /// Returns a sub-resource accessor for config operations.
     ///
     /// # Parameters
     /// - `id`: The process group id.
-    type ProcessGroupsDownloadApi<'b>: ProcessGroupsDownloadApi
-    where
-        Self: 'b;
-    fn download<'b>(&'b self, id: &'b str) -> Self::ProcessGroupsDownloadApi<'b>;
+    fn download<'b>(&'b self, id: &'b str) -> impl ProcessGroupsDownloadApi + 'b;
     /// Returns a sub-resource accessor for config operations.
     ///
     /// # Parameters
     /// - `id`: The process group id.
-    type ProcessGroupsEmptyAllConnectionsRequestsApi<
-        'b,
-    >: ProcessGroupsEmptyAllConnectionsRequestsApi
-    where
-        Self: 'b;
     fn empty_all_connections_requests<'b>(
         &'b self,
         id: &'b str,
-    ) -> Self::ProcessGroupsEmptyAllConnectionsRequestsApi<'b>;
+    ) -> impl ProcessGroupsEmptyAllConnectionsRequestsApi + 'b;
     /// Returns a sub-resource accessor for config operations.
     ///
     /// # Parameters
     /// - `id`: The process group id.
-    type ProcessGroupsFlowContentsApi<'b>: ProcessGroupsFlowContentsApi
-    where
-        Self: 'b;
-    fn flow_contents<'b>(&'b self, id: &'b str) -> Self::ProcessGroupsFlowContentsApi<'b>;
+    fn flow_contents<'b>(&'b self, id: &'b str) -> impl ProcessGroupsFlowContentsApi + 'b;
     /// Returns a sub-resource accessor for config operations.
     ///
     /// # Parameters
     /// - `id`: The process group id.
-    type ProcessGroupsFunnelsApi<'b>: ProcessGroupsFunnelsApi
-    where
-        Self: 'b;
-    fn funnels<'b>(&'b self, id: &'b str) -> Self::ProcessGroupsFunnelsApi<'b>;
+    fn funnels<'b>(&'b self, id: &'b str) -> impl ProcessGroupsFunnelsApi + 'b;
     /// Returns a sub-resource accessor for config operations.
     ///
     /// # Parameters
     /// - `id`: The process group id.
-    type ProcessGroupsInputPortsApi<'b>: ProcessGroupsInputPortsApi
-    where
-        Self: 'b;
-    fn input_ports<'b>(&'b self, id: &'b str) -> Self::ProcessGroupsInputPortsApi<'b>;
+    fn input_ports<'b>(&'b self, id: &'b str) -> impl ProcessGroupsInputPortsApi + 'b;
     /// Returns a sub-resource accessor for config operations.
     ///
     /// # Parameters
     /// - `id`: The process group id.
-    type ProcessGroupsLabelsApi<'b>: ProcessGroupsLabelsApi
-    where
-        Self: 'b;
-    fn labels<'b>(&'b self, id: &'b str) -> Self::ProcessGroupsLabelsApi<'b>;
+    fn labels<'b>(&'b self, id: &'b str) -> impl ProcessGroupsLabelsApi + 'b;
     /// Returns a sub-resource accessor for config operations.
     ///
     /// # Parameters
     /// - `id`: The process group id.
-    type ProcessGroupsLocalModificationsApi<'b>: ProcessGroupsLocalModificationsApi
-    where
-        Self: 'b;
     fn local_modifications<'b>(
         &'b self,
         id: &'b str,
-    ) -> Self::ProcessGroupsLocalModificationsApi<'b>;
+    ) -> impl ProcessGroupsLocalModificationsApi + 'b;
     /// Returns a sub-resource accessor for config operations.
     ///
     /// # Parameters
     /// - `id`: The process group id.
-    type ProcessGroupsOutputPortsApi<'b>: ProcessGroupsOutputPortsApi
-    where
-        Self: 'b;
-    fn output_ports<'b>(&'b self, id: &'b str) -> Self::ProcessGroupsOutputPortsApi<'b>;
+    fn output_ports<'b>(&'b self, id: &'b str) -> impl ProcessGroupsOutputPortsApi + 'b;
     /// Returns a sub-resource accessor for config operations.
     ///
     /// # Parameters
     /// - `id`: The process group id.
-    type ProcessGroupsPasteApi<'b>: ProcessGroupsPasteApi
-    where
-        Self: 'b;
-    fn paste<'b>(&'b self, id: &'b str) -> Self::ProcessGroupsPasteApi<'b>;
+    fn paste<'b>(&'b self, id: &'b str) -> impl ProcessGroupsPasteApi + 'b;
     /// Returns a sub-resource accessor for config operations.
     ///
     /// # Parameters
     /// - `id`: The process group id.
-    type ProcessGroupsProcessGroupsApi<'b>: ProcessGroupsProcessGroupsApi
-    where
-        Self: 'b;
-    fn process_groups<'b>(&'b self, id: &'b str) -> Self::ProcessGroupsProcessGroupsApi<'b>;
+    fn process_groups<'b>(&'b self, id: &'b str) -> impl ProcessGroupsProcessGroupsApi + 'b;
     /// Returns a sub-resource accessor for config operations.
     ///
     /// # Parameters
     /// - `id`: The process group id.
-    type ProcessGroupsProcessorsApi<'b>: ProcessGroupsProcessorsApi
-    where
-        Self: 'b;
-    fn processors<'b>(&'b self, id: &'b str) -> Self::ProcessGroupsProcessorsApi<'b>;
+    fn processors<'b>(&'b self, id: &'b str) -> impl ProcessGroupsProcessorsApi + 'b;
     /// Returns a sub-resource accessor for config operations.
     ///
     /// # Parameters
     /// - `id`: The process group id.
-    type ProcessGroupsRemoteProcessGroupsApi<'b>: ProcessGroupsRemoteProcessGroupsApi
-    where
-        Self: 'b;
     fn remote_process_groups<'b>(
         &'b self,
         id: &'b str,
-    ) -> Self::ProcessGroupsRemoteProcessGroupsApi<'b>;
+    ) -> impl ProcessGroupsRemoteProcessGroupsApi + 'b;
     /// Returns a sub-resource accessor for config operations.
     ///
     /// # Parameters
     /// - `id`: The process group id.
-    type ProcessGroupsReplaceRequestsApi<'b>: ProcessGroupsReplaceRequestsApi
-    where
-        Self: 'b;
-    fn replace_requests<'b>(&'b self, id: &'b str) -> Self::ProcessGroupsReplaceRequestsApi<'b>;
+    fn replace_requests<'b>(&'b self, id: &'b str) -> impl ProcessGroupsReplaceRequestsApi + 'b;
     /// Returns a sub-resource accessor for config operations.
     ///
     /// # Parameters
     /// - `id`: The process group id.
-    type ProcessGroupsSnippetInstanceApi<'b>: ProcessGroupsSnippetInstanceApi
-    where
-        Self: 'b;
-    fn snippet_instance<'b>(&'b self, id: &'b str) -> Self::ProcessGroupsSnippetInstanceApi<'b>;
+    fn snippet_instance<'b>(&'b self, id: &'b str) -> impl ProcessGroupsSnippetInstanceApi + 'b;
     /// Deletes the Replace Request with the given ID
     ///
     /// Deletes the Replace Request with the given ID. After a request is created via a POST to /process-groups/{id}/replace-requests, it is expected that the client will properly clean up the request by DELETE'ing it, once the Replace process has completed. If the request is deleted before the request completes, then the Replace request will finish the step that it is currently performing and then will cancel any subsequent steps. Note: This endpoint is subject to change as NiFi and it's REST API evolve.

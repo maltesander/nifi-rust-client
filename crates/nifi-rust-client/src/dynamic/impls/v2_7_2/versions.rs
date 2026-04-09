@@ -12,11 +12,7 @@ pub(crate) struct V2_7_2VersionsApi<'a> {
 }
 #[allow(unused_variables)]
 impl VersionsApi for V2_7_2VersionsApi<'_> {
-    type VersionsDownloadApi<'b>
-        = crate::dynamic::dispatch::VersionsDownloadApiDispatch<'b>
-    where
-        Self: 'b;
-    fn download<'b>(&'b self, id: &'b str) -> Self::VersionsDownloadApi<'b> {
+    fn download<'b>(&'b self, id: &'b str) -> impl VersionsDownloadApi + 'b {
         crate::dynamic::dispatch::VersionsDownloadApiDispatch {
             client: self.client,
             id: id.to_string(),

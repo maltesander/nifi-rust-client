@@ -55,16 +55,7 @@ pub trait FlowFileQueuesListingRequestsApi {
 /// The FlowFileQueues API.
 #[allow(unused_variables, async_fn_in_trait, clippy::too_many_arguments)]
 pub trait FlowFileQueuesApi {
-    type FlowFileQueuesDropRequestsApi<'b>: FlowFileQueuesDropRequestsApi
-    where
-        Self: 'b;
-    fn drop_requests<'b>(&'b self, id: &'b str) -> Self::FlowFileQueuesDropRequestsApi<'b>;
-    type FlowFileQueuesFlowfilesApi<'b>: FlowFileQueuesFlowfilesApi
-    where
-        Self: 'b;
-    fn flowfiles<'b>(&'b self, id: &'b str) -> Self::FlowFileQueuesFlowfilesApi<'b>;
-    type FlowFileQueuesListingRequestsApi<'b>: FlowFileQueuesListingRequestsApi
-    where
-        Self: 'b;
-    fn listing_requests<'b>(&'b self, id: &'b str) -> Self::FlowFileQueuesListingRequestsApi<'b>;
+    fn drop_requests<'b>(&'b self, id: &'b str) -> impl FlowFileQueuesDropRequestsApi + 'b;
+    fn flowfiles<'b>(&'b self, id: &'b str) -> impl FlowFileQueuesFlowfilesApi + 'b;
+    fn listing_requests<'b>(&'b self, id: &'b str) -> impl FlowFileQueuesListingRequestsApi + 'b;
 }

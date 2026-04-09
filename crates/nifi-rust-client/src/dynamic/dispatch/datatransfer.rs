@@ -31,11 +31,7 @@ impl<'a> DataTransferApiDispatch<'a> {
     }
 }
 impl DataTransferApi for DataTransferApiDispatch<'_> {
-    type DataTransferTransactionsApi<'b>
-        = DataTransferTransactionsApiDispatch<'b>
-    where
-        Self: 'b;
-    fn transactions<'b>(&'b self, port_id: &'b str) -> Self::DataTransferTransactionsApi<'b> {
+    fn transactions<'b>(&'b self, port_id: &'b str) -> impl DataTransferTransactionsApi + 'b {
         DataTransferTransactionsApiDispatch {
             client: self.client(),
             port_id: port_id.to_string(),

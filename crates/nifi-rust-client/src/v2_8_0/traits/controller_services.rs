@@ -80,30 +80,12 @@ pub trait ControllerServicesStateApi {
 /// The Controller Services API.
 #[allow(unused_variables, async_fn_in_trait, clippy::too_many_arguments)]
 pub trait ControllerServicesApi {
-    type ControllerServicesBulletinsApi<'b>: ControllerServicesBulletinsApi
-    where
-        Self: 'b;
-    fn bulletins<'b>(&'b self, id: &'b str) -> Self::ControllerServicesBulletinsApi<'b>;
-    type ControllerServicesConfigApi<'b>: ControllerServicesConfigApi
-    where
-        Self: 'b;
-    fn config<'b>(&'b self, id: &'b str) -> Self::ControllerServicesConfigApi<'b>;
-    type ControllerServicesDescriptorsApi<'b>: ControllerServicesDescriptorsApi
-    where
-        Self: 'b;
-    fn descriptors<'b>(&'b self, id: &'b str) -> Self::ControllerServicesDescriptorsApi<'b>;
-    type ControllerServicesReferencesApi<'b>: ControllerServicesReferencesApi
-    where
-        Self: 'b;
-    fn references<'b>(&'b self, id: &'b str) -> Self::ControllerServicesReferencesApi<'b>;
-    type ControllerServicesRunStatusApi<'b>: ControllerServicesRunStatusApi
-    where
-        Self: 'b;
-    fn run_status<'b>(&'b self, id: &'b str) -> Self::ControllerServicesRunStatusApi<'b>;
-    type ControllerServicesStateApi<'b>: ControllerServicesStateApi
-    where
-        Self: 'b;
-    fn state<'b>(&'b self, id: &'b str) -> Self::ControllerServicesStateApi<'b>;
+    fn bulletins<'b>(&'b self, id: &'b str) -> impl ControllerServicesBulletinsApi + 'b;
+    fn config<'b>(&'b self, id: &'b str) -> impl ControllerServicesConfigApi + 'b;
+    fn descriptors<'b>(&'b self, id: &'b str) -> impl ControllerServicesDescriptorsApi + 'b;
+    fn references<'b>(&'b self, id: &'b str) -> impl ControllerServicesReferencesApi + 'b;
+    fn run_status<'b>(&'b self, id: &'b str) -> impl ControllerServicesRunStatusApi + 'b;
+    fn state<'b>(&'b self, id: &'b str) -> impl ControllerServicesStateApi + 'b;
     /// Deletes a controller service
     async fn remove_controller_service(
         &self,

@@ -45,8 +45,5 @@ pub trait DataTransferTransactionsApi {
 /// The DataTransfer API.
 #[allow(unused_variables, async_fn_in_trait, clippy::too_many_arguments)]
 pub trait DataTransferApi {
-    type DataTransferTransactionsApi<'b>: DataTransferTransactionsApi
-    where
-        Self: 'b;
-    fn transactions<'b>(&'b self, port_id: &'b str) -> Self::DataTransferTransactionsApi<'b>;
+    fn transactions<'b>(&'b self, port_id: &'b str) -> impl DataTransferTransactionsApi + 'b;
 }

@@ -236,11 +236,10 @@ impl<'a> DataTransferTransactionsApi<'a> {
 }
 #[allow(clippy::too_many_arguments)]
 impl crate::v2_8_0::traits::DataTransferApi for DataTransferApi<'_> {
-    type DataTransferTransactionsApi<'b>
-        = DataTransferTransactionsApi<'b>
-    where
-        Self: 'b;
-    fn transactions<'b>(&'b self, port_id: &'b str) -> Self::DataTransferTransactionsApi<'b> {
+    fn transactions<'b>(
+        &'b self,
+        port_id: &'b str,
+    ) -> impl crate::v2_8_0::traits::DataTransferTransactionsApi + 'b {
         DataTransferTransactionsApi {
             client: self.client,
             port_id,

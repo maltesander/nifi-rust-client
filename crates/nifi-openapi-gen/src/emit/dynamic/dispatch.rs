@@ -90,20 +90,16 @@ fn emit_dispatch_file(
     // Trait impl for the root trait
     out.push_str(&format!("impl {struct_name} for {dispatch_name}<'_> {{\n"));
 
-    // GAT declarations and accessor methods for sub-resources
+    // Accessor methods for sub-resources (RPITIT — no GAT bindings needed)
     for sg in &sub_groups.sub_groups {
         let sub_trait_name = &sg.struct_name;
         let sub_dispatch_name = format!("{sub_trait_name}Dispatch");
         let accessor = &sg.accessor_fn;
         let primary = &sg.primary_param;
 
-        // GAT declaration
+        // Accessor method (RPITIT)
         out.push_str(&format!(
-            "    type {sub_trait_name}<'b> = {sub_dispatch_name}<'b> where Self: 'b;\n"
-        ));
-        // Accessor method
-        out.push_str(&format!(
-            "    fn {accessor}<'b>(&'b self, {primary}: &'b str) -> Self::{sub_trait_name}<'b> {{\n"
+            "    fn {accessor}<'b>(&'b self, {primary}: &'b str) -> impl {sub_trait_name} + 'b {{\n"
         ));
         out.push_str(&format!("        {sub_dispatch_name} {{\n"));
         out.push_str("            client: self.client(),\n");
@@ -675,20 +671,16 @@ mod tests {
             "Missing version() helper"
         );
 
-        // Root trait impl has GAT
+        // Root trait impl has RPITIT accessor (no GAT binding)
         assert!(
-            content.contains(
-                "type ControllerServicesConfigApi<'b> = ControllerServicesConfigApiDispatch<'b>"
-            ),
-            "Missing GAT in root trait impl"
+            !content.contains("type ControllerServicesConfigApi<'b>"),
+            "GAT binding should not be present"
         );
-
-        // Root trait impl has accessor method
         assert!(
             content.contains(
-                "fn config<'b>(&'b self, id: &'b str) -> Self::ControllerServicesConfigApi<'b>"
+                "fn config<'b>(&'b self, id: &'b str) -> impl ControllerServicesConfigApi + 'b"
             ),
-            "Missing accessor method in root trait impl"
+            "Missing RPITIT accessor method in root trait impl"
         );
 
         // Root endpoint stays on the dispatch enum

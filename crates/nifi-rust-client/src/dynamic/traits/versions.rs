@@ -34,10 +34,7 @@ pub trait VersionsApi {
     ///
     /// # Parameters
     /// - `id`: The process group id.
-    type VersionsDownloadApi<'b>: VersionsDownloadApi
-    where
-        Self: 'b;
-    fn download<'b>(&'b self, id: &'b str) -> Self::VersionsDownloadApi<'b>;
+    fn download<'b>(&'b self, id: &'b str) -> impl VersionsDownloadApi + 'b;
     /// Create a version control request
     ///
     /// Creates a request so that a Process Group can be placed under Version Control or have its Version Control configuration changed. Creating this request will prevent any other threads from simultaneously saving local changes to Version Control. It will not, however, actually save the local flow to the Flow Registry. A POST to /versions/process-groups/{id} should be used to initiate saving of the local flow to the Flow Registry. Note: This endpoint is subject to change as NiFi and it's REST API evolve.

@@ -632,74 +632,64 @@ impl<'a> ParameterProvidersStateApi<'a> {
 }
 #[allow(clippy::too_many_arguments)]
 impl crate::v2_8_0::traits::ParameterProvidersApi for ParameterProvidersApi<'_> {
-    type ParameterProvidersApplyParametersRequestsApi<'b>
-        = ParameterProvidersApplyParametersRequestsApi<'b>
-    where
-        Self: 'b;
     fn apply_parameters_requests<'b>(
         &'b self,
         provider_id: &'b str,
-    ) -> Self::ParameterProvidersApplyParametersRequestsApi<'b> {
+    ) -> impl crate::v2_8_0::traits::ParameterProvidersApplyParametersRequestsApi + 'b {
         ParameterProvidersApplyParametersRequestsApi {
             client: self.client,
             provider_id,
         }
     }
-    type ParameterProvidersBulletinsApi<'b>
-        = ParameterProvidersBulletinsApi<'b>
-    where
-        Self: 'b;
-    fn bulletins<'b>(&'b self, id: &'b str) -> Self::ParameterProvidersBulletinsApi<'b> {
+    fn bulletins<'b>(
+        &'b self,
+        id: &'b str,
+    ) -> impl crate::v2_8_0::traits::ParameterProvidersBulletinsApi + 'b {
         ParameterProvidersBulletinsApi {
             client: self.client,
             id,
         }
     }
-    type ParameterProvidersConfigApi<'b>
-        = ParameterProvidersConfigApi<'b>
-    where
-        Self: 'b;
-    fn config<'b>(&'b self, id: &'b str) -> Self::ParameterProvidersConfigApi<'b> {
+    fn config<'b>(
+        &'b self,
+        id: &'b str,
+    ) -> impl crate::v2_8_0::traits::ParameterProvidersConfigApi + 'b {
         ParameterProvidersConfigApi {
             client: self.client,
             id,
         }
     }
-    type ParameterProvidersDescriptorsApi<'b>
-        = ParameterProvidersDescriptorsApi<'b>
-    where
-        Self: 'b;
-    fn descriptors<'b>(&'b self, id: &'b str) -> Self::ParameterProvidersDescriptorsApi<'b> {
+    fn descriptors<'b>(
+        &'b self,
+        id: &'b str,
+    ) -> impl crate::v2_8_0::traits::ParameterProvidersDescriptorsApi + 'b {
         ParameterProvidersDescriptorsApi {
             client: self.client,
             id,
         }
     }
-    type ParameterProvidersParametersApi<'b>
-        = ParameterProvidersParametersApi<'b>
-    where
-        Self: 'b;
-    fn parameters<'b>(&'b self, id: &'b str) -> Self::ParameterProvidersParametersApi<'b> {
+    fn parameters<'b>(
+        &'b self,
+        id: &'b str,
+    ) -> impl crate::v2_8_0::traits::ParameterProvidersParametersApi + 'b {
         ParameterProvidersParametersApi {
             client: self.client,
             id,
         }
     }
-    type ParameterProvidersReferencesApi<'b>
-        = ParameterProvidersReferencesApi<'b>
-    where
-        Self: 'b;
-    fn references<'b>(&'b self, id: &'b str) -> Self::ParameterProvidersReferencesApi<'b> {
+    fn references<'b>(
+        &'b self,
+        id: &'b str,
+    ) -> impl crate::v2_8_0::traits::ParameterProvidersReferencesApi + 'b {
         ParameterProvidersReferencesApi {
             client: self.client,
             id,
         }
     }
-    type ParameterProvidersStateApi<'b>
-        = ParameterProvidersStateApi<'b>
-    where
-        Self: 'b;
-    fn state<'b>(&'b self, id: &'b str) -> Self::ParameterProvidersStateApi<'b> {
+    fn state<'b>(
+        &'b self,
+        id: &'b str,
+    ) -> impl crate::v2_8_0::traits::ParameterProvidersStateApi + 'b {
         ParameterProvidersStateApi {
             client: self.client,
             id,

@@ -12,10 +12,7 @@ pub trait ProvenanceEventsContentApi {
 /// The ProvenanceEvents API.
 #[allow(unused_variables, async_fn_in_trait, clippy::too_many_arguments)]
 pub trait ProvenanceEventsApi {
-    type ProvenanceEventsContentApi<'b>: ProvenanceEventsContentApi
-    where
-        Self: 'b;
-    fn content<'b>(&'b self, id: &'b str) -> Self::ProvenanceEventsContentApi<'b>;
+    fn content<'b>(&'b self, id: &'b str) -> impl ProvenanceEventsContentApi + 'b;
     /// Replays content from a provenance event
     async fn submit_replay_latest_event(
         &self,

@@ -292,50 +292,32 @@ pub trait ControllerServicesApi {
     ///
     /// # Parameters
     /// - `id`: The controller service id.
-    type ControllerServicesBulletinsApi<'b>: ControllerServicesBulletinsApi
-    where
-        Self: 'b;
-    fn bulletins<'b>(&'b self, id: &'b str) -> Self::ControllerServicesBulletinsApi<'b>;
+    fn bulletins<'b>(&'b self, id: &'b str) -> impl ControllerServicesBulletinsApi + 'b;
     /// Returns a sub-resource accessor for config operations.
     ///
     /// # Parameters
     /// - `id`: The controller service id.
-    type ControllerServicesConfigApi<'b>: ControllerServicesConfigApi
-    where
-        Self: 'b;
-    fn config<'b>(&'b self, id: &'b str) -> Self::ControllerServicesConfigApi<'b>;
+    fn config<'b>(&'b self, id: &'b str) -> impl ControllerServicesConfigApi + 'b;
     /// Returns a sub-resource accessor for config operations.
     ///
     /// # Parameters
     /// - `id`: The controller service id.
-    type ControllerServicesDescriptorsApi<'b>: ControllerServicesDescriptorsApi
-    where
-        Self: 'b;
-    fn descriptors<'b>(&'b self, id: &'b str) -> Self::ControllerServicesDescriptorsApi<'b>;
+    fn descriptors<'b>(&'b self, id: &'b str) -> impl ControllerServicesDescriptorsApi + 'b;
     /// Returns a sub-resource accessor for config operations.
     ///
     /// # Parameters
     /// - `id`: The controller service id.
-    type ControllerServicesReferencesApi<'b>: ControllerServicesReferencesApi
-    where
-        Self: 'b;
-    fn references<'b>(&'b self, id: &'b str) -> Self::ControllerServicesReferencesApi<'b>;
+    fn references<'b>(&'b self, id: &'b str) -> impl ControllerServicesReferencesApi + 'b;
     /// Returns a sub-resource accessor for config operations.
     ///
     /// # Parameters
     /// - `id`: The controller service id.
-    type ControllerServicesRunStatusApi<'b>: ControllerServicesRunStatusApi
-    where
-        Self: 'b;
-    fn run_status<'b>(&'b self, id: &'b str) -> Self::ControllerServicesRunStatusApi<'b>;
+    fn run_status<'b>(&'b self, id: &'b str) -> impl ControllerServicesRunStatusApi + 'b;
     /// Returns a sub-resource accessor for config operations.
     ///
     /// # Parameters
     /// - `id`: The controller service id.
-    type ControllerServicesStateApi<'b>: ControllerServicesStateApi
-    where
-        Self: 'b;
-    fn state<'b>(&'b self, id: &'b str) -> Self::ControllerServicesStateApi<'b>;
+    fn state<'b>(&'b self, id: &'b str) -> impl ControllerServicesStateApi + 'b;
     /// Gets a controller service
     ///
     /// If the uiOnly query parameter is provided with a value of true, the returned entity may only contain fields that are necessary for rendering the NiFi User Interface. As such, the selected fields may change at any time, even during incremental releases, without warning. As a result, this parameter should not be provided by any client other than the UI.

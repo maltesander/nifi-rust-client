@@ -37,77 +37,49 @@ impl<'a> FlowApiDispatch<'a> {
     }
 }
 impl FlowApi for FlowApiDispatch<'_> {
-    type FlowBranchesApi<'b>
-        = FlowBranchesApiDispatch<'b>
-    where
-        Self: 'b;
-    fn branches<'b>(&'b self, id: &'b str) -> Self::FlowBranchesApi<'b> {
+    fn branches<'b>(&'b self, id: &'b str) -> impl FlowBranchesApi + 'b {
         FlowBranchesApiDispatch {
             client: self.client(),
             id: id.to_string(),
             version: self.version(),
         }
     }
-    type FlowBreadcrumbsApi<'b>
-        = FlowBreadcrumbsApiDispatch<'b>
-    where
-        Self: 'b;
-    fn breadcrumbs<'b>(&'b self, id: &'b str) -> Self::FlowBreadcrumbsApi<'b> {
+    fn breadcrumbs<'b>(&'b self, id: &'b str) -> impl FlowBreadcrumbsApi + 'b {
         FlowBreadcrumbsApiDispatch {
             client: self.client(),
             id: id.to_string(),
             version: self.version(),
         }
     }
-    type FlowBucketsApi<'b>
-        = FlowBucketsApiDispatch<'b>
-    where
-        Self: 'b;
-    fn buckets<'b>(&'b self, id: &'b str) -> Self::FlowBucketsApi<'b> {
+    fn buckets<'b>(&'b self, id: &'b str) -> impl FlowBucketsApi + 'b {
         FlowBucketsApiDispatch {
             client: self.client(),
             id: id.to_string(),
             version: self.version(),
         }
     }
-    type FlowBulletinsApi<'b>
-        = FlowBulletinsApiDispatch<'b>
-    where
-        Self: 'b;
-    fn bulletins<'b>(&'b self, id: &'b str) -> Self::FlowBulletinsApi<'b> {
+    fn bulletins<'b>(&'b self, id: &'b str) -> impl FlowBulletinsApi + 'b {
         FlowBulletinsApiDispatch {
             client: self.client(),
             id: id.to_string(),
             version: self.version(),
         }
     }
-    type FlowControllerServicesApi<'b>
-        = FlowControllerServicesApiDispatch<'b>
-    where
-        Self: 'b;
-    fn controller_services<'b>(&'b self, id: &'b str) -> Self::FlowControllerServicesApi<'b> {
+    fn controller_services<'b>(&'b self, id: &'b str) -> impl FlowControllerServicesApi + 'b {
         FlowControllerServicesApiDispatch {
             client: self.client(),
             id: id.to_string(),
             version: self.version(),
         }
     }
-    type FlowStatisticsApi<'b>
-        = FlowStatisticsApiDispatch<'b>
-    where
-        Self: 'b;
-    fn statistics<'b>(&'b self, id: &'b str) -> Self::FlowStatisticsApi<'b> {
+    fn statistics<'b>(&'b self, id: &'b str) -> impl FlowStatisticsApi + 'b {
         FlowStatisticsApiDispatch {
             client: self.client(),
             id: id.to_string(),
             version: self.version(),
         }
     }
-    type FlowStatusApi<'b>
-        = FlowStatusApiDispatch<'b>
-    where
-        Self: 'b;
-    fn status<'b>(&'b self, id: &'b str) -> Self::FlowStatusApi<'b> {
+    fn status<'b>(&'b self, id: &'b str) -> impl FlowStatusApi + 'b {
         FlowStatusApiDispatch {
             client: self.client(),
             id: id.to_string(),

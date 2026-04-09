@@ -2019,71 +2019,49 @@ impl<'a> FlowStatusApi<'a> {
 }
 #[allow(clippy::too_many_arguments)]
 impl crate::v2_7_2::traits::FlowApi for FlowApi<'_> {
-    type FlowBranchesApi<'b>
-        = FlowBranchesApi<'b>
-    where
-        Self: 'b;
-    fn branches<'b>(&'b self, id: &'b str) -> Self::FlowBranchesApi<'b> {
+    fn branches<'b>(&'b self, id: &'b str) -> impl crate::v2_7_2::traits::FlowBranchesApi + 'b {
         FlowBranchesApi {
             client: self.client,
             id,
         }
     }
-    type FlowBreadcrumbsApi<'b>
-        = FlowBreadcrumbsApi<'b>
-    where
-        Self: 'b;
-    fn breadcrumbs<'b>(&'b self, id: &'b str) -> Self::FlowBreadcrumbsApi<'b> {
+    fn breadcrumbs<'b>(
+        &'b self,
+        id: &'b str,
+    ) -> impl crate::v2_7_2::traits::FlowBreadcrumbsApi + 'b {
         FlowBreadcrumbsApi {
             client: self.client,
             id,
         }
     }
-    type FlowBucketsApi<'b>
-        = FlowBucketsApi<'b>
-    where
-        Self: 'b;
-    fn buckets<'b>(&'b self, id: &'b str) -> Self::FlowBucketsApi<'b> {
+    fn buckets<'b>(&'b self, id: &'b str) -> impl crate::v2_7_2::traits::FlowBucketsApi + 'b {
         FlowBucketsApi {
             client: self.client,
             id,
         }
     }
-    type FlowBulletinsApi<'b>
-        = FlowBulletinsApi<'b>
-    where
-        Self: 'b;
-    fn bulletins<'b>(&'b self, id: &'b str) -> Self::FlowBulletinsApi<'b> {
+    fn bulletins<'b>(&'b self, id: &'b str) -> impl crate::v2_7_2::traits::FlowBulletinsApi + 'b {
         FlowBulletinsApi {
             client: self.client,
             id,
         }
     }
-    type FlowControllerServicesApi<'b>
-        = FlowControllerServicesApi<'b>
-    where
-        Self: 'b;
-    fn controller_services<'b>(&'b self, id: &'b str) -> Self::FlowControllerServicesApi<'b> {
+    fn controller_services<'b>(
+        &'b self,
+        id: &'b str,
+    ) -> impl crate::v2_7_2::traits::FlowControllerServicesApi + 'b {
         FlowControllerServicesApi {
             client: self.client,
             id,
         }
     }
-    type FlowStatisticsApi<'b>
-        = FlowStatisticsApi<'b>
-    where
-        Self: 'b;
-    fn statistics<'b>(&'b self, id: &'b str) -> Self::FlowStatisticsApi<'b> {
+    fn statistics<'b>(&'b self, id: &'b str) -> impl crate::v2_7_2::traits::FlowStatisticsApi + 'b {
         FlowStatisticsApi {
             client: self.client,
             id,
         }
     }
-    type FlowStatusApi<'b>
-        = FlowStatusApi<'b>
-    where
-        Self: 'b;
-    fn status<'b>(&'b self, id: &'b str) -> Self::FlowStatusApi<'b> {
+    fn status<'b>(&'b self, id: &'b str) -> impl crate::v2_7_2::traits::FlowStatusApi + 'b {
         FlowStatusApi {
             client: self.client,
             id,

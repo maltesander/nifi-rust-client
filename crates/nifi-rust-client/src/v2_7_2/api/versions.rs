@@ -456,11 +456,7 @@ impl<'a> VersionsDownloadApi<'a> {
 }
 #[allow(clippy::too_many_arguments)]
 impl crate::v2_7_2::traits::VersionsApi for VersionsApi<'_> {
-    type VersionsDownloadApi<'b>
-        = VersionsDownloadApi<'b>
-    where
-        Self: 'b;
-    fn download<'b>(&'b self, id: &'b str) -> Self::VersionsDownloadApi<'b> {
+    fn download<'b>(&'b self, id: &'b str) -> impl crate::v2_7_2::traits::VersionsDownloadApi + 'b {
         VersionsDownloadApi {
             client: self.client,
             id,

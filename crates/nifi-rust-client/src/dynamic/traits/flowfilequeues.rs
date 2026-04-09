@@ -218,24 +218,15 @@ pub trait FlowFileQueuesApi {
     ///
     /// # Parameters
     /// - `id`: The connection id.
-    type FlowFileQueuesDropRequestsApi<'b>: FlowFileQueuesDropRequestsApi
-    where
-        Self: 'b;
-    fn drop_requests<'b>(&'b self, id: &'b str) -> Self::FlowFileQueuesDropRequestsApi<'b>;
+    fn drop_requests<'b>(&'b self, id: &'b str) -> impl FlowFileQueuesDropRequestsApi + 'b;
     /// Returns a sub-resource accessor for config operations.
     ///
     /// # Parameters
     /// - `id`: The connection id.
-    type FlowFileQueuesFlowfilesApi<'b>: FlowFileQueuesFlowfilesApi
-    where
-        Self: 'b;
-    fn flowfiles<'b>(&'b self, id: &'b str) -> Self::FlowFileQueuesFlowfilesApi<'b>;
+    fn flowfiles<'b>(&'b self, id: &'b str) -> impl FlowFileQueuesFlowfilesApi + 'b;
     /// Returns a sub-resource accessor for config operations.
     ///
     /// # Parameters
     /// - `id`: The connection id.
-    type FlowFileQueuesListingRequestsApi<'b>: FlowFileQueuesListingRequestsApi
-    where
-        Self: 'b;
-    fn listing_requests<'b>(&'b self, id: &'b str) -> Self::FlowFileQueuesListingRequestsApi<'b>;
+    fn listing_requests<'b>(&'b self, id: &'b str) -> impl FlowFileQueuesListingRequestsApi + 'b;
 }

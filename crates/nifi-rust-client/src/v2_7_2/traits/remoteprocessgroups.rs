@@ -65,26 +65,11 @@ pub trait RemoteProcessGroupsStateApi {
 /// The RemoteProcessGroups API.
 #[allow(unused_variables, async_fn_in_trait, clippy::too_many_arguments)]
 pub trait RemoteProcessGroupsApi {
-    type RemoteProcessGroupsBulletinsApi<'b>: RemoteProcessGroupsBulletinsApi
-    where
-        Self: 'b;
-    fn bulletins<'b>(&'b self, id: &'b str) -> Self::RemoteProcessGroupsBulletinsApi<'b>;
-    type RemoteProcessGroupsInputPortsApi<'b>: RemoteProcessGroupsInputPortsApi
-    where
-        Self: 'b;
-    fn input_ports<'b>(&'b self, id: &'b str) -> Self::RemoteProcessGroupsInputPortsApi<'b>;
-    type RemoteProcessGroupsOutputPortsApi<'b>: RemoteProcessGroupsOutputPortsApi
-    where
-        Self: 'b;
-    fn output_ports<'b>(&'b self, id: &'b str) -> Self::RemoteProcessGroupsOutputPortsApi<'b>;
-    type RemoteProcessGroupsRunStatusApi<'b>: RemoteProcessGroupsRunStatusApi
-    where
-        Self: 'b;
-    fn run_status<'b>(&'b self, id: &'b str) -> Self::RemoteProcessGroupsRunStatusApi<'b>;
-    type RemoteProcessGroupsStateApi<'b>: RemoteProcessGroupsStateApi
-    where
-        Self: 'b;
-    fn state<'b>(&'b self, id: &'b str) -> Self::RemoteProcessGroupsStateApi<'b>;
+    fn bulletins<'b>(&'b self, id: &'b str) -> impl RemoteProcessGroupsBulletinsApi + 'b;
+    fn input_ports<'b>(&'b self, id: &'b str) -> impl RemoteProcessGroupsInputPortsApi + 'b;
+    fn output_ports<'b>(&'b self, id: &'b str) -> impl RemoteProcessGroupsOutputPortsApi + 'b;
+    fn run_status<'b>(&'b self, id: &'b str) -> impl RemoteProcessGroupsRunStatusApi + 'b;
+    fn state<'b>(&'b self, id: &'b str) -> impl RemoteProcessGroupsStateApi + 'b;
     /// Deletes a remote process group
     async fn remove_remote_process_group(
         &self,

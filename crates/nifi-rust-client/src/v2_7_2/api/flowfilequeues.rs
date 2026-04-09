@@ -321,31 +321,28 @@ impl<'a> FlowFileQueuesListingRequestsApi<'a> {
 }
 #[allow(clippy::too_many_arguments)]
 impl crate::v2_7_2::traits::FlowFileQueuesApi for FlowFileQueuesApi<'_> {
-    type FlowFileQueuesDropRequestsApi<'b>
-        = FlowFileQueuesDropRequestsApi<'b>
-    where
-        Self: 'b;
-    fn drop_requests<'b>(&'b self, id: &'b str) -> Self::FlowFileQueuesDropRequestsApi<'b> {
+    fn drop_requests<'b>(
+        &'b self,
+        id: &'b str,
+    ) -> impl crate::v2_7_2::traits::FlowFileQueuesDropRequestsApi + 'b {
         FlowFileQueuesDropRequestsApi {
             client: self.client,
             id,
         }
     }
-    type FlowFileQueuesFlowfilesApi<'b>
-        = FlowFileQueuesFlowfilesApi<'b>
-    where
-        Self: 'b;
-    fn flowfiles<'b>(&'b self, id: &'b str) -> Self::FlowFileQueuesFlowfilesApi<'b> {
+    fn flowfiles<'b>(
+        &'b self,
+        id: &'b str,
+    ) -> impl crate::v2_7_2::traits::FlowFileQueuesFlowfilesApi + 'b {
         FlowFileQueuesFlowfilesApi {
             client: self.client,
             id,
         }
     }
-    type FlowFileQueuesListingRequestsApi<'b>
-        = FlowFileQueuesListingRequestsApi<'b>
-    where
-        Self: 'b;
-    fn listing_requests<'b>(&'b self, id: &'b str) -> Self::FlowFileQueuesListingRequestsApi<'b> {
+    fn listing_requests<'b>(
+        &'b self,
+        id: &'b str,
+    ) -> impl crate::v2_7_2::traits::FlowFileQueuesListingRequestsApi + 'b {
         FlowFileQueuesListingRequestsApi {
             client: self.client,
             id,

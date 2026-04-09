@@ -14,22 +14,14 @@ pub(crate) struct V2_6_0InputPortsApi<'a> {
 }
 #[allow(unused_variables)]
 impl InputPortsApi for V2_6_0InputPortsApi<'_> {
-    type InputPortsBulletinsApi<'b>
-        = crate::dynamic::dispatch::InputPortsBulletinsApiDispatch<'b>
-    where
-        Self: 'b;
-    fn bulletins<'b>(&'b self, id: &'b str) -> Self::InputPortsBulletinsApi<'b> {
+    fn bulletins<'b>(&'b self, id: &'b str) -> impl InputPortsBulletinsApi + 'b {
         crate::dynamic::dispatch::InputPortsBulletinsApiDispatch {
             client: self.client,
             id: id.to_string(),
             version: crate::dynamic::DetectedVersion::V2_6_0,
         }
     }
-    type InputPortsRunStatusApi<'b>
-        = crate::dynamic::dispatch::InputPortsRunStatusApiDispatch<'b>
-    where
-        Self: 'b;
-    fn run_status<'b>(&'b self, id: &'b str) -> Self::InputPortsRunStatusApi<'b> {
+    fn run_status<'b>(&'b self, id: &'b str) -> impl InputPortsRunStatusApi + 'b {
         crate::dynamic::dispatch::InputPortsRunStatusApiDispatch {
             client: self.client,
             id: id.to_string(),

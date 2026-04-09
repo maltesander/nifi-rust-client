@@ -16,39 +16,27 @@ pub(crate) struct V2_8_0ParameterContextsApi<'a> {
 }
 #[allow(unused_variables)]
 impl ParameterContextsApi for V2_8_0ParameterContextsApi<'_> {
-    type ParameterContextsAssetsApi<'b>
-        = crate::dynamic::dispatch::ParameterContextsAssetsApiDispatch<'b>
-    where
-        Self: 'b;
-    fn assets<'b>(&'b self, context_id: &'b str) -> Self::ParameterContextsAssetsApi<'b> {
+    fn assets<'b>(&'b self, context_id: &'b str) -> impl ParameterContextsAssetsApi + 'b {
         crate::dynamic::dispatch::ParameterContextsAssetsApiDispatch {
             client: self.client,
             context_id: context_id.to_string(),
             version: crate::dynamic::DetectedVersion::V2_8_0,
         }
     }
-    type ParameterContextsUpdateRequestsApi<'b>
-        = crate::dynamic::dispatch::ParameterContextsUpdateRequestsApiDispatch<'b>
-    where
-        Self: 'b;
     fn update_requests<'b>(
         &'b self,
         context_id: &'b str,
-    ) -> Self::ParameterContextsUpdateRequestsApi<'b> {
+    ) -> impl ParameterContextsUpdateRequestsApi + 'b {
         crate::dynamic::dispatch::ParameterContextsUpdateRequestsApiDispatch {
             client: self.client,
             context_id: context_id.to_string(),
             version: crate::dynamic::DetectedVersion::V2_8_0,
         }
     }
-    type ParameterContextsValidationRequestsApi<'b>
-        = crate::dynamic::dispatch::ParameterContextsValidationRequestsApiDispatch<'b>
-    where
-        Self: 'b;
     fn validation_requests<'b>(
         &'b self,
         context_id: &'b str,
-    ) -> Self::ParameterContextsValidationRequestsApi<'b> {
+    ) -> impl ParameterContextsValidationRequestsApi + 'b {
         crate::dynamic::dispatch::ParameterContextsValidationRequestsApiDispatch {
             client: self.client,
             context_id: context_id.to_string(),

@@ -85,35 +85,15 @@ pub trait ParameterProvidersStateApi {
 /// The ParameterProviders API.
 #[allow(unused_variables, async_fn_in_trait, clippy::too_many_arguments)]
 pub trait ParameterProvidersApi {
-    type ParameterProvidersApplyParametersRequestsApi<
-        'b,
-    >: ParameterProvidersApplyParametersRequestsApi
-    where
-        Self: 'b;
     fn apply_parameters_requests<'b>(
         &'b self,
         provider_id: &'b str,
-    ) -> Self::ParameterProvidersApplyParametersRequestsApi<'b>;
-    type ParameterProvidersConfigApi<'b>: ParameterProvidersConfigApi
-    where
-        Self: 'b;
-    fn config<'b>(&'b self, id: &'b str) -> Self::ParameterProvidersConfigApi<'b>;
-    type ParameterProvidersDescriptorsApi<'b>: ParameterProvidersDescriptorsApi
-    where
-        Self: 'b;
-    fn descriptors<'b>(&'b self, id: &'b str) -> Self::ParameterProvidersDescriptorsApi<'b>;
-    type ParameterProvidersParametersApi<'b>: ParameterProvidersParametersApi
-    where
-        Self: 'b;
-    fn parameters<'b>(&'b self, id: &'b str) -> Self::ParameterProvidersParametersApi<'b>;
-    type ParameterProvidersReferencesApi<'b>: ParameterProvidersReferencesApi
-    where
-        Self: 'b;
-    fn references<'b>(&'b self, id: &'b str) -> Self::ParameterProvidersReferencesApi<'b>;
-    type ParameterProvidersStateApi<'b>: ParameterProvidersStateApi
-    where
-        Self: 'b;
-    fn state<'b>(&'b self, id: &'b str) -> Self::ParameterProvidersStateApi<'b>;
+    ) -> impl ParameterProvidersApplyParametersRequestsApi + 'b;
+    fn config<'b>(&'b self, id: &'b str) -> impl ParameterProvidersConfigApi + 'b;
+    fn descriptors<'b>(&'b self, id: &'b str) -> impl ParameterProvidersDescriptorsApi + 'b;
+    fn parameters<'b>(&'b self, id: &'b str) -> impl ParameterProvidersParametersApi + 'b;
+    fn references<'b>(&'b self, id: &'b str) -> impl ParameterProvidersReferencesApi + 'b;
+    fn state<'b>(&'b self, id: &'b str) -> impl ParameterProvidersStateApi + 'b;
     /// Deletes a parameter provider
     async fn remove_parameter_provider(
         &self,

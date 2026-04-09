@@ -22,14 +22,8 @@ pub trait InputPortsRunStatusApi {
 /// The InputPorts API.
 #[allow(unused_variables, async_fn_in_trait, clippy::too_many_arguments)]
 pub trait InputPortsApi {
-    type InputPortsBulletinsApi<'b>: InputPortsBulletinsApi
-    where
-        Self: 'b;
-    fn bulletins<'b>(&'b self, id: &'b str) -> Self::InputPortsBulletinsApi<'b>;
-    type InputPortsRunStatusApi<'b>: InputPortsRunStatusApi
-    where
-        Self: 'b;
-    fn run_status<'b>(&'b self, id: &'b str) -> Self::InputPortsRunStatusApi<'b>;
+    fn bulletins<'b>(&'b self, id: &'b str) -> impl InputPortsBulletinsApi + 'b;
+    fn run_status<'b>(&'b self, id: &'b str) -> impl InputPortsRunStatusApi + 'b;
     /// Deletes an input port
     async fn remove_input_port(
         &self,

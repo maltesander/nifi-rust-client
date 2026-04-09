@@ -522,61 +522,46 @@ impl<'a> ProcessorsThreadsApi<'a> {
 }
 #[allow(clippy::too_many_arguments)]
 impl crate::v2_6_0::traits::ProcessorsApi for ProcessorsApi<'_> {
-    type ProcessorsConfigApi<'b>
-        = ProcessorsConfigApi<'b>
-    where
-        Self: 'b;
-    fn config<'b>(&'b self, id: &'b str) -> Self::ProcessorsConfigApi<'b> {
+    fn config<'b>(&'b self, id: &'b str) -> impl crate::v2_6_0::traits::ProcessorsConfigApi + 'b {
         ProcessorsConfigApi {
             client: self.client,
             id,
         }
     }
-    type ProcessorsDescriptorsApi<'b>
-        = ProcessorsDescriptorsApi<'b>
-    where
-        Self: 'b;
-    fn descriptors<'b>(&'b self, id: &'b str) -> Self::ProcessorsDescriptorsApi<'b> {
+    fn descriptors<'b>(
+        &'b self,
+        id: &'b str,
+    ) -> impl crate::v2_6_0::traits::ProcessorsDescriptorsApi + 'b {
         ProcessorsDescriptorsApi {
             client: self.client,
             id,
         }
     }
-    type ProcessorsDiagnosticsApi<'b>
-        = ProcessorsDiagnosticsApi<'b>
-    where
-        Self: 'b;
-    fn diagnostics<'b>(&'b self, id: &'b str) -> Self::ProcessorsDiagnosticsApi<'b> {
+    fn diagnostics<'b>(
+        &'b self,
+        id: &'b str,
+    ) -> impl crate::v2_6_0::traits::ProcessorsDiagnosticsApi + 'b {
         ProcessorsDiagnosticsApi {
             client: self.client,
             id,
         }
     }
-    type ProcessorsRunStatusApi<'b>
-        = ProcessorsRunStatusApi<'b>
-    where
-        Self: 'b;
-    fn run_status<'b>(&'b self, id: &'b str) -> Self::ProcessorsRunStatusApi<'b> {
+    fn run_status<'b>(
+        &'b self,
+        id: &'b str,
+    ) -> impl crate::v2_6_0::traits::ProcessorsRunStatusApi + 'b {
         ProcessorsRunStatusApi {
             client: self.client,
             id,
         }
     }
-    type ProcessorsStateApi<'b>
-        = ProcessorsStateApi<'b>
-    where
-        Self: 'b;
-    fn state<'b>(&'b self, id: &'b str) -> Self::ProcessorsStateApi<'b> {
+    fn state<'b>(&'b self, id: &'b str) -> impl crate::v2_6_0::traits::ProcessorsStateApi + 'b {
         ProcessorsStateApi {
             client: self.client,
             id,
         }
     }
-    type ProcessorsThreadsApi<'b>
-        = ProcessorsThreadsApi<'b>
-    where
-        Self: 'b;
-    fn threads<'b>(&'b self, id: &'b str) -> Self::ProcessorsThreadsApi<'b> {
+    fn threads<'b>(&'b self, id: &'b str) -> impl crate::v2_6_0::traits::ProcessorsThreadsApi + 'b {
         ProcessorsThreadsApi {
             client: self.client,
             id,

@@ -146,11 +146,10 @@ impl<'a> InputPortsRunStatusApi<'a> {
 }
 #[allow(clippy::too_many_arguments)]
 impl crate::v2_6_0::traits::InputPortsApi for InputPortsApi<'_> {
-    type InputPortsRunStatusApi<'b>
-        = InputPortsRunStatusApi<'b>
-    where
-        Self: 'b;
-    fn run_status<'b>(&'b self, id: &'b str) -> Self::InputPortsRunStatusApi<'b> {
+    fn run_status<'b>(
+        &'b self,
+        id: &'b str,
+    ) -> impl crate::v2_6_0::traits::InputPortsRunStatusApi + 'b {
         InputPortsRunStatusApi {
             client: self.client,
             id,

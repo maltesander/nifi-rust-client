@@ -58,22 +58,10 @@ pub trait ReportingTasksStateApi {
 /// The ReportingTasks API.
 #[allow(unused_variables, async_fn_in_trait, clippy::too_many_arguments)]
 pub trait ReportingTasksApi {
-    type ReportingTasksConfigApi<'b>: ReportingTasksConfigApi
-    where
-        Self: 'b;
-    fn config<'b>(&'b self, id: &'b str) -> Self::ReportingTasksConfigApi<'b>;
-    type ReportingTasksDescriptorsApi<'b>: ReportingTasksDescriptorsApi
-    where
-        Self: 'b;
-    fn descriptors<'b>(&'b self, id: &'b str) -> Self::ReportingTasksDescriptorsApi<'b>;
-    type ReportingTasksRunStatusApi<'b>: ReportingTasksRunStatusApi
-    where
-        Self: 'b;
-    fn run_status<'b>(&'b self, id: &'b str) -> Self::ReportingTasksRunStatusApi<'b>;
-    type ReportingTasksStateApi<'b>: ReportingTasksStateApi
-    where
-        Self: 'b;
-    fn state<'b>(&'b self, id: &'b str) -> Self::ReportingTasksStateApi<'b>;
+    fn config<'b>(&'b self, id: &'b str) -> impl ReportingTasksConfigApi + 'b;
+    fn descriptors<'b>(&'b self, id: &'b str) -> impl ReportingTasksDescriptorsApi + 'b;
+    fn run_status<'b>(&'b self, id: &'b str) -> impl ReportingTasksRunStatusApi + 'b;
+    fn state<'b>(&'b self, id: &'b str) -> impl ReportingTasksStateApi + 'b;
     /// Deletes a reporting task
     async fn remove_reporting_task(
         &self,

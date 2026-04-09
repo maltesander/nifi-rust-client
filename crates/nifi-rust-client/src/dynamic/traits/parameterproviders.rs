@@ -355,63 +355,40 @@ pub trait ParameterProvidersApi {
     ///
     /// # Parameters
     /// - `provider_id`: The ID of the Parameter Provider
-    type ParameterProvidersApplyParametersRequestsApi<
-        'b,
-    >: ParameterProvidersApplyParametersRequestsApi
-    where
-        Self: 'b;
     fn apply_parameters_requests<'b>(
         &'b self,
         provider_id: &'b str,
-    ) -> Self::ParameterProvidersApplyParametersRequestsApi<'b>;
+    ) -> impl ParameterProvidersApplyParametersRequestsApi + 'b;
     /// Returns a sub-resource accessor for config operations.
     ///
     /// # Parameters
     /// - `id`: The parameter provider id.
-    type ParameterProvidersBulletinsApi<'b>: ParameterProvidersBulletinsApi
-    where
-        Self: 'b;
-    fn bulletins<'b>(&'b self, id: &'b str) -> Self::ParameterProvidersBulletinsApi<'b>;
+    fn bulletins<'b>(&'b self, id: &'b str) -> impl ParameterProvidersBulletinsApi + 'b;
     /// Returns a sub-resource accessor for config operations.
     ///
     /// # Parameters
     /// - `id`: The parameter provider id.
-    type ParameterProvidersConfigApi<'b>: ParameterProvidersConfigApi
-    where
-        Self: 'b;
-    fn config<'b>(&'b self, id: &'b str) -> Self::ParameterProvidersConfigApi<'b>;
+    fn config<'b>(&'b self, id: &'b str) -> impl ParameterProvidersConfigApi + 'b;
     /// Returns a sub-resource accessor for config operations.
     ///
     /// # Parameters
     /// - `id`: The parameter provider id.
-    type ParameterProvidersDescriptorsApi<'b>: ParameterProvidersDescriptorsApi
-    where
-        Self: 'b;
-    fn descriptors<'b>(&'b self, id: &'b str) -> Self::ParameterProvidersDescriptorsApi<'b>;
+    fn descriptors<'b>(&'b self, id: &'b str) -> impl ParameterProvidersDescriptorsApi + 'b;
     /// Returns a sub-resource accessor for config operations.
     ///
     /// # Parameters
     /// - `id`: The parameter provider id.
-    type ParameterProvidersParametersApi<'b>: ParameterProvidersParametersApi
-    where
-        Self: 'b;
-    fn parameters<'b>(&'b self, id: &'b str) -> Self::ParameterProvidersParametersApi<'b>;
+    fn parameters<'b>(&'b self, id: &'b str) -> impl ParameterProvidersParametersApi + 'b;
     /// Returns a sub-resource accessor for config operations.
     ///
     /// # Parameters
     /// - `id`: The parameter provider id.
-    type ParameterProvidersReferencesApi<'b>: ParameterProvidersReferencesApi
-    where
-        Self: 'b;
-    fn references<'b>(&'b self, id: &'b str) -> Self::ParameterProvidersReferencesApi<'b>;
+    fn references<'b>(&'b self, id: &'b str) -> impl ParameterProvidersReferencesApi + 'b;
     /// Returns a sub-resource accessor for config operations.
     ///
     /// # Parameters
     /// - `id`: The parameter provider id.
-    type ParameterProvidersStateApi<'b>: ParameterProvidersStateApi
-    where
-        Self: 'b;
-    fn state<'b>(&'b self, id: &'b str) -> Self::ParameterProvidersStateApi<'b>;
+    fn state<'b>(&'b self, id: &'b str) -> impl ParameterProvidersStateApi + 'b;
     /// Gets a parameter provider
     ///
     /// Calls `GET /nifi-api/parameter-providers/{id}`.

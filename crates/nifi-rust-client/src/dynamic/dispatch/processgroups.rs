@@ -47,199 +47,131 @@ impl<'a> ProcessGroupsApiDispatch<'a> {
     }
 }
 impl ProcessGroupsApi for ProcessGroupsApiDispatch<'_> {
-    type ProcessGroupsConnectionsApi<'b>
-        = ProcessGroupsConnectionsApiDispatch<'b>
-    where
-        Self: 'b;
-    fn connections<'b>(&'b self, id: &'b str) -> Self::ProcessGroupsConnectionsApi<'b> {
+    fn connections<'b>(&'b self, id: &'b str) -> impl ProcessGroupsConnectionsApi + 'b {
         ProcessGroupsConnectionsApiDispatch {
             client: self.client(),
             id: id.to_string(),
             version: self.version(),
         }
     }
-    type ProcessGroupsControllerServicesApi<'b>
-        = ProcessGroupsControllerServicesApiDispatch<'b>
-    where
-        Self: 'b;
     fn controller_services<'b>(
         &'b self,
         id: &'b str,
-    ) -> Self::ProcessGroupsControllerServicesApi<'b> {
+    ) -> impl ProcessGroupsControllerServicesApi + 'b {
         ProcessGroupsControllerServicesApiDispatch {
             client: self.client(),
             id: id.to_string(),
             version: self.version(),
         }
     }
-    type ProcessGroupsCopyApi<'b>
-        = ProcessGroupsCopyApiDispatch<'b>
-    where
-        Self: 'b;
-    fn copy<'b>(&'b self, id: &'b str) -> Self::ProcessGroupsCopyApi<'b> {
+    fn copy<'b>(&'b self, id: &'b str) -> impl ProcessGroupsCopyApi + 'b {
         ProcessGroupsCopyApiDispatch {
             client: self.client(),
             id: id.to_string(),
             version: self.version(),
         }
     }
-    type ProcessGroupsDownloadApi<'b>
-        = ProcessGroupsDownloadApiDispatch<'b>
-    where
-        Self: 'b;
-    fn download<'b>(&'b self, id: &'b str) -> Self::ProcessGroupsDownloadApi<'b> {
+    fn download<'b>(&'b self, id: &'b str) -> impl ProcessGroupsDownloadApi + 'b {
         ProcessGroupsDownloadApiDispatch {
             client: self.client(),
             id: id.to_string(),
             version: self.version(),
         }
     }
-    type ProcessGroupsEmptyAllConnectionsRequestsApi<'b>
-        = ProcessGroupsEmptyAllConnectionsRequestsApiDispatch<'b>
-    where
-        Self: 'b;
     fn empty_all_connections_requests<'b>(
         &'b self,
         id: &'b str,
-    ) -> Self::ProcessGroupsEmptyAllConnectionsRequestsApi<'b> {
+    ) -> impl ProcessGroupsEmptyAllConnectionsRequestsApi + 'b {
         ProcessGroupsEmptyAllConnectionsRequestsApiDispatch {
             client: self.client(),
             id: id.to_string(),
             version: self.version(),
         }
     }
-    type ProcessGroupsFlowContentsApi<'b>
-        = ProcessGroupsFlowContentsApiDispatch<'b>
-    where
-        Self: 'b;
-    fn flow_contents<'b>(&'b self, id: &'b str) -> Self::ProcessGroupsFlowContentsApi<'b> {
+    fn flow_contents<'b>(&'b self, id: &'b str) -> impl ProcessGroupsFlowContentsApi + 'b {
         ProcessGroupsFlowContentsApiDispatch {
             client: self.client(),
             id: id.to_string(),
             version: self.version(),
         }
     }
-    type ProcessGroupsFunnelsApi<'b>
-        = ProcessGroupsFunnelsApiDispatch<'b>
-    where
-        Self: 'b;
-    fn funnels<'b>(&'b self, id: &'b str) -> Self::ProcessGroupsFunnelsApi<'b> {
+    fn funnels<'b>(&'b self, id: &'b str) -> impl ProcessGroupsFunnelsApi + 'b {
         ProcessGroupsFunnelsApiDispatch {
             client: self.client(),
             id: id.to_string(),
             version: self.version(),
         }
     }
-    type ProcessGroupsInputPortsApi<'b>
-        = ProcessGroupsInputPortsApiDispatch<'b>
-    where
-        Self: 'b;
-    fn input_ports<'b>(&'b self, id: &'b str) -> Self::ProcessGroupsInputPortsApi<'b> {
+    fn input_ports<'b>(&'b self, id: &'b str) -> impl ProcessGroupsInputPortsApi + 'b {
         ProcessGroupsInputPortsApiDispatch {
             client: self.client(),
             id: id.to_string(),
             version: self.version(),
         }
     }
-    type ProcessGroupsLabelsApi<'b>
-        = ProcessGroupsLabelsApiDispatch<'b>
-    where
-        Self: 'b;
-    fn labels<'b>(&'b self, id: &'b str) -> Self::ProcessGroupsLabelsApi<'b> {
+    fn labels<'b>(&'b self, id: &'b str) -> impl ProcessGroupsLabelsApi + 'b {
         ProcessGroupsLabelsApiDispatch {
             client: self.client(),
             id: id.to_string(),
             version: self.version(),
         }
     }
-    type ProcessGroupsLocalModificationsApi<'b>
-        = ProcessGroupsLocalModificationsApiDispatch<'b>
-    where
-        Self: 'b;
     fn local_modifications<'b>(
         &'b self,
         id: &'b str,
-    ) -> Self::ProcessGroupsLocalModificationsApi<'b> {
+    ) -> impl ProcessGroupsLocalModificationsApi + 'b {
         ProcessGroupsLocalModificationsApiDispatch {
             client: self.client(),
             id: id.to_string(),
             version: self.version(),
         }
     }
-    type ProcessGroupsOutputPortsApi<'b>
-        = ProcessGroupsOutputPortsApiDispatch<'b>
-    where
-        Self: 'b;
-    fn output_ports<'b>(&'b self, id: &'b str) -> Self::ProcessGroupsOutputPortsApi<'b> {
+    fn output_ports<'b>(&'b self, id: &'b str) -> impl ProcessGroupsOutputPortsApi + 'b {
         ProcessGroupsOutputPortsApiDispatch {
             client: self.client(),
             id: id.to_string(),
             version: self.version(),
         }
     }
-    type ProcessGroupsPasteApi<'b>
-        = ProcessGroupsPasteApiDispatch<'b>
-    where
-        Self: 'b;
-    fn paste<'b>(&'b self, id: &'b str) -> Self::ProcessGroupsPasteApi<'b> {
+    fn paste<'b>(&'b self, id: &'b str) -> impl ProcessGroupsPasteApi + 'b {
         ProcessGroupsPasteApiDispatch {
             client: self.client(),
             id: id.to_string(),
             version: self.version(),
         }
     }
-    type ProcessGroupsProcessGroupsApi<'b>
-        = ProcessGroupsProcessGroupsApiDispatch<'b>
-    where
-        Self: 'b;
-    fn process_groups<'b>(&'b self, id: &'b str) -> Self::ProcessGroupsProcessGroupsApi<'b> {
+    fn process_groups<'b>(&'b self, id: &'b str) -> impl ProcessGroupsProcessGroupsApi + 'b {
         ProcessGroupsProcessGroupsApiDispatch {
             client: self.client(),
             id: id.to_string(),
             version: self.version(),
         }
     }
-    type ProcessGroupsProcessorsApi<'b>
-        = ProcessGroupsProcessorsApiDispatch<'b>
-    where
-        Self: 'b;
-    fn processors<'b>(&'b self, id: &'b str) -> Self::ProcessGroupsProcessorsApi<'b> {
+    fn processors<'b>(&'b self, id: &'b str) -> impl ProcessGroupsProcessorsApi + 'b {
         ProcessGroupsProcessorsApiDispatch {
             client: self.client(),
             id: id.to_string(),
             version: self.version(),
         }
     }
-    type ProcessGroupsRemoteProcessGroupsApi<'b>
-        = ProcessGroupsRemoteProcessGroupsApiDispatch<'b>
-    where
-        Self: 'b;
     fn remote_process_groups<'b>(
         &'b self,
         id: &'b str,
-    ) -> Self::ProcessGroupsRemoteProcessGroupsApi<'b> {
+    ) -> impl ProcessGroupsRemoteProcessGroupsApi + 'b {
         ProcessGroupsRemoteProcessGroupsApiDispatch {
             client: self.client(),
             id: id.to_string(),
             version: self.version(),
         }
     }
-    type ProcessGroupsReplaceRequestsApi<'b>
-        = ProcessGroupsReplaceRequestsApiDispatch<'b>
-    where
-        Self: 'b;
-    fn replace_requests<'b>(&'b self, id: &'b str) -> Self::ProcessGroupsReplaceRequestsApi<'b> {
+    fn replace_requests<'b>(&'b self, id: &'b str) -> impl ProcessGroupsReplaceRequestsApi + 'b {
         ProcessGroupsReplaceRequestsApiDispatch {
             client: self.client(),
             id: id.to_string(),
             version: self.version(),
         }
     }
-    type ProcessGroupsSnippetInstanceApi<'b>
-        = ProcessGroupsSnippetInstanceApiDispatch<'b>
-    where
-        Self: 'b;
-    fn snippet_instance<'b>(&'b self, id: &'b str) -> Self::ProcessGroupsSnippetInstanceApi<'b> {
+    fn snippet_instance<'b>(&'b self, id: &'b str) -> impl ProcessGroupsSnippetInstanceApi + 'b {
         ProcessGroupsSnippetInstanceApiDispatch {
             client: self.client(),
             id: id.to_string(),

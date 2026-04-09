@@ -201,8 +201,5 @@ pub trait DataTransferApi {
     ///
     /// # Parameters
     /// - `port_id`: The input port id.
-    type DataTransferTransactionsApi<'b>: DataTransferTransactionsApi
-    where
-        Self: 'b;
-    fn transactions<'b>(&'b self, port_id: &'b str) -> Self::DataTransferTransactionsApi<'b>;
+    fn transactions<'b>(&'b self, port_id: &'b str) -> impl DataTransferTransactionsApi + 'b;
 }

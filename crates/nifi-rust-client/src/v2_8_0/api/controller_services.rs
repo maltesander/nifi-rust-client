@@ -540,61 +540,55 @@ impl<'a> ControllerServicesStateApi<'a> {
 }
 #[allow(clippy::too_many_arguments)]
 impl crate::v2_8_0::traits::ControllerServicesApi for ControllerServicesApi<'_> {
-    type ControllerServicesBulletinsApi<'b>
-        = ControllerServicesBulletinsApi<'b>
-    where
-        Self: 'b;
-    fn bulletins<'b>(&'b self, id: &'b str) -> Self::ControllerServicesBulletinsApi<'b> {
+    fn bulletins<'b>(
+        &'b self,
+        id: &'b str,
+    ) -> impl crate::v2_8_0::traits::ControllerServicesBulletinsApi + 'b {
         ControllerServicesBulletinsApi {
             client: self.client,
             id,
         }
     }
-    type ControllerServicesConfigApi<'b>
-        = ControllerServicesConfigApi<'b>
-    where
-        Self: 'b;
-    fn config<'b>(&'b self, id: &'b str) -> Self::ControllerServicesConfigApi<'b> {
+    fn config<'b>(
+        &'b self,
+        id: &'b str,
+    ) -> impl crate::v2_8_0::traits::ControllerServicesConfigApi + 'b {
         ControllerServicesConfigApi {
             client: self.client,
             id,
         }
     }
-    type ControllerServicesDescriptorsApi<'b>
-        = ControllerServicesDescriptorsApi<'b>
-    where
-        Self: 'b;
-    fn descriptors<'b>(&'b self, id: &'b str) -> Self::ControllerServicesDescriptorsApi<'b> {
+    fn descriptors<'b>(
+        &'b self,
+        id: &'b str,
+    ) -> impl crate::v2_8_0::traits::ControllerServicesDescriptorsApi + 'b {
         ControllerServicesDescriptorsApi {
             client: self.client,
             id,
         }
     }
-    type ControllerServicesReferencesApi<'b>
-        = ControllerServicesReferencesApi<'b>
-    where
-        Self: 'b;
-    fn references<'b>(&'b self, id: &'b str) -> Self::ControllerServicesReferencesApi<'b> {
+    fn references<'b>(
+        &'b self,
+        id: &'b str,
+    ) -> impl crate::v2_8_0::traits::ControllerServicesReferencesApi + 'b {
         ControllerServicesReferencesApi {
             client: self.client,
             id,
         }
     }
-    type ControllerServicesRunStatusApi<'b>
-        = ControllerServicesRunStatusApi<'b>
-    where
-        Self: 'b;
-    fn run_status<'b>(&'b self, id: &'b str) -> Self::ControllerServicesRunStatusApi<'b> {
+    fn run_status<'b>(
+        &'b self,
+        id: &'b str,
+    ) -> impl crate::v2_8_0::traits::ControllerServicesRunStatusApi + 'b {
         ControllerServicesRunStatusApi {
             client: self.client,
             id,
         }
     }
-    type ControllerServicesStateApi<'b>
-        = ControllerServicesStateApi<'b>
-    where
-        Self: 'b;
-    fn state<'b>(&'b self, id: &'b str) -> Self::ControllerServicesStateApi<'b> {
+    fn state<'b>(
+        &'b self,
+        id: &'b str,
+    ) -> impl crate::v2_8_0::traits::ControllerServicesStateApi + 'b {
         ControllerServicesStateApi {
             client: self.client,
             id,

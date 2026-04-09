@@ -78,30 +78,12 @@ pub trait ControllerStateApi {
 /// The Controller API.
 #[allow(unused_variables, async_fn_in_trait, clippy::too_many_arguments)]
 pub trait ControllerApi {
-    type ControllerConfigApi<'b>: ControllerConfigApi
-    where
-        Self: 'b;
-    fn config<'b>(&'b self, id: &'b str) -> Self::ControllerConfigApi<'b>;
-    type ControllerContentApi<'b>: ControllerContentApi
-    where
-        Self: 'b;
-    fn content<'b>(&'b self, id: &'b str) -> Self::ControllerContentApi<'b>;
-    type ControllerDescriptorsApi<'b>: ControllerDescriptorsApi
-    where
-        Self: 'b;
-    fn descriptors<'b>(&'b self, id: &'b str) -> Self::ControllerDescriptorsApi<'b>;
-    type ControllerDetailsApi<'b>: ControllerDetailsApi
-    where
-        Self: 'b;
-    fn details<'b>(&'b self, id: &'b str) -> Self::ControllerDetailsApi<'b>;
-    type ControllerRunStatusApi<'b>: ControllerRunStatusApi
-    where
-        Self: 'b;
-    fn run_status<'b>(&'b self, id: &'b str) -> Self::ControllerRunStatusApi<'b>;
-    type ControllerStateApi<'b>: ControllerStateApi
-    where
-        Self: 'b;
-    fn state<'b>(&'b self, id: &'b str) -> Self::ControllerStateApi<'b>;
+    fn config<'b>(&'b self, id: &'b str) -> impl ControllerConfigApi + 'b;
+    fn content<'b>(&'b self, id: &'b str) -> impl ControllerContentApi + 'b;
+    fn descriptors<'b>(&'b self, id: &'b str) -> impl ControllerDescriptorsApi + 'b;
+    fn details<'b>(&'b self, id: &'b str) -> impl ControllerDetailsApi + 'b;
+    fn run_status<'b>(&'b self, id: &'b str) -> impl ControllerRunStatusApi + 'b;
+    fn state<'b>(&'b self, id: &'b str) -> impl ControllerStateApi + 'b;
     /// Creates a new bulletin
     async fn create_bulletin(
         &self,

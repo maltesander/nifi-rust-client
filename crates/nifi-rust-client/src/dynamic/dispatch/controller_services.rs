@@ -36,66 +36,42 @@ impl<'a> ControllerServicesApiDispatch<'a> {
     }
 }
 impl ControllerServicesApi for ControllerServicesApiDispatch<'_> {
-    type ControllerServicesBulletinsApi<'b>
-        = ControllerServicesBulletinsApiDispatch<'b>
-    where
-        Self: 'b;
-    fn bulletins<'b>(&'b self, id: &'b str) -> Self::ControllerServicesBulletinsApi<'b> {
+    fn bulletins<'b>(&'b self, id: &'b str) -> impl ControllerServicesBulletinsApi + 'b {
         ControllerServicesBulletinsApiDispatch {
             client: self.client(),
             id: id.to_string(),
             version: self.version(),
         }
     }
-    type ControllerServicesConfigApi<'b>
-        = ControllerServicesConfigApiDispatch<'b>
-    where
-        Self: 'b;
-    fn config<'b>(&'b self, id: &'b str) -> Self::ControllerServicesConfigApi<'b> {
+    fn config<'b>(&'b self, id: &'b str) -> impl ControllerServicesConfigApi + 'b {
         ControllerServicesConfigApiDispatch {
             client: self.client(),
             id: id.to_string(),
             version: self.version(),
         }
     }
-    type ControllerServicesDescriptorsApi<'b>
-        = ControllerServicesDescriptorsApiDispatch<'b>
-    where
-        Self: 'b;
-    fn descriptors<'b>(&'b self, id: &'b str) -> Self::ControllerServicesDescriptorsApi<'b> {
+    fn descriptors<'b>(&'b self, id: &'b str) -> impl ControllerServicesDescriptorsApi + 'b {
         ControllerServicesDescriptorsApiDispatch {
             client: self.client(),
             id: id.to_string(),
             version: self.version(),
         }
     }
-    type ControllerServicesReferencesApi<'b>
-        = ControllerServicesReferencesApiDispatch<'b>
-    where
-        Self: 'b;
-    fn references<'b>(&'b self, id: &'b str) -> Self::ControllerServicesReferencesApi<'b> {
+    fn references<'b>(&'b self, id: &'b str) -> impl ControllerServicesReferencesApi + 'b {
         ControllerServicesReferencesApiDispatch {
             client: self.client(),
             id: id.to_string(),
             version: self.version(),
         }
     }
-    type ControllerServicesRunStatusApi<'b>
-        = ControllerServicesRunStatusApiDispatch<'b>
-    where
-        Self: 'b;
-    fn run_status<'b>(&'b self, id: &'b str) -> Self::ControllerServicesRunStatusApi<'b> {
+    fn run_status<'b>(&'b self, id: &'b str) -> impl ControllerServicesRunStatusApi + 'b {
         ControllerServicesRunStatusApiDispatch {
             client: self.client(),
             id: id.to_string(),
             version: self.version(),
         }
     }
-    type ControllerServicesStateApi<'b>
-        = ControllerServicesStateApiDispatch<'b>
-    where
-        Self: 'b;
-    fn state<'b>(&'b self, id: &'b str) -> Self::ControllerServicesStateApi<'b> {
+    fn state<'b>(&'b self, id: &'b str) -> impl ControllerServicesStateApi + 'b {
         ControllerServicesStateApiDispatch {
             client: self.client(),
             id: id.to_string(),

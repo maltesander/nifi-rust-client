@@ -65,18 +65,12 @@ pub trait OutputPortsApi {
     ///
     /// # Parameters
     /// - `id`: The output port id.
-    type OutputPortsBulletinsApi<'b>: OutputPortsBulletinsApi
-    where
-        Self: 'b;
-    fn bulletins<'b>(&'b self, id: &'b str) -> Self::OutputPortsBulletinsApi<'b>;
+    fn bulletins<'b>(&'b self, id: &'b str) -> impl OutputPortsBulletinsApi + 'b;
     /// Returns a sub-resource accessor for config operations.
     ///
     /// # Parameters
     /// - `id`: The port id.
-    type OutputPortsRunStatusApi<'b>: OutputPortsRunStatusApi
-    where
-        Self: 'b;
-    fn run_status<'b>(&'b self, id: &'b str) -> Self::OutputPortsRunStatusApi<'b>;
+    fn run_status<'b>(&'b self, id: &'b str) -> impl OutputPortsRunStatusApi + 'b;
     /// Gets an output port
     ///
     /// Calls `GET /nifi-api/output-ports/{id}`.

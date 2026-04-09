@@ -213,11 +213,10 @@ impl<'a> ProvenanceEventsContentApi<'a> {
 }
 #[allow(clippy::too_many_arguments)]
 impl crate::v2_7_2::traits::ProvenanceEventsApi for ProvenanceEventsApi<'_> {
-    type ProvenanceEventsContentApi<'b>
-        = ProvenanceEventsContentApi<'b>
-    where
-        Self: 'b;
-    fn content<'b>(&'b self, id: &'b str) -> Self::ProvenanceEventsContentApi<'b> {
+    fn content<'b>(
+        &'b self,
+        id: &'b str,
+    ) -> impl crate::v2_7_2::traits::ProvenanceEventsContentApi + 'b {
         ProvenanceEventsContentApi {
             client: self.client,
             id,

@@ -22,5 +22,8 @@ tags
 # Python bytecode cache
 __pycache__/
 
+# IDE settings
+.vscode/
+
 # Design docs and plans (generated during development)
 docs/superpowers/

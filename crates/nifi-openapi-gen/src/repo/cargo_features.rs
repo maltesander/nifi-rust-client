@@ -71,9 +71,12 @@ pub fn patch_tests_cargo_features(toml_str: &str, versions: &[&str]) -> String {
         features.insert("default", toml_edit::value(arr));
     }
 
-    // dynamic feature — forwards to client crate
+    // dynamic feature — forwards to client crate and enables all version features
     let mut dynamic_arr = toml_edit::Array::new();
     dynamic_arr.push("nifi-rust-client/dynamic");
+    for version in versions {
+        dynamic_arr.push(version_to_feature(version).as_str());
+    }
     features.insert("dynamic", toml_edit::value(dynamic_arr));
 
     features.sort_values();
@@ -167,6 +170,11 @@ mod tests {
     fn test_patch_tests_cargo_features_includes_dynamic() {
         let toml = "[package]\nname = \"nifi-integration-tests\"\n";
         let result = patch_tests_cargo_features(toml, &["2.7.2", "2.8.0"]);
-        assert!(result.contains("dynamic = [\"nifi-rust-client/dynamic\"]"));
+        assert!(
+            result.contains(
+                "dynamic = [\"nifi-rust-client/dynamic\", \"nifi-2-7-2\", \"nifi-2-8-0\"]"
+            ),
+            "dynamic feature should include all version features. Got:\n{result}"
+        );
     }
 }

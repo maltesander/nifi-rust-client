@@ -524,37 +524,28 @@ impl<'a> ParameterContextsValidationRequestsApi<'a> {
 }
 #[allow(clippy::too_many_arguments)]
 impl crate::v2_6_0::traits::ParameterContextsApi for ParameterContextsApi<'_> {
-    type ParameterContextsAssetsApi<'b>
-        = ParameterContextsAssetsApi<'b>
-    where
-        Self: 'b;
-    fn assets<'b>(&'b self, context_id: &'b str) -> Self::ParameterContextsAssetsApi<'b> {
+    fn assets<'b>(
+        &'b self,
+        context_id: &'b str,
+    ) -> impl crate::v2_6_0::traits::ParameterContextsAssetsApi + 'b {
         ParameterContextsAssetsApi {
             client: self.client,
             context_id,
         }
     }
-    type ParameterContextsUpdateRequestsApi<'b>
-        = ParameterContextsUpdateRequestsApi<'b>
-    where
-        Self: 'b;
     fn update_requests<'b>(
         &'b self,
         context_id: &'b str,
-    ) -> Self::ParameterContextsUpdateRequestsApi<'b> {
+    ) -> impl crate::v2_6_0::traits::ParameterContextsUpdateRequestsApi + 'b {
         ParameterContextsUpdateRequestsApi {
             client: self.client,
             context_id,
         }
     }
-    type ParameterContextsValidationRequestsApi<'b>
-        = ParameterContextsValidationRequestsApi<'b>
-    where
-        Self: 'b;
     fn validation_requests<'b>(
         &'b self,
         context_id: &'b str,
-    ) -> Self::ParameterContextsValidationRequestsApi<'b> {
+    ) -> impl crate::v2_6_0::traits::ParameterContextsValidationRequestsApi + 'b {
         ParameterContextsValidationRequestsApi {
             client: self.client,
             context_id,

@@ -89,7 +89,7 @@ fn emit_tag_impl_file(
     out.push_str("use crate::dynamic::types;\n");
     out.push_str(&format!("use crate::dynamic::traits::{struct_name};\n"));
 
-    // Import sub-resource trait names (needed for GAT bounds)
+    // Import sub-resource trait names (needed for RPITIT bounds)
     for sg in &sub_groups.sub_groups {
         out.push_str(&format!(
             "#[allow(unused_imports)]\nuse crate::dynamic::traits::{};\n",
@@ -107,7 +107,7 @@ fn emit_tag_impl_file(
     out.push_str("#[allow(unused_variables)]\n");
     out.push_str(&format!("impl {struct_name} for {wrapper_struct}<'_> {{\n"));
 
-    // GAT type bindings and accessor methods for sub-resources
+    // Accessor methods for sub-resources (RPITIT — no GAT bindings needed)
     let variant = version_to_variant(ver);
     for sg in &sub_groups.sub_groups {
         let sub_trait_name = &sg.struct_name;
@@ -115,14 +115,9 @@ fn emit_tag_impl_file(
         let accessor = &sg.accessor_fn;
         let primary = &sg.primary_param;
 
-        // GAT type binding
+        // Accessor method (RPITIT)
         out.push_str(&format!(
-            "    type {sub_trait_name}<'b> = crate::dynamic::dispatch::{sub_dispatch_name}<'b> where Self: 'b;\n"
-        ));
-
-        // Accessor method
-        out.push_str(&format!(
-            "    fn {accessor}<'b>(&'b self, {primary}: &'b str) -> Self::{sub_trait_name}<'b> {{\n"
+            "    fn {accessor}<'b>(&'b self, {primary}: &'b str) -> impl {sub_trait_name} + 'b {{\n"
         ));
         out.push_str(&format!(
             "        crate::dynamic::dispatch::{sub_dispatch_name} {{\n"
@@ -460,17 +455,16 @@ mod tests {
             "Missing struct definition"
         );
 
-        // GAT type binding pointing to dispatch struct (rustfmt may split across lines)
+        // RPITIT accessor (no GAT type binding)
         assert!(
-            content.contains("type ControllerServicesConfigApi<'b>")
-                && content.contains("ControllerServicesConfigApiDispatch"),
-            "Missing GAT type binding. Content:\n{content}"
+            !content.contains("type ControllerServicesConfigApi<'b>"),
+            "GAT type binding should not be present. Content:\n{content}"
         );
 
-        // Accessor method constructs dispatch struct
+        // Accessor method with RPITIT return type constructs dispatch struct
         assert!(
-            content.contains("fn config<'b>("),
-            "Missing accessor method. Content:\n{content}"
+            content.contains("fn config<'b>(&'b self, id: &'b str) -> impl ControllerServicesConfigApi + 'b"),
+            "Missing RPITIT accessor method. Content:\n{content}"
         );
         assert!(
             content.contains("crate::dynamic::dispatch::ControllerServicesConfigApiDispatch {"),
