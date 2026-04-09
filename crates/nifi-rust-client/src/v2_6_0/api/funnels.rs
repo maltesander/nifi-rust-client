@@ -99,3 +99,26 @@ impl<'a> FunnelsApi<'a> {
         self.client.put(&format!("/funnels/{id}"), body).await
     }
 }
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_6_0::traits::FunnelsApi for FunnelsApi<'_> {
+    async fn remove_funnel(
+        &self,
+        id: &str,
+        version: Option<&str>,
+        client_id: Option<&str>,
+        disconnected_node_acknowledged: Option<bool>,
+    ) -> Result<crate::v2_6_0::types::FunnelEntity, NifiError> {
+        self.remove_funnel(id, version, client_id, disconnected_node_acknowledged)
+            .await
+    }
+    async fn get_funnel(&self, id: &str) -> Result<crate::v2_6_0::types::FunnelEntity, NifiError> {
+        self.get_funnel(id).await
+    }
+    async fn update_funnel(
+        &self,
+        id: &str,
+        body: &crate::v2_6_0::types::FunnelEntity,
+    ) -> Result<crate::v2_6_0::types::FunnelEntity, NifiError> {
+        self.update_funnel(id, body).await
+    }
+}

@@ -4,91 +4,82 @@
 use crate::NifiError;
 use crate::dynamic::traits::ReportingTasksApi;
 #[allow(unused_imports)]
+use crate::dynamic::traits::ReportingTasksBulletinsApi;
+#[allow(unused_imports)]
+use crate::dynamic::traits::ReportingTasksConfigApi;
+#[allow(unused_imports)]
+use crate::dynamic::traits::ReportingTasksDescriptorsApi;
+#[allow(unused_imports)]
+use crate::dynamic::traits::ReportingTasksRunStatusApi;
+#[allow(unused_imports)]
+use crate::dynamic::traits::ReportingTasksStateApi;
+#[allow(unused_imports)]
 use crate::dynamic::types;
 pub(crate) struct V2_6_0ReportingTasksApi<'a> {
     pub(crate) client: &'a crate::NifiClient,
 }
 #[allow(unused_variables)]
 impl ReportingTasksApi for V2_6_0ReportingTasksApi<'_> {
-    async fn analyze_configuration_3(
-        &self,
-        id: &str,
-        body: types::ConfigurationAnalysisEntity,
-    ) -> Result<types::ConfigurationAnalysisDto, NifiError> {
-        let api = crate::v2_6_0::api::reportingtasks::ReportingTasksConfigApi {
+    type ReportingTasksBulletinsApi<'b>
+        = crate::dynamic::dispatch::ReportingTasksBulletinsApiDispatch<'b>
+    where
+        Self: 'b;
+    fn bulletins<'b>(&'b self, id: &'b str) -> Self::ReportingTasksBulletinsApi<'b> {
+        crate::dynamic::dispatch::ReportingTasksBulletinsApiDispatch {
             client: self.client,
-            id,
-        };
-        Ok(api
-            .analyze_configuration_3(
-                &crate::v2_6_0::types::ConfigurationAnalysisEntity::try_from(body)?,
-            )
-            .await?
-            .into())
+            id: id.to_string(),
+            version: crate::dynamic::DetectedVersion::V2_6_0,
+        }
     }
-    async fn clear_state_4(
-        &self,
-        id: &str,
-        body: types::ComponentStateEntity,
-    ) -> Result<types::ComponentStateDto, NifiError> {
-        let api = crate::v2_6_0::api::reportingtasks::ReportingTasksStateApi {
+    type ReportingTasksConfigApi<'b>
+        = crate::dynamic::dispatch::ReportingTasksConfigApiDispatch<'b>
+    where
+        Self: 'b;
+    fn config<'b>(&'b self, id: &'b str) -> Self::ReportingTasksConfigApi<'b> {
+        crate::dynamic::dispatch::ReportingTasksConfigApiDispatch {
             client: self.client,
-            id,
-        };
-        Ok(api
-            .clear_state_4(&crate::v2_6_0::types::ComponentStateEntity::try_from(body)?)
-            .await?
-            .into())
+            id: id.to_string(),
+            version: crate::dynamic::DetectedVersion::V2_6_0,
+        }
     }
-    async fn delete_verification_request_3(
-        &self,
-        id: &str,
-        request_id: &str,
-    ) -> Result<types::VerifyConfigRequestDto, NifiError> {
-        let api = crate::v2_6_0::api::reportingtasks::ReportingTasksConfigApi {
+    type ReportingTasksDescriptorsApi<'b>
+        = crate::dynamic::dispatch::ReportingTasksDescriptorsApiDispatch<'b>
+    where
+        Self: 'b;
+    fn descriptors<'b>(&'b self, id: &'b str) -> Self::ReportingTasksDescriptorsApi<'b> {
+        crate::dynamic::dispatch::ReportingTasksDescriptorsApiDispatch {
             client: self.client,
-            id,
-        };
-        Ok(api.delete_verification_request_3(request_id).await?.into())
+            id: id.to_string(),
+            version: crate::dynamic::DetectedVersion::V2_6_0,
+        }
     }
-    async fn get_property_descriptor_4(
-        &self,
-        id: &str,
-        property_name: &str,
-        sensitive: Option<bool>,
-    ) -> Result<types::PropertyDescriptorDto, NifiError> {
-        let api = crate::v2_6_0::api::reportingtasks::ReportingTasksDescriptorsApi {
+    type ReportingTasksRunStatusApi<'b>
+        = crate::dynamic::dispatch::ReportingTasksRunStatusApiDispatch<'b>
+    where
+        Self: 'b;
+    fn run_status<'b>(&'b self, id: &'b str) -> Self::ReportingTasksRunStatusApi<'b> {
+        crate::dynamic::dispatch::ReportingTasksRunStatusApiDispatch {
             client: self.client,
-            id,
-        };
-        Ok(api
-            .get_property_descriptor_4(property_name, sensitive)
-            .await?
-            .into())
+            id: id.to_string(),
+            version: crate::dynamic::DetectedVersion::V2_6_0,
+        }
+    }
+    type ReportingTasksStateApi<'b>
+        = crate::dynamic::dispatch::ReportingTasksStateApiDispatch<'b>
+    where
+        Self: 'b;
+    fn state<'b>(&'b self, id: &'b str) -> Self::ReportingTasksStateApi<'b> {
+        crate::dynamic::dispatch::ReportingTasksStateApiDispatch {
+            client: self.client,
+            id: id.to_string(),
+            version: crate::dynamic::DetectedVersion::V2_6_0,
+        }
     }
     async fn get_reporting_task(&self, id: &str) -> Result<types::ReportingTaskEntity, NifiError> {
         let api = crate::v2_6_0::api::reportingtasks::ReportingTasksApi {
             client: self.client,
         };
         Ok(api.get_reporting_task(id).await?.into())
-    }
-    async fn get_state_4(&self, id: &str) -> Result<types::ComponentStateDto, NifiError> {
-        let api = crate::v2_6_0::api::reportingtasks::ReportingTasksStateApi {
-            client: self.client,
-            id,
-        };
-        Ok(api.get_state_4().await?.into())
-    }
-    async fn get_verification_request_3(
-        &self,
-        id: &str,
-        request_id: &str,
-    ) -> Result<types::VerifyConfigRequestDto, NifiError> {
-        let api = crate::v2_6_0::api::reportingtasks::ReportingTasksConfigApi {
-            client: self.client,
-            id,
-        };
-        Ok(api.get_verification_request_3(request_id).await?.into())
     }
     async fn remove_reporting_task(
         &self,
@@ -105,26 +96,10 @@ impl ReportingTasksApi for V2_6_0ReportingTasksApi<'_> {
             .await?
             .into())
     }
-    async fn submit_config_verification_request_2(
-        &self,
-        id: &str,
-        body: types::VerifyConfigRequestEntity,
-    ) -> Result<types::VerifyConfigRequestDto, NifiError> {
-        let api = crate::v2_6_0::api::reportingtasks::ReportingTasksConfigApi {
-            client: self.client,
-            id,
-        };
-        Ok(api
-            .submit_config_verification_request_2(
-                &crate::v2_6_0::types::VerifyConfigRequestEntity::try_from(body)?,
-            )
-            .await?
-            .into())
-    }
     async fn update_reporting_task(
         &self,
         id: &str,
-        body: types::ReportingTaskEntity,
+        body: &types::ReportingTaskEntity,
     ) -> Result<types::ReportingTaskEntity, NifiError> {
         let api = crate::v2_6_0::api::reportingtasks::ReportingTasksApi {
             client: self.client,
@@ -132,23 +107,7 @@ impl ReportingTasksApi for V2_6_0ReportingTasksApi<'_> {
         Ok(api
             .update_reporting_task(
                 id,
-                &crate::v2_6_0::types::ReportingTaskEntity::try_from(body)?,
-            )
-            .await?
-            .into())
-    }
-    async fn update_run_status_5(
-        &self,
-        id: &str,
-        body: types::ReportingTaskRunStatusEntity,
-    ) -> Result<types::ReportingTaskEntity, NifiError> {
-        let api = crate::v2_6_0::api::reportingtasks::ReportingTasksRunStatusApi {
-            client: self.client,
-            id,
-        };
-        Ok(api
-            .update_run_status_5(
-                &crate::v2_6_0::types::ReportingTaskRunStatusEntity::try_from(body)?,
+                &crate::v2_6_0::types::ReportingTaskEntity::try_from(body.clone())?,
             )
             .await?
             .into())

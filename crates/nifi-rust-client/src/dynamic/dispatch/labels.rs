@@ -46,7 +46,7 @@ impl LabelsApi for LabelsApiDispatch<'_> {
     async fn update_label(
         &self,
         id: &str,
-        body: types::LabelEntity,
+        body: &types::LabelEntity,
     ) -> Result<types::LabelEntity, NifiError> {
         match self {
             Self::V2_6_0(api) => api.update_label(id, body).await,

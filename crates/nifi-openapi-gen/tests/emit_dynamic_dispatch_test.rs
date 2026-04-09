@@ -209,8 +209,8 @@ fn dispatch_forwards_all_params() {
         "Should have query param: {proc_rs}"
     );
     assert!(
-        proc_rs.contains("body: types::ProcessorEntity"),
-        "Should have body param: {proc_rs}"
+        proc_rs.contains("body: &types::ProcessorEntity"),
+        "Should have borrowed body param: {proc_rs}"
     );
 
     // Match arm forwards all three params

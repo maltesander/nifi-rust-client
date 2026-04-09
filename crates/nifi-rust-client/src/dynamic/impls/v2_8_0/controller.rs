@@ -4,197 +4,184 @@
 use crate::NifiError;
 use crate::dynamic::traits::ControllerApi;
 #[allow(unused_imports)]
+use crate::dynamic::traits::ControllerBulletinsApi;
+#[allow(unused_imports)]
+use crate::dynamic::traits::ControllerConfigApi;
+#[allow(unused_imports)]
+use crate::dynamic::traits::ControllerContentApi;
+#[allow(unused_imports)]
+use crate::dynamic::traits::ControllerDescriptorsApi;
+#[allow(unused_imports)]
+use crate::dynamic::traits::ControllerDetailsApi;
+#[allow(unused_imports)]
+use crate::dynamic::traits::ControllerRunStatusApi;
+#[allow(unused_imports)]
+use crate::dynamic::traits::ControllerStateApi;
+#[allow(unused_imports)]
 use crate::dynamic::types;
 pub(crate) struct V2_8_0ControllerApi<'a> {
     pub(crate) client: &'a crate::NifiClient,
 }
 #[allow(unused_variables)]
 impl ControllerApi for V2_8_0ControllerApi<'_> {
-    async fn analyze_flow_analysis_rule_configuration(
-        &self,
-        id: &str,
-        body: types::ConfigurationAnalysisEntity,
-    ) -> Result<types::ConfigurationAnalysisDto, NifiError> {
-        let api = crate::v2_8_0::api::controller::ControllerConfigApi {
+    type ControllerBulletinsApi<'b>
+        = crate::dynamic::dispatch::ControllerBulletinsApiDispatch<'b>
+    where
+        Self: 'b;
+    fn bulletins<'b>(&'b self, id: &'b str) -> Self::ControllerBulletinsApi<'b> {
+        crate::dynamic::dispatch::ControllerBulletinsApiDispatch {
             client: self.client,
-            id,
-        };
-        Ok(api
-            .analyze_flow_analysis_rule_configuration(
-                &crate::v2_8_0::types::ConfigurationAnalysisEntity::try_from(body)?,
-            )
-            .await?
-            .into())
+            id: id.to_string(),
+            version: crate::dynamic::DetectedVersion::V2_8_0,
+        }
     }
-    async fn analyze_flow_registry_client_configuration(
-        &self,
-        id: &str,
-        body: types::ConfigurationAnalysisEntity,
-    ) -> Result<types::ConfigurationAnalysisDto, NifiError> {
-        let api = crate::v2_8_0::api::controller::ControllerConfigApi {
+    type ControllerConfigApi<'b>
+        = crate::dynamic::dispatch::ControllerConfigApiDispatch<'b>
+    where
+        Self: 'b;
+    fn config<'b>(&'b self, id: &'b str) -> Self::ControllerConfigApi<'b> {
+        crate::dynamic::dispatch::ControllerConfigApiDispatch {
             client: self.client,
-            id,
-        };
-        Ok(api
-            .analyze_flow_registry_client_configuration(
-                &crate::v2_8_0::types::ConfigurationAnalysisEntity::try_from(body)?,
-            )
-            .await?
-            .into())
+            id: id.to_string(),
+            version: crate::dynamic::DetectedVersion::V2_8_0,
+        }
     }
-    async fn clear_flow_analysis_rule_bulletins(
-        &self,
-        id: &str,
-        body: types::ClearBulletinsRequestEntity,
-    ) -> Result<types::ClearBulletinsResultEntity, NifiError> {
-        let api = crate::v2_8_0::api::controller::ControllerBulletinsApi {
+    type ControllerContentApi<'b>
+        = crate::dynamic::dispatch::ControllerContentApiDispatch<'b>
+    where
+        Self: 'b;
+    fn content<'b>(&'b self, id: &'b str) -> Self::ControllerContentApi<'b> {
+        crate::dynamic::dispatch::ControllerContentApiDispatch {
             client: self.client,
-            id,
-        };
-        Ok(api
-            .clear_flow_analysis_rule_bulletins(
-                &crate::v2_8_0::types::ClearBulletinsRequestEntity::try_from(body)?,
-            )
-            .await?
-            .into())
+            id: id.to_string(),
+            version: crate::dynamic::DetectedVersion::V2_8_0,
+        }
     }
-    async fn clear_parameter_provider_bulletins(
-        &self,
-        id: &str,
-        body: types::ClearBulletinsRequestEntity,
-    ) -> Result<types::ClearBulletinsResultEntity, NifiError> {
-        let api = crate::v2_8_0::api::controller::ControllerBulletinsApi {
+    type ControllerDescriptorsApi<'b>
+        = crate::dynamic::dispatch::ControllerDescriptorsApiDispatch<'b>
+    where
+        Self: 'b;
+    fn descriptors<'b>(&'b self, id: &'b str) -> Self::ControllerDescriptorsApi<'b> {
+        crate::dynamic::dispatch::ControllerDescriptorsApiDispatch {
             client: self.client,
-            id,
-        };
-        Ok(api
-            .clear_parameter_provider_bulletins(
-                &crate::v2_8_0::types::ClearBulletinsRequestEntity::try_from(body)?,
-            )
-            .await?
-            .into())
+            id: id.to_string(),
+            version: crate::dynamic::DetectedVersion::V2_8_0,
+        }
     }
-    async fn clear_registry_client_bulletins(
-        &self,
-        id: &str,
-        body: types::ClearBulletinsRequestEntity,
-    ) -> Result<types::ClearBulletinsResultEntity, NifiError> {
-        let api = crate::v2_8_0::api::controller::ControllerBulletinsApi {
+    type ControllerDetailsApi<'b>
+        = crate::dynamic::dispatch::ControllerDetailsApiDispatch<'b>
+    where
+        Self: 'b;
+    fn details<'b>(&'b self, id: &'b str) -> Self::ControllerDetailsApi<'b> {
+        crate::dynamic::dispatch::ControllerDetailsApiDispatch {
             client: self.client,
-            id,
-        };
-        Ok(api
-            .clear_registry_client_bulletins(
-                &crate::v2_8_0::types::ClearBulletinsRequestEntity::try_from(body)?,
-            )
-            .await?
-            .into())
+            id: id.to_string(),
+            version: crate::dynamic::DetectedVersion::V2_8_0,
+        }
     }
-    async fn clear_state(
-        &self,
-        id: &str,
-        body: types::ComponentStateEntity,
-    ) -> Result<types::ComponentStateDto, NifiError> {
-        let api = crate::v2_8_0::api::controller::ControllerStateApi {
+    type ControllerRunStatusApi<'b>
+        = crate::dynamic::dispatch::ControllerRunStatusApiDispatch<'b>
+    where
+        Self: 'b;
+    fn run_status<'b>(&'b self, id: &'b str) -> Self::ControllerRunStatusApi<'b> {
+        crate::dynamic::dispatch::ControllerRunStatusApiDispatch {
             client: self.client,
-            id,
-        };
-        Ok(api
-            .clear_state(&crate::v2_8_0::types::ComponentStateEntity::try_from(body)?)
-            .await?
-            .into())
+            id: id.to_string(),
+            version: crate::dynamic::DetectedVersion::V2_8_0,
+        }
+    }
+    type ControllerStateApi<'b>
+        = crate::dynamic::dispatch::ControllerStateApiDispatch<'b>
+    where
+        Self: 'b;
+    fn state<'b>(&'b self, id: &'b str) -> Self::ControllerStateApi<'b> {
+        crate::dynamic::dispatch::ControllerStateApiDispatch {
+            client: self.client,
+            id: id.to_string(),
+            version: crate::dynamic::DetectedVersion::V2_8_0,
+        }
     }
     async fn create_bulletin(
         &self,
-        body: types::BulletinEntity,
+        body: &types::BulletinEntity,
     ) -> Result<types::BulletinEntity, NifiError> {
         let api = crate::v2_8_0::api::controller::ControllerApi {
             client: self.client,
         };
         Ok(api
-            .create_bulletin(&crate::v2_8_0::types::BulletinEntity::try_from(body)?)
+            .create_bulletin(&crate::v2_8_0::types::BulletinEntity::try_from(
+                body.clone(),
+            )?)
             .await?
             .into())
     }
     async fn create_controller_service(
         &self,
-        body: types::ControllerServiceEntity,
+        body: &types::ControllerServiceEntity,
     ) -> Result<types::ControllerServiceEntity, NifiError> {
         let api = crate::v2_8_0::api::controller::ControllerApi {
             client: self.client,
         };
         Ok(api
             .create_controller_service(&crate::v2_8_0::types::ControllerServiceEntity::try_from(
-                body,
+                body.clone(),
             )?)
             .await?
             .into())
     }
     async fn create_flow_analysis_rule(
         &self,
-        body: types::FlowAnalysisRuleEntity,
+        body: &types::FlowAnalysisRuleEntity,
     ) -> Result<types::FlowAnalysisRuleEntity, NifiError> {
         let api = crate::v2_8_0::api::controller::ControllerApi {
             client: self.client,
         };
         Ok(api
             .create_flow_analysis_rule(&crate::v2_8_0::types::FlowAnalysisRuleEntity::try_from(
-                body,
+                body.clone(),
             )?)
             .await?
             .into())
     }
     async fn create_flow_registry_client(
         &self,
-        body: types::FlowRegistryClientEntity,
+        body: &types::FlowRegistryClientEntity,
     ) -> Result<types::FlowRegistryClientEntity, NifiError> {
         let api = crate::v2_8_0::api::controller::ControllerApi {
             client: self.client,
         };
         Ok(api
             .create_flow_registry_client(&crate::v2_8_0::types::FlowRegistryClientEntity::try_from(
-                body,
+                body.clone(),
             )?)
             .await?
             .into())
     }
     async fn create_parameter_provider(
         &self,
-        body: types::ParameterProviderEntity,
+        body: &types::ParameterProviderEntity,
     ) -> Result<types::ParameterProviderEntity, NifiError> {
         let api = crate::v2_8_0::api::controller::ControllerApi {
             client: self.client,
         };
         Ok(api
             .create_parameter_provider(&crate::v2_8_0::types::ParameterProviderEntity::try_from(
-                body,
+                body.clone(),
             )?)
             .await?
             .into())
     }
     async fn create_reporting_task(
         &self,
-        body: types::ReportingTaskEntity,
+        body: &types::ReportingTaskEntity,
     ) -> Result<types::ReportingTaskEntity, NifiError> {
         let api = crate::v2_8_0::api::controller::ControllerApi {
             client: self.client,
         };
         Ok(api
-            .create_reporting_task(&crate::v2_8_0::types::ReportingTaskEntity::try_from(body)?)
-            .await?
-            .into())
-    }
-    async fn delete_flow_analysis_rule_verification_request(
-        &self,
-        id: &str,
-        request_id: &str,
-    ) -> Result<types::VerifyConfigRequestDto, NifiError> {
-        let api = crate::v2_8_0::api::controller::ControllerConfigApi {
-            client: self.client,
-            id,
-        };
-        Ok(api
-            .delete_flow_analysis_rule_verification_request(request_id)
+            .create_reporting_task(&crate::v2_8_0::types::ReportingTaskEntity::try_from(
+                body.clone(),
+            )?)
             .await?
             .into())
     }
@@ -239,27 +226,6 @@ impl ControllerApi for V2_8_0ControllerApi<'_> {
         };
         Ok(api.delete_node(id).await?.into())
     }
-    async fn delete_registry_client_verification_request(
-        &self,
-        id: &str,
-        request_id: &str,
-    ) -> Result<types::VerifyConfigRequestDto, NifiError> {
-        let api = crate::v2_8_0::api::controller::ControllerConfigApi {
-            client: self.client,
-            id,
-        };
-        Ok(api
-            .delete_registry_client_verification_request(request_id)
-            .await?
-            .into())
-    }
-    async fn download_nar(&self, id: &str) -> Result<(), NifiError> {
-        let api = crate::v2_8_0::api::controller::ControllerContentApi {
-            client: self.client,
-            id,
-        };
-        api.download_nar().await
-    }
     async fn get_cluster(&self) -> Result<types::ClusterDto, NifiError> {
         let api = crate::v2_8_0::api::controller::ControllerApi {
             client: self.client,
@@ -283,45 +249,6 @@ impl ControllerApi for V2_8_0ControllerApi<'_> {
         };
         Ok(api.get_flow_analysis_rule(id).await?.into())
     }
-    async fn get_flow_analysis_rule_property_descriptor(
-        &self,
-        id: &str,
-        property_name: &str,
-        sensitive: Option<bool>,
-    ) -> Result<types::PropertyDescriptorDto, NifiError> {
-        let api = crate::v2_8_0::api::controller::ControllerDescriptorsApi {
-            client: self.client,
-            id,
-        };
-        Ok(api
-            .get_flow_analysis_rule_property_descriptor(property_name, sensitive)
-            .await?
-            .into())
-    }
-    async fn get_flow_analysis_rule_state(
-        &self,
-        id: &str,
-    ) -> Result<types::ComponentStateDto, NifiError> {
-        let api = crate::v2_8_0::api::controller::ControllerStateApi {
-            client: self.client,
-            id,
-        };
-        Ok(api.get_flow_analysis_rule_state().await?.into())
-    }
-    async fn get_flow_analysis_rule_verification_request(
-        &self,
-        id: &str,
-        request_id: &str,
-    ) -> Result<types::VerifyConfigRequestDto, NifiError> {
-        let api = crate::v2_8_0::api::controller::ControllerConfigApi {
-            client: self.client,
-            id,
-        };
-        Ok(api
-            .get_flow_analysis_rule_verification_request(request_id)
-            .await?
-            .into())
-    }
     async fn get_flow_analysis_rules(&self) -> Result<types::FlowAnalysisRulesEntity, NifiError> {
         let api = crate::v2_8_0::api::controller::ControllerApi {
             client: self.client,
@@ -344,13 +271,6 @@ impl ControllerApi for V2_8_0ControllerApi<'_> {
             client: self.client,
         };
         Ok(api.get_flow_registry_clients().await?.into())
-    }
-    async fn get_nar_details(&self, id: &str) -> Result<types::NarDetailsEntity, NifiError> {
-        let api = crate::v2_8_0::api::controller::ControllerDetailsApi {
-            client: self.client,
-            id,
-        };
-        Ok(api.get_nar_details().await?.into())
     }
     async fn get_nar_summaries(&self) -> Result<types::NarSummariesEntity, NifiError> {
         let api = crate::v2_8_0::api::controller::ControllerApi {
@@ -376,21 +296,6 @@ impl ControllerApi for V2_8_0ControllerApi<'_> {
         };
         Ok(api.get_node_status_history().await?.into())
     }
-    async fn get_property_descriptor(
-        &self,
-        id: &str,
-        property_name: &str,
-        sensitive: Option<bool>,
-    ) -> Result<types::PropertyDescriptorDto, NifiError> {
-        let api = crate::v2_8_0::api::controller::ControllerDescriptorsApi {
-            client: self.client,
-            id,
-        };
-        Ok(api
-            .get_property_descriptor(property_name, sensitive)
-            .await?
-            .into())
-    }
     async fn get_registry_client_types(
         &self,
     ) -> Result<types::FlowRegistryClientTypesEntity, NifiError> {
@@ -399,30 +304,18 @@ impl ControllerApi for V2_8_0ControllerApi<'_> {
         };
         Ok(api.get_registry_client_types().await?.into())
     }
-    async fn get_registry_client_verification_request(
-        &self,
-        id: &str,
-        request_id: &str,
-    ) -> Result<types::VerifyConfigRequestDto, NifiError> {
-        let api = crate::v2_8_0::api::controller::ControllerConfigApi {
-            client: self.client,
-            id,
-        };
-        Ok(api
-            .get_registry_client_verification_request(request_id)
-            .await?
-            .into())
-    }
     async fn import_reporting_task_snapshot(
         &self,
-        body: types::VersionedReportingTaskImportRequestEntity,
+        body: &types::VersionedReportingTaskImportRequestEntity,
     ) -> Result<types::VersionedReportingTaskImportResponseEntity, NifiError> {
         let api = crate::v2_8_0::api::controller::ControllerApi {
             client: self.client,
         };
         Ok(api
             .import_reporting_task_snapshot(
-                &crate::v2_8_0::types::VersionedReportingTaskImportRequestEntity::try_from(body)?,
+                &crate::v2_8_0::types::VersionedReportingTaskImportRequestEntity::try_from(
+                    body.clone(),
+                )?,
             )
             .await?
             .into())
@@ -442,48 +335,16 @@ impl ControllerApi for V2_8_0ControllerApi<'_> {
             .await?
             .into())
     }
-    async fn submit_flow_analysis_rule_config_verification_request(
-        &self,
-        id: &str,
-        body: types::VerifyConfigRequestEntity,
-    ) -> Result<types::VerifyConfigRequestDto, NifiError> {
-        let api = crate::v2_8_0::api::controller::ControllerConfigApi {
-            client: self.client,
-            id,
-        };
-        Ok(api
-            .submit_flow_analysis_rule_config_verification_request(
-                &crate::v2_8_0::types::VerifyConfigRequestEntity::try_from(body)?,
-            )
-            .await?
-            .into())
-    }
-    async fn submit_registry_client_config_verification_request(
-        &self,
-        id: &str,
-        body: types::VerifyConfigRequestEntity,
-    ) -> Result<types::VerifyConfigRequestDto, NifiError> {
-        let api = crate::v2_8_0::api::controller::ControllerConfigApi {
-            client: self.client,
-            id,
-        };
-        Ok(api
-            .submit_registry_client_config_verification_request(
-                &crate::v2_8_0::types::VerifyConfigRequestEntity::try_from(body)?,
-            )
-            .await?
-            .into())
-    }
     async fn update_controller_config(
         &self,
-        body: types::ControllerConfigurationEntity,
+        body: &types::ControllerConfigurationEntity,
     ) -> Result<types::ControllerConfigurationEntity, NifiError> {
         let api = crate::v2_8_0::api::controller::ControllerApi {
             client: self.client,
         };
         Ok(api
             .update_controller_config(
-                &crate::v2_8_0::types::ControllerConfigurationEntity::try_from(body)?,
+                &crate::v2_8_0::types::ControllerConfigurationEntity::try_from(body.clone())?,
             )
             .await?
             .into())
@@ -491,7 +352,7 @@ impl ControllerApi for V2_8_0ControllerApi<'_> {
     async fn update_flow_analysis_rule(
         &self,
         id: &str,
-        body: types::FlowAnalysisRuleEntity,
+        body: &types::FlowAnalysisRuleEntity,
     ) -> Result<types::FlowAnalysisRuleEntity, NifiError> {
         let api = crate::v2_8_0::api::controller::ControllerApi {
             client: self.client,
@@ -499,7 +360,7 @@ impl ControllerApi for V2_8_0ControllerApi<'_> {
         Ok(api
             .update_flow_analysis_rule(
                 id,
-                &crate::v2_8_0::types::FlowAnalysisRuleEntity::try_from(body)?,
+                &crate::v2_8_0::types::FlowAnalysisRuleEntity::try_from(body.clone())?,
             )
             .await?
             .into())
@@ -507,7 +368,7 @@ impl ControllerApi for V2_8_0ControllerApi<'_> {
     async fn update_flow_registry_client(
         &self,
         id: &str,
-        body: types::FlowRegistryClientEntity,
+        body: &types::FlowRegistryClientEntity,
     ) -> Result<types::FlowRegistryClientEntity, NifiError> {
         let api = crate::v2_8_0::api::controller::ControllerApi {
             client: self.client,
@@ -515,7 +376,7 @@ impl ControllerApi for V2_8_0ControllerApi<'_> {
         Ok(api
             .update_flow_registry_client(
                 id,
-                &crate::v2_8_0::types::FlowRegistryClientEntity::try_from(body)?,
+                &crate::v2_8_0::types::FlowRegistryClientEntity::try_from(body.clone())?,
             )
             .await?
             .into())
@@ -523,28 +384,15 @@ impl ControllerApi for V2_8_0ControllerApi<'_> {
     async fn update_node(
         &self,
         id: &str,
-        body: types::NodeEntity,
+        body: &types::NodeEntity,
     ) -> Result<types::NodeDto, NifiError> {
         let api = crate::v2_8_0::api::controller::ControllerApi {
             client: self.client,
         };
         Ok(api
-            .update_node(id, &crate::v2_8_0::types::NodeEntity::try_from(body)?)
-            .await?
-            .into())
-    }
-    async fn update_run_status(
-        &self,
-        id: &str,
-        body: types::FlowAnalysisRuleRunStatusEntity,
-    ) -> Result<types::FlowAnalysisRuleEntity, NifiError> {
-        let api = crate::v2_8_0::api::controller::ControllerRunStatusApi {
-            client: self.client,
-            id,
-        };
-        Ok(api
-            .update_run_status(
-                &crate::v2_8_0::types::FlowAnalysisRuleRunStatusEntity::try_from(body)?,
+            .update_node(
+                id,
+                &crate::v2_8_0::types::NodeEntity::try_from(body.clone())?,
             )
             .await?
             .into())

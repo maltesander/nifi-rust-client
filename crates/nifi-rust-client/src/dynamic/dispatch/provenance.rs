@@ -78,7 +78,7 @@ impl ProvenanceApi for ProvenanceApiDispatch<'_> {
     }
     async fn submit_lineage_request(
         &self,
-        body: types::LineageEntity,
+        body: &types::LineageEntity,
     ) -> Result<types::LineageDto, NifiError> {
         match self {
             Self::V2_6_0(api) => api.submit_lineage_request(body).await,
@@ -88,7 +88,7 @@ impl ProvenanceApi for ProvenanceApiDispatch<'_> {
     }
     async fn submit_provenance_request(
         &self,
-        body: types::ProvenanceEntity,
+        body: &types::ProvenanceEntity,
     ) -> Result<types::ProvenanceDto, NifiError> {
         match self {
             Self::V2_6_0(api) => api.submit_provenance_request(body).await,

@@ -268,17 +268,17 @@ fn emits_body_param_with_try_from() {
         find_file(&files, "v2_8_0/processors.rs").expect("should have v2_8_0/processors.rs");
 
     assert!(
-        proc_rs.contains("body: types::ProcessorEntity"),
-        "should accept body by value: {proc_rs}"
+        proc_rs.contains("body: &types::ProcessorEntity"),
+        "should accept body by reference: {proc_rs}"
     );
     assert!(
-        proc_rs.contains("crate::v2_8_0::types::ProcessorEntity::try_from(body)?"),
-        "should convert body with try_from: {proc_rs}"
+        proc_rs.contains("body.clone()"),
+        "should clone body before conversion: {proc_rs}"
     );
 }
 
 #[test]
-fn emits_sub_group_endpoint() {
+fn emits_sub_group_gat_and_accessor() {
     let spec = make_spec(vec![sub_group_tag()]);
     let versions: Vec<(&str, &str, &str, &ApiSpec)> =
         vec![("2.8.0", "v2_8_0", "nifi-2-8-0", &spec)];
@@ -287,14 +287,35 @@ fn emits_sub_group_endpoint() {
     let pg_rs = find_file(&files, "v2_8_0/process_groups.rs")
         .expect("should have v2_8_0/process_groups.rs");
 
-    // Should construct the sub-group struct
+    // GAT type binding pointing to dispatch struct
     assert!(
-        pg_rs.contains("ProcessGroupConnectionsApi"),
-        "should reference sub-group struct: {pg_rs}"
+        pg_rs.contains("type ProcessGroupConnectionsApi<'b>")
+            && pg_rs.contains("ProcessGroupConnectionsApiDispatch"),
+        "should have GAT type binding for sub-resource: {pg_rs}"
+    );
+
+    // Accessor method constructs dispatch struct
+    assert!(
+        pg_rs.contains("fn connections<'b>("),
+        "should have accessor method: {pg_rs}"
+    );
+    assert!(
+        pg_rs.contains("crate::dynamic::dispatch::ProcessGroupConnectionsApiDispatch {"),
+        "should construct dispatch struct: {pg_rs}"
+    );
+    assert!(
+        pg_rs.contains("DetectedVersion::V2_8_0"),
+        "should pass version variant: {pg_rs}"
     );
     assert!(
         pg_rs.contains("client: self.client"),
-        "should pass client to sub-group: {pg_rs}"
+        "should pass client to dispatch struct: {pg_rs}"
+    );
+
+    // Sub-group endpoint method should NOT be in per-version impl
+    assert!(
+        !pg_rs.contains("async fn get_connections("),
+        "sub-group endpoint should NOT be in per-version impl: {pg_rs}"
     );
 }
 

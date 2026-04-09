@@ -192,3 +192,67 @@ impl<'a> OutputPortsRunStatusApi<'a> {
             .await
     }
 }
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_7_2::traits::OutputPortsApi for OutputPortsApi<'_> {
+    type OutputPortsBulletinsApi<'b>
+        = OutputPortsBulletinsApi<'b>
+    where
+        Self: 'b;
+    fn bulletins<'b>(&'b self, id: &'b str) -> Self::OutputPortsBulletinsApi<'b> {
+        OutputPortsBulletinsApi {
+            client: self.client,
+            id,
+        }
+    }
+    type OutputPortsRunStatusApi<'b>
+        = OutputPortsRunStatusApi<'b>
+    where
+        Self: 'b;
+    fn run_status<'b>(&'b self, id: &'b str) -> Self::OutputPortsRunStatusApi<'b> {
+        OutputPortsRunStatusApi {
+            client: self.client,
+            id,
+        }
+    }
+    async fn remove_output_port(
+        &self,
+        id: &str,
+        version: Option<&str>,
+        client_id: Option<&str>,
+        disconnected_node_acknowledged: Option<bool>,
+    ) -> Result<crate::v2_7_2::types::PortEntity, NifiError> {
+        self.remove_output_port(id, version, client_id, disconnected_node_acknowledged)
+            .await
+    }
+    async fn get_output_port(
+        &self,
+        id: &str,
+    ) -> Result<crate::v2_7_2::types::PortEntity, NifiError> {
+        self.get_output_port(id).await
+    }
+    async fn update_output_port(
+        &self,
+        id: &str,
+        body: &crate::v2_7_2::types::PortEntity,
+    ) -> Result<crate::v2_7_2::types::PortEntity, NifiError> {
+        self.update_output_port(id, body).await
+    }
+}
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_7_2::traits::OutputPortsBulletinsApi for OutputPortsBulletinsApi<'_> {
+    async fn clear_bulletins_3(
+        &self,
+        body: &crate::v2_7_2::types::ClearBulletinsRequestEntity,
+    ) -> Result<crate::v2_7_2::types::ClearBulletinsResultEntity, NifiError> {
+        self.clear_bulletins_3(body).await
+    }
+}
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_7_2::traits::OutputPortsRunStatusApi for OutputPortsRunStatusApi<'_> {
+    async fn update_run_status_3(
+        &self,
+        body: &crate::v2_7_2::types::PortRunStatusEntity,
+    ) -> Result<crate::v2_7_2::types::ProcessorEntity, NifiError> {
+        self.update_run_status_3(body).await
+    }
+}

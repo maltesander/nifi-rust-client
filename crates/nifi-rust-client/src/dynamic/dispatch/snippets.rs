@@ -16,7 +16,7 @@ pub enum SnippetsApiDispatch<'a> {
 impl SnippetsApi for SnippetsApiDispatch<'_> {
     async fn create_snippet(
         &self,
-        body: types::SnippetEntity,
+        body: &types::SnippetEntity,
     ) -> Result<types::SnippetEntity, NifiError> {
         match self {
             Self::V2_6_0(api) => api.create_snippet(body).await,
@@ -38,7 +38,7 @@ impl SnippetsApi for SnippetsApiDispatch<'_> {
     async fn update_snippet(
         &self,
         id: &str,
-        body: types::SnippetEntity,
+        body: &types::SnippetEntity,
     ) -> Result<types::SnippetEntity, NifiError> {
         match self {
             Self::V2_6_0(api) => api.update_snippet(id, body).await,

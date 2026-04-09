@@ -582,3 +582,189 @@ impl<'a> ParameterProvidersStateApi<'a> {
         Ok(e.component_state.unwrap_or_default())
     }
 }
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_6_0::traits::ParameterProvidersApi for ParameterProvidersApi<'_> {
+    type ParameterProvidersApplyParametersRequestsApi<'b>
+        = ParameterProvidersApplyParametersRequestsApi<'b>
+    where
+        Self: 'b;
+    fn apply_parameters_requests<'b>(
+        &'b self,
+        provider_id: &'b str,
+    ) -> Self::ParameterProvidersApplyParametersRequestsApi<'b> {
+        ParameterProvidersApplyParametersRequestsApi {
+            client: self.client,
+            provider_id,
+        }
+    }
+    type ParameterProvidersConfigApi<'b>
+        = ParameterProvidersConfigApi<'b>
+    where
+        Self: 'b;
+    fn config<'b>(&'b self, id: &'b str) -> Self::ParameterProvidersConfigApi<'b> {
+        ParameterProvidersConfigApi {
+            client: self.client,
+            id,
+        }
+    }
+    type ParameterProvidersDescriptorsApi<'b>
+        = ParameterProvidersDescriptorsApi<'b>
+    where
+        Self: 'b;
+    fn descriptors<'b>(&'b self, id: &'b str) -> Self::ParameterProvidersDescriptorsApi<'b> {
+        ParameterProvidersDescriptorsApi {
+            client: self.client,
+            id,
+        }
+    }
+    type ParameterProvidersParametersApi<'b>
+        = ParameterProvidersParametersApi<'b>
+    where
+        Self: 'b;
+    fn parameters<'b>(&'b self, id: &'b str) -> Self::ParameterProvidersParametersApi<'b> {
+        ParameterProvidersParametersApi {
+            client: self.client,
+            id,
+        }
+    }
+    type ParameterProvidersReferencesApi<'b>
+        = ParameterProvidersReferencesApi<'b>
+    where
+        Self: 'b;
+    fn references<'b>(&'b self, id: &'b str) -> Self::ParameterProvidersReferencesApi<'b> {
+        ParameterProvidersReferencesApi {
+            client: self.client,
+            id,
+        }
+    }
+    type ParameterProvidersStateApi<'b>
+        = ParameterProvidersStateApi<'b>
+    where
+        Self: 'b;
+    fn state<'b>(&'b self, id: &'b str) -> Self::ParameterProvidersStateApi<'b> {
+        ParameterProvidersStateApi {
+            client: self.client,
+            id,
+        }
+    }
+    async fn remove_parameter_provider(
+        &self,
+        id: &str,
+        version: Option<&str>,
+        client_id: Option<&str>,
+        disconnected_node_acknowledged: Option<bool>,
+    ) -> Result<crate::v2_6_0::types::ParameterProviderEntity, NifiError> {
+        self.remove_parameter_provider(id, version, client_id, disconnected_node_acknowledged)
+            .await
+    }
+    async fn get_parameter_provider(
+        &self,
+        id: &str,
+    ) -> Result<crate::v2_6_0::types::ParameterProviderEntity, NifiError> {
+        self.get_parameter_provider(id).await
+    }
+    async fn update_parameter_provider(
+        &self,
+        id: &str,
+        body: &crate::v2_6_0::types::ParameterProviderEntity,
+    ) -> Result<crate::v2_6_0::types::ParameterProviderEntity, NifiError> {
+        self.update_parameter_provider(id, body).await
+    }
+}
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_6_0::traits::ParameterProvidersApplyParametersRequestsApi
+    for ParameterProvidersApplyParametersRequestsApi<'_>
+{
+    async fn submit_apply_parameters(
+        &self,
+        body: &crate::v2_6_0::types::ParameterProviderParameterApplicationEntity,
+    ) -> Result<crate::v2_6_0::types::ParameterProviderApplyParametersRequestDto, NifiError> {
+        self.submit_apply_parameters(body).await
+    }
+    async fn delete_apply_parameters_request(
+        &self,
+        request_id: &str,
+        disconnected_node_acknowledged: Option<bool>,
+    ) -> Result<crate::v2_6_0::types::ParameterProviderApplyParametersRequestDto, NifiError> {
+        self.delete_apply_parameters_request(request_id, disconnected_node_acknowledged)
+            .await
+    }
+    async fn get_parameter_provider_apply_parameters_request(
+        &self,
+        request_id: &str,
+    ) -> Result<crate::v2_6_0::types::ParameterProviderApplyParametersRequestDto, NifiError> {
+        self.get_parameter_provider_apply_parameters_request(request_id)
+            .await
+    }
+}
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_6_0::traits::ParameterProvidersConfigApi for ParameterProvidersConfigApi<'_> {
+    async fn analyze_configuration_1(
+        &self,
+        body: &crate::v2_6_0::types::ConfigurationAnalysisEntity,
+    ) -> Result<crate::v2_6_0::types::ConfigurationAnalysisDto, NifiError> {
+        self.analyze_configuration_1(body).await
+    }
+    async fn submit_config_verification_request_1(
+        &self,
+        body: &crate::v2_6_0::types::VerifyConfigRequestEntity,
+    ) -> Result<crate::v2_6_0::types::VerifyConfigRequestDto, NifiError> {
+        self.submit_config_verification_request_1(body).await
+    }
+    async fn delete_verification_request_1(
+        &self,
+        request_id: &str,
+    ) -> Result<crate::v2_6_0::types::VerifyConfigRequestDto, NifiError> {
+        self.delete_verification_request_1(request_id).await
+    }
+    async fn get_verification_request_1(
+        &self,
+        request_id: &str,
+    ) -> Result<crate::v2_6_0::types::VerifyConfigRequestDto, NifiError> {
+        self.get_verification_request_1(request_id).await
+    }
+}
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_6_0::traits::ParameterProvidersDescriptorsApi
+    for ParameterProvidersDescriptorsApi<'_>
+{
+    async fn get_property_descriptor_2(
+        &self,
+        property_name: &str,
+    ) -> Result<crate::v2_6_0::types::PropertyDescriptorDto, NifiError> {
+        self.get_property_descriptor_2(property_name).await
+    }
+}
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_6_0::traits::ParameterProvidersParametersApi
+    for ParameterProvidersParametersApi<'_>
+{
+    async fn fetch_parameters(
+        &self,
+        body: &crate::v2_6_0::types::ParameterProviderParameterFetchEntity,
+    ) -> Result<crate::v2_6_0::types::ParameterProviderEntity, NifiError> {
+        self.fetch_parameters(body).await
+    }
+}
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_6_0::traits::ParameterProvidersReferencesApi
+    for ParameterProvidersReferencesApi<'_>
+{
+    async fn get_parameter_provider_references(
+        &self,
+    ) -> Result<crate::v2_6_0::types::ParameterProviderReferencingComponentsEntity, NifiError> {
+        self.get_parameter_provider_references().await
+    }
+}
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_6_0::traits::ParameterProvidersStateApi for ParameterProvidersStateApi<'_> {
+    async fn get_state_1(&self) -> Result<crate::v2_6_0::types::ComponentStateDto, NifiError> {
+        self.get_state_1().await
+    }
+    async fn clear_state_2(
+        &self,
+        body: &crate::v2_6_0::types::ComponentStateEntity,
+    ) -> Result<crate::v2_6_0::types::ComponentStateDto, NifiError> {
+        self.clear_state_2(body).await
+    }
+}

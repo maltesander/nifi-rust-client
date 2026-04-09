@@ -22,7 +22,7 @@ pub trait TenantsApi {
     ///
     /// # Permissions
     /// Requires `Write - /tenants`.
-    async fn create_user(&self, body: types::UserEntity) -> Result<types::UserEntity, NifiError> {
+    async fn create_user(&self, body: &types::UserEntity) -> Result<types::UserEntity, NifiError> {
         Err(NifiError::UnsupportedEndpoint {
             endpoint: "create_user".to_string(),
             version: "unknown".to_string(),
@@ -45,7 +45,7 @@ pub trait TenantsApi {
     /// Requires `Write - /tenants`.
     async fn create_user_group(
         &self,
-        body: types::UserGroupEntity,
+        body: &types::UserGroupEntity,
     ) -> Result<types::UserGroupEntity, NifiError> {
         Err(NifiError::UnsupportedEndpoint {
             endpoint: "create_user_group".to_string(),
@@ -253,7 +253,7 @@ pub trait TenantsApi {
     async fn update_user(
         &self,
         id: &str,
-        body: types::UserEntity,
+        body: &types::UserEntity,
     ) -> Result<types::UserEntity, NifiError> {
         Err(NifiError::UnsupportedEndpoint {
             endpoint: "update_user".to_string(),
@@ -281,7 +281,7 @@ pub trait TenantsApi {
     async fn update_user_group(
         &self,
         id: &str,
-        body: types::UserGroupEntity,
+        body: &types::UserGroupEntity,
     ) -> Result<types::UserGroupEntity, NifiError> {
         Err(NifiError::UnsupportedEndpoint {
             endpoint: "update_user_group".to_string(),

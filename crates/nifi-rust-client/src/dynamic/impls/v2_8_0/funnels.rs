@@ -34,13 +34,16 @@ impl FunnelsApi for V2_8_0FunnelsApi<'_> {
     async fn update_funnel(
         &self,
         id: &str,
-        body: types::FunnelEntity,
+        body: &types::FunnelEntity,
     ) -> Result<types::FunnelEntity, NifiError> {
         let api = crate::v2_8_0::api::funnels::FunnelsApi {
             client: self.client,
         };
         Ok(api
-            .update_funnel(id, &crate::v2_8_0::types::FunnelEntity::try_from(body)?)
+            .update_funnel(
+                id,
+                &crate::v2_8_0::types::FunnelEntity::try_from(body.clone())?,
+            )
             .await?
             .into())
     }

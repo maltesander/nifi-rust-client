@@ -14,7 +14,7 @@ pub enum TenantsApiDispatch<'a> {
     V2_8_0(super::super::impls::v2_8_0::V2_8_0TenantsApi<'a>),
 }
 impl TenantsApi for TenantsApiDispatch<'_> {
-    async fn create_user(&self, body: types::UserEntity) -> Result<types::UserEntity, NifiError> {
+    async fn create_user(&self, body: &types::UserEntity) -> Result<types::UserEntity, NifiError> {
         match self {
             Self::V2_6_0(api) => api.create_user(body).await,
             Self::V2_7_2(api) => api.create_user(body).await,
@@ -23,7 +23,7 @@ impl TenantsApi for TenantsApiDispatch<'_> {
     }
     async fn create_user_group(
         &self,
-        body: types::UserGroupEntity,
+        body: &types::UserGroupEntity,
     ) -> Result<types::UserGroupEntity, NifiError> {
         match self {
             Self::V2_6_0(api) => api.create_user_group(body).await,
@@ -113,7 +113,7 @@ impl TenantsApi for TenantsApiDispatch<'_> {
     async fn update_user(
         &self,
         id: &str,
-        body: types::UserEntity,
+        body: &types::UserEntity,
     ) -> Result<types::UserEntity, NifiError> {
         match self {
             Self::V2_6_0(api) => api.update_user(id, body).await,
@@ -124,7 +124,7 @@ impl TenantsApi for TenantsApiDispatch<'_> {
     async fn update_user_group(
         &self,
         id: &str,
-        body: types::UserGroupEntity,
+        body: &types::UserGroupEntity,
     ) -> Result<types::UserGroupEntity, NifiError> {
         match self {
             Self::V2_6_0(api) => api.update_user_group(id, body).await,

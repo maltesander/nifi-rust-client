@@ -3,6 +3,7 @@
 #[allow(unused_imports)]
 use crate::NifiError;
 use crate::dynamic::traits::VersionsApi;
+use crate::dynamic::traits::VersionsDownloadApi;
 #[allow(unused_imports)]
 use crate::dynamic::types;
 /// Dynamic dispatch enum for the Versions API. Use via the [`VersionsApi`] trait.
@@ -13,10 +14,37 @@ pub enum VersionsApiDispatch<'a> {
     V2_7_2(super::super::impls::v2_7_2::V2_7_2VersionsApi<'a>),
     V2_8_0(super::super::impls::v2_8_0::V2_8_0VersionsApi<'a>),
 }
+impl<'a> VersionsApiDispatch<'a> {
+    fn client(&self) -> &'a crate::NifiClient {
+        match self {
+            Self::V2_6_0(api) => api.client,
+            Self::V2_7_2(api) => api.client,
+            Self::V2_8_0(api) => api.client,
+        }
+    }
+    fn version(&self) -> crate::dynamic::DetectedVersion {
+        match self {
+            Self::V2_6_0(_) => crate::dynamic::DetectedVersion::V2_6_0,
+            Self::V2_7_2(_) => crate::dynamic::DetectedVersion::V2_7_2,
+            Self::V2_8_0(_) => crate::dynamic::DetectedVersion::V2_8_0,
+        }
+    }
+}
 impl VersionsApi for VersionsApiDispatch<'_> {
+    type VersionsDownloadApi<'b>
+        = VersionsDownloadApiDispatch<'b>
+    where
+        Self: 'b;
+    fn download<'b>(&'b self, id: &'b str) -> Self::VersionsDownloadApi<'b> {
+        VersionsDownloadApiDispatch {
+            client: self.client(),
+            id: id.to_string(),
+            version: self.version(),
+        }
+    }
     async fn create_version_control_request(
         &self,
-        body: types::CreateActiveRequestEntity,
+        body: &types::CreateActiveRequestEntity,
     ) -> Result<(), NifiError> {
         match self {
             Self::V2_6_0(api) => api.create_version_control_request(body).await,
@@ -84,13 +112,6 @@ impl VersionsApi for VersionsApiDispatch<'_> {
             }
         }
     }
-    async fn export_flow_version(&self, id: &str) -> Result<(), NifiError> {
-        match self {
-            Self::V2_6_0(api) => api.export_flow_version(id).await,
-            Self::V2_7_2(api) => api.export_flow_version(id).await,
-            Self::V2_8_0(api) => api.export_flow_version(id).await,
-        }
-    }
     async fn get_revert_request(
         &self,
         id: &str,
@@ -124,7 +145,7 @@ impl VersionsApi for VersionsApiDispatch<'_> {
     async fn initiate_revert_flow_version(
         &self,
         id: &str,
-        body: types::VersionControlInformationEntity,
+        body: &types::VersionControlInformationEntity,
     ) -> Result<types::VersionedFlowUpdateRequestEntity, NifiError> {
         match self {
             Self::V2_6_0(api) => api.initiate_revert_flow_version(id, body).await,
@@ -135,7 +156,7 @@ impl VersionsApi for VersionsApiDispatch<'_> {
     async fn initiate_version_control_update(
         &self,
         id: &str,
-        body: types::VersionControlInformationEntity,
+        body: &types::VersionControlInformationEntity,
     ) -> Result<types::VersionedFlowUpdateRequestEntity, NifiError> {
         match self {
             Self::V2_6_0(api) => api.initiate_version_control_update(id, body).await,
@@ -146,7 +167,7 @@ impl VersionsApi for VersionsApiDispatch<'_> {
     async fn save_to_flow_registry(
         &self,
         id: &str,
-        body: types::StartVersionControlRequestEntity,
+        body: &types::StartVersionControlRequestEntity,
     ) -> Result<types::VersionControlInformationEntity, NifiError> {
         match self {
             Self::V2_6_0(api) => api.save_to_flow_registry(id, body).await,
@@ -179,7 +200,7 @@ impl VersionsApi for VersionsApiDispatch<'_> {
     async fn update_flow_version(
         &self,
         id: &str,
-        body: types::VersionedFlowSnapshotEntity,
+        body: &types::VersionedFlowSnapshotEntity,
     ) -> Result<types::VersionControlInformationEntity, NifiError> {
         match self {
             Self::V2_6_0(api) => api.update_flow_version(id, body).await,
@@ -190,12 +211,50 @@ impl VersionsApi for VersionsApiDispatch<'_> {
     async fn update_version_control_request(
         &self,
         id: &str,
-        body: types::VersionControlComponentMappingEntity,
+        body: &types::VersionControlComponentMappingEntity,
     ) -> Result<types::VersionControlInformationEntity, NifiError> {
         match self {
             Self::V2_6_0(api) => api.update_version_control_request(id, body).await,
             Self::V2_7_2(api) => api.update_version_control_request(id, body).await,
             Self::V2_8_0(api) => api.update_version_control_request(id, body).await,
+        }
+    }
+}
+/// Sub-resource dispatch struct for [VersionsDownloadApi].
+pub struct VersionsDownloadApiDispatch<'a> {
+    pub(crate) client: &'a crate::NifiClient,
+    pub(crate) id: String,
+    pub(crate) version: crate::dynamic::DetectedVersion,
+}
+impl VersionsDownloadApi for VersionsDownloadApiDispatch<'_> {
+    async fn export_flow_version(&self) -> Result<(), NifiError> {
+        #[allow(unreachable_patterns)]
+        match self.version {
+            crate::dynamic::DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::versions::VersionsDownloadApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                api.export_flow_version().await
+            }
+            crate::dynamic::DetectedVersion::V2_7_2 => {
+                let api = crate::v2_7_2::api::versions::VersionsDownloadApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                api.export_flow_version().await
+            }
+            crate::dynamic::DetectedVersion::V2_8_0 => {
+                let api = crate::v2_8_0::api::versions::VersionsDownloadApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                api.export_flow_version().await
+            }
+            _ => Err(NifiError::UnsupportedEndpoint {
+                endpoint: "export_flow_version".to_string(),
+                version: "unknown".to_string(),
+            }),
         }
     }
 }

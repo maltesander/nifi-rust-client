@@ -25,3 +25,11 @@ impl<'a> AuthenticationApi<'a> {
         Ok(e.authentication_configuration.unwrap_or_default())
     }
 }
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_7_2::traits::AuthenticationApi for AuthenticationApi<'_> {
+    async fn get_authentication_configuration(
+        &self,
+    ) -> Result<crate::v2_7_2::types::AuthenticationConfigurationDto, NifiError> {
+        self.get_authentication_configuration().await
+    }
+}

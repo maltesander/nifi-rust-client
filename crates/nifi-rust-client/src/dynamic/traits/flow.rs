@@ -4,15 +4,12 @@
 use crate::NifiError;
 #[allow(unused_imports)]
 use crate::dynamic::types;
-/// The Flow API.
+/// Sub-resource trait for FlowBranchesApi.
 #[allow(unused_variables, async_fn_in_trait, clippy::too_many_arguments)]
-pub trait FlowApi {
-    /// Enable or disable Controller Services in the specified Process Group.
+pub trait FlowBranchesApi {
+    /// Gets the branches from the specified registry for the current user
     ///
-    /// Calls `PUT /nifi-api/flow/process-groups/{id}/controller-services`.
-    ///
-    /// # Parameters
-    /// - `id`: The process group id.
+    /// Calls `GET /nifi-api/flow/registries/{id}/branches`.
     ///
     /// # Errors
     /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
@@ -23,23 +20,207 @@ pub trait FlowApi {
     ///
     /// # Permissions
     /// Requires `Read - /flow`.
-    /// Requires `Write - /{component-type}/{uuid} or /operation/{component-type}/{uuid} - For every service being enabled/disabled`.
-    async fn activate_controller_services(
-        &self,
-        id: &str,
-        body: types::ActivateControllerServicesEntity,
-    ) -> Result<types::ActivateControllerServicesEntity, NifiError> {
+    async fn get_branches(&self) -> Result<types::FlowRegistryBranchesEntity, NifiError> {
         Err(NifiError::UnsupportedEndpoint {
-            endpoint: "activate_controller_services".to_string(),
+            endpoint: "get_branches".to_string(),
             version: "unknown".to_string(),
         })
     }
+    /// Gets the differences between two versions of the same versioned flow, the basis of the comparison will be the first version
+    ///
+    /// Calls `GET /nifi-api/flow/registries/{registry-id}/branches/{branch-id-a}/buckets/{bucket-id-a}/flows/{flow-id-a}/{version-a}/diff/branches/{branch-id-b}/buckets/{bucket-id-b}/flows/{flow-id-b}/{version-b}`.
+    ///
+    /// # Parameters
+    /// - `registry_id`: The registry client id.
+    /// - `branch_id_a`: The branch id for the base version.
+    /// - `bucket_id_a`: The bucket id for the base version.
+    /// - `flow_id_a`: The flow id for the base version.
+    /// - `version_a`: The base version.
+    /// - `branch_id_b`: The branch id for the compared version.
+    /// - `bucket_id_b`: The bucket id for the compared version.
+    /// - `flow_id_b`: The flow id for the compared version.
+    /// - `version_b`: The compared version.
+    /// - `offset`: Must be a non-negative number. Specifies the starting point of the listing. 0 means start from the beginning.
+    /// - `limit`: Limits the number of differences listed. This might lead to partial result. 0 means no limitation is applied.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /flow`.
+    async fn get_version_differences(
+        &self,
+        registry_id: &str,
+        branch_id_a: &str,
+        bucket_id_a: &str,
+        flow_id_a: &str,
+        version_a: &str,
+        branch_id_b: &str,
+        bucket_id_b: &str,
+        flow_id_b: &str,
+        version_b: &str,
+        offset: Option<i32>,
+        limit: Option<i32>,
+    ) -> Result<types::FlowComparisonEntity, NifiError> {
+        Err(NifiError::UnsupportedEndpoint {
+            endpoint: "get_version_differences".to_string(),
+            version: "unknown".to_string(),
+        })
+    }
+}
+/// Sub-resource trait for FlowBreadcrumbsApi.
+#[allow(unused_variables, async_fn_in_trait, clippy::too_many_arguments)]
+pub trait FlowBreadcrumbsApi {
+    /// Gets the breadcrumbs for a process group
+    ///
+    /// Calls `GET /nifi-api/flow/process-groups/{id}/breadcrumbs`.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /flow`.
+    async fn get_breadcrumbs(&self) -> Result<types::FlowBreadcrumbEntity, NifiError> {
+        Err(NifiError::UnsupportedEndpoint {
+            endpoint: "get_breadcrumbs".to_string(),
+            version: "unknown".to_string(),
+        })
+    }
+}
+/// Sub-resource trait for FlowBucketsApi.
+#[allow(unused_variables, async_fn_in_trait, clippy::too_many_arguments)]
+pub trait FlowBucketsApi {
+    /// Gets the buckets from the specified registry for the current user
+    ///
+    /// Calls `GET /nifi-api/flow/registries/{id}/buckets`.
+    ///
+    /// # Parameters
+    /// - `branch`: The name of a branch to get the buckets from. If not specified the default branch of the registry client will be used.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /flow`.
+    async fn get_buckets(
+        &self,
+        branch: Option<&str>,
+    ) -> Result<types::FlowRegistryBucketsEntity, NifiError> {
+        Err(NifiError::UnsupportedEndpoint {
+            endpoint: "get_buckets".to_string(),
+            version: "unknown".to_string(),
+        })
+    }
+    /// Gets the details of a flow from the specified registry and bucket for the specified flow for the current user
+    ///
+    /// Calls `GET /nifi-api/flow/registries/{registry-id}/buckets/{bucket-id}/flows/{flow-id}/details`.
+    ///
+    /// # Parameters
+    /// - `registry_id`: The registry client id.
+    /// - `bucket_id`: The bucket id.
+    /// - `flow_id`: The flow id.
+    /// - `branch`: The name of a branch to get the flow from. If not specified the default branch of the registry client will be used.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /flow`.
+    async fn get_details(
+        &self,
+        registry_id: &str,
+        bucket_id: &str,
+        flow_id: &str,
+        branch: Option<&str>,
+    ) -> Result<types::VersionedFlowDto, NifiError> {
+        Err(NifiError::UnsupportedEndpoint {
+            endpoint: "get_details".to_string(),
+            version: "unknown".to_string(),
+        })
+    }
+    /// Gets the flows from the specified registry and bucket for the current user
+    ///
+    /// Calls `GET /nifi-api/flow/registries/{registry-id}/buckets/{bucket-id}/flows`.
+    ///
+    /// # Parameters
+    /// - `registry_id`: The registry client id.
+    /// - `bucket_id`: The bucket id.
+    /// - `branch`: The name of a branch to get the flows from. If not specified the default branch of the registry client will be used.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /flow`.
+    async fn get_flows(
+        &self,
+        registry_id: &str,
+        bucket_id: &str,
+        branch: Option<&str>,
+    ) -> Result<types::VersionedFlowsEntity, NifiError> {
+        Err(NifiError::UnsupportedEndpoint {
+            endpoint: "get_flows".to_string(),
+            version: "unknown".to_string(),
+        })
+    }
+    /// Gets the flow versions from the specified registry and bucket for the specified flow for the current user
+    ///
+    /// Calls `GET /nifi-api/flow/registries/{registry-id}/buckets/{bucket-id}/flows/{flow-id}/versions`.
+    ///
+    /// # Parameters
+    /// - `registry_id`: The registry client id.
+    /// - `bucket_id`: The bucket id.
+    /// - `flow_id`: The flow id.
+    /// - `branch`: The name of a branch to get the flow versions from. If not specified the default branch of the registry client will be used.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /flow`.
+    async fn get_versions(
+        &self,
+        registry_id: &str,
+        bucket_id: &str,
+        flow_id: &str,
+        branch: Option<&str>,
+    ) -> Result<types::VersionedFlowSnapshotMetadataSetEntity, NifiError> {
+        Err(NifiError::UnsupportedEndpoint {
+            endpoint: "get_versions".to_string(),
+            version: "unknown".to_string(),
+        })
+    }
+}
+/// Sub-resource trait for FlowBulletinsApi.
+#[allow(unused_variables, async_fn_in_trait, clippy::too_many_arguments)]
+pub trait FlowBulletinsApi {
     /// Clears bulletins for components in the specified Process Group.
     ///
     /// Calls `POST /nifi-api/flow/process-groups/{id}/bulletins/clear-requests`.
-    ///
-    /// # Parameters
-    /// - `id`: The process group id.
     ///
     /// # Errors
     /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
@@ -56,14 +237,413 @@ pub trait FlowApi {
     /// *Supported in NiFi: 2.7.2, 2.8.0*
     async fn clear_bulletins_1(
         &self,
-        id: &str,
-        body: types::ClearBulletinsForGroupRequestEntity,
+        body: &types::ClearBulletinsForGroupRequestEntity,
     ) -> Result<types::ClearBulletinsForGroupResultsEntity, NifiError> {
         Err(NifiError::UnsupportedEndpoint {
             endpoint: "clear_bulletins_1".to_string(),
             version: "unknown".to_string(),
         })
     }
+}
+/// Sub-resource trait for FlowControllerServicesApi.
+#[allow(unused_variables, async_fn_in_trait, clippy::too_many_arguments)]
+pub trait FlowControllerServicesApi {
+    /// Enable or disable Controller Services in the specified Process Group.
+    ///
+    /// Calls `PUT /nifi-api/flow/process-groups/{id}/controller-services`.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /flow`.
+    /// Requires `Write - /{component-type}/{uuid} or /operation/{component-type}/{uuid} - For every service being enabled/disabled`.
+    async fn activate_controller_services(
+        &self,
+        body: &types::ActivateControllerServicesEntity,
+    ) -> Result<types::ActivateControllerServicesEntity, NifiError> {
+        Err(NifiError::UnsupportedEndpoint {
+            endpoint: "activate_controller_services".to_string(),
+            version: "unknown".to_string(),
+        })
+    }
+    /// Gets all controller services
+    ///
+    /// If the uiOnly query parameter is provided with a value of true, the returned entity may only contain fields that are necessary for rendering the NiFi User Interface. As such, the selected fields may change at any time, even during incremental releases, without warning. As a result, this parameter should not be provided by any client other than the UI.
+    ///
+    /// Calls `GET /nifi-api/flow/process-groups/{id}/controller-services`.
+    ///
+    /// # Parameters
+    /// - `include_ancestor_groups`: Whether or not to include parent/ancestor process groups
+    /// - `include_descendant_groups`: Whether or not to include descendant process groups
+    /// - `include_referencing_components`: Whether or not to include services' referencing components in the response
+    /// - `ui_only`
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /flow`.
+    async fn get_controller_services_from_group(
+        &self,
+        include_ancestor_groups: Option<bool>,
+        include_descendant_groups: Option<bool>,
+        include_referencing_components: Option<bool>,
+        ui_only: Option<bool>,
+    ) -> Result<types::ControllerServicesEntity, NifiError> {
+        Err(NifiError::UnsupportedEndpoint {
+            endpoint: "get_controller_services_from_group".to_string(),
+            version: "unknown".to_string(),
+        })
+    }
+}
+/// Sub-resource trait for FlowStatisticsApi.
+#[allow(unused_variables, async_fn_in_trait, clippy::too_many_arguments)]
+pub trait FlowStatisticsApi {
+    /// Gets statistics for a connection
+    ///
+    /// Calls `GET /nifi-api/flow/connections/{id}/statistics`.
+    ///
+    /// # Parameters
+    /// - `nodewise`: Whether or not to include the breakdown per node. Optional, defaults to false
+    /// - `cluster_node_id`: The id of the node where to get the statistics.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /flow`.
+    async fn get_connection_statistics(
+        &self,
+        nodewise: Option<bool>,
+        cluster_node_id: Option<&str>,
+    ) -> Result<types::ConnectionStatisticsEntity, NifiError> {
+        Err(NifiError::UnsupportedEndpoint {
+            endpoint: "get_connection_statistics".to_string(),
+            version: "unknown".to_string(),
+        })
+    }
+}
+/// Sub-resource trait for FlowStatusApi.
+#[allow(unused_variables, async_fn_in_trait, clippy::too_many_arguments)]
+pub trait FlowStatusApi {
+    /// Gets status for a connection
+    ///
+    /// Calls `GET /nifi-api/flow/connections/{id}/status`.
+    ///
+    /// # Parameters
+    /// - `nodewise`: Whether or not to include the breakdown per node. Optional, defaults to false
+    /// - `cluster_node_id`: The id of the node where to get the status.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /flow`.
+    async fn get_connection_status(
+        &self,
+        nodewise: Option<bool>,
+        cluster_node_id: Option<&str>,
+    ) -> Result<types::ConnectionStatusEntity, NifiError> {
+        Err(NifiError::UnsupportedEndpoint {
+            endpoint: "get_connection_status".to_string(),
+            version: "unknown".to_string(),
+        })
+    }
+    /// Gets the status history for a connection
+    ///
+    /// Calls `GET /nifi-api/flow/connections/{id}/status/history`.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /flow`.
+    async fn get_connection_status_history(&self) -> Result<types::StatusHistoryEntity, NifiError> {
+        Err(NifiError::UnsupportedEndpoint {
+            endpoint: "get_connection_status_history".to_string(),
+            version: "unknown".to_string(),
+        })
+    }
+    /// Gets status for an input port
+    ///
+    /// Calls `GET /nifi-api/flow/input-ports/{id}/status`.
+    ///
+    /// # Parameters
+    /// - `nodewise`: Whether or not to include the breakdown per node. Optional, defaults to false
+    /// - `cluster_node_id`: The id of the node where to get the status.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /flow`.
+    async fn get_input_port_status(
+        &self,
+        nodewise: Option<bool>,
+        cluster_node_id: Option<&str>,
+    ) -> Result<types::PortStatusEntity, NifiError> {
+        Err(NifiError::UnsupportedEndpoint {
+            endpoint: "get_input_port_status".to_string(),
+            version: "unknown".to_string(),
+        })
+    }
+    /// Gets status for an output port
+    ///
+    /// Calls `GET /nifi-api/flow/output-ports/{id}/status`.
+    ///
+    /// # Parameters
+    /// - `nodewise`: Whether or not to include the breakdown per node. Optional, defaults to false
+    /// - `cluster_node_id`: The id of the node where to get the status.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /flow`.
+    async fn get_output_port_status(
+        &self,
+        nodewise: Option<bool>,
+        cluster_node_id: Option<&str>,
+    ) -> Result<types::PortStatusEntity, NifiError> {
+        Err(NifiError::UnsupportedEndpoint {
+            endpoint: "get_output_port_status".to_string(),
+            version: "unknown".to_string(),
+        })
+    }
+    /// Gets the status for a process group
+    ///
+    /// The status for a process group includes status for all descendent components. When invoked on the root group with recursive set to true, it will return the current status of every component in the flow.
+    ///
+    /// Calls `GET /nifi-api/flow/process-groups/{id}/status`.
+    ///
+    /// # Parameters
+    /// - `recursive`: Whether all descendant groups and the status of their content will be included. Optional, defaults to false
+    /// - `nodewise`: Whether or not to include the breakdown per node. Optional, defaults to false
+    /// - `cluster_node_id`: The id of the node where to get the status.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /flow`.
+    async fn get_process_group_status(
+        &self,
+        recursive: Option<bool>,
+        nodewise: Option<bool>,
+        cluster_node_id: Option<&str>,
+    ) -> Result<types::ProcessGroupStatusEntity, NifiError> {
+        Err(NifiError::UnsupportedEndpoint {
+            endpoint: "get_process_group_status".to_string(),
+            version: "unknown".to_string(),
+        })
+    }
+    /// Gets status history for a remote process group
+    ///
+    /// Calls `GET /nifi-api/flow/process-groups/{id}/status/history`.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /flow`.
+    async fn get_process_group_status_history(
+        &self,
+    ) -> Result<types::StatusHistoryEntity, NifiError> {
+        Err(NifiError::UnsupportedEndpoint {
+            endpoint: "get_process_group_status_history".to_string(),
+            version: "unknown".to_string(),
+        })
+    }
+    /// Gets status for a processor
+    ///
+    /// Calls `GET /nifi-api/flow/processors/{id}/status`.
+    ///
+    /// # Parameters
+    /// - `nodewise`: Whether or not to include the breakdown per node. Optional, defaults to false
+    /// - `cluster_node_id`: The id of the node where to get the status.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /flow`.
+    async fn get_processor_status(
+        &self,
+        nodewise: Option<bool>,
+        cluster_node_id: Option<&str>,
+    ) -> Result<types::ProcessorStatusEntity, NifiError> {
+        Err(NifiError::UnsupportedEndpoint {
+            endpoint: "get_processor_status".to_string(),
+            version: "unknown".to_string(),
+        })
+    }
+    /// Gets status history for a processor
+    ///
+    /// Calls `GET /nifi-api/flow/processors/{id}/status/history`.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /flow`.
+    async fn get_processor_status_history(&self) -> Result<types::StatusHistoryEntity, NifiError> {
+        Err(NifiError::UnsupportedEndpoint {
+            endpoint: "get_processor_status_history".to_string(),
+            version: "unknown".to_string(),
+        })
+    }
+    /// Gets status for a remote process group
+    ///
+    /// Calls `GET /nifi-api/flow/remote-process-groups/{id}/status`.
+    ///
+    /// # Parameters
+    /// - `nodewise`: Whether or not to include the breakdown per node. Optional, defaults to false
+    /// - `cluster_node_id`: The id of the node where to get the status.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /flow`.
+    async fn get_remote_process_group_status(
+        &self,
+        nodewise: Option<bool>,
+        cluster_node_id: Option<&str>,
+    ) -> Result<types::RemoteProcessGroupStatusEntity, NifiError> {
+        Err(NifiError::UnsupportedEndpoint {
+            endpoint: "get_remote_process_group_status".to_string(),
+            version: "unknown".to_string(),
+        })
+    }
+    /// Gets the status history
+    ///
+    /// Calls `GET /nifi-api/flow/remote-process-groups/{id}/status/history`.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /flow`.
+    async fn get_remote_process_group_status_history(
+        &self,
+    ) -> Result<types::StatusHistoryEntity, NifiError> {
+        Err(NifiError::UnsupportedEndpoint {
+            endpoint: "get_remote_process_group_status_history".to_string(),
+            version: "unknown".to_string(),
+        })
+    }
+}
+/// The Flow API.
+#[allow(unused_variables, async_fn_in_trait, clippy::too_many_arguments)]
+pub trait FlowApi {
+    /// Returns a sub-resource accessor for config operations.
+    ///
+    /// # Parameters
+    /// - `id`: The registry id.
+    type FlowBranchesApi<'b>: FlowBranchesApi
+    where
+        Self: 'b;
+    fn branches<'b>(&'b self, id: &'b str) -> Self::FlowBranchesApi<'b>;
+    /// Returns a sub-resource accessor for config operations.
+    ///
+    /// # Parameters
+    /// - `id`: The process group id.
+    type FlowBreadcrumbsApi<'b>: FlowBreadcrumbsApi
+    where
+        Self: 'b;
+    fn breadcrumbs<'b>(&'b self, id: &'b str) -> Self::FlowBreadcrumbsApi<'b>;
+    /// Returns a sub-resource accessor for config operations.
+    ///
+    /// # Parameters
+    /// - `id`: The registry id.
+    type FlowBucketsApi<'b>: FlowBucketsApi
+    where
+        Self: 'b;
+    fn buckets<'b>(&'b self, id: &'b str) -> Self::FlowBucketsApi<'b>;
+    /// Returns a sub-resource accessor for config operations.
+    ///
+    /// # Parameters
+    /// - `id`: The process group id.
+    type FlowBulletinsApi<'b>: FlowBulletinsApi
+    where
+        Self: 'b;
+    fn bulletins<'b>(&'b self, id: &'b str) -> Self::FlowBulletinsApi<'b>;
+    /// Returns a sub-resource accessor for config operations.
+    ///
+    /// # Parameters
+    /// - `id`: The process group id.
+    type FlowControllerServicesApi<'b>: FlowControllerServicesApi
+    where
+        Self: 'b;
+    fn controller_services<'b>(&'b self, id: &'b str) -> Self::FlowControllerServicesApi<'b>;
+    /// Returns a sub-resource accessor for config operations.
+    ///
+    /// # Parameters
+    /// - `id`: The connection id.
+    type FlowStatisticsApi<'b>: FlowStatisticsApi
+    where
+        Self: 'b;
+    fn statistics<'b>(&'b self, id: &'b str) -> Self::FlowStatisticsApi<'b>;
+    /// Returns a sub-resource accessor for config operations.
+    ///
+    /// # Parameters
+    /// - `id`: The connection id.
+    type FlowStatusApi<'b>: FlowStatusApi
+    where
+        Self: 'b;
+    fn status<'b>(&'b self, id: &'b str) -> Self::FlowStatusApi<'b>;
     /// Download a snapshot of the given reporting tasks and any controller services they use
     ///
     /// Calls `GET /nifi-api/flow/reporting-tasks/download`.
@@ -218,77 +798,6 @@ pub trait FlowApi {
             version: "unknown".to_string(),
         })
     }
-    /// Gets the branches from the specified registry for the current user
-    ///
-    /// Calls `GET /nifi-api/flow/registries/{id}/branches`.
-    ///
-    /// # Parameters
-    /// - `id`: The registry id.
-    ///
-    /// # Errors
-    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
-    /// - `401`: Client could not be authenticated.
-    /// - `403`: Client is not authorized to make this request.
-    /// - `404`: The specified resource could not be found.
-    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
-    ///
-    /// # Permissions
-    /// Requires `Read - /flow`.
-    async fn get_branches(&self, id: &str) -> Result<types::FlowRegistryBranchesEntity, NifiError> {
-        Err(NifiError::UnsupportedEndpoint {
-            endpoint: "get_branches".to_string(),
-            version: "unknown".to_string(),
-        })
-    }
-    /// Gets the breadcrumbs for a process group
-    ///
-    /// Calls `GET /nifi-api/flow/process-groups/{id}/breadcrumbs`.
-    ///
-    /// # Parameters
-    /// - `id`: The process group id.
-    ///
-    /// # Errors
-    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
-    /// - `401`: Client could not be authenticated.
-    /// - `403`: Client is not authorized to make this request.
-    /// - `404`: The specified resource could not be found.
-    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
-    ///
-    /// # Permissions
-    /// Requires `Read - /flow`.
-    async fn get_breadcrumbs(&self, id: &str) -> Result<types::FlowBreadcrumbEntity, NifiError> {
-        Err(NifiError::UnsupportedEndpoint {
-            endpoint: "get_breadcrumbs".to_string(),
-            version: "unknown".to_string(),
-        })
-    }
-    /// Gets the buckets from the specified registry for the current user
-    ///
-    /// Calls `GET /nifi-api/flow/registries/{id}/buckets`.
-    ///
-    /// # Parameters
-    /// - `id`: The registry id.
-    /// - `branch`: The name of a branch to get the buckets from. If not specified the default branch of the registry client will be used.
-    ///
-    /// # Errors
-    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
-    /// - `401`: Client could not be authenticated.
-    /// - `403`: Client is not authorized to make this request.
-    /// - `404`: The specified resource could not be found.
-    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
-    ///
-    /// # Permissions
-    /// Requires `Read - /flow`.
-    async fn get_buckets(
-        &self,
-        id: &str,
-        branch: Option<&str>,
-    ) -> Result<types::FlowRegistryBucketsEntity, NifiError> {
-        Err(NifiError::UnsupportedEndpoint {
-            endpoint: "get_buckets".to_string(),
-            version: "unknown".to_string(),
-        })
-    }
     /// Gets current bulletins
     ///
     /// Calls `GET /nifi-api/flow/bulletin-board`.
@@ -389,89 +898,6 @@ pub trait FlowApi {
     ) -> Result<types::ComponentHistoryDto, NifiError> {
         Err(NifiError::UnsupportedEndpoint {
             endpoint: "get_component_history".to_string(),
-            version: "unknown".to_string(),
-        })
-    }
-    /// Gets statistics for a connection
-    ///
-    /// Calls `GET /nifi-api/flow/connections/{id}/statistics`.
-    ///
-    /// # Parameters
-    /// - `id`: The connection id.
-    /// - `nodewise`: Whether or not to include the breakdown per node. Optional, defaults to false
-    /// - `cluster_node_id`: The id of the node where to get the statistics.
-    ///
-    /// # Errors
-    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
-    /// - `401`: Client could not be authenticated.
-    /// - `403`: Client is not authorized to make this request.
-    /// - `404`: The specified resource could not be found.
-    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
-    ///
-    /// # Permissions
-    /// Requires `Read - /flow`.
-    async fn get_connection_statistics(
-        &self,
-        id: &str,
-        nodewise: Option<bool>,
-        cluster_node_id: Option<&str>,
-    ) -> Result<types::ConnectionStatisticsEntity, NifiError> {
-        Err(NifiError::UnsupportedEndpoint {
-            endpoint: "get_connection_statistics".to_string(),
-            version: "unknown".to_string(),
-        })
-    }
-    /// Gets status for a connection
-    ///
-    /// Calls `GET /nifi-api/flow/connections/{id}/status`.
-    ///
-    /// # Parameters
-    /// - `id`: The connection id.
-    /// - `nodewise`: Whether or not to include the breakdown per node. Optional, defaults to false
-    /// - `cluster_node_id`: The id of the node where to get the status.
-    ///
-    /// # Errors
-    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
-    /// - `401`: Client could not be authenticated.
-    /// - `403`: Client is not authorized to make this request.
-    /// - `404`: The specified resource could not be found.
-    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
-    ///
-    /// # Permissions
-    /// Requires `Read - /flow`.
-    async fn get_connection_status(
-        &self,
-        id: &str,
-        nodewise: Option<bool>,
-        cluster_node_id: Option<&str>,
-    ) -> Result<types::ConnectionStatusEntity, NifiError> {
-        Err(NifiError::UnsupportedEndpoint {
-            endpoint: "get_connection_status".to_string(),
-            version: "unknown".to_string(),
-        })
-    }
-    /// Gets the status history for a connection
-    ///
-    /// Calls `GET /nifi-api/flow/connections/{id}/status/history`.
-    ///
-    /// # Parameters
-    /// - `id`: The connection id.
-    ///
-    /// # Errors
-    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
-    /// - `401`: Client could not be authenticated.
-    /// - `403`: Client is not authorized to make this request.
-    /// - `404`: The specified resource could not be found.
-    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
-    ///
-    /// # Permissions
-    /// Requires `Read - /flow`.
-    async fn get_connection_status_history(
-        &self,
-        id: &str,
-    ) -> Result<types::StatusHistoryEntity, NifiError> {
-        Err(NifiError::UnsupportedEndpoint {
-            endpoint: "get_connection_status_history".to_string(),
             version: "unknown".to_string(),
         })
     }
@@ -591,40 +1017,6 @@ pub trait FlowApi {
             version: "unknown".to_string(),
         })
     }
-    /// Gets all controller services
-    ///
-    /// If the uiOnly query parameter is provided with a value of true, the returned entity may only contain fields that are necessary for rendering the NiFi User Interface. As such, the selected fields may change at any time, even during incremental releases, without warning. As a result, this parameter should not be provided by any client other than the UI.
-    ///
-    /// Calls `GET /nifi-api/flow/process-groups/{id}/controller-services`.
-    ///
-    /// # Parameters
-    /// - `id`: The process group id.
-    /// - `include_ancestor_groups`: Whether or not to include parent/ancestor process groups
-    /// - `include_descendant_groups`: Whether or not to include descendant process groups
-    /// - `include_referencing_components`: Whether or not to include services' referencing components in the response
-    /// - `ui_only`
-    ///
-    /// # Errors
-    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
-    /// - `401`: Client could not be authenticated.
-    /// - `403`: Client is not authorized to make this request.
-    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
-    ///
-    /// # Permissions
-    /// Requires `Read - /flow`.
-    async fn get_controller_services_from_group(
-        &self,
-        id: &str,
-        include_ancestor_groups: Option<bool>,
-        include_descendant_groups: Option<bool>,
-        include_referencing_components: Option<bool>,
-        ui_only: Option<bool>,
-    ) -> Result<types::ControllerServicesEntity, NifiError> {
-        Err(NifiError::UnsupportedEndpoint {
-            endpoint: "get_controller_services_from_group".to_string(),
-            version: "unknown".to_string(),
-        })
-    }
     /// Gets the current status of this NiFi
     ///
     /// Calls `GET /nifi-api/flow/status`.
@@ -652,39 +1044,6 @@ pub trait FlowApi {
     async fn get_current_user(&self) -> Result<types::CurrentUserEntity, NifiError> {
         Err(NifiError::UnsupportedEndpoint {
             endpoint: "get_current_user".to_string(),
-            version: "unknown".to_string(),
-        })
-    }
-    /// Gets the details of a flow from the specified registry and bucket for the specified flow for the current user
-    ///
-    /// Calls `GET /nifi-api/flow/registries/{registry-id}/buckets/{bucket-id}/flows/{flow-id}/details`.
-    ///
-    /// # Parameters
-    /// - `id`
-    /// - `registry_id`: The registry client id.
-    /// - `bucket_id`: The bucket id.
-    /// - `flow_id`: The flow id.
-    /// - `branch`: The name of a branch to get the flow from. If not specified the default branch of the registry client will be used.
-    ///
-    /// # Errors
-    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
-    /// - `401`: Client could not be authenticated.
-    /// - `403`: Client is not authorized to make this request.
-    /// - `404`: The specified resource could not be found.
-    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
-    ///
-    /// # Permissions
-    /// Requires `Read - /flow`.
-    async fn get_details(
-        &self,
-        id: &str,
-        registry_id: &str,
-        bucket_id: &str,
-        flow_id: &str,
-        branch: Option<&str>,
-    ) -> Result<types::VersionedFlowDto, NifiError> {
-        Err(NifiError::UnsupportedEndpoint {
-            endpoint: "get_details".to_string(),
             version: "unknown".to_string(),
         })
     }
@@ -890,66 +1249,6 @@ pub trait FlowApi {
             version: "unknown".to_string(),
         })
     }
-    /// Gets the flows from the specified registry and bucket for the current user
-    ///
-    /// Calls `GET /nifi-api/flow/registries/{registry-id}/buckets/{bucket-id}/flows`.
-    ///
-    /// # Parameters
-    /// - `id`
-    /// - `registry_id`: The registry client id.
-    /// - `bucket_id`: The bucket id.
-    /// - `branch`: The name of a branch to get the flows from. If not specified the default branch of the registry client will be used.
-    ///
-    /// # Errors
-    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
-    /// - `401`: Client could not be authenticated.
-    /// - `403`: Client is not authorized to make this request.
-    /// - `404`: The specified resource could not be found.
-    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
-    ///
-    /// # Permissions
-    /// Requires `Read - /flow`.
-    async fn get_flows(
-        &self,
-        id: &str,
-        registry_id: &str,
-        bucket_id: &str,
-        branch: Option<&str>,
-    ) -> Result<types::VersionedFlowsEntity, NifiError> {
-        Err(NifiError::UnsupportedEndpoint {
-            endpoint: "get_flows".to_string(),
-            version: "unknown".to_string(),
-        })
-    }
-    /// Gets status for an input port
-    ///
-    /// Calls `GET /nifi-api/flow/input-ports/{id}/status`.
-    ///
-    /// # Parameters
-    /// - `id`: The input port id.
-    /// - `nodewise`: Whether or not to include the breakdown per node. Optional, defaults to false
-    /// - `cluster_node_id`: The id of the node where to get the status.
-    ///
-    /// # Errors
-    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
-    /// - `401`: Client could not be authenticated.
-    /// - `403`: Client is not authorized to make this request.
-    /// - `404`: The specified resource could not be found.
-    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
-    ///
-    /// # Permissions
-    /// Requires `Read - /flow`.
-    async fn get_input_port_status(
-        &self,
-        id: &str,
-        nodewise: Option<bool>,
-        cluster_node_id: Option<&str>,
-    ) -> Result<types::PortStatusEntity, NifiError> {
-        Err(NifiError::UnsupportedEndpoint {
-            endpoint: "get_input_port_status".to_string(),
-            version: "unknown".to_string(),
-        })
-    }
     /// Gets all listen ports configured on this NiFi that the current user has access to
     ///
     /// Calls `GET /nifi-api/flow/listen-ports`.
@@ -967,35 +1266,6 @@ pub trait FlowApi {
     async fn get_listen_ports(&self) -> Result<types::ListenPortsEntity, NifiError> {
         Err(NifiError::UnsupportedEndpoint {
             endpoint: "get_listen_ports".to_string(),
-            version: "unknown".to_string(),
-        })
-    }
-    /// Gets status for an output port
-    ///
-    /// Calls `GET /nifi-api/flow/output-ports/{id}/status`.
-    ///
-    /// # Parameters
-    /// - `id`: The output port id.
-    /// - `nodewise`: Whether or not to include the breakdown per node. Optional, defaults to false
-    /// - `cluster_node_id`: The id of the node where to get the status.
-    ///
-    /// # Errors
-    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
-    /// - `401`: Client could not be authenticated.
-    /// - `403`: Client is not authorized to make this request.
-    /// - `404`: The specified resource could not be found.
-    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
-    ///
-    /// # Permissions
-    /// Requires `Read - /flow`.
-    async fn get_output_port_status(
-        &self,
-        id: &str,
-        nodewise: Option<bool>,
-        cluster_node_id: Option<&str>,
-    ) -> Result<types::PortStatusEntity, NifiError> {
-        Err(NifiError::UnsupportedEndpoint {
-            endpoint: "get_output_port_status".to_string(),
             version: "unknown".to_string(),
         })
     }
@@ -1117,64 +1387,6 @@ pub trait FlowApi {
             version: "unknown".to_string(),
         })
     }
-    /// Gets the status for a process group
-    ///
-    /// The status for a process group includes status for all descendent components. When invoked on the root group with recursive set to true, it will return the current status of every component in the flow.
-    ///
-    /// Calls `GET /nifi-api/flow/process-groups/{id}/status`.
-    ///
-    /// # Parameters
-    /// - `id`: The process group id.
-    /// - `recursive`: Whether all descendant groups and the status of their content will be included. Optional, defaults to false
-    /// - `nodewise`: Whether or not to include the breakdown per node. Optional, defaults to false
-    /// - `cluster_node_id`: The id of the node where to get the status.
-    ///
-    /// # Errors
-    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
-    /// - `401`: Client could not be authenticated.
-    /// - `403`: Client is not authorized to make this request.
-    /// - `404`: The specified resource could not be found.
-    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
-    ///
-    /// # Permissions
-    /// Requires `Read - /flow`.
-    async fn get_process_group_status(
-        &self,
-        id: &str,
-        recursive: Option<bool>,
-        nodewise: Option<bool>,
-        cluster_node_id: Option<&str>,
-    ) -> Result<types::ProcessGroupStatusEntity, NifiError> {
-        Err(NifiError::UnsupportedEndpoint {
-            endpoint: "get_process_group_status".to_string(),
-            version: "unknown".to_string(),
-        })
-    }
-    /// Gets status history for a remote process group
-    ///
-    /// Calls `GET /nifi-api/flow/process-groups/{id}/status/history`.
-    ///
-    /// # Parameters
-    /// - `id`: The process group id.
-    ///
-    /// # Errors
-    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
-    /// - `401`: Client could not be authenticated.
-    /// - `403`: Client is not authorized to make this request.
-    /// - `404`: The specified resource could not be found.
-    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
-    ///
-    /// # Permissions
-    /// Requires `Read - /flow`.
-    async fn get_process_group_status_history(
-        &self,
-        id: &str,
-    ) -> Result<types::StatusHistoryEntity, NifiError> {
-        Err(NifiError::UnsupportedEndpoint {
-            endpoint: "get_process_group_status_history".to_string(),
-            version: "unknown".to_string(),
-        })
-    }
     /// Retrieves the Processor Definition for the specified component type.
     ///
     /// Note: This endpoint is subject to change as NiFi and it's REST API evolve.
@@ -1204,60 +1416,6 @@ pub trait FlowApi {
     ) -> Result<types::ProcessorDefinition, NifiError> {
         Err(NifiError::UnsupportedEndpoint {
             endpoint: "get_processor_definition".to_string(),
-            version: "unknown".to_string(),
-        })
-    }
-    /// Gets status for a processor
-    ///
-    /// Calls `GET /nifi-api/flow/processors/{id}/status`.
-    ///
-    /// # Parameters
-    /// - `id`: The processor id.
-    /// - `nodewise`: Whether or not to include the breakdown per node. Optional, defaults to false
-    /// - `cluster_node_id`: The id of the node where to get the status.
-    ///
-    /// # Errors
-    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
-    /// - `401`: Client could not be authenticated.
-    /// - `403`: Client is not authorized to make this request.
-    /// - `404`: The specified resource could not be found.
-    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
-    ///
-    /// # Permissions
-    /// Requires `Read - /flow`.
-    async fn get_processor_status(
-        &self,
-        id: &str,
-        nodewise: Option<bool>,
-        cluster_node_id: Option<&str>,
-    ) -> Result<types::ProcessorStatusEntity, NifiError> {
-        Err(NifiError::UnsupportedEndpoint {
-            endpoint: "get_processor_status".to_string(),
-            version: "unknown".to_string(),
-        })
-    }
-    /// Gets status history for a processor
-    ///
-    /// Calls `GET /nifi-api/flow/processors/{id}/status/history`.
-    ///
-    /// # Parameters
-    /// - `id`: The processor id.
-    ///
-    /// # Errors
-    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
-    /// - `401`: Client could not be authenticated.
-    /// - `403`: Client is not authorized to make this request.
-    /// - `404`: The specified resource could not be found.
-    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
-    ///
-    /// # Permissions
-    /// Requires `Read - /flow`.
-    async fn get_processor_status_history(
-        &self,
-        id: &str,
-    ) -> Result<types::StatusHistoryEntity, NifiError> {
-        Err(NifiError::UnsupportedEndpoint {
-            endpoint: "get_processor_status_history".to_string(),
             version: "unknown".to_string(),
         })
     }
@@ -1307,60 +1465,6 @@ pub trait FlowApi {
     async fn get_registry_clients(&self) -> Result<types::FlowRegistryClientsEntity, NifiError> {
         Err(NifiError::UnsupportedEndpoint {
             endpoint: "get_registry_clients".to_string(),
-            version: "unknown".to_string(),
-        })
-    }
-    /// Gets status for a remote process group
-    ///
-    /// Calls `GET /nifi-api/flow/remote-process-groups/{id}/status`.
-    ///
-    /// # Parameters
-    /// - `id`: The remote process group id.
-    /// - `nodewise`: Whether or not to include the breakdown per node. Optional, defaults to false
-    /// - `cluster_node_id`: The id of the node where to get the status.
-    ///
-    /// # Errors
-    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
-    /// - `401`: Client could not be authenticated.
-    /// - `403`: Client is not authorized to make this request.
-    /// - `404`: The specified resource could not be found.
-    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
-    ///
-    /// # Permissions
-    /// Requires `Read - /flow`.
-    async fn get_remote_process_group_status(
-        &self,
-        id: &str,
-        nodewise: Option<bool>,
-        cluster_node_id: Option<&str>,
-    ) -> Result<types::RemoteProcessGroupStatusEntity, NifiError> {
-        Err(NifiError::UnsupportedEndpoint {
-            endpoint: "get_remote_process_group_status".to_string(),
-            version: "unknown".to_string(),
-        })
-    }
-    /// Gets the status history
-    ///
-    /// Calls `GET /nifi-api/flow/remote-process-groups/{id}/status/history`.
-    ///
-    /// # Parameters
-    /// - `id`: The remote process group id.
-    ///
-    /// # Errors
-    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
-    /// - `401`: Client could not be authenticated.
-    /// - `403`: Client is not authorized to make this request.
-    /// - `404`: The specified resource could not be found.
-    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
-    ///
-    /// # Permissions
-    /// Requires `Read - /flow`.
-    async fn get_remote_process_group_status_history(
-        &self,
-        id: &str,
-    ) -> Result<types::StatusHistoryEntity, NifiError> {
-        Err(NifiError::UnsupportedEndpoint {
-            endpoint: "get_remote_process_group_status_history".to_string(),
             version: "unknown".to_string(),
         })
     }
@@ -1487,86 +1591,6 @@ pub trait FlowApi {
             version: "unknown".to_string(),
         })
     }
-    /// Gets the differences between two versions of the same versioned flow, the basis of the comparison will be the first version
-    ///
-    /// Calls `GET /nifi-api/flow/registries/{registry-id}/branches/{branch-id-a}/buckets/{bucket-id-a}/flows/{flow-id-a}/{version-a}/diff/branches/{branch-id-b}/buckets/{bucket-id-b}/flows/{flow-id-b}/{version-b}`.
-    ///
-    /// # Parameters
-    /// - `id`
-    /// - `registry_id`: The registry client id.
-    /// - `branch_id_a`: The branch id for the base version.
-    /// - `bucket_id_a`: The bucket id for the base version.
-    /// - `flow_id_a`: The flow id for the base version.
-    /// - `version_a`: The base version.
-    /// - `branch_id_b`: The branch id for the compared version.
-    /// - `bucket_id_b`: The bucket id for the compared version.
-    /// - `flow_id_b`: The flow id for the compared version.
-    /// - `version_b`: The compared version.
-    /// - `offset`: Must be a non-negative number. Specifies the starting point of the listing. 0 means start from the beginning.
-    /// - `limit`: Limits the number of differences listed. This might lead to partial result. 0 means no limitation is applied.
-    ///
-    /// # Errors
-    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
-    /// - `401`: Client could not be authenticated.
-    /// - `403`: Client is not authorized to make this request.
-    /// - `404`: The specified resource could not be found.
-    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
-    ///
-    /// # Permissions
-    /// Requires `Read - /flow`.
-    async fn get_version_differences(
-        &self,
-        id: &str,
-        registry_id: &str,
-        branch_id_a: &str,
-        bucket_id_a: &str,
-        flow_id_a: &str,
-        version_a: &str,
-        branch_id_b: &str,
-        bucket_id_b: &str,
-        flow_id_b: &str,
-        version_b: &str,
-        offset: Option<i32>,
-        limit: Option<i32>,
-    ) -> Result<types::FlowComparisonEntity, NifiError> {
-        Err(NifiError::UnsupportedEndpoint {
-            endpoint: "get_version_differences".to_string(),
-            version: "unknown".to_string(),
-        })
-    }
-    /// Gets the flow versions from the specified registry and bucket for the specified flow for the current user
-    ///
-    /// Calls `GET /nifi-api/flow/registries/{registry-id}/buckets/{bucket-id}/flows/{flow-id}/versions`.
-    ///
-    /// # Parameters
-    /// - `id`
-    /// - `registry_id`: The registry client id.
-    /// - `bucket_id`: The bucket id.
-    /// - `flow_id`: The flow id.
-    /// - `branch`: The name of a branch to get the flow versions from. If not specified the default branch of the registry client will be used.
-    ///
-    /// # Errors
-    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
-    /// - `401`: Client could not be authenticated.
-    /// - `403`: Client is not authorized to make this request.
-    /// - `404`: The specified resource could not be found.
-    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
-    ///
-    /// # Permissions
-    /// Requires `Read - /flow`.
-    async fn get_versions(
-        &self,
-        id: &str,
-        registry_id: &str,
-        bucket_id: &str,
-        flow_id: &str,
-        branch: Option<&str>,
-    ) -> Result<types::VersionedFlowSnapshotMetadataSetEntity, NifiError> {
-        Err(NifiError::UnsupportedEndpoint {
-            endpoint: "get_versions".to_string(),
-            version: "unknown".to_string(),
-        })
-    }
     /// Gets configuration history
     ///
     /// Note: This endpoint is subject to change as NiFi and it's REST API evolve.
@@ -1627,7 +1651,7 @@ pub trait FlowApi {
     async fn schedule_components(
         &self,
         id: &str,
-        body: types::ScheduleComponentsEntity,
+        body: &types::ScheduleComponentsEntity,
     ) -> Result<types::ScheduleComponentsEntity, NifiError> {
         Err(NifiError::UnsupportedEndpoint {
             endpoint: "schedule_components".to_string(),

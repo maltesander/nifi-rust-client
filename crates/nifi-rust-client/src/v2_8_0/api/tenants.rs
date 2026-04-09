@@ -309,3 +309,73 @@ impl<'a> TenantsApi<'a> {
         self.client.put(&format!("/tenants/users/{id}"), body).await
     }
 }
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_8_0::traits::TenantsApi for TenantsApi<'_> {
+    async fn search_tenants(
+        &self,
+        q: &str,
+    ) -> Result<crate::v2_8_0::types::TenantsEntity, NifiError> {
+        self.search_tenants(q).await
+    }
+    async fn get_user_groups(&self) -> Result<crate::v2_8_0::types::UserGroupsEntity, NifiError> {
+        self.get_user_groups().await
+    }
+    async fn create_user_group(
+        &self,
+        body: &crate::v2_8_0::types::UserGroupEntity,
+    ) -> Result<crate::v2_8_0::types::UserGroupEntity, NifiError> {
+        self.create_user_group(body).await
+    }
+    async fn remove_user_group(
+        &self,
+        id: &str,
+        version: Option<&str>,
+        client_id: Option<&str>,
+        disconnected_node_acknowledged: Option<bool>,
+    ) -> Result<crate::v2_8_0::types::UserGroupEntity, NifiError> {
+        self.remove_user_group(id, version, client_id, disconnected_node_acknowledged)
+            .await
+    }
+    async fn get_user_group(
+        &self,
+        id: &str,
+    ) -> Result<crate::v2_8_0::types::UserGroupEntity, NifiError> {
+        self.get_user_group(id).await
+    }
+    async fn update_user_group(
+        &self,
+        id: &str,
+        body: &crate::v2_8_0::types::UserGroupEntity,
+    ) -> Result<crate::v2_8_0::types::UserGroupEntity, NifiError> {
+        self.update_user_group(id, body).await
+    }
+    async fn get_users(&self) -> Result<crate::v2_8_0::types::UsersEntity, NifiError> {
+        self.get_users().await
+    }
+    async fn create_user(
+        &self,
+        body: &crate::v2_8_0::types::UserEntity,
+    ) -> Result<crate::v2_8_0::types::UserEntity, NifiError> {
+        self.create_user(body).await
+    }
+    async fn remove_user(
+        &self,
+        id: &str,
+        version: Option<&str>,
+        client_id: Option<&str>,
+        disconnected_node_acknowledged: Option<bool>,
+    ) -> Result<crate::v2_8_0::types::UserEntity, NifiError> {
+        self.remove_user(id, version, client_id, disconnected_node_acknowledged)
+            .await
+    }
+    async fn get_user(&self, id: &str) -> Result<crate::v2_8_0::types::UserEntity, NifiError> {
+        self.get_user(id).await
+    }
+    async fn update_user(
+        &self,
+        id: &str,
+        body: &crate::v2_8_0::types::UserEntity,
+    ) -> Result<crate::v2_8_0::types::UserEntity, NifiError> {
+        self.update_user(id, body).await
+    }
+}

@@ -4,22 +4,24 @@
 use crate::NifiError;
 use crate::dynamic::traits::ProvenanceEventsApi;
 #[allow(unused_imports)]
+use crate::dynamic::traits::ProvenanceEventsContentApi;
+#[allow(unused_imports)]
 use crate::dynamic::types;
 pub(crate) struct V2_6_0ProvenanceEventsApi<'a> {
     pub(crate) client: &'a crate::NifiClient,
 }
 #[allow(unused_variables)]
 impl ProvenanceEventsApi for V2_6_0ProvenanceEventsApi<'_> {
-    async fn get_input_content(
-        &self,
-        id: &str,
-        cluster_node_id: Option<&str>,
-    ) -> Result<(), NifiError> {
-        let api = crate::v2_6_0::api::provenanceevents::ProvenanceEventsContentApi {
+    type ProvenanceEventsContentApi<'b>
+        = crate::dynamic::dispatch::ProvenanceEventsContentApiDispatch<'b>
+    where
+        Self: 'b;
+    fn content<'b>(&'b self, id: &'b str) -> Self::ProvenanceEventsContentApi<'b> {
+        crate::dynamic::dispatch::ProvenanceEventsContentApiDispatch {
             client: self.client,
-            id,
-        };
-        api.get_input_content(cluster_node_id).await
+            id: id.to_string(),
+            version: crate::dynamic::DetectedVersion::V2_6_0,
+        }
     }
     async fn get_latest_provenance_events(
         &self,
@@ -34,17 +36,6 @@ impl ProvenanceEventsApi for V2_6_0ProvenanceEventsApi<'_> {
             .await?
             .into())
     }
-    async fn get_output_content(
-        &self,
-        id: &str,
-        cluster_node_id: Option<&str>,
-    ) -> Result<(), NifiError> {
-        let api = crate::v2_6_0::api::provenanceevents::ProvenanceEventsContentApi {
-            client: self.client,
-            id,
-        };
-        api.get_output_content(cluster_node_id).await
-    }
     async fn get_provenance_event(
         &self,
         id: &str,
@@ -57,28 +48,28 @@ impl ProvenanceEventsApi for V2_6_0ProvenanceEventsApi<'_> {
     }
     async fn submit_replay(
         &self,
-        body: types::SubmitReplayRequestEntity,
+        body: &types::SubmitReplayRequestEntity,
     ) -> Result<types::ProvenanceEventDto, NifiError> {
         let api = crate::v2_6_0::api::provenanceevents::ProvenanceEventsApi {
             client: self.client,
         };
         Ok(api
             .submit_replay(&crate::v2_6_0::types::SubmitReplayRequestEntity::try_from(
-                body,
+                body.clone(),
             )?)
             .await?
             .into())
     }
     async fn submit_replay_latest_event(
         &self,
-        body: types::ReplayLastEventRequestEntity,
+        body: &types::ReplayLastEventRequestEntity,
     ) -> Result<types::ReplayLastEventResponseEntity, NifiError> {
         let api = crate::v2_6_0::api::provenanceevents::ProvenanceEventsApi {
             client: self.client,
         };
         Ok(api
             .submit_replay_latest_event(
-                &crate::v2_6_0::types::ReplayLastEventRequestEntity::try_from(body)?,
+                &crate::v2_6_0::types::ReplayLastEventRequestEntity::try_from(body.clone())?,
             )
             .await?
             .into())

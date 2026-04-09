@@ -46,7 +46,7 @@ impl FunnelsApi for FunnelsApiDispatch<'_> {
     async fn update_funnel(
         &self,
         id: &str,
-        body: types::FunnelEntity,
+        body: &types::FunnelEntity,
     ) -> Result<types::FunnelEntity, NifiError> {
         match self {
             Self::V2_6_0(api) => api.update_funnel(id, body).await,

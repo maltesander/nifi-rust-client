@@ -34,13 +34,16 @@ impl ConnectionsApi for V2_6_0ConnectionsApi<'_> {
     async fn update_connection(
         &self,
         id: &str,
-        body: types::ConnectionEntity,
+        body: &types::ConnectionEntity,
     ) -> Result<types::ConnectionEntity, NifiError> {
         let api = crate::v2_6_0::api::connections::ConnectionsApi {
             client: self.client,
         };
         Ok(api
-            .update_connection(id, &crate::v2_6_0::types::ConnectionEntity::try_from(body)?)
+            .update_connection(
+                id,
+                &crate::v2_6_0::types::ConnectionEntity::try_from(body.clone())?,
+            )
             .await?
             .into())
     }

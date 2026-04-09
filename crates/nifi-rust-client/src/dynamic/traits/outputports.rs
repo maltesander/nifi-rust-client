@@ -4,15 +4,12 @@
 use crate::NifiError;
 #[allow(unused_imports)]
 use crate::dynamic::types;
-/// The OutputPorts API.
+/// Sub-resource trait for OutputPortsBulletinsApi.
 #[allow(unused_variables, async_fn_in_trait, clippy::too_many_arguments)]
-pub trait OutputPortsApi {
+pub trait OutputPortsBulletinsApi {
     /// Clears bulletins for an output port
     ///
     /// Calls `POST /nifi-api/output-ports/{id}/bulletins/clear-requests`.
-    ///
-    /// # Parameters
-    /// - `id`: The output port id.
     ///
     /// # Errors
     /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
@@ -27,14 +24,59 @@ pub trait OutputPortsApi {
     /// *Supported in NiFi: 2.7.2, 2.8.0*
     async fn clear_bulletins_3(
         &self,
-        id: &str,
-        body: types::ClearBulletinsRequestEntity,
+        body: &types::ClearBulletinsRequestEntity,
     ) -> Result<types::ClearBulletinsResultEntity, NifiError> {
         Err(NifiError::UnsupportedEndpoint {
             endpoint: "clear_bulletins_3".to_string(),
             version: "unknown".to_string(),
         })
     }
+}
+/// Sub-resource trait for OutputPortsRunStatusApi.
+#[allow(unused_variables, async_fn_in_trait, clippy::too_many_arguments)]
+pub trait OutputPortsRunStatusApi {
+    /// Updates run status of an output-port
+    ///
+    /// Calls `PUT /nifi-api/output-ports/{id}/run-status`.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Write - /output-ports/{uuid} or /operation/output-ports/{uuid}`.
+    async fn update_run_status_3(
+        &self,
+        body: &types::PortRunStatusEntity,
+    ) -> Result<types::ProcessorEntity, NifiError> {
+        Err(NifiError::UnsupportedEndpoint {
+            endpoint: "update_run_status_3".to_string(),
+            version: "unknown".to_string(),
+        })
+    }
+}
+/// The OutputPorts API.
+#[allow(unused_variables, async_fn_in_trait, clippy::too_many_arguments)]
+pub trait OutputPortsApi {
+    /// Returns a sub-resource accessor for config operations.
+    ///
+    /// # Parameters
+    /// - `id`: The output port id.
+    type OutputPortsBulletinsApi<'b>: OutputPortsBulletinsApi
+    where
+        Self: 'b;
+    fn bulletins<'b>(&'b self, id: &'b str) -> Self::OutputPortsBulletinsApi<'b>;
+    /// Returns a sub-resource accessor for config operations.
+    ///
+    /// # Parameters
+    /// - `id`: The port id.
+    type OutputPortsRunStatusApi<'b>: OutputPortsRunStatusApi
+    where
+        Self: 'b;
+    fn run_status<'b>(&'b self, id: &'b str) -> Self::OutputPortsRunStatusApi<'b>;
     /// Gets an output port
     ///
     /// Calls `GET /nifi-api/output-ports/{id}`.
@@ -108,36 +150,10 @@ pub trait OutputPortsApi {
     async fn update_output_port(
         &self,
         id: &str,
-        body: types::PortEntity,
+        body: &types::PortEntity,
     ) -> Result<types::PortEntity, NifiError> {
         Err(NifiError::UnsupportedEndpoint {
             endpoint: "update_output_port".to_string(),
-            version: "unknown".to_string(),
-        })
-    }
-    /// Updates run status of an output-port
-    ///
-    /// Calls `PUT /nifi-api/output-ports/{id}/run-status`.
-    ///
-    /// # Parameters
-    /// - `id`: The port id.
-    ///
-    /// # Errors
-    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
-    /// - `401`: Client could not be authenticated.
-    /// - `403`: Client is not authorized to make this request.
-    /// - `404`: The specified resource could not be found.
-    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
-    ///
-    /// # Permissions
-    /// Requires `Write - /output-ports/{uuid} or /operation/output-ports/{uuid}`.
-    async fn update_run_status_3(
-        &self,
-        id: &str,
-        body: types::PortRunStatusEntity,
-    ) -> Result<types::ProcessorEntity, NifiError> {
-        Err(NifiError::UnsupportedEndpoint {
-            endpoint: "update_run_status_3".to_string(),
             version: "unknown".to_string(),
         })
     }

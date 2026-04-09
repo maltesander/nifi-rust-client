@@ -16,7 +16,7 @@ pub enum PoliciesApiDispatch<'a> {
 impl PoliciesApi for PoliciesApiDispatch<'_> {
     async fn create_access_policy(
         &self,
-        body: types::AccessPolicyEntity,
+        body: &types::AccessPolicyEntity,
     ) -> Result<types::AccessPolicyEntity, NifiError> {
         match self {
             Self::V2_6_0(api) => api.create_access_policy(body).await,
@@ -67,7 +67,7 @@ impl PoliciesApi for PoliciesApiDispatch<'_> {
     async fn update_access_policy(
         &self,
         id: &str,
-        body: types::AccessPolicyEntity,
+        body: &types::AccessPolicyEntity,
     ) -> Result<types::AccessPolicyEntity, NifiError> {
         match self {
             Self::V2_6_0(api) => api.update_access_policy(id, body).await,

@@ -4,66 +4,89 @@
 use crate::NifiError;
 use crate::dynamic::traits::ControllerServicesApi;
 #[allow(unused_imports)]
+use crate::dynamic::traits::ControllerServicesBulletinsApi;
+#[allow(unused_imports)]
+use crate::dynamic::traits::ControllerServicesConfigApi;
+#[allow(unused_imports)]
+use crate::dynamic::traits::ControllerServicesDescriptorsApi;
+#[allow(unused_imports)]
+use crate::dynamic::traits::ControllerServicesReferencesApi;
+#[allow(unused_imports)]
+use crate::dynamic::traits::ControllerServicesRunStatusApi;
+#[allow(unused_imports)]
+use crate::dynamic::traits::ControllerServicesStateApi;
+#[allow(unused_imports)]
 use crate::dynamic::types;
 pub(crate) struct V2_8_0ControllerServicesApi<'a> {
     pub(crate) client: &'a crate::NifiClient,
 }
 #[allow(unused_variables)]
 impl ControllerServicesApi for V2_8_0ControllerServicesApi<'_> {
-    async fn analyze_configuration(
-        &self,
-        id: &str,
-        body: types::ConfigurationAnalysisEntity,
-    ) -> Result<types::ConfigurationAnalysisDto, NifiError> {
-        let api = crate::v2_8_0::api::controller_services::ControllerServicesConfigApi {
+    type ControllerServicesBulletinsApi<'b>
+        = crate::dynamic::dispatch::ControllerServicesBulletinsApiDispatch<'b>
+    where
+        Self: 'b;
+    fn bulletins<'b>(&'b self, id: &'b str) -> Self::ControllerServicesBulletinsApi<'b> {
+        crate::dynamic::dispatch::ControllerServicesBulletinsApiDispatch {
             client: self.client,
-            id,
-        };
-        Ok(api
-            .analyze_configuration(
-                &crate::v2_8_0::types::ConfigurationAnalysisEntity::try_from(body)?,
-            )
-            .await?
-            .into())
+            id: id.to_string(),
+            version: crate::dynamic::DetectedVersion::V2_8_0,
+        }
     }
-    async fn clear_bulletins(
-        &self,
-        id: &str,
-        body: types::ClearBulletinsRequestEntity,
-    ) -> Result<types::ClearBulletinsResultEntity, NifiError> {
-        let api = crate::v2_8_0::api::controller_services::ControllerServicesBulletinsApi {
+    type ControllerServicesConfigApi<'b>
+        = crate::dynamic::dispatch::ControllerServicesConfigApiDispatch<'b>
+    where
+        Self: 'b;
+    fn config<'b>(&'b self, id: &'b str) -> Self::ControllerServicesConfigApi<'b> {
+        crate::dynamic::dispatch::ControllerServicesConfigApiDispatch {
             client: self.client,
-            id,
-        };
-        Ok(api
-            .clear_bulletins(&crate::v2_8_0::types::ClearBulletinsRequestEntity::try_from(body)?)
-            .await?
-            .into())
+            id: id.to_string(),
+            version: crate::dynamic::DetectedVersion::V2_8_0,
+        }
     }
-    async fn clear_state_1(
-        &self,
-        id: &str,
-        body: types::ComponentStateEntity,
-    ) -> Result<types::ComponentStateDto, NifiError> {
-        let api = crate::v2_8_0::api::controller_services::ControllerServicesStateApi {
+    type ControllerServicesDescriptorsApi<'b>
+        = crate::dynamic::dispatch::ControllerServicesDescriptorsApiDispatch<'b>
+    where
+        Self: 'b;
+    fn descriptors<'b>(&'b self, id: &'b str) -> Self::ControllerServicesDescriptorsApi<'b> {
+        crate::dynamic::dispatch::ControllerServicesDescriptorsApiDispatch {
             client: self.client,
-            id,
-        };
-        Ok(api
-            .clear_state_1(&crate::v2_8_0::types::ComponentStateEntity::try_from(body)?)
-            .await?
-            .into())
+            id: id.to_string(),
+            version: crate::dynamic::DetectedVersion::V2_8_0,
+        }
     }
-    async fn delete_verification_request(
-        &self,
-        id: &str,
-        request_id: &str,
-    ) -> Result<types::VerifyConfigRequestDto, NifiError> {
-        let api = crate::v2_8_0::api::controller_services::ControllerServicesConfigApi {
+    type ControllerServicesReferencesApi<'b>
+        = crate::dynamic::dispatch::ControllerServicesReferencesApiDispatch<'b>
+    where
+        Self: 'b;
+    fn references<'b>(&'b self, id: &'b str) -> Self::ControllerServicesReferencesApi<'b> {
+        crate::dynamic::dispatch::ControllerServicesReferencesApiDispatch {
             client: self.client,
-            id,
-        };
-        Ok(api.delete_verification_request(request_id).await?.into())
+            id: id.to_string(),
+            version: crate::dynamic::DetectedVersion::V2_8_0,
+        }
+    }
+    type ControllerServicesRunStatusApi<'b>
+        = crate::dynamic::dispatch::ControllerServicesRunStatusApiDispatch<'b>
+    where
+        Self: 'b;
+    fn run_status<'b>(&'b self, id: &'b str) -> Self::ControllerServicesRunStatusApi<'b> {
+        crate::dynamic::dispatch::ControllerServicesRunStatusApiDispatch {
+            client: self.client,
+            id: id.to_string(),
+            version: crate::dynamic::DetectedVersion::V2_8_0,
+        }
+    }
+    type ControllerServicesStateApi<'b>
+        = crate::dynamic::dispatch::ControllerServicesStateApiDispatch<'b>
+    where
+        Self: 'b;
+    fn state<'b>(&'b self, id: &'b str) -> Self::ControllerServicesStateApi<'b> {
+        crate::dynamic::dispatch::ControllerServicesStateApiDispatch {
+            client: self.client,
+            id: id.to_string(),
+            version: crate::dynamic::DetectedVersion::V2_8_0,
+        }
     }
     async fn get_controller_service(
         &self,
@@ -74,49 +97,6 @@ impl ControllerServicesApi for V2_8_0ControllerServicesApi<'_> {
             client: self.client,
         };
         Ok(api.get_controller_service(id, ui_only).await?.into())
-    }
-    async fn get_controller_service_references(
-        &self,
-        id: &str,
-    ) -> Result<types::ControllerServiceReferencingComponentsEntity, NifiError> {
-        let api = crate::v2_8_0::api::controller_services::ControllerServicesReferencesApi {
-            client: self.client,
-            id,
-        };
-        Ok(api.get_controller_service_references().await?.into())
-    }
-    async fn get_property_descriptor_1(
-        &self,
-        id: &str,
-        property_name: &str,
-        sensitive: Option<bool>,
-    ) -> Result<types::PropertyDescriptorDto, NifiError> {
-        let api = crate::v2_8_0::api::controller_services::ControllerServicesDescriptorsApi {
-            client: self.client,
-            id,
-        };
-        Ok(api
-            .get_property_descriptor_1(property_name, sensitive)
-            .await?
-            .into())
-    }
-    async fn get_state(&self, id: &str) -> Result<types::ComponentStateDto, NifiError> {
-        let api = crate::v2_8_0::api::controller_services::ControllerServicesStateApi {
-            client: self.client,
-            id,
-        };
-        Ok(api.get_state().await?.into())
-    }
-    async fn get_verification_request(
-        &self,
-        id: &str,
-        request_id: &str,
-    ) -> Result<types::VerifyConfigRequestDto, NifiError> {
-        let api = crate::v2_8_0::api::controller_services::ControllerServicesConfigApi {
-            client: self.client,
-            id,
-        };
-        Ok(api.get_verification_request(request_id).await?.into())
     }
     async fn remove_controller_service(
         &self,
@@ -133,26 +113,10 @@ impl ControllerServicesApi for V2_8_0ControllerServicesApi<'_> {
             .await?
             .into())
     }
-    async fn submit_config_verification_request(
-        &self,
-        id: &str,
-        body: types::VerifyConfigRequestEntity,
-    ) -> Result<types::VerifyConfigRequestDto, NifiError> {
-        let api = crate::v2_8_0::api::controller_services::ControllerServicesConfigApi {
-            client: self.client,
-            id,
-        };
-        Ok(api
-            .submit_config_verification_request(
-                &crate::v2_8_0::types::VerifyConfigRequestEntity::try_from(body)?,
-            )
-            .await?
-            .into())
-    }
     async fn update_controller_service(
         &self,
         id: &str,
-        body: types::ControllerServiceEntity,
+        body: &types::ControllerServiceEntity,
     ) -> Result<types::ControllerServiceEntity, NifiError> {
         let api = crate::v2_8_0::api::controller_services::ControllerServicesApi {
             client: self.client,
@@ -160,41 +124,7 @@ impl ControllerServicesApi for V2_8_0ControllerServicesApi<'_> {
         Ok(api
             .update_controller_service(
                 id,
-                &crate::v2_8_0::types::ControllerServiceEntity::try_from(body)?,
-            )
-            .await?
-            .into())
-    }
-    async fn update_controller_service_references(
-        &self,
-        id: &str,
-        body: types::UpdateControllerServiceReferenceRequestEntity,
-    ) -> Result<types::ControllerServiceReferencingComponentsEntity, NifiError> {
-        let api = crate::v2_8_0::api::controller_services::ControllerServicesReferencesApi {
-            client: self.client,
-            id,
-        };
-        Ok(api
-            .update_controller_service_references(
-                &crate::v2_8_0::types::UpdateControllerServiceReferenceRequestEntity::try_from(
-                    body,
-                )?,
-            )
-            .await?
-            .into())
-    }
-    async fn update_run_status_1(
-        &self,
-        id: &str,
-        body: types::ControllerServiceRunStatusEntity,
-    ) -> Result<types::ControllerServiceEntity, NifiError> {
-        let api = crate::v2_8_0::api::controller_services::ControllerServicesRunStatusApi {
-            client: self.client,
-            id,
-        };
-        Ok(api
-            .update_run_status_1(
-                &crate::v2_8_0::types::ControllerServiceRunStatusEntity::try_from(body)?,
+                &crate::v2_8_0::types::ControllerServiceEntity::try_from(body.clone())?,
             )
             .await?
             .into())

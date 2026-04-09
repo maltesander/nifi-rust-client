@@ -1247,3 +1247,446 @@ impl<'a> ProcessGroupsSnippetInstanceApi<'a> {
         Ok(e.flow.unwrap_or_default())
     }
 }
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_6_0::traits::ProcessGroupsApi for ProcessGroupsApi<'_> {
+    type ProcessGroupsConnectionsApi<'b>
+        = ProcessGroupsConnectionsApi<'b>
+    where
+        Self: 'b;
+    fn connections<'b>(&'b self, id: &'b str) -> Self::ProcessGroupsConnectionsApi<'b> {
+        ProcessGroupsConnectionsApi {
+            client: self.client,
+            id,
+        }
+    }
+    type ProcessGroupsControllerServicesApi<'b>
+        = ProcessGroupsControllerServicesApi<'b>
+    where
+        Self: 'b;
+    fn controller_services<'b>(
+        &'b self,
+        id: &'b str,
+    ) -> Self::ProcessGroupsControllerServicesApi<'b> {
+        ProcessGroupsControllerServicesApi {
+            client: self.client,
+            id,
+        }
+    }
+    type ProcessGroupsCopyApi<'b>
+        = ProcessGroupsCopyApi<'b>
+    where
+        Self: 'b;
+    fn copy<'b>(&'b self, id: &'b str) -> Self::ProcessGroupsCopyApi<'b> {
+        ProcessGroupsCopyApi {
+            client: self.client,
+            id,
+        }
+    }
+    type ProcessGroupsDownloadApi<'b>
+        = ProcessGroupsDownloadApi<'b>
+    where
+        Self: 'b;
+    fn download<'b>(&'b self, id: &'b str) -> Self::ProcessGroupsDownloadApi<'b> {
+        ProcessGroupsDownloadApi {
+            client: self.client,
+            id,
+        }
+    }
+    type ProcessGroupsEmptyAllConnectionsRequestsApi<'b>
+        = ProcessGroupsEmptyAllConnectionsRequestsApi<'b>
+    where
+        Self: 'b;
+    fn empty_all_connections_requests<'b>(
+        &'b self,
+        id: &'b str,
+    ) -> Self::ProcessGroupsEmptyAllConnectionsRequestsApi<'b> {
+        ProcessGroupsEmptyAllConnectionsRequestsApi {
+            client: self.client,
+            id,
+        }
+    }
+    type ProcessGroupsFlowContentsApi<'b>
+        = ProcessGroupsFlowContentsApi<'b>
+    where
+        Self: 'b;
+    fn flow_contents<'b>(&'b self, id: &'b str) -> Self::ProcessGroupsFlowContentsApi<'b> {
+        ProcessGroupsFlowContentsApi {
+            client: self.client,
+            id,
+        }
+    }
+    type ProcessGroupsFunnelsApi<'b>
+        = ProcessGroupsFunnelsApi<'b>
+    where
+        Self: 'b;
+    fn funnels<'b>(&'b self, id: &'b str) -> Self::ProcessGroupsFunnelsApi<'b> {
+        ProcessGroupsFunnelsApi {
+            client: self.client,
+            id,
+        }
+    }
+    type ProcessGroupsInputPortsApi<'b>
+        = ProcessGroupsInputPortsApi<'b>
+    where
+        Self: 'b;
+    fn input_ports<'b>(&'b self, id: &'b str) -> Self::ProcessGroupsInputPortsApi<'b> {
+        ProcessGroupsInputPortsApi {
+            client: self.client,
+            id,
+        }
+    }
+    type ProcessGroupsLabelsApi<'b>
+        = ProcessGroupsLabelsApi<'b>
+    where
+        Self: 'b;
+    fn labels<'b>(&'b self, id: &'b str) -> Self::ProcessGroupsLabelsApi<'b> {
+        ProcessGroupsLabelsApi {
+            client: self.client,
+            id,
+        }
+    }
+    type ProcessGroupsLocalModificationsApi<'b>
+        = ProcessGroupsLocalModificationsApi<'b>
+    where
+        Self: 'b;
+    fn local_modifications<'b>(
+        &'b self,
+        id: &'b str,
+    ) -> Self::ProcessGroupsLocalModificationsApi<'b> {
+        ProcessGroupsLocalModificationsApi {
+            client: self.client,
+            id,
+        }
+    }
+    type ProcessGroupsOutputPortsApi<'b>
+        = ProcessGroupsOutputPortsApi<'b>
+    where
+        Self: 'b;
+    fn output_ports<'b>(&'b self, id: &'b str) -> Self::ProcessGroupsOutputPortsApi<'b> {
+        ProcessGroupsOutputPortsApi {
+            client: self.client,
+            id,
+        }
+    }
+    type ProcessGroupsPasteApi<'b>
+        = ProcessGroupsPasteApi<'b>
+    where
+        Self: 'b;
+    fn paste<'b>(&'b self, id: &'b str) -> Self::ProcessGroupsPasteApi<'b> {
+        ProcessGroupsPasteApi {
+            client: self.client,
+            id,
+        }
+    }
+    type ProcessGroupsProcessGroupsApi<'b>
+        = ProcessGroupsProcessGroupsApi<'b>
+    where
+        Self: 'b;
+    fn process_groups<'b>(&'b self, id: &'b str) -> Self::ProcessGroupsProcessGroupsApi<'b> {
+        ProcessGroupsProcessGroupsApi {
+            client: self.client,
+            id,
+        }
+    }
+    type ProcessGroupsProcessorsApi<'b>
+        = ProcessGroupsProcessorsApi<'b>
+    where
+        Self: 'b;
+    fn processors<'b>(&'b self, id: &'b str) -> Self::ProcessGroupsProcessorsApi<'b> {
+        ProcessGroupsProcessorsApi {
+            client: self.client,
+            id,
+        }
+    }
+    type ProcessGroupsRemoteProcessGroupsApi<'b>
+        = ProcessGroupsRemoteProcessGroupsApi<'b>
+    where
+        Self: 'b;
+    fn remote_process_groups<'b>(
+        &'b self,
+        id: &'b str,
+    ) -> Self::ProcessGroupsRemoteProcessGroupsApi<'b> {
+        ProcessGroupsRemoteProcessGroupsApi {
+            client: self.client,
+            id,
+        }
+    }
+    type ProcessGroupsReplaceRequestsApi<'b>
+        = ProcessGroupsReplaceRequestsApi<'b>
+    where
+        Self: 'b;
+    fn replace_requests<'b>(&'b self, id: &'b str) -> Self::ProcessGroupsReplaceRequestsApi<'b> {
+        ProcessGroupsReplaceRequestsApi {
+            client: self.client,
+            id,
+        }
+    }
+    type ProcessGroupsSnippetInstanceApi<'b>
+        = ProcessGroupsSnippetInstanceApi<'b>
+    where
+        Self: 'b;
+    fn snippet_instance<'b>(&'b self, id: &'b str) -> Self::ProcessGroupsSnippetInstanceApi<'b> {
+        ProcessGroupsSnippetInstanceApi {
+            client: self.client,
+            id,
+        }
+    }
+    async fn delete_replace_process_group_request(
+        &self,
+        id: &str,
+        disconnected_node_acknowledged: Option<bool>,
+    ) -> Result<crate::v2_6_0::types::ProcessGroupReplaceRequestEntity, NifiError> {
+        self.delete_replace_process_group_request(id, disconnected_node_acknowledged)
+            .await
+    }
+    async fn get_replace_process_group_request(
+        &self,
+        id: &str,
+    ) -> Result<crate::v2_6_0::types::ProcessGroupReplaceRequestEntity, NifiError> {
+        self.get_replace_process_group_request(id).await
+    }
+    async fn remove_process_group(
+        &self,
+        id: &str,
+        version: Option<&str>,
+        client_id: Option<&str>,
+        disconnected_node_acknowledged: Option<bool>,
+    ) -> Result<crate::v2_6_0::types::ProcessGroupEntity, NifiError> {
+        self.remove_process_group(id, version, client_id, disconnected_node_acknowledged)
+            .await
+    }
+    async fn get_process_group(
+        &self,
+        id: &str,
+    ) -> Result<crate::v2_6_0::types::ProcessGroupEntity, NifiError> {
+        self.get_process_group(id).await
+    }
+    async fn update_process_group(
+        &self,
+        id: &str,
+        body: &crate::v2_6_0::types::ProcessGroupEntity,
+    ) -> Result<crate::v2_6_0::types::ProcessGroupEntity, NifiError> {
+        self.update_process_group(id, body).await
+    }
+}
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_6_0::traits::ProcessGroupsConnectionsApi for ProcessGroupsConnectionsApi<'_> {
+    async fn get_connections(&self) -> Result<crate::v2_6_0::types::ConnectionsEntity, NifiError> {
+        self.get_connections().await
+    }
+    async fn create_connection(
+        &self,
+        body: &crate::v2_6_0::types::ConnectionEntity,
+    ) -> Result<crate::v2_6_0::types::ConnectionEntity, NifiError> {
+        self.create_connection(body).await
+    }
+}
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_6_0::traits::ProcessGroupsControllerServicesApi
+    for ProcessGroupsControllerServicesApi<'_>
+{
+    async fn create_controller_service_1(
+        &self,
+        body: &crate::v2_6_0::types::ControllerServiceEntity,
+    ) -> Result<crate::v2_6_0::types::ControllerServiceEntity, NifiError> {
+        self.create_controller_service_1(body).await
+    }
+}
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_6_0::traits::ProcessGroupsCopyApi for ProcessGroupsCopyApi<'_> {
+    async fn copy(
+        &self,
+        body: &crate::v2_6_0::types::CopyRequestEntity,
+    ) -> Result<crate::v2_6_0::types::CopyResponseEntity, NifiError> {
+        self.copy(body).await
+    }
+}
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_6_0::traits::ProcessGroupsDownloadApi for ProcessGroupsDownloadApi<'_> {
+    async fn export_process_group(
+        &self,
+        include_referenced_services: Option<bool>,
+    ) -> Result<(), NifiError> {
+        self.export_process_group(include_referenced_services).await
+    }
+}
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_6_0::traits::ProcessGroupsEmptyAllConnectionsRequestsApi
+    for ProcessGroupsEmptyAllConnectionsRequestsApi<'_>
+{
+    async fn create_empty_all_connections_request(
+        &self,
+    ) -> Result<crate::v2_6_0::types::DropRequestDto, NifiError> {
+        self.create_empty_all_connections_request().await
+    }
+    async fn remove_drop_request_1(
+        &self,
+        drop_request_id: &str,
+    ) -> Result<crate::v2_6_0::types::DropRequestDto, NifiError> {
+        self.remove_drop_request_1(drop_request_id).await
+    }
+    async fn get_drop_all_flowfiles_request(
+        &self,
+        drop_request_id: &str,
+    ) -> Result<crate::v2_6_0::types::DropRequestDto, NifiError> {
+        self.get_drop_all_flowfiles_request(drop_request_id).await
+    }
+}
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_6_0::traits::ProcessGroupsFlowContentsApi for ProcessGroupsFlowContentsApi<'_> {
+    async fn replace_process_group(
+        &self,
+        body: &crate::v2_6_0::types::ProcessGroupImportEntity,
+    ) -> Result<crate::v2_6_0::types::ProcessGroupImportEntity, NifiError> {
+        self.replace_process_group(body).await
+    }
+}
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_6_0::traits::ProcessGroupsFunnelsApi for ProcessGroupsFunnelsApi<'_> {
+    async fn get_funnels(&self) -> Result<crate::v2_6_0::types::FunnelsEntity, NifiError> {
+        self.get_funnels().await
+    }
+    async fn create_funnel(
+        &self,
+        body: &crate::v2_6_0::types::FunnelEntity,
+    ) -> Result<crate::v2_6_0::types::FunnelEntity, NifiError> {
+        self.create_funnel(body).await
+    }
+}
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_6_0::traits::ProcessGroupsInputPortsApi for ProcessGroupsInputPortsApi<'_> {
+    async fn get_input_ports(&self) -> Result<crate::v2_6_0::types::InputPortsEntity, NifiError> {
+        self.get_input_ports().await
+    }
+    async fn create_input_port(
+        &self,
+        body: &crate::v2_6_0::types::PortEntity,
+    ) -> Result<crate::v2_6_0::types::PortEntity, NifiError> {
+        self.create_input_port(body).await
+    }
+}
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_6_0::traits::ProcessGroupsLabelsApi for ProcessGroupsLabelsApi<'_> {
+    async fn get_labels(&self) -> Result<crate::v2_6_0::types::LabelsEntity, NifiError> {
+        self.get_labels().await
+    }
+    async fn create_label(
+        &self,
+        body: &crate::v2_6_0::types::LabelEntity,
+    ) -> Result<crate::v2_6_0::types::LabelEntity, NifiError> {
+        self.create_label(body).await
+    }
+}
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_6_0::traits::ProcessGroupsLocalModificationsApi
+    for ProcessGroupsLocalModificationsApi<'_>
+{
+    async fn get_local_modifications(
+        &self,
+    ) -> Result<crate::v2_6_0::types::FlowComparisonEntity, NifiError> {
+        self.get_local_modifications().await
+    }
+}
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_6_0::traits::ProcessGroupsOutputPortsApi for ProcessGroupsOutputPortsApi<'_> {
+    async fn get_output_ports(&self) -> Result<crate::v2_6_0::types::OutputPortsEntity, NifiError> {
+        self.get_output_ports().await
+    }
+    async fn create_output_port(
+        &self,
+        body: &crate::v2_6_0::types::PortEntity,
+    ) -> Result<crate::v2_6_0::types::PortEntity, NifiError> {
+        self.create_output_port(body).await
+    }
+}
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_6_0::traits::ProcessGroupsPasteApi for ProcessGroupsPasteApi<'_> {
+    async fn paste(
+        &self,
+        body: &crate::v2_6_0::types::PasteRequestEntity,
+    ) -> Result<crate::v2_6_0::types::PasteResponseEntity, NifiError> {
+        self.paste(body).await
+    }
+}
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_6_0::traits::ProcessGroupsProcessGroupsApi for ProcessGroupsProcessGroupsApi<'_> {
+    async fn get_process_groups(
+        &self,
+    ) -> Result<crate::v2_6_0::types::ProcessGroupsEntity, NifiError> {
+        self.get_process_groups().await
+    }
+    async fn create_process_group(
+        &self,
+        parameter_context_handling_strategy: Option<
+            crate::v2_6_0::types::ParameterContextHandlingStrategy,
+        >,
+        body: &crate::v2_6_0::types::ProcessGroupEntity,
+    ) -> Result<crate::v2_6_0::types::ProcessGroupEntity, NifiError> {
+        self.create_process_group(parameter_context_handling_strategy, body)
+            .await
+    }
+    async fn import_process_group(
+        &self,
+        body: &crate::v2_6_0::types::ProcessGroupUploadEntity,
+    ) -> Result<crate::v2_6_0::types::ProcessGroupEntity, NifiError> {
+        self.import_process_group(body).await
+    }
+    async fn upload_process_group(
+        &self,
+    ) -> Result<crate::v2_6_0::types::ProcessGroupEntity, NifiError> {
+        self.upload_process_group().await
+    }
+}
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_6_0::traits::ProcessGroupsProcessorsApi for ProcessGroupsProcessorsApi<'_> {
+    async fn get_processors(
+        &self,
+        include_descendant_groups: Option<bool>,
+    ) -> Result<crate::v2_6_0::types::ProcessorsEntity, NifiError> {
+        self.get_processors(include_descendant_groups).await
+    }
+    async fn create_processor(
+        &self,
+        body: &crate::v2_6_0::types::ProcessorEntity,
+    ) -> Result<crate::v2_6_0::types::ProcessorEntity, NifiError> {
+        self.create_processor(body).await
+    }
+}
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_6_0::traits::ProcessGroupsRemoteProcessGroupsApi
+    for ProcessGroupsRemoteProcessGroupsApi<'_>
+{
+    async fn get_remote_process_groups(
+        &self,
+    ) -> Result<crate::v2_6_0::types::RemoteProcessGroupsEntity, NifiError> {
+        self.get_remote_process_groups().await
+    }
+    async fn create_remote_process_group(
+        &self,
+        body: &crate::v2_6_0::types::RemoteProcessGroupEntity,
+    ) -> Result<crate::v2_6_0::types::RemoteProcessGroupEntity, NifiError> {
+        self.create_remote_process_group(body).await
+    }
+}
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_6_0::traits::ProcessGroupsReplaceRequestsApi
+    for ProcessGroupsReplaceRequestsApi<'_>
+{
+    async fn initiate_replace_process_group(
+        &self,
+        body: &crate::v2_6_0::types::ProcessGroupImportEntity,
+    ) -> Result<crate::v2_6_0::types::ProcessGroupReplaceRequestEntity, NifiError> {
+        self.initiate_replace_process_group(body).await
+    }
+}
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_6_0::traits::ProcessGroupsSnippetInstanceApi
+    for ProcessGroupsSnippetInstanceApi<'_>
+{
+    async fn copy_snippet(
+        &self,
+        body: &crate::v2_6_0::types::CopySnippetRequestEntity,
+    ) -> Result<crate::v2_6_0::types::FlowDto, NifiError> {
+        self.copy_snippet(body).await
+    }
+}

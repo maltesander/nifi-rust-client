@@ -4,25 +4,37 @@
 use crate::NifiError;
 use crate::dynamic::traits::InputPortsApi;
 #[allow(unused_imports)]
+use crate::dynamic::traits::InputPortsBulletinsApi;
+#[allow(unused_imports)]
+use crate::dynamic::traits::InputPortsRunStatusApi;
+#[allow(unused_imports)]
 use crate::dynamic::types;
 pub(crate) struct V2_7_2InputPortsApi<'a> {
     pub(crate) client: &'a crate::NifiClient,
 }
 #[allow(unused_variables)]
 impl InputPortsApi for V2_7_2InputPortsApi<'_> {
-    async fn clear_bulletins_2(
-        &self,
-        id: &str,
-        body: types::ClearBulletinsRequestEntity,
-    ) -> Result<types::ClearBulletinsResultEntity, NifiError> {
-        let api = crate::v2_7_2::api::inputports::InputPortsBulletinsApi {
+    type InputPortsBulletinsApi<'b>
+        = crate::dynamic::dispatch::InputPortsBulletinsApiDispatch<'b>
+    where
+        Self: 'b;
+    fn bulletins<'b>(&'b self, id: &'b str) -> Self::InputPortsBulletinsApi<'b> {
+        crate::dynamic::dispatch::InputPortsBulletinsApiDispatch {
             client: self.client,
-            id,
-        };
-        Ok(api
-            .clear_bulletins_2(&crate::v2_7_2::types::ClearBulletinsRequestEntity::try_from(body)?)
-            .await?
-            .into())
+            id: id.to_string(),
+            version: crate::dynamic::DetectedVersion::V2_7_2,
+        }
+    }
+    type InputPortsRunStatusApi<'b>
+        = crate::dynamic::dispatch::InputPortsRunStatusApiDispatch<'b>
+    where
+        Self: 'b;
+    fn run_status<'b>(&'b self, id: &'b str) -> Self::InputPortsRunStatusApi<'b> {
+        crate::dynamic::dispatch::InputPortsRunStatusApiDispatch {
+            client: self.client,
+            id: id.to_string(),
+            version: crate::dynamic::DetectedVersion::V2_7_2,
+        }
     }
     async fn get_input_port(&self, id: &str) -> Result<types::PortEntity, NifiError> {
         let api = crate::v2_7_2::api::inputports::InputPortsApi {
@@ -48,27 +60,16 @@ impl InputPortsApi for V2_7_2InputPortsApi<'_> {
     async fn update_input_port(
         &self,
         id: &str,
-        body: types::PortEntity,
+        body: &types::PortEntity,
     ) -> Result<types::PortEntity, NifiError> {
         let api = crate::v2_7_2::api::inputports::InputPortsApi {
             client: self.client,
         };
         Ok(api
-            .update_input_port(id, &crate::v2_7_2::types::PortEntity::try_from(body)?)
-            .await?
-            .into())
-    }
-    async fn update_run_status_2(
-        &self,
-        id: &str,
-        body: types::PortRunStatusEntity,
-    ) -> Result<types::ProcessorEntity, NifiError> {
-        let api = crate::v2_7_2::api::inputports::InputPortsRunStatusApi {
-            client: self.client,
-            id,
-        };
-        Ok(api
-            .update_run_status_2(&crate::v2_7_2::types::PortRunStatusEntity::try_from(body)?)
+            .update_input_port(
+                id,
+                &crate::v2_7_2::types::PortEntity::try_from(body.clone())?,
+            )
             .await?
             .into())
     }

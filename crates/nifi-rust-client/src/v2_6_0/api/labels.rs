@@ -99,3 +99,26 @@ impl<'a> LabelsApi<'a> {
         self.client.put(&format!("/labels/{id}"), body).await
     }
 }
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_6_0::traits::LabelsApi for LabelsApi<'_> {
+    async fn remove_label(
+        &self,
+        id: &str,
+        version: Option<&str>,
+        client_id: Option<&str>,
+        disconnected_node_acknowledged: Option<bool>,
+    ) -> Result<crate::v2_6_0::types::LabelEntity, NifiError> {
+        self.remove_label(id, version, client_id, disconnected_node_acknowledged)
+            .await
+    }
+    async fn get_label(&self, id: &str) -> Result<crate::v2_6_0::types::LabelEntity, NifiError> {
+        self.get_label(id).await
+    }
+    async fn update_label(
+        &self,
+        id: &str,
+        body: &crate::v2_6_0::types::LabelEntity,
+    ) -> Result<crate::v2_6_0::types::LabelEntity, NifiError> {
+        self.update_label(id, body).await
+    }
+}

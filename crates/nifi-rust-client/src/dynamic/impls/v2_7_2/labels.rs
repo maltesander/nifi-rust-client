@@ -34,13 +34,16 @@ impl LabelsApi for V2_7_2LabelsApi<'_> {
     async fn update_label(
         &self,
         id: &str,
-        body: types::LabelEntity,
+        body: &types::LabelEntity,
     ) -> Result<types::LabelEntity, NifiError> {
         let api = crate::v2_7_2::api::labels::LabelsApi {
             client: self.client,
         };
         Ok(api
-            .update_label(id, &crate::v2_7_2::types::LabelEntity::try_from(body)?)
+            .update_label(
+                id,
+                &crate::v2_7_2::types::LabelEntity::try_from(body.clone())?,
+            )
             .await?
             .into())
     }

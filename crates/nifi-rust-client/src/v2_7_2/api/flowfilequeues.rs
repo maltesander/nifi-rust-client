@@ -319,3 +319,95 @@ impl<'a> FlowFileQueuesListingRequestsApi<'a> {
         Ok(e.listing_request.unwrap_or_default())
     }
 }
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_7_2::traits::FlowFileQueuesApi for FlowFileQueuesApi<'_> {
+    type FlowFileQueuesDropRequestsApi<'b>
+        = FlowFileQueuesDropRequestsApi<'b>
+    where
+        Self: 'b;
+    fn drop_requests<'b>(&'b self, id: &'b str) -> Self::FlowFileQueuesDropRequestsApi<'b> {
+        FlowFileQueuesDropRequestsApi {
+            client: self.client,
+            id,
+        }
+    }
+    type FlowFileQueuesFlowfilesApi<'b>
+        = FlowFileQueuesFlowfilesApi<'b>
+    where
+        Self: 'b;
+    fn flowfiles<'b>(&'b self, id: &'b str) -> Self::FlowFileQueuesFlowfilesApi<'b> {
+        FlowFileQueuesFlowfilesApi {
+            client: self.client,
+            id,
+        }
+    }
+    type FlowFileQueuesListingRequestsApi<'b>
+        = FlowFileQueuesListingRequestsApi<'b>
+    where
+        Self: 'b;
+    fn listing_requests<'b>(&'b self, id: &'b str) -> Self::FlowFileQueuesListingRequestsApi<'b> {
+        FlowFileQueuesListingRequestsApi {
+            client: self.client,
+            id,
+        }
+    }
+}
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_7_2::traits::FlowFileQueuesDropRequestsApi for FlowFileQueuesDropRequestsApi<'_> {
+    async fn create_drop_request(&self) -> Result<crate::v2_7_2::types::DropRequestDto, NifiError> {
+        self.create_drop_request().await
+    }
+    async fn remove_drop_request(
+        &self,
+        drop_request_id: &str,
+    ) -> Result<crate::v2_7_2::types::DropRequestDto, NifiError> {
+        self.remove_drop_request(drop_request_id).await
+    }
+    async fn get_drop_request(
+        &self,
+        drop_request_id: &str,
+    ) -> Result<crate::v2_7_2::types::DropRequestDto, NifiError> {
+        self.get_drop_request(drop_request_id).await
+    }
+}
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_7_2::traits::FlowFileQueuesFlowfilesApi for FlowFileQueuesFlowfilesApi<'_> {
+    async fn get_flow_file(
+        &self,
+        flowfile_uuid: &str,
+        cluster_node_id: Option<&str>,
+    ) -> Result<crate::v2_7_2::types::FlowFileDto, NifiError> {
+        self.get_flow_file(flowfile_uuid, cluster_node_id).await
+    }
+    async fn download_flow_file_content(
+        &self,
+        flowfile_uuid: &str,
+        client_id: Option<&str>,
+        cluster_node_id: Option<&str>,
+    ) -> Result<(), NifiError> {
+        self.download_flow_file_content(flowfile_uuid, client_id, cluster_node_id)
+            .await
+    }
+}
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_7_2::traits::FlowFileQueuesListingRequestsApi
+    for FlowFileQueuesListingRequestsApi<'_>
+{
+    async fn create_flow_file_listing(
+        &self,
+    ) -> Result<crate::v2_7_2::types::ListingRequestDto, NifiError> {
+        self.create_flow_file_listing().await
+    }
+    async fn delete_listing_request(
+        &self,
+        listing_request_id: &str,
+    ) -> Result<crate::v2_7_2::types::ListingRequestDto, NifiError> {
+        self.delete_listing_request(listing_request_id).await
+    }
+    async fn get_listing_request(
+        &self,
+        listing_request_id: &str,
+    ) -> Result<crate::v2_7_2::types::ListingRequestDto, NifiError> {
+        self.get_listing_request(listing_request_id).await
+    }
+}

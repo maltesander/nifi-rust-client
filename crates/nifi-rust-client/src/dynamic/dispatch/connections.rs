@@ -46,7 +46,7 @@ impl ConnectionsApi for ConnectionsApiDispatch<'_> {
     async fn update_connection(
         &self,
         id: &str,
-        body: types::ConnectionEntity,
+        body: &types::ConnectionEntity,
     ) -> Result<types::ConnectionEntity, NifiError> {
         match self {
             Self::V2_6_0(api) => api.update_connection(id, body).await,

@@ -104,3 +104,29 @@ impl<'a> ConnectionsApi<'a> {
         self.client.put(&format!("/connections/{id}"), body).await
     }
 }
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_6_0::traits::ConnectionsApi for ConnectionsApi<'_> {
+    async fn delete_connection(
+        &self,
+        id: &str,
+        version: Option<&str>,
+        client_id: Option<&str>,
+        disconnected_node_acknowledged: Option<bool>,
+    ) -> Result<crate::v2_6_0::types::ConnectionEntity, NifiError> {
+        self.delete_connection(id, version, client_id, disconnected_node_acknowledged)
+            .await
+    }
+    async fn get_connection(
+        &self,
+        id: &str,
+    ) -> Result<crate::v2_6_0::types::ConnectionEntity, NifiError> {
+        self.get_connection(id).await
+    }
+    async fn update_connection(
+        &self,
+        id: &str,
+        body: &crate::v2_6_0::types::ConnectionEntity,
+    ) -> Result<crate::v2_6_0::types::ConnectionEntity, NifiError> {
+        self.update_connection(id, body).await
+    }
+}

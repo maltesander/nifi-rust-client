@@ -25,9 +25,18 @@ pub(super) fn find_endpoint<'a>(
 }
 
 /// Build the accessor for calling the API in dynamic mode.
-/// Dynamic traits flatten sub-groups, so it's always just `accessor_fn()`.
-pub(super) fn build_accessor(tag_accessor_fn: &str, _sub_group: Option<&SubGroup>) -> String {
-    format!("{tag_accessor_fn}()")
+/// For sub-group endpoints, chains the sub-group accessor with the primary param.
+pub(super) fn build_accessor(tag_accessor_fn: &str, sub_group: Option<&SubGroup>) -> String {
+    match sub_group {
+        Some(sg) => {
+            let val = default_path_param_value(&sg.primary_param);
+            format!(
+                "{tag_accessor_fn}().{accessor}(\"{val}\")",
+                accessor = sg.accessor_fn
+            )
+        }
+        None => format!("{tag_accessor_fn}()"),
+    }
 }
 
 /// Return a sensible placeholder value for a path parameter.
@@ -39,9 +48,17 @@ pub(super) fn default_path_param_value(param_name: &str) -> String {
     }
 }
 
-/// Produce a use statement for the trait needed to call the given struct's methods.
-pub(super) fn trait_use_stmt(struct_name: &str) -> String {
-    format!("use nifi_rust_client::dynamic::traits::{struct_name};")
+/// Produce use statements for the traits needed to call the given struct's methods.
+/// For sub-group endpoints, imports both the root trait (for the accessor) and the
+/// sub-resource trait (for the leaf method).
+pub(super) fn trait_use_stmt(struct_name: &str, sub_group: Option<&SubGroup>) -> String {
+    match sub_group {
+        Some(sg) => format!(
+            "use nifi_rust_client::dynamic::traits::{{{struct_name}, {sub_trait}}};",
+            sub_trait = sg.struct_name
+        ),
+        None => format!("use nifi_rust_client::dynamic::traits::{struct_name};"),
+    }
 }
 
 /// Capitalize the first character of a string.
@@ -90,10 +107,26 @@ mod tests {
     }
 
     #[test]
-    fn trait_use_stmt_formats_correctly() {
+    fn trait_use_stmt_root() {
         assert_eq!(
-            trait_use_stmt("FlowApi"),
+            trait_use_stmt("FlowApi", None),
             "use nifi_rust_client::dynamic::traits::FlowApi;"
+        );
+    }
+
+    #[test]
+    fn trait_use_stmt_sub_group() {
+        let sg = SubGroup {
+            name: "metrics".to_string(),
+            struct_name: "FlowMetricsApi".to_string(),
+            accessor_fn: "metrics".to_string(),
+            primary_param: "producer".to_string(),
+            primary_param_doc: None,
+            endpoints: vec![],
+        };
+        assert_eq!(
+            trait_use_stmt("FlowApi", Some(&sg)),
+            "use nifi_rust_client::dynamic::traits::{FlowApi, FlowMetricsApi};"
         );
     }
 
@@ -103,7 +136,7 @@ mod tests {
     }
 
     #[test]
-    fn build_accessor_sub_group_flattened() {
+    fn build_accessor_sub_group_chains() {
         let sg = SubGroup {
             name: "metrics".to_string(),
             struct_name: "FlowMetricsApi".to_string(),
@@ -112,8 +145,10 @@ mod tests {
             primary_param_doc: None,
             endpoints: vec![],
         };
-        // Dynamic traits flatten sub-groups — accessor is always just the tag.
-        assert_eq!(build_accessor("flow_api", Some(&sg)), "flow_api()");
+        assert_eq!(
+            build_accessor("flow_api", Some(&sg)),
+            "flow_api().metrics(\"prometheus\")"
+        );
     }
 
     #[test]

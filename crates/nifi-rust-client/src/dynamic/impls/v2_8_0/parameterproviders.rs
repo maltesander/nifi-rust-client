@@ -4,98 +4,105 @@
 use crate::NifiError;
 use crate::dynamic::traits::ParameterProvidersApi;
 #[allow(unused_imports)]
+use crate::dynamic::traits::ParameterProvidersApplyParametersRequestsApi;
+#[allow(unused_imports)]
+use crate::dynamic::traits::ParameterProvidersBulletinsApi;
+#[allow(unused_imports)]
+use crate::dynamic::traits::ParameterProvidersConfigApi;
+#[allow(unused_imports)]
+use crate::dynamic::traits::ParameterProvidersDescriptorsApi;
+#[allow(unused_imports)]
+use crate::dynamic::traits::ParameterProvidersParametersApi;
+#[allow(unused_imports)]
+use crate::dynamic::traits::ParameterProvidersReferencesApi;
+#[allow(unused_imports)]
+use crate::dynamic::traits::ParameterProvidersStateApi;
+#[allow(unused_imports)]
 use crate::dynamic::types;
 pub(crate) struct V2_8_0ParameterProvidersApi<'a> {
     pub(crate) client: &'a crate::NifiClient,
 }
 #[allow(unused_variables)]
 impl ParameterProvidersApi for V2_8_0ParameterProvidersApi<'_> {
-    async fn analyze_configuration_1(
-        &self,
-        id: &str,
-        body: types::ConfigurationAnalysisEntity,
-    ) -> Result<types::ConfigurationAnalysisDto, NifiError> {
-        let api = crate::v2_8_0::api::parameterproviders::ParameterProvidersConfigApi {
+    type ParameterProvidersApplyParametersRequestsApi<'b>
+        = crate::dynamic::dispatch::ParameterProvidersApplyParametersRequestsApiDispatch<'b>
+    where
+        Self: 'b;
+    fn apply_parameters_requests<'b>(
+        &'b self,
+        provider_id: &'b str,
+    ) -> Self::ParameterProvidersApplyParametersRequestsApi<'b> {
+        crate::dynamic::dispatch::ParameterProvidersApplyParametersRequestsApiDispatch {
             client: self.client,
-            id,
-        };
-        Ok(api
-            .analyze_configuration_1(
-                &crate::v2_8_0::types::ConfigurationAnalysisEntity::try_from(body)?,
-            )
-            .await?
-            .into())
+            provider_id: provider_id.to_string(),
+            version: crate::dynamic::DetectedVersion::V2_8_0,
+        }
     }
-    async fn clear_bulletins_4(
-        &self,
-        id: &str,
-        body: types::ClearBulletinsRequestEntity,
-    ) -> Result<types::ClearBulletinsResultEntity, NifiError> {
-        let api = crate::v2_8_0::api::parameterproviders::ParameterProvidersBulletinsApi {
+    type ParameterProvidersBulletinsApi<'b>
+        = crate::dynamic::dispatch::ParameterProvidersBulletinsApiDispatch<'b>
+    where
+        Self: 'b;
+    fn bulletins<'b>(&'b self, id: &'b str) -> Self::ParameterProvidersBulletinsApi<'b> {
+        crate::dynamic::dispatch::ParameterProvidersBulletinsApiDispatch {
             client: self.client,
-            id,
-        };
-        Ok(api
-            .clear_bulletins_4(&crate::v2_8_0::types::ClearBulletinsRequestEntity::try_from(body)?)
-            .await?
-            .into())
+            id: id.to_string(),
+            version: crate::dynamic::DetectedVersion::V2_8_0,
+        }
     }
-    async fn clear_state_2(
-        &self,
-        id: &str,
-        body: types::ComponentStateEntity,
-    ) -> Result<types::ComponentStateDto, NifiError> {
-        let api = crate::v2_8_0::api::parameterproviders::ParameterProvidersStateApi {
+    type ParameterProvidersConfigApi<'b>
+        = crate::dynamic::dispatch::ParameterProvidersConfigApiDispatch<'b>
+    where
+        Self: 'b;
+    fn config<'b>(&'b self, id: &'b str) -> Self::ParameterProvidersConfigApi<'b> {
+        crate::dynamic::dispatch::ParameterProvidersConfigApiDispatch {
             client: self.client,
-            id,
-        };
-        Ok(api
-            .clear_state_2(&crate::v2_8_0::types::ComponentStateEntity::try_from(body)?)
-            .await?
-            .into())
+            id: id.to_string(),
+            version: crate::dynamic::DetectedVersion::V2_8_0,
+        }
     }
-    async fn delete_apply_parameters_request(
-        &self,
-        provider_id: &str,
-        request_id: &str,
-        disconnected_node_acknowledged: Option<bool>,
-    ) -> Result<types::ParameterProviderApplyParametersRequestDto, NifiError> {
-        let api =
-            crate::v2_8_0::api::parameterproviders::ParameterProvidersApplyParametersRequestsApi {
-                client: self.client,
-                provider_id,
-            };
-        Ok(api
-            .delete_apply_parameters_request(request_id, disconnected_node_acknowledged)
-            .await?
-            .into())
-    }
-    async fn delete_verification_request_1(
-        &self,
-        id: &str,
-        request_id: &str,
-    ) -> Result<types::VerifyConfigRequestDto, NifiError> {
-        let api = crate::v2_8_0::api::parameterproviders::ParameterProvidersConfigApi {
+    type ParameterProvidersDescriptorsApi<'b>
+        = crate::dynamic::dispatch::ParameterProvidersDescriptorsApiDispatch<'b>
+    where
+        Self: 'b;
+    fn descriptors<'b>(&'b self, id: &'b str) -> Self::ParameterProvidersDescriptorsApi<'b> {
+        crate::dynamic::dispatch::ParameterProvidersDescriptorsApiDispatch {
             client: self.client,
-            id,
-        };
-        Ok(api.delete_verification_request_1(request_id).await?.into())
+            id: id.to_string(),
+            version: crate::dynamic::DetectedVersion::V2_8_0,
+        }
     }
-    async fn fetch_parameters(
-        &self,
-        id: &str,
-        body: types::ParameterProviderParameterFetchEntity,
-    ) -> Result<types::ParameterProviderEntity, NifiError> {
-        let api = crate::v2_8_0::api::parameterproviders::ParameterProvidersParametersApi {
+    type ParameterProvidersParametersApi<'b>
+        = crate::dynamic::dispatch::ParameterProvidersParametersApiDispatch<'b>
+    where
+        Self: 'b;
+    fn parameters<'b>(&'b self, id: &'b str) -> Self::ParameterProvidersParametersApi<'b> {
+        crate::dynamic::dispatch::ParameterProvidersParametersApiDispatch {
             client: self.client,
-            id,
-        };
-        Ok(api
-            .fetch_parameters(
-                &crate::v2_8_0::types::ParameterProviderParameterFetchEntity::try_from(body)?,
-            )
-            .await?
-            .into())
+            id: id.to_string(),
+            version: crate::dynamic::DetectedVersion::V2_8_0,
+        }
+    }
+    type ParameterProvidersReferencesApi<'b>
+        = crate::dynamic::dispatch::ParameterProvidersReferencesApiDispatch<'b>
+    where
+        Self: 'b;
+    fn references<'b>(&'b self, id: &'b str) -> Self::ParameterProvidersReferencesApi<'b> {
+        crate::dynamic::dispatch::ParameterProvidersReferencesApiDispatch {
+            client: self.client,
+            id: id.to_string(),
+            version: crate::dynamic::DetectedVersion::V2_8_0,
+        }
+    }
+    type ParameterProvidersStateApi<'b>
+        = crate::dynamic::dispatch::ParameterProvidersStateApiDispatch<'b>
+    where
+        Self: 'b;
+    fn state<'b>(&'b self, id: &'b str) -> Self::ParameterProvidersStateApi<'b> {
+        crate::dynamic::dispatch::ParameterProvidersStateApiDispatch {
+            client: self.client,
+            id: id.to_string(),
+            version: crate::dynamic::DetectedVersion::V2_8_0,
+        }
     }
     async fn get_parameter_provider(
         &self,
@@ -105,60 +112,6 @@ impl ParameterProvidersApi for V2_8_0ParameterProvidersApi<'_> {
             client: self.client,
         };
         Ok(api.get_parameter_provider(id).await?.into())
-    }
-    async fn get_parameter_provider_apply_parameters_request(
-        &self,
-        provider_id: &str,
-        request_id: &str,
-    ) -> Result<types::ParameterProviderApplyParametersRequestDto, NifiError> {
-        let api =
-            crate::v2_8_0::api::parameterproviders::ParameterProvidersApplyParametersRequestsApi {
-                client: self.client,
-                provider_id,
-            };
-        Ok(api
-            .get_parameter_provider_apply_parameters_request(request_id)
-            .await?
-            .into())
-    }
-    async fn get_parameter_provider_references(
-        &self,
-        id: &str,
-    ) -> Result<types::ParameterProviderReferencingComponentsEntity, NifiError> {
-        let api = crate::v2_8_0::api::parameterproviders::ParameterProvidersReferencesApi {
-            client: self.client,
-            id,
-        };
-        Ok(api.get_parameter_provider_references().await?.into())
-    }
-    async fn get_property_descriptor_2(
-        &self,
-        id: &str,
-        property_name: &str,
-    ) -> Result<types::PropertyDescriptorDto, NifiError> {
-        let api = crate::v2_8_0::api::parameterproviders::ParameterProvidersDescriptorsApi {
-            client: self.client,
-            id,
-        };
-        Ok(api.get_property_descriptor_2(property_name).await?.into())
-    }
-    async fn get_state_1(&self, id: &str) -> Result<types::ComponentStateDto, NifiError> {
-        let api = crate::v2_8_0::api::parameterproviders::ParameterProvidersStateApi {
-            client: self.client,
-            id,
-        };
-        Ok(api.get_state_1().await?.into())
-    }
-    async fn get_verification_request_1(
-        &self,
-        id: &str,
-        request_id: &str,
-    ) -> Result<types::VerifyConfigRequestDto, NifiError> {
-        let api = crate::v2_8_0::api::parameterproviders::ParameterProvidersConfigApi {
-            client: self.client,
-            id,
-        };
-        Ok(api.get_verification_request_1(request_id).await?.into())
     }
     async fn remove_parameter_provider(
         &self,
@@ -175,43 +128,10 @@ impl ParameterProvidersApi for V2_8_0ParameterProvidersApi<'_> {
             .await?
             .into())
     }
-    async fn submit_apply_parameters(
-        &self,
-        provider_id: &str,
-        body: types::ParameterProviderParameterApplicationEntity,
-    ) -> Result<types::ParameterProviderApplyParametersRequestDto, NifiError> {
-        let api =
-            crate::v2_8_0::api::parameterproviders::ParameterProvidersApplyParametersRequestsApi {
-                client: self.client,
-                provider_id,
-            };
-        Ok(api
-            .submit_apply_parameters(
-                &crate::v2_8_0::types::ParameterProviderParameterApplicationEntity::try_from(body)?,
-            )
-            .await?
-            .into())
-    }
-    async fn submit_config_verification_request_1(
-        &self,
-        id: &str,
-        body: types::VerifyConfigRequestEntity,
-    ) -> Result<types::VerifyConfigRequestDto, NifiError> {
-        let api = crate::v2_8_0::api::parameterproviders::ParameterProvidersConfigApi {
-            client: self.client,
-            id,
-        };
-        Ok(api
-            .submit_config_verification_request_1(
-                &crate::v2_8_0::types::VerifyConfigRequestEntity::try_from(body)?,
-            )
-            .await?
-            .into())
-    }
     async fn update_parameter_provider(
         &self,
         id: &str,
-        body: types::ParameterProviderEntity,
+        body: &types::ParameterProviderEntity,
     ) -> Result<types::ParameterProviderEntity, NifiError> {
         let api = crate::v2_8_0::api::parameterproviders::ParameterProvidersApi {
             client: self.client,
@@ -219,7 +139,7 @@ impl ParameterProvidersApi for V2_8_0ParameterProvidersApi<'_> {
         Ok(api
             .update_parameter_provider(
                 id,
-                &crate::v2_8_0::types::ParameterProviderEntity::try_from(body)?,
+                &crate::v2_8_0::types::ParameterProviderEntity::try_from(body.clone())?,
             )
             .await?
             .into())

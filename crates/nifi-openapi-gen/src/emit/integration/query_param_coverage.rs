@@ -83,7 +83,7 @@ pub fn emit_query_param_coverage_tests(
                     rust_name = qp.rust_name,
                 );
 
-                let use_trait = trait_use_stmt(&tag_group.struct_name);
+                let use_trait = trait_use_stmt(&tag_group.struct_name, sub_group);
 
                 // Build the argument expression for the target param.
                 let (param_arg, extra_use) = match &qp.ty {
@@ -184,21 +184,25 @@ async fn {base_name}_ignored_on_older() {{
 /// All other params get defaults.
 fn build_call_args(
     endpoint: &Endpoint,
-    _sub_group: Option<&SubGroup>,
+    sub_group: Option<&SubGroup>,
     target_param_rust_name: &str,
     target_param_arg: &str,
 ) -> String {
     let mut args: Vec<String> = Vec::new();
+    let primary_param = sub_group.map(|sg| sg.primary_param.as_str());
 
-    // All path params (dynamic traits flatten sub-groups).
+    // Path params (excluding primary for sub-group endpoints).
     for pp in &endpoint.path_params {
+        if primary_param == Some(pp.name.as_str()) {
+            continue;
+        }
         let val = default_path_param_value(&pp.name);
         args.push(format!("\"{val}\""));
     }
 
-    // Add request body (if any).
+    // Add request body (if any) — borrowed.
     if endpoint.request_type.is_some() {
-        args.push("Default::default()".to_string());
+        args.push("&Default::default()".to_string());
     }
 
     // Add query params.

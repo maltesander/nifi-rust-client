@@ -79,3 +79,21 @@ impl<'a> SystemDiagnosticsApi<'a> {
             .await
     }
 }
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_6_0::traits::SystemDiagnosticsApi for SystemDiagnosticsApi<'_> {
+    async fn get_system_diagnostics(
+        &self,
+        nodewise: Option<bool>,
+        diagnostic_level: Option<crate::v2_6_0::types::DiagnosticLevel>,
+        cluster_node_id: Option<&str>,
+    ) -> Result<crate::v2_6_0::types::SystemDiagnosticsDto, NifiError> {
+        self.get_system_diagnostics(nodewise, diagnostic_level, cluster_node_id)
+            .await
+    }
+    async fn get_jmx_metrics(
+        &self,
+        bean_name_filter: Option<&str>,
+    ) -> Result<crate::v2_6_0::types::JmxMetricsResultsEntity, NifiError> {
+        self.get_jmx_metrics(bean_name_filter).await
+    }
+}

@@ -1355,3 +1355,375 @@ impl<'a> ControllerStateApi<'a> {
         Ok(e.component_state.unwrap_or_default())
     }
 }
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_7_2::traits::ControllerApi for ControllerApi<'_> {
+    type ControllerBulletinsApi<'b>
+        = ControllerBulletinsApi<'b>
+    where
+        Self: 'b;
+    fn bulletins<'b>(&'b self, id: &'b str) -> Self::ControllerBulletinsApi<'b> {
+        ControllerBulletinsApi {
+            client: self.client,
+            id,
+        }
+    }
+    type ControllerConfigApi<'b>
+        = ControllerConfigApi<'b>
+    where
+        Self: 'b;
+    fn config<'b>(&'b self, id: &'b str) -> Self::ControllerConfigApi<'b> {
+        ControllerConfigApi {
+            client: self.client,
+            id,
+        }
+    }
+    type ControllerContentApi<'b>
+        = ControllerContentApi<'b>
+    where
+        Self: 'b;
+    fn content<'b>(&'b self, id: &'b str) -> Self::ControllerContentApi<'b> {
+        ControllerContentApi {
+            client: self.client,
+            id,
+        }
+    }
+    type ControllerDescriptorsApi<'b>
+        = ControllerDescriptorsApi<'b>
+    where
+        Self: 'b;
+    fn descriptors<'b>(&'b self, id: &'b str) -> Self::ControllerDescriptorsApi<'b> {
+        ControllerDescriptorsApi {
+            client: self.client,
+            id,
+        }
+    }
+    type ControllerDetailsApi<'b>
+        = ControllerDetailsApi<'b>
+    where
+        Self: 'b;
+    fn details<'b>(&'b self, id: &'b str) -> Self::ControllerDetailsApi<'b> {
+        ControllerDetailsApi {
+            client: self.client,
+            id,
+        }
+    }
+    type ControllerRunStatusApi<'b>
+        = ControllerRunStatusApi<'b>
+    where
+        Self: 'b;
+    fn run_status<'b>(&'b self, id: &'b str) -> Self::ControllerRunStatusApi<'b> {
+        ControllerRunStatusApi {
+            client: self.client,
+            id,
+        }
+    }
+    type ControllerStateApi<'b>
+        = ControllerStateApi<'b>
+    where
+        Self: 'b;
+    fn state<'b>(&'b self, id: &'b str) -> Self::ControllerStateApi<'b> {
+        ControllerStateApi {
+            client: self.client,
+            id,
+        }
+    }
+    async fn create_bulletin(
+        &self,
+        body: &crate::v2_7_2::types::BulletinEntity,
+    ) -> Result<crate::v2_7_2::types::BulletinEntity, NifiError> {
+        self.create_bulletin(body).await
+    }
+    async fn get_cluster(&self) -> Result<crate::v2_7_2::types::ClusterDto, NifiError> {
+        self.get_cluster().await
+    }
+    async fn delete_node(&self, id: &str) -> Result<crate::v2_7_2::types::NodeDto, NifiError> {
+        self.delete_node(id).await
+    }
+    async fn get_node(&self, id: &str) -> Result<crate::v2_7_2::types::NodeDto, NifiError> {
+        self.get_node(id).await
+    }
+    async fn update_node(
+        &self,
+        id: &str,
+        body: &crate::v2_7_2::types::NodeEntity,
+    ) -> Result<crate::v2_7_2::types::NodeDto, NifiError> {
+        self.update_node(id, body).await
+    }
+    async fn get_controller_config(
+        &self,
+    ) -> Result<crate::v2_7_2::types::ControllerConfigurationEntity, NifiError> {
+        self.get_controller_config().await
+    }
+    async fn update_controller_config(
+        &self,
+        body: &crate::v2_7_2::types::ControllerConfigurationEntity,
+    ) -> Result<crate::v2_7_2::types::ControllerConfigurationEntity, NifiError> {
+        self.update_controller_config(body).await
+    }
+    async fn create_controller_service(
+        &self,
+        body: &crate::v2_7_2::types::ControllerServiceEntity,
+    ) -> Result<crate::v2_7_2::types::ControllerServiceEntity, NifiError> {
+        self.create_controller_service(body).await
+    }
+    async fn get_flow_analysis_rules(
+        &self,
+    ) -> Result<crate::v2_7_2::types::FlowAnalysisRulesEntity, NifiError> {
+        self.get_flow_analysis_rules().await
+    }
+    async fn create_flow_analysis_rule(
+        &self,
+        body: &crate::v2_7_2::types::FlowAnalysisRuleEntity,
+    ) -> Result<crate::v2_7_2::types::FlowAnalysisRuleEntity, NifiError> {
+        self.create_flow_analysis_rule(body).await
+    }
+    async fn remove_flow_analysis_rule(
+        &self,
+        id: &str,
+        version: Option<&str>,
+        client_id: Option<&str>,
+        disconnected_node_acknowledged: Option<bool>,
+    ) -> Result<crate::v2_7_2::types::FlowAnalysisRuleEntity, NifiError> {
+        self.remove_flow_analysis_rule(id, version, client_id, disconnected_node_acknowledged)
+            .await
+    }
+    async fn get_flow_analysis_rule(
+        &self,
+        id: &str,
+    ) -> Result<crate::v2_7_2::types::FlowAnalysisRuleEntity, NifiError> {
+        self.get_flow_analysis_rule(id).await
+    }
+    async fn update_flow_analysis_rule(
+        &self,
+        id: &str,
+        body: &crate::v2_7_2::types::FlowAnalysisRuleEntity,
+    ) -> Result<crate::v2_7_2::types::FlowAnalysisRuleEntity, NifiError> {
+        self.update_flow_analysis_rule(id, body).await
+    }
+    async fn delete_history(
+        &self,
+        end_date: &str,
+    ) -> Result<crate::v2_7_2::types::HistoryDto, NifiError> {
+        self.delete_history(end_date).await
+    }
+    async fn get_nar_summaries(
+        &self,
+    ) -> Result<crate::v2_7_2::types::NarSummariesEntity, NifiError> {
+        self.get_nar_summaries().await
+    }
+    async fn upload_nar(
+        &self,
+        filename: Option<&str>,
+        data: Vec<u8>,
+    ) -> Result<crate::v2_7_2::types::NarSummaryDto, NifiError> {
+        self.upload_nar(filename, data).await
+    }
+    async fn delete_nar(
+        &self,
+        id: &str,
+        disconnected_node_acknowledged: Option<bool>,
+        force: Option<bool>,
+    ) -> Result<crate::v2_7_2::types::NarSummaryDto, NifiError> {
+        self.delete_nar(id, disconnected_node_acknowledged, force)
+            .await
+    }
+    async fn get_nar_summary(
+        &self,
+        id: &str,
+    ) -> Result<crate::v2_7_2::types::NarDetailsEntity, NifiError> {
+        self.get_nar_summary(id).await
+    }
+    async fn create_parameter_provider(
+        &self,
+        body: &crate::v2_7_2::types::ParameterProviderEntity,
+    ) -> Result<crate::v2_7_2::types::ParameterProviderEntity, NifiError> {
+        self.create_parameter_provider(body).await
+    }
+    async fn get_flow_registry_clients(
+        &self,
+    ) -> Result<crate::v2_7_2::types::FlowRegistryClientsEntity, NifiError> {
+        self.get_flow_registry_clients().await
+    }
+    async fn create_flow_registry_client(
+        &self,
+        body: &crate::v2_7_2::types::FlowRegistryClientEntity,
+    ) -> Result<crate::v2_7_2::types::FlowRegistryClientEntity, NifiError> {
+        self.create_flow_registry_client(body).await
+    }
+    async fn delete_flow_registry_client(
+        &self,
+        id: &str,
+        version: Option<&str>,
+        client_id: Option<&str>,
+        disconnected_node_acknowledged: Option<bool>,
+    ) -> Result<crate::v2_7_2::types::FlowRegistryClientEntity, NifiError> {
+        self.delete_flow_registry_client(id, version, client_id, disconnected_node_acknowledged)
+            .await
+    }
+    async fn get_flow_registry_client(
+        &self,
+        id: &str,
+    ) -> Result<crate::v2_7_2::types::FlowRegistryClientEntity, NifiError> {
+        self.get_flow_registry_client(id).await
+    }
+    async fn update_flow_registry_client(
+        &self,
+        id: &str,
+        body: &crate::v2_7_2::types::FlowRegistryClientEntity,
+    ) -> Result<crate::v2_7_2::types::FlowRegistryClientEntity, NifiError> {
+        self.update_flow_registry_client(id, body).await
+    }
+    async fn get_registry_client_types(
+        &self,
+    ) -> Result<crate::v2_7_2::types::FlowRegistryClientTypesEntity, NifiError> {
+        self.get_registry_client_types().await
+    }
+    async fn create_reporting_task(
+        &self,
+        body: &crate::v2_7_2::types::ReportingTaskEntity,
+    ) -> Result<crate::v2_7_2::types::ReportingTaskEntity, NifiError> {
+        self.create_reporting_task(body).await
+    }
+    async fn import_reporting_task_snapshot(
+        &self,
+        body: &crate::v2_7_2::types::VersionedReportingTaskImportRequestEntity,
+    ) -> Result<crate::v2_7_2::types::VersionedReportingTaskImportResponseEntity, NifiError> {
+        self.import_reporting_task_snapshot(body).await
+    }
+    async fn get_node_status_history(
+        &self,
+    ) -> Result<crate::v2_7_2::types::ComponentHistoryDto, NifiError> {
+        self.get_node_status_history().await
+    }
+}
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_7_2::traits::ControllerBulletinsApi for ControllerBulletinsApi<'_> {
+    async fn clear_flow_analysis_rule_bulletins(
+        &self,
+        body: &crate::v2_7_2::types::ClearBulletinsRequestEntity,
+    ) -> Result<crate::v2_7_2::types::ClearBulletinsResultEntity, NifiError> {
+        self.clear_flow_analysis_rule_bulletins(body).await
+    }
+    async fn clear_parameter_provider_bulletins(
+        &self,
+        body: &crate::v2_7_2::types::ClearBulletinsRequestEntity,
+    ) -> Result<crate::v2_7_2::types::ClearBulletinsResultEntity, NifiError> {
+        self.clear_parameter_provider_bulletins(body).await
+    }
+    async fn clear_registry_client_bulletins(
+        &self,
+        body: &crate::v2_7_2::types::ClearBulletinsRequestEntity,
+    ) -> Result<crate::v2_7_2::types::ClearBulletinsResultEntity, NifiError> {
+        self.clear_registry_client_bulletins(body).await
+    }
+}
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_7_2::traits::ControllerConfigApi for ControllerConfigApi<'_> {
+    async fn analyze_flow_analysis_rule_configuration(
+        &self,
+        body: &crate::v2_7_2::types::ConfigurationAnalysisEntity,
+    ) -> Result<crate::v2_7_2::types::ConfigurationAnalysisDto, NifiError> {
+        self.analyze_flow_analysis_rule_configuration(body).await
+    }
+    async fn submit_flow_analysis_rule_config_verification_request(
+        &self,
+        body: &crate::v2_7_2::types::VerifyConfigRequestEntity,
+    ) -> Result<crate::v2_7_2::types::VerifyConfigRequestDto, NifiError> {
+        self.submit_flow_analysis_rule_config_verification_request(body)
+            .await
+    }
+    async fn delete_flow_analysis_rule_verification_request(
+        &self,
+        request_id: &str,
+    ) -> Result<crate::v2_7_2::types::VerifyConfigRequestDto, NifiError> {
+        self.delete_flow_analysis_rule_verification_request(request_id)
+            .await
+    }
+    async fn get_flow_analysis_rule_verification_request(
+        &self,
+        request_id: &str,
+    ) -> Result<crate::v2_7_2::types::VerifyConfigRequestDto, NifiError> {
+        self.get_flow_analysis_rule_verification_request(request_id)
+            .await
+    }
+    async fn analyze_flow_registry_client_configuration(
+        &self,
+        body: &crate::v2_7_2::types::ConfigurationAnalysisEntity,
+    ) -> Result<crate::v2_7_2::types::ConfigurationAnalysisDto, NifiError> {
+        self.analyze_flow_registry_client_configuration(body).await
+    }
+    async fn submit_registry_client_config_verification_request(
+        &self,
+        body: &crate::v2_7_2::types::VerifyConfigRequestEntity,
+    ) -> Result<crate::v2_7_2::types::VerifyConfigRequestDto, NifiError> {
+        self.submit_registry_client_config_verification_request(body)
+            .await
+    }
+    async fn delete_registry_client_verification_request(
+        &self,
+        request_id: &str,
+    ) -> Result<crate::v2_7_2::types::VerifyConfigRequestDto, NifiError> {
+        self.delete_registry_client_verification_request(request_id)
+            .await
+    }
+    async fn get_registry_client_verification_request(
+        &self,
+        request_id: &str,
+    ) -> Result<crate::v2_7_2::types::VerifyConfigRequestDto, NifiError> {
+        self.get_registry_client_verification_request(request_id)
+            .await
+    }
+}
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_7_2::traits::ControllerContentApi for ControllerContentApi<'_> {
+    async fn download_nar(&self) -> Result<(), NifiError> {
+        self.download_nar().await
+    }
+}
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_7_2::traits::ControllerDescriptorsApi for ControllerDescriptorsApi<'_> {
+    async fn get_flow_analysis_rule_property_descriptor(
+        &self,
+        property_name: &str,
+        sensitive: Option<bool>,
+    ) -> Result<crate::v2_7_2::types::PropertyDescriptorDto, NifiError> {
+        self.get_flow_analysis_rule_property_descriptor(property_name, sensitive)
+            .await
+    }
+    async fn get_property_descriptor(
+        &self,
+        property_name: &str,
+        sensitive: Option<bool>,
+    ) -> Result<crate::v2_7_2::types::PropertyDescriptorDto, NifiError> {
+        self.get_property_descriptor(property_name, sensitive).await
+    }
+}
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_7_2::traits::ControllerDetailsApi for ControllerDetailsApi<'_> {
+    async fn get_nar_details(&self) -> Result<crate::v2_7_2::types::NarDetailsEntity, NifiError> {
+        self.get_nar_details().await
+    }
+}
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_7_2::traits::ControllerRunStatusApi for ControllerRunStatusApi<'_> {
+    async fn update_run_status(
+        &self,
+        body: &crate::v2_7_2::types::FlowAnalysisRuleRunStatusEntity,
+    ) -> Result<crate::v2_7_2::types::FlowAnalysisRuleEntity, NifiError> {
+        self.update_run_status(body).await
+    }
+}
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_7_2::traits::ControllerStateApi for ControllerStateApi<'_> {
+    async fn get_flow_analysis_rule_state(
+        &self,
+    ) -> Result<crate::v2_7_2::types::ComponentStateDto, NifiError> {
+        self.get_flow_analysis_rule_state().await
+    }
+    async fn clear_state(
+        &self,
+        body: &crate::v2_7_2::types::ComponentStateEntity,
+    ) -> Result<crate::v2_7_2::types::ComponentStateDto, NifiError> {
+        self.clear_state(body).await
+    }
+}

@@ -90,3 +90,27 @@ impl<'a> SnippetsApi<'a> {
         self.client.put(&format!("/snippets/{id}"), body).await
     }
 }
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_7_2::traits::SnippetsApi for SnippetsApi<'_> {
+    async fn create_snippet(
+        &self,
+        body: &crate::v2_7_2::types::SnippetEntity,
+    ) -> Result<crate::v2_7_2::types::SnippetEntity, NifiError> {
+        self.create_snippet(body).await
+    }
+    async fn delete_snippet(
+        &self,
+        id: &str,
+        disconnected_node_acknowledged: Option<bool>,
+    ) -> Result<crate::v2_7_2::types::SnippetEntity, NifiError> {
+        self.delete_snippet(id, disconnected_node_acknowledged)
+            .await
+    }
+    async fn update_snippet(
+        &self,
+        id: &str,
+        body: &crate::v2_7_2::types::SnippetEntity,
+    ) -> Result<crate::v2_7_2::types::SnippetEntity, NifiError> {
+        self.update_snippet(id, body).await
+    }
+}

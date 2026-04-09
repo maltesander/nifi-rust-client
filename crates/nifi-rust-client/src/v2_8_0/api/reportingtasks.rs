@@ -459,3 +459,147 @@ impl<'a> ReportingTasksStateApi<'a> {
         Ok(e.component_state.unwrap_or_default())
     }
 }
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_8_0::traits::ReportingTasksApi for ReportingTasksApi<'_> {
+    type ReportingTasksBulletinsApi<'b>
+        = ReportingTasksBulletinsApi<'b>
+    where
+        Self: 'b;
+    fn bulletins<'b>(&'b self, id: &'b str) -> Self::ReportingTasksBulletinsApi<'b> {
+        ReportingTasksBulletinsApi {
+            client: self.client,
+            id,
+        }
+    }
+    type ReportingTasksConfigApi<'b>
+        = ReportingTasksConfigApi<'b>
+    where
+        Self: 'b;
+    fn config<'b>(&'b self, id: &'b str) -> Self::ReportingTasksConfigApi<'b> {
+        ReportingTasksConfigApi {
+            client: self.client,
+            id,
+        }
+    }
+    type ReportingTasksDescriptorsApi<'b>
+        = ReportingTasksDescriptorsApi<'b>
+    where
+        Self: 'b;
+    fn descriptors<'b>(&'b self, id: &'b str) -> Self::ReportingTasksDescriptorsApi<'b> {
+        ReportingTasksDescriptorsApi {
+            client: self.client,
+            id,
+        }
+    }
+    type ReportingTasksRunStatusApi<'b>
+        = ReportingTasksRunStatusApi<'b>
+    where
+        Self: 'b;
+    fn run_status<'b>(&'b self, id: &'b str) -> Self::ReportingTasksRunStatusApi<'b> {
+        ReportingTasksRunStatusApi {
+            client: self.client,
+            id,
+        }
+    }
+    type ReportingTasksStateApi<'b>
+        = ReportingTasksStateApi<'b>
+    where
+        Self: 'b;
+    fn state<'b>(&'b self, id: &'b str) -> Self::ReportingTasksStateApi<'b> {
+        ReportingTasksStateApi {
+            client: self.client,
+            id,
+        }
+    }
+    async fn remove_reporting_task(
+        &self,
+        id: &str,
+        version: Option<&str>,
+        client_id: Option<&str>,
+        disconnected_node_acknowledged: Option<bool>,
+    ) -> Result<crate::v2_8_0::types::ReportingTaskEntity, NifiError> {
+        self.remove_reporting_task(id, version, client_id, disconnected_node_acknowledged)
+            .await
+    }
+    async fn get_reporting_task(
+        &self,
+        id: &str,
+    ) -> Result<crate::v2_8_0::types::ReportingTaskEntity, NifiError> {
+        self.get_reporting_task(id).await
+    }
+    async fn update_reporting_task(
+        &self,
+        id: &str,
+        body: &crate::v2_8_0::types::ReportingTaskEntity,
+    ) -> Result<crate::v2_8_0::types::ReportingTaskEntity, NifiError> {
+        self.update_reporting_task(id, body).await
+    }
+}
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_8_0::traits::ReportingTasksBulletinsApi for ReportingTasksBulletinsApi<'_> {
+    async fn clear_bulletins_7(
+        &self,
+        body: &crate::v2_8_0::types::ClearBulletinsRequestEntity,
+    ) -> Result<crate::v2_8_0::types::ClearBulletinsResultEntity, NifiError> {
+        self.clear_bulletins_7(body).await
+    }
+}
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_8_0::traits::ReportingTasksConfigApi for ReportingTasksConfigApi<'_> {
+    async fn analyze_configuration_3(
+        &self,
+        body: &crate::v2_8_0::types::ConfigurationAnalysisEntity,
+    ) -> Result<crate::v2_8_0::types::ConfigurationAnalysisDto, NifiError> {
+        self.analyze_configuration_3(body).await
+    }
+    async fn submit_config_verification_request_2(
+        &self,
+        body: &crate::v2_8_0::types::VerifyConfigRequestEntity,
+    ) -> Result<crate::v2_8_0::types::VerifyConfigRequestDto, NifiError> {
+        self.submit_config_verification_request_2(body).await
+    }
+    async fn delete_verification_request_3(
+        &self,
+        request_id: &str,
+    ) -> Result<crate::v2_8_0::types::VerifyConfigRequestDto, NifiError> {
+        self.delete_verification_request_3(request_id).await
+    }
+    async fn get_verification_request_3(
+        &self,
+        request_id: &str,
+    ) -> Result<crate::v2_8_0::types::VerifyConfigRequestDto, NifiError> {
+        self.get_verification_request_3(request_id).await
+    }
+}
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_8_0::traits::ReportingTasksDescriptorsApi for ReportingTasksDescriptorsApi<'_> {
+    async fn get_property_descriptor_4(
+        &self,
+        property_name: &str,
+        sensitive: Option<bool>,
+    ) -> Result<crate::v2_8_0::types::PropertyDescriptorDto, NifiError> {
+        self.get_property_descriptor_4(property_name, sensitive)
+            .await
+    }
+}
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_8_0::traits::ReportingTasksRunStatusApi for ReportingTasksRunStatusApi<'_> {
+    async fn update_run_status_5(
+        &self,
+        body: &crate::v2_8_0::types::ReportingTaskRunStatusEntity,
+    ) -> Result<crate::v2_8_0::types::ReportingTaskEntity, NifiError> {
+        self.update_run_status_5(body).await
+    }
+}
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_8_0::traits::ReportingTasksStateApi for ReportingTasksStateApi<'_> {
+    async fn get_state_4(&self) -> Result<crate::v2_8_0::types::ComponentStateDto, NifiError> {
+        self.get_state_4().await
+    }
+    async fn clear_state_4(
+        &self,
+        body: &crate::v2_8_0::types::ComponentStateEntity,
+    ) -> Result<crate::v2_8_0::types::ComponentStateDto, NifiError> {
+        self.clear_state_4(body).await
+    }
+}

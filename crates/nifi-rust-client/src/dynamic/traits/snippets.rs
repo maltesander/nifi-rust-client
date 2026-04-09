@@ -22,7 +22,7 @@ pub trait SnippetsApi {
     /// Requires `Read or Write - /{component-type}/{uuid} - For every component (all Read or all Write) in the Snippet and their descendant components`.
     async fn create_snippet(
         &self,
-        body: types::SnippetEntity,
+        body: &types::SnippetEntity,
     ) -> Result<types::SnippetEntity, NifiError> {
         Err(NifiError::UnsupportedEndpoint {
             endpoint: "create_snippet".to_string(),
@@ -77,7 +77,7 @@ pub trait SnippetsApi {
     async fn update_snippet(
         &self,
         id: &str,
-        body: types::SnippetEntity,
+        body: &types::SnippetEntity,
     ) -> Result<types::SnippetEntity, NifiError> {
         Err(NifiError::UnsupportedEndpoint {
             endpoint: "update_snippet".to_string(),

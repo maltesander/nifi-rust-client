@@ -4,15 +4,12 @@
 use crate::NifiError;
 #[allow(unused_imports)]
 use crate::dynamic::types;
-/// The RemoteProcessGroups API.
+/// Sub-resource trait for RemoteProcessGroupsBulletinsApi.
 #[allow(unused_variables, async_fn_in_trait, clippy::too_many_arguments)]
-pub trait RemoteProcessGroupsApi {
+pub trait RemoteProcessGroupsBulletinsApi {
     /// Clears bulletins for a remote process group
     ///
     /// Calls `POST /nifi-api/remote-process-groups/{id}/bulletins/clear-requests`.
-    ///
-    /// # Parameters
-    /// - `id`: The remote process group id.
     ///
     /// # Errors
     /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
@@ -27,14 +24,248 @@ pub trait RemoteProcessGroupsApi {
     /// *Supported in NiFi: 2.7.2, 2.8.0*
     async fn clear_bulletins_6(
         &self,
-        id: &str,
-        body: types::ClearBulletinsRequestEntity,
+        body: &types::ClearBulletinsRequestEntity,
     ) -> Result<types::ClearBulletinsResultEntity, NifiError> {
         Err(NifiError::UnsupportedEndpoint {
             endpoint: "clear_bulletins_6".to_string(),
             version: "unknown".to_string(),
         })
     }
+}
+/// Sub-resource trait for RemoteProcessGroupsInputPortsApi.
+#[allow(unused_variables, async_fn_in_trait, clippy::too_many_arguments)]
+pub trait RemoteProcessGroupsInputPortsApi {
+    /// Updates a remote port
+    ///
+    /// Note: This endpoint is subject to change as NiFi and it's REST API evolve.
+    ///
+    /// Calls `PUT /nifi-api/remote-process-groups/{id}/input-ports/{port-id}`.
+    ///
+    /// # Parameters
+    /// - `port_id`: The remote process group port id.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Write - /remote-process-groups/{uuid}`.
+    async fn update_remote_process_group_input_port(
+        &self,
+        port_id: &str,
+        body: &types::RemoteProcessGroupPortEntity,
+    ) -> Result<types::RemoteProcessGroupPortEntity, NifiError> {
+        Err(NifiError::UnsupportedEndpoint {
+            endpoint: "update_remote_process_group_input_port".to_string(),
+            version: "unknown".to_string(),
+        })
+    }
+    /// Updates run status of a remote port
+    ///
+    /// Note: This endpoint is subject to change as NiFi and it's REST API evolve.
+    ///
+    /// Calls `PUT /nifi-api/remote-process-groups/{id}/input-ports/{port-id}/run-status`.
+    ///
+    /// # Parameters
+    /// - `port_id`: The remote process group port id.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Write - /remote-process-groups/{uuid} or /operation/remote-process-groups/{uuid}`.
+    async fn update_remote_process_group_input_port_run_status(
+        &self,
+        port_id: &str,
+        body: &types::RemotePortRunStatusEntity,
+    ) -> Result<types::RemoteProcessGroupPortEntity, NifiError> {
+        Err(NifiError::UnsupportedEndpoint {
+            endpoint: "update_remote_process_group_input_port_run_status".to_string(),
+            version: "unknown".to_string(),
+        })
+    }
+}
+/// Sub-resource trait for RemoteProcessGroupsOutputPortsApi.
+#[allow(unused_variables, async_fn_in_trait, clippy::too_many_arguments)]
+pub trait RemoteProcessGroupsOutputPortsApi {
+    /// Updates a remote port
+    ///
+    /// Note: This endpoint is subject to change as NiFi and it's REST API evolve.
+    ///
+    /// Calls `PUT /nifi-api/remote-process-groups/{id}/output-ports/{port-id}`.
+    ///
+    /// # Parameters
+    /// - `port_id`: The remote process group port id.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Write - /remote-process-groups/{uuid}`.
+    async fn update_remote_process_group_output_port(
+        &self,
+        port_id: &str,
+        body: &types::RemoteProcessGroupPortEntity,
+    ) -> Result<types::RemoteProcessGroupPortEntity, NifiError> {
+        Err(NifiError::UnsupportedEndpoint {
+            endpoint: "update_remote_process_group_output_port".to_string(),
+            version: "unknown".to_string(),
+        })
+    }
+    /// Updates run status of a remote port
+    ///
+    /// Note: This endpoint is subject to change as NiFi and it's REST API evolve.
+    ///
+    /// Calls `PUT /nifi-api/remote-process-groups/{id}/output-ports/{port-id}/run-status`.
+    ///
+    /// # Parameters
+    /// - `port_id`: The remote process group port id.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Write - /remote-process-groups/{uuid} or /operation/remote-process-groups/{uuid}`.
+    async fn update_remote_process_group_output_port_run_status(
+        &self,
+        port_id: &str,
+        body: &types::RemotePortRunStatusEntity,
+    ) -> Result<types::RemoteProcessGroupPortEntity, NifiError> {
+        Err(NifiError::UnsupportedEndpoint {
+            endpoint: "update_remote_process_group_output_port_run_status".to_string(),
+            version: "unknown".to_string(),
+        })
+    }
+}
+/// Sub-resource trait for RemoteProcessGroupsRunStatusApi.
+#[allow(unused_variables, async_fn_in_trait, clippy::too_many_arguments)]
+pub trait RemoteProcessGroupsRunStatusApi {
+    /// Updates run status of a remote process group
+    ///
+    /// Calls `PUT /nifi-api/remote-process-groups/{id}/run-status`.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Write - /remote-process-groups/{uuid} or /operation/remote-process-groups/{uuid}`.
+    async fn update_remote_process_group_run_status(
+        &self,
+        body: &types::RemotePortRunStatusEntity,
+    ) -> Result<types::RemoteProcessGroupEntity, NifiError> {
+        Err(NifiError::UnsupportedEndpoint {
+            endpoint: "update_remote_process_group_run_status".to_string(),
+            version: "unknown".to_string(),
+        })
+    }
+    /// Updates run status of all remote process groups in a process group (recursively)
+    ///
+    /// Calls `PUT /nifi-api/remote-process-groups/process-group/{id}/run-status`.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Write - /remote-process-groups/{uuid} or /operation/remote-process-groups/{uuid}`.
+    async fn update_remote_process_group_run_statuses(
+        &self,
+        body: &types::RemotePortRunStatusEntity,
+    ) -> Result<types::RemoteProcessGroupEntity, NifiError> {
+        Err(NifiError::UnsupportedEndpoint {
+            endpoint: "update_remote_process_group_run_statuses".to_string(),
+            version: "unknown".to_string(),
+        })
+    }
+}
+/// Sub-resource trait for RemoteProcessGroupsStateApi.
+#[allow(unused_variables, async_fn_in_trait, clippy::too_many_arguments)]
+pub trait RemoteProcessGroupsStateApi {
+    /// Gets the state for a RemoteProcessGroup
+    ///
+    /// Calls `GET /nifi-api/remote-process-groups/{id}/state`.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Write - /remote-process-groups/{uuid}`.
+    async fn get_state_3(&self) -> Result<types::ComponentStateDto, NifiError> {
+        Err(NifiError::UnsupportedEndpoint {
+            endpoint: "get_state_3".to_string(),
+            version: "unknown".to_string(),
+        })
+    }
+}
+/// The RemoteProcessGroups API.
+#[allow(unused_variables, async_fn_in_trait, clippy::too_many_arguments)]
+pub trait RemoteProcessGroupsApi {
+    /// Returns a sub-resource accessor for config operations.
+    ///
+    /// # Parameters
+    /// - `id`: The remote process group id.
+    type RemoteProcessGroupsBulletinsApi<'b>: RemoteProcessGroupsBulletinsApi
+    where
+        Self: 'b;
+    fn bulletins<'b>(&'b self, id: &'b str) -> Self::RemoteProcessGroupsBulletinsApi<'b>;
+    /// Returns a sub-resource accessor for config operations.
+    ///
+    /// # Parameters
+    /// - `id`: The remote process group id.
+    type RemoteProcessGroupsInputPortsApi<'b>: RemoteProcessGroupsInputPortsApi
+    where
+        Self: 'b;
+    fn input_ports<'b>(&'b self, id: &'b str) -> Self::RemoteProcessGroupsInputPortsApi<'b>;
+    /// Returns a sub-resource accessor for config operations.
+    ///
+    /// # Parameters
+    /// - `id`: The remote process group id.
+    type RemoteProcessGroupsOutputPortsApi<'b>: RemoteProcessGroupsOutputPortsApi
+    where
+        Self: 'b;
+    fn output_ports<'b>(&'b self, id: &'b str) -> Self::RemoteProcessGroupsOutputPortsApi<'b>;
+    /// Returns a sub-resource accessor for config operations.
+    ///
+    /// # Parameters
+    /// - `id`: The process group id.
+    type RemoteProcessGroupsRunStatusApi<'b>: RemoteProcessGroupsRunStatusApi
+    where
+        Self: 'b;
+    fn run_status<'b>(&'b self, id: &'b str) -> Self::RemoteProcessGroupsRunStatusApi<'b>;
+    /// Returns a sub-resource accessor for config operations.
+    ///
+    /// # Parameters
+    /// - `id`: The processor id.
+    type RemoteProcessGroupsStateApi<'b>: RemoteProcessGroupsStateApi
+    where
+        Self: 'b;
+    fn state<'b>(&'b self, id: &'b str) -> Self::RemoteProcessGroupsStateApi<'b>;
     /// Gets a remote process group
     ///
     /// Calls `GET /nifi-api/remote-process-groups/{id}`.
@@ -57,28 +288,6 @@ pub trait RemoteProcessGroupsApi {
     ) -> Result<types::RemoteProcessGroupEntity, NifiError> {
         Err(NifiError::UnsupportedEndpoint {
             endpoint: "get_remote_process_group".to_string(),
-            version: "unknown".to_string(),
-        })
-    }
-    /// Gets the state for a RemoteProcessGroup
-    ///
-    /// Calls `GET /nifi-api/remote-process-groups/{id}/state`.
-    ///
-    /// # Parameters
-    /// - `id`: The processor id.
-    ///
-    /// # Errors
-    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
-    /// - `401`: Client could not be authenticated.
-    /// - `403`: Client is not authorized to make this request.
-    /// - `404`: The specified resource could not be found.
-    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
-    ///
-    /// # Permissions
-    /// Requires `Write - /remote-process-groups/{uuid}`.
-    async fn get_state_3(&self, id: &str) -> Result<types::ComponentStateDto, NifiError> {
-        Err(NifiError::UnsupportedEndpoint {
-            endpoint: "get_state_3".to_string(),
             version: "unknown".to_string(),
         })
     }
@@ -133,182 +342,10 @@ pub trait RemoteProcessGroupsApi {
     async fn update_remote_process_group(
         &self,
         id: &str,
-        body: types::RemoteProcessGroupEntity,
+        body: &types::RemoteProcessGroupEntity,
     ) -> Result<types::RemoteProcessGroupEntity, NifiError> {
         Err(NifiError::UnsupportedEndpoint {
             endpoint: "update_remote_process_group".to_string(),
-            version: "unknown".to_string(),
-        })
-    }
-    /// Updates a remote port
-    ///
-    /// Note: This endpoint is subject to change as NiFi and it's REST API evolve.
-    ///
-    /// Calls `PUT /nifi-api/remote-process-groups/{id}/input-ports/{port-id}`.
-    ///
-    /// # Parameters
-    /// - `id`: The remote process group id.
-    /// - `port_id`: The remote process group port id.
-    ///
-    /// # Errors
-    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
-    /// - `401`: Client could not be authenticated.
-    /// - `403`: Client is not authorized to make this request.
-    /// - `404`: The specified resource could not be found.
-    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
-    ///
-    /// # Permissions
-    /// Requires `Write - /remote-process-groups/{uuid}`.
-    async fn update_remote_process_group_input_port(
-        &self,
-        id: &str,
-        port_id: &str,
-        body: types::RemoteProcessGroupPortEntity,
-    ) -> Result<types::RemoteProcessGroupPortEntity, NifiError> {
-        Err(NifiError::UnsupportedEndpoint {
-            endpoint: "update_remote_process_group_input_port".to_string(),
-            version: "unknown".to_string(),
-        })
-    }
-    /// Updates run status of a remote port
-    ///
-    /// Note: This endpoint is subject to change as NiFi and it's REST API evolve.
-    ///
-    /// Calls `PUT /nifi-api/remote-process-groups/{id}/input-ports/{port-id}/run-status`.
-    ///
-    /// # Parameters
-    /// - `id`: The remote process group id.
-    /// - `port_id`: The remote process group port id.
-    ///
-    /// # Errors
-    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
-    /// - `401`: Client could not be authenticated.
-    /// - `403`: Client is not authorized to make this request.
-    /// - `404`: The specified resource could not be found.
-    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
-    ///
-    /// # Permissions
-    /// Requires `Write - /remote-process-groups/{uuid} or /operation/remote-process-groups/{uuid}`.
-    async fn update_remote_process_group_input_port_run_status(
-        &self,
-        id: &str,
-        port_id: &str,
-        body: types::RemotePortRunStatusEntity,
-    ) -> Result<types::RemoteProcessGroupPortEntity, NifiError> {
-        Err(NifiError::UnsupportedEndpoint {
-            endpoint: "update_remote_process_group_input_port_run_status".to_string(),
-            version: "unknown".to_string(),
-        })
-    }
-    /// Updates a remote port
-    ///
-    /// Note: This endpoint is subject to change as NiFi and it's REST API evolve.
-    ///
-    /// Calls `PUT /nifi-api/remote-process-groups/{id}/output-ports/{port-id}`.
-    ///
-    /// # Parameters
-    /// - `id`: The remote process group id.
-    /// - `port_id`: The remote process group port id.
-    ///
-    /// # Errors
-    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
-    /// - `401`: Client could not be authenticated.
-    /// - `403`: Client is not authorized to make this request.
-    /// - `404`: The specified resource could not be found.
-    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
-    ///
-    /// # Permissions
-    /// Requires `Write - /remote-process-groups/{uuid}`.
-    async fn update_remote_process_group_output_port(
-        &self,
-        id: &str,
-        port_id: &str,
-        body: types::RemoteProcessGroupPortEntity,
-    ) -> Result<types::RemoteProcessGroupPortEntity, NifiError> {
-        Err(NifiError::UnsupportedEndpoint {
-            endpoint: "update_remote_process_group_output_port".to_string(),
-            version: "unknown".to_string(),
-        })
-    }
-    /// Updates run status of a remote port
-    ///
-    /// Note: This endpoint is subject to change as NiFi and it's REST API evolve.
-    ///
-    /// Calls `PUT /nifi-api/remote-process-groups/{id}/output-ports/{port-id}/run-status`.
-    ///
-    /// # Parameters
-    /// - `id`: The remote process group id.
-    /// - `port_id`: The remote process group port id.
-    ///
-    /// # Errors
-    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
-    /// - `401`: Client could not be authenticated.
-    /// - `403`: Client is not authorized to make this request.
-    /// - `404`: The specified resource could not be found.
-    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
-    ///
-    /// # Permissions
-    /// Requires `Write - /remote-process-groups/{uuid} or /operation/remote-process-groups/{uuid}`.
-    async fn update_remote_process_group_output_port_run_status(
-        &self,
-        id: &str,
-        port_id: &str,
-        body: types::RemotePortRunStatusEntity,
-    ) -> Result<types::RemoteProcessGroupPortEntity, NifiError> {
-        Err(NifiError::UnsupportedEndpoint {
-            endpoint: "update_remote_process_group_output_port_run_status".to_string(),
-            version: "unknown".to_string(),
-        })
-    }
-    /// Updates run status of a remote process group
-    ///
-    /// Calls `PUT /nifi-api/remote-process-groups/{id}/run-status`.
-    ///
-    /// # Parameters
-    /// - `id`: The remote process group id.
-    ///
-    /// # Errors
-    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
-    /// - `401`: Client could not be authenticated.
-    /// - `403`: Client is not authorized to make this request.
-    /// - `404`: The specified resource could not be found.
-    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
-    ///
-    /// # Permissions
-    /// Requires `Write - /remote-process-groups/{uuid} or /operation/remote-process-groups/{uuid}`.
-    async fn update_remote_process_group_run_status(
-        &self,
-        id: &str,
-        body: types::RemotePortRunStatusEntity,
-    ) -> Result<types::RemoteProcessGroupEntity, NifiError> {
-        Err(NifiError::UnsupportedEndpoint {
-            endpoint: "update_remote_process_group_run_status".to_string(),
-            version: "unknown".to_string(),
-        })
-    }
-    /// Updates run status of all remote process groups in a process group (recursively)
-    ///
-    /// Calls `PUT /nifi-api/remote-process-groups/process-group/{id}/run-status`.
-    ///
-    /// # Parameters
-    /// - `id`: The process group id.
-    ///
-    /// # Errors
-    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
-    /// - `401`: Client could not be authenticated.
-    /// - `403`: Client is not authorized to make this request.
-    /// - `404`: The specified resource could not be found.
-    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
-    ///
-    /// # Permissions
-    /// Requires `Write - /remote-process-groups/{uuid} or /operation/remote-process-groups/{uuid}`.
-    async fn update_remote_process_group_run_statuses(
-        &self,
-        id: &str,
-        body: types::RemotePortRunStatusEntity,
-    ) -> Result<types::RemoteProcessGroupEntity, NifiError> {
-        Err(NifiError::UnsupportedEndpoint {
-            endpoint: "update_remote_process_group_run_statuses".to_string(),
             version: "unknown".to_string(),
         })
     }

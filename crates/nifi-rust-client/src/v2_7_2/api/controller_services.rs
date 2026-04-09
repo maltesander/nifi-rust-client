@@ -538,3 +538,176 @@ impl<'a> ControllerServicesStateApi<'a> {
         Ok(e.component_state.unwrap_or_default())
     }
 }
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_7_2::traits::ControllerServicesApi for ControllerServicesApi<'_> {
+    type ControllerServicesBulletinsApi<'b>
+        = ControllerServicesBulletinsApi<'b>
+    where
+        Self: 'b;
+    fn bulletins<'b>(&'b self, id: &'b str) -> Self::ControllerServicesBulletinsApi<'b> {
+        ControllerServicesBulletinsApi {
+            client: self.client,
+            id,
+        }
+    }
+    type ControllerServicesConfigApi<'b>
+        = ControllerServicesConfigApi<'b>
+    where
+        Self: 'b;
+    fn config<'b>(&'b self, id: &'b str) -> Self::ControllerServicesConfigApi<'b> {
+        ControllerServicesConfigApi {
+            client: self.client,
+            id,
+        }
+    }
+    type ControllerServicesDescriptorsApi<'b>
+        = ControllerServicesDescriptorsApi<'b>
+    where
+        Self: 'b;
+    fn descriptors<'b>(&'b self, id: &'b str) -> Self::ControllerServicesDescriptorsApi<'b> {
+        ControllerServicesDescriptorsApi {
+            client: self.client,
+            id,
+        }
+    }
+    type ControllerServicesReferencesApi<'b>
+        = ControllerServicesReferencesApi<'b>
+    where
+        Self: 'b;
+    fn references<'b>(&'b self, id: &'b str) -> Self::ControllerServicesReferencesApi<'b> {
+        ControllerServicesReferencesApi {
+            client: self.client,
+            id,
+        }
+    }
+    type ControllerServicesRunStatusApi<'b>
+        = ControllerServicesRunStatusApi<'b>
+    where
+        Self: 'b;
+    fn run_status<'b>(&'b self, id: &'b str) -> Self::ControllerServicesRunStatusApi<'b> {
+        ControllerServicesRunStatusApi {
+            client: self.client,
+            id,
+        }
+    }
+    type ControllerServicesStateApi<'b>
+        = ControllerServicesStateApi<'b>
+    where
+        Self: 'b;
+    fn state<'b>(&'b self, id: &'b str) -> Self::ControllerServicesStateApi<'b> {
+        ControllerServicesStateApi {
+            client: self.client,
+            id,
+        }
+    }
+    async fn remove_controller_service(
+        &self,
+        id: &str,
+        version: Option<&str>,
+        client_id: Option<&str>,
+        disconnected_node_acknowledged: Option<bool>,
+    ) -> Result<crate::v2_7_2::types::ControllerServiceEntity, NifiError> {
+        self.remove_controller_service(id, version, client_id, disconnected_node_acknowledged)
+            .await
+    }
+    async fn get_controller_service(
+        &self,
+        id: &str,
+        ui_only: Option<bool>,
+    ) -> Result<crate::v2_7_2::types::ControllerServiceEntity, NifiError> {
+        self.get_controller_service(id, ui_only).await
+    }
+    async fn update_controller_service(
+        &self,
+        id: &str,
+        body: &crate::v2_7_2::types::ControllerServiceEntity,
+    ) -> Result<crate::v2_7_2::types::ControllerServiceEntity, NifiError> {
+        self.update_controller_service(id, body).await
+    }
+}
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_7_2::traits::ControllerServicesBulletinsApi for ControllerServicesBulletinsApi<'_> {
+    async fn clear_bulletins(
+        &self,
+        body: &crate::v2_7_2::types::ClearBulletinsRequestEntity,
+    ) -> Result<crate::v2_7_2::types::ClearBulletinsResultEntity, NifiError> {
+        self.clear_bulletins(body).await
+    }
+}
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_7_2::traits::ControllerServicesConfigApi for ControllerServicesConfigApi<'_> {
+    async fn analyze_configuration(
+        &self,
+        body: &crate::v2_7_2::types::ConfigurationAnalysisEntity,
+    ) -> Result<crate::v2_7_2::types::ConfigurationAnalysisDto, NifiError> {
+        self.analyze_configuration(body).await
+    }
+    async fn submit_config_verification_request(
+        &self,
+        body: &crate::v2_7_2::types::VerifyConfigRequestEntity,
+    ) -> Result<crate::v2_7_2::types::VerifyConfigRequestDto, NifiError> {
+        self.submit_config_verification_request(body).await
+    }
+    async fn delete_verification_request(
+        &self,
+        request_id: &str,
+    ) -> Result<crate::v2_7_2::types::VerifyConfigRequestDto, NifiError> {
+        self.delete_verification_request(request_id).await
+    }
+    async fn get_verification_request(
+        &self,
+        request_id: &str,
+    ) -> Result<crate::v2_7_2::types::VerifyConfigRequestDto, NifiError> {
+        self.get_verification_request(request_id).await
+    }
+}
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_7_2::traits::ControllerServicesDescriptorsApi
+    for ControllerServicesDescriptorsApi<'_>
+{
+    async fn get_property_descriptor_1(
+        &self,
+        property_name: &str,
+        sensitive: Option<bool>,
+    ) -> Result<crate::v2_7_2::types::PropertyDescriptorDto, NifiError> {
+        self.get_property_descriptor_1(property_name, sensitive)
+            .await
+    }
+}
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_7_2::traits::ControllerServicesReferencesApi
+    for ControllerServicesReferencesApi<'_>
+{
+    async fn get_controller_service_references(
+        &self,
+    ) -> Result<crate::v2_7_2::types::ControllerServiceReferencingComponentsEntity, NifiError> {
+        self.get_controller_service_references().await
+    }
+    async fn update_controller_service_references(
+        &self,
+        body: &crate::v2_7_2::types::UpdateControllerServiceReferenceRequestEntity,
+    ) -> Result<crate::v2_7_2::types::ControllerServiceReferencingComponentsEntity, NifiError> {
+        self.update_controller_service_references(body).await
+    }
+}
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_7_2::traits::ControllerServicesRunStatusApi for ControllerServicesRunStatusApi<'_> {
+    async fn update_run_status_1(
+        &self,
+        body: &crate::v2_7_2::types::ControllerServiceRunStatusEntity,
+    ) -> Result<crate::v2_7_2::types::ControllerServiceEntity, NifiError> {
+        self.update_run_status_1(body).await
+    }
+}
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_7_2::traits::ControllerServicesStateApi for ControllerServicesStateApi<'_> {
+    async fn get_state(&self) -> Result<crate::v2_7_2::types::ComponentStateDto, NifiError> {
+        self.get_state().await
+    }
+    async fn clear_state_1(
+        &self,
+        body: &crate::v2_7_2::types::ComponentStateEntity,
+    ) -> Result<crate::v2_7_2::types::ComponentStateDto, NifiError> {
+        self.clear_state_1(body).await
+    }
+}

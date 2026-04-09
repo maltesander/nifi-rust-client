@@ -2,8 +2,8 @@ use std::collections::BTreeMap;
 
 use crate::parser::{ApiSpec, HttpMethod, RequestBodyKind};
 use crate::util::{
-    EndpointInfo, collect_all_tags, collect_tag_endpoints, dynamic_query_param_type,
-    escape_keyword, format_source, merge_query_params,
+    EndpointInfo, collect_all_tags, collect_tag_sub_groups, dynamic_query_param_type,
+    escape_keyword, format_source, merge_query_params, version_to_variant,
 };
 
 /// Returns `Vec<(path, content)>` for `dynamic/impls/`.
@@ -81,11 +81,22 @@ fn emit_tag_impl_file(
     let prefix = version_struct_prefix(mod_name);
     let wrapper_struct = format!("{prefix}{struct_name}");
 
+    let sub_groups = collect_tag_sub_groups(versions, tag);
+
     out.push_str("#[allow(unused_imports)]\n");
     out.push_str("use crate::NifiError;\n");
     out.push_str("#[allow(unused_imports)]\n");
     out.push_str("use crate::dynamic::types;\n");
-    out.push_str(&format!("use crate::dynamic::traits::{struct_name};\n\n"));
+    out.push_str(&format!("use crate::dynamic::traits::{struct_name};\n"));
+
+    // Import sub-resource trait names (needed for GAT bounds)
+    for sg in &sub_groups.sub_groups {
+        out.push_str(&format!(
+            "#[allow(unused_imports)]\nuse crate::dynamic::traits::{};\n",
+            sg.struct_name
+        ));
+    }
+    out.push('\n');
 
     // Struct definition
     out.push_str(&format!(
@@ -96,9 +107,37 @@ fn emit_tag_impl_file(
     out.push_str("#[allow(unused_variables)]\n");
     out.push_str(&format!("impl {struct_name} for {wrapper_struct}<'_> {{\n"));
 
-    let endpoints = collect_tag_endpoints(versions, tag);
+    // GAT type bindings and accessor methods for sub-resources
+    let variant = version_to_variant(ver);
+    for sg in &sub_groups.sub_groups {
+        let sub_trait_name = &sg.struct_name;
+        let sub_dispatch_name = format!("{sub_trait_name}Dispatch");
+        let accessor = &sg.accessor_fn;
+        let primary = &sg.primary_param;
 
-    for (fn_name, ep_by_version) in &endpoints {
+        // GAT type binding
+        out.push_str(&format!(
+            "    type {sub_trait_name}<'b> = crate::dynamic::dispatch::{sub_dispatch_name}<'b> where Self: 'b;\n"
+        ));
+
+        // Accessor method
+        out.push_str(&format!(
+            "    fn {accessor}<'b>(&'b self, {primary}: &'b str) -> Self::{sub_trait_name}<'b> {{\n"
+        ));
+        out.push_str(&format!(
+            "        crate::dynamic::dispatch::{sub_dispatch_name} {{\n"
+        ));
+        out.push_str("            client: self.client,\n");
+        out.push_str(&format!("            {primary}: {primary}.to_string(),\n"));
+        out.push_str(&format!(
+            "            version: crate::dynamic::DetectedVersion::{variant},\n"
+        ));
+        out.push_str("        }\n");
+        out.push_str("    }\n\n");
+    }
+
+    // Only root endpoint methods (sub-group endpoints are handled by dispatch structs)
+    for (fn_name, ep_by_version) in &sub_groups.root_endpoints {
         // Only emit methods that exist in this version; missing ones use the trait default.
         if let Some(info) = ep_by_version.get(ver) {
             emit_impl_method(
@@ -181,14 +220,14 @@ fn emit_impl_method(
         })
         .collect();
 
-    // --- Body param (must match trait signature) ---
+    // --- Body param (must match trait signature — borrowed for dynamic) ---
     let body_arg = if ep.method == HttpMethod::Delete {
         String::new()
     } else {
         match &ep.body_kind {
             Some(RequestBodyKind::Json) => {
                 let req_type = ep.request_type.as_deref().unwrap_or("serde_json::Value");
-                format!(", body: types::{req_type}")
+                format!(", body: &types::{req_type}")
             }
             Some(RequestBodyKind::OctetStream) => {
                 ", filename: Option<&str>, data: Vec<u8>".to_string()
@@ -282,7 +321,7 @@ fn emit_impl_method(
             Some(RequestBodyKind::Json) => {
                 let req_type = ep.request_type.as_deref().unwrap_or("serde_json::Value");
                 call_args.push(format!(
-                    "&crate::{mod_name}::types::{req_type}::try_from(body)?",
+                    "&crate::{mod_name}::types::{req_type}::try_from(body.clone())?",
                 ));
             }
             Some(RequestBodyKind::OctetStream) => {
@@ -332,4 +371,181 @@ fn find_tag_module_name(
     }
     // Strip trailing "_api" if present (module names don't include it)
     result.strip_suffix("_api").unwrap_or(&result).to_string()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::parser::*;
+
+    fn make_spec() -> ApiSpec {
+        let ep_root = Endpoint {
+            method: HttpMethod::Get,
+            path: "/controller-services/{id}".to_string(),
+            fn_name: "get_controller_service".to_string(),
+            doc: Some("Gets a controller service".to_string()),
+            description: None,
+            path_params: vec![PathParam {
+                name: "id".to_string(),
+                doc: None,
+            }],
+            request_type: None,
+            body_kind: None,
+            body_doc: None,
+            response_type: Some("ControllerServiceEntity".to_string()),
+            response_inner: Some("ControllerServiceDto".to_string()),
+            response_field: Some("component".to_string()),
+            query_params: vec![],
+            success_responses: vec![],
+            error_responses: vec![],
+            security: None,
+        };
+        let ep_sub = Endpoint {
+            method: HttpMethod::Post,
+            path: "/controller-services/{id}/config/analysis".to_string(),
+            fn_name: "analyze_configuration".to_string(),
+            doc: Some("Performs analysis".to_string()),
+            description: None,
+            path_params: vec![PathParam {
+                name: "id".to_string(),
+                doc: None,
+            }],
+            request_type: Some("ConfigurationAnalysisEntity".to_string()),
+            body_kind: Some(RequestBodyKind::Json),
+            body_doc: None,
+            response_type: Some("ConfigurationAnalysisEntity".to_string()),
+            response_inner: Some("ConfigurationAnalysisDto".to_string()),
+            response_field: Some("configuration_analysis".to_string()),
+            query_params: vec![],
+            success_responses: vec![],
+            error_responses: vec![],
+            security: None,
+        };
+        ApiSpec {
+            tags: vec![TagGroup {
+                tag: "ControllerServices".to_string(),
+                struct_name: "ControllerServicesApi".to_string(),
+                module_name: "controller_services".to_string(),
+                accessor_fn: "controller_services_api".to_string(),
+                types: vec![],
+                root_endpoints: vec![ep_root],
+                sub_groups: vec![SubGroup {
+                    name: "config".to_string(),
+                    struct_name: "ControllerServicesConfigApi".to_string(),
+                    accessor_fn: "config".to_string(),
+                    primary_param: "id".to_string(),
+                    primary_param_doc: Some("The controller service id.".to_string()),
+                    endpoints: vec![ep_sub],
+                }],
+            }],
+            all_types: vec![],
+        }
+    }
+
+    #[test]
+    fn emit_dynamic_impls_hierarchical() {
+        let spec = make_spec();
+        let versions: Vec<(&str, &str, &str, &ApiSpec)> =
+            vec![("2.8.0", "v2_8_0", "nifi-2-8-0", &spec)];
+        let files = emit_dynamic_impls(&versions);
+
+        let (_, content) = files
+            .iter()
+            .find(|(f, _)| f == "v2_8_0/controller_services.rs")
+            .unwrap();
+
+        // Struct definition
+        assert!(
+            content.contains("pub(crate) struct V2_8_0ControllerServicesApi<'a>"),
+            "Missing struct definition"
+        );
+
+        // GAT type binding pointing to dispatch struct (rustfmt may split across lines)
+        assert!(
+            content.contains("type ControllerServicesConfigApi<'b>")
+                && content.contains("ControllerServicesConfigApiDispatch"),
+            "Missing GAT type binding. Content:\n{content}"
+        );
+
+        // Accessor method constructs dispatch struct
+        assert!(
+            content.contains("fn config<'b>("),
+            "Missing accessor method. Content:\n{content}"
+        );
+        assert!(
+            content.contains("crate::dynamic::dispatch::ControllerServicesConfigApiDispatch {"),
+            "Missing dispatch struct construction. Content:\n{content}"
+        );
+        assert!(
+            content.contains("DetectedVersion::V2_8_0"),
+            "Missing version variant. Content:\n{content}"
+        );
+
+        // Root endpoint method present
+        assert!(
+            content.contains("async fn get_controller_service("),
+            "Missing root endpoint method. Content:\n{content}"
+        );
+
+        // Sub-group endpoint method NOT present (handled by dispatch)
+        assert!(
+            !content.contains("async fn analyze_configuration("),
+            "Sub-group method should NOT be in per-version impl. Content:\n{content}"
+        );
+
+        // Sub-resource trait import
+        assert!(
+            content.contains("use crate::dynamic::traits::ControllerServicesConfigApi"),
+            "Missing sub-resource trait import. Content:\n{content}"
+        );
+    }
+
+    #[test]
+    fn emit_dynamic_impls_borrowed_body() {
+        let spec = make_spec();
+        // Add a root endpoint with a body to test borrowed body
+        let mut spec_with_body = spec;
+        spec_with_body.tags[0].root_endpoints.push(Endpoint {
+            method: HttpMethod::Put,
+            path: "/controller-services/{id}".to_string(),
+            fn_name: "update_controller_service".to_string(),
+            doc: Some("Updates a controller service".to_string()),
+            description: None,
+            path_params: vec![PathParam {
+                name: "id".to_string(),
+                doc: None,
+            }],
+            request_type: Some("ControllerServiceEntity".to_string()),
+            body_kind: Some(RequestBodyKind::Json),
+            body_doc: None,
+            response_type: Some("ControllerServiceEntity".to_string()),
+            response_inner: Some("ControllerServiceDto".to_string()),
+            response_field: Some("component".to_string()),
+            query_params: vec![],
+            success_responses: vec![],
+            error_responses: vec![],
+            security: None,
+        });
+
+        let versions: Vec<(&str, &str, &str, &ApiSpec)> =
+            vec![("2.8.0", "v2_8_0", "nifi-2-8-0", &spec_with_body)];
+        let files = emit_dynamic_impls(&versions);
+
+        let (_, content) = files
+            .iter()
+            .find(|(f, _)| f == "v2_8_0/controller_services.rs")
+            .unwrap();
+
+        // Body param should be borrowed
+        assert!(
+            content.contains("body: &types::ControllerServiceEntity"),
+            "Body param should be borrowed. Content:\n{content}"
+        );
+
+        // Body conversion should clone (rustfmt may split across lines)
+        assert!(
+            content.contains("body.clone()"),
+            "Body conversion should clone. Content:\n{content}"
+        );
+    }
 }

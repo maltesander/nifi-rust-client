@@ -45,3 +45,14 @@ impl<'a> SiteToSiteApi<'a> {
         self.client.get("/site-to-site/peers").await
     }
 }
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_8_0::traits::SiteToSiteApi for SiteToSiteApi<'_> {
+    async fn get_site_to_site_details(
+        &self,
+    ) -> Result<crate::v2_8_0::types::ControllerDto, NifiError> {
+        self.get_site_to_site_details().await
+    }
+    async fn get_peers(&self) -> Result<crate::v2_8_0::types::PeersEntity, NifiError> {
+        self.get_peers().await
+    }
+}

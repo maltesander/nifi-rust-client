@@ -522,3 +522,147 @@ impl<'a> ParameterContextsValidationRequestsApi<'a> {
             .await
     }
 }
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_7_2::traits::ParameterContextsApi for ParameterContextsApi<'_> {
+    type ParameterContextsAssetsApi<'b>
+        = ParameterContextsAssetsApi<'b>
+    where
+        Self: 'b;
+    fn assets<'b>(&'b self, context_id: &'b str) -> Self::ParameterContextsAssetsApi<'b> {
+        ParameterContextsAssetsApi {
+            client: self.client,
+            context_id,
+        }
+    }
+    type ParameterContextsUpdateRequestsApi<'b>
+        = ParameterContextsUpdateRequestsApi<'b>
+    where
+        Self: 'b;
+    fn update_requests<'b>(
+        &'b self,
+        context_id: &'b str,
+    ) -> Self::ParameterContextsUpdateRequestsApi<'b> {
+        ParameterContextsUpdateRequestsApi {
+            client: self.client,
+            context_id,
+        }
+    }
+    type ParameterContextsValidationRequestsApi<'b>
+        = ParameterContextsValidationRequestsApi<'b>
+    where
+        Self: 'b;
+    fn validation_requests<'b>(
+        &'b self,
+        context_id: &'b str,
+    ) -> Self::ParameterContextsValidationRequestsApi<'b> {
+        ParameterContextsValidationRequestsApi {
+            client: self.client,
+            context_id,
+        }
+    }
+    async fn create_parameter_context(
+        &self,
+        body: &crate::v2_7_2::types::ParameterContextEntity,
+    ) -> Result<crate::v2_7_2::types::ParameterContextEntity, NifiError> {
+        self.create_parameter_context(body).await
+    }
+    async fn delete_parameter_context(
+        &self,
+        id: &str,
+        version: Option<&str>,
+        client_id: Option<&str>,
+        disconnected_node_acknowledged: Option<bool>,
+    ) -> Result<crate::v2_7_2::types::ParameterContextEntity, NifiError> {
+        self.delete_parameter_context(id, version, client_id, disconnected_node_acknowledged)
+            .await
+    }
+    async fn get_parameter_context(
+        &self,
+        id: &str,
+        include_inherited_parameters: Option<bool>,
+    ) -> Result<crate::v2_7_2::types::ParameterContextEntity, NifiError> {
+        self.get_parameter_context(id, include_inherited_parameters)
+            .await
+    }
+    async fn update_parameter_context(
+        &self,
+        id: &str,
+        body: &crate::v2_7_2::types::ParameterContextEntity,
+    ) -> Result<crate::v2_7_2::types::ParameterContextEntity, NifiError> {
+        self.update_parameter_context(id, body).await
+    }
+}
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_7_2::traits::ParameterContextsAssetsApi for ParameterContextsAssetsApi<'_> {
+    async fn get_assets(&self) -> Result<crate::v2_7_2::types::AssetsEntity, NifiError> {
+        self.get_assets().await
+    }
+    async fn create_asset(
+        &self,
+        filename: Option<&str>,
+        data: Vec<u8>,
+    ) -> Result<crate::v2_7_2::types::AssetDto, NifiError> {
+        self.create_asset(filename, data).await
+    }
+    async fn delete_asset(
+        &self,
+        asset_id: &str,
+        disconnected_node_acknowledged: Option<bool>,
+    ) -> Result<crate::v2_7_2::types::AssetDto, NifiError> {
+        self.delete_asset(asset_id, disconnected_node_acknowledged)
+            .await
+    }
+    async fn get_asset_content(&self, asset_id: &str) -> Result<(), NifiError> {
+        self.get_asset_content(asset_id).await
+    }
+}
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_7_2::traits::ParameterContextsUpdateRequestsApi
+    for ParameterContextsUpdateRequestsApi<'_>
+{
+    async fn submit_parameter_context_update(
+        &self,
+        body: &crate::v2_7_2::types::ParameterContextEntity,
+    ) -> Result<crate::v2_7_2::types::ParameterContextUpdateRequestEntity, NifiError> {
+        self.submit_parameter_context_update(body).await
+    }
+    async fn delete_update_request(
+        &self,
+        request_id: &str,
+        disconnected_node_acknowledged: Option<bool>,
+    ) -> Result<crate::v2_7_2::types::ParameterContextUpdateRequestEntity, NifiError> {
+        self.delete_update_request(request_id, disconnected_node_acknowledged)
+            .await
+    }
+    async fn get_parameter_context_update(
+        &self,
+        request_id: &str,
+    ) -> Result<crate::v2_7_2::types::ParameterContextUpdateRequestEntity, NifiError> {
+        self.get_parameter_context_update(request_id).await
+    }
+}
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_7_2::traits::ParameterContextsValidationRequestsApi
+    for ParameterContextsValidationRequestsApi<'_>
+{
+    async fn submit_validation_request(
+        &self,
+        body: &crate::v2_7_2::types::ParameterContextValidationRequestEntity,
+    ) -> Result<crate::v2_7_2::types::ParameterContextValidationRequestEntity, NifiError> {
+        self.submit_validation_request(body).await
+    }
+    async fn delete_validation_request(
+        &self,
+        id: &str,
+        disconnected_node_acknowledged: Option<bool>,
+    ) -> Result<crate::v2_7_2::types::ParameterContextValidationRequestEntity, NifiError> {
+        self.delete_validation_request(id, disconnected_node_acknowledged)
+            .await
+    }
+    async fn get_validation_request(
+        &self,
+        id: &str,
+    ) -> Result<crate::v2_7_2::types::ParameterContextValidationRequestEntity, NifiError> {
+        self.get_validation_request(id).await
+    }
+}

@@ -80,7 +80,7 @@ pub trait FunnelsApi {
     async fn update_funnel(
         &self,
         id: &str,
-        body: types::FunnelEntity,
+        body: &types::FunnelEntity,
     ) -> Result<types::FunnelEntity, NifiError> {
         Err(NifiError::UnsupportedEndpoint {
             endpoint: "update_funnel".to_string(),

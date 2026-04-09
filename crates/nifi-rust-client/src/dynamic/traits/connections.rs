@@ -85,7 +85,7 @@ pub trait ConnectionsApi {
     async fn update_connection(
         &self,
         id: &str,
-        body: types::ConnectionEntity,
+        body: &types::ConnectionEntity,
     ) -> Result<types::ConnectionEntity, NifiError> {
         Err(NifiError::UnsupportedEndpoint {
             endpoint: "update_connection".to_string(),

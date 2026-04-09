@@ -4,15 +4,14 @@
 use crate::NifiError;
 #[allow(unused_imports)]
 use crate::dynamic::types;
-/// The ProvenanceEvents API.
+/// Sub-resource trait for ProvenanceEventsContentApi.
 #[allow(unused_variables, async_fn_in_trait, clippy::too_many_arguments)]
-pub trait ProvenanceEventsApi {
+pub trait ProvenanceEventsContentApi {
     /// Gets the input content for a provenance event
     ///
     /// Calls `GET /nifi-api/provenance-events/{id}/content/input`.
     ///
     /// # Parameters
-    /// - `id`: The provenance event id.
     /// - `cluster_node_id`: The id of the node where the content exists if clustered.
     ///
     /// # Errors
@@ -26,16 +25,48 @@ pub trait ProvenanceEventsApi {
     /// # Permissions
     /// Requires `Read Component Provenance Data - /provenance-data/{component-type}/{uuid}`.
     /// Requires `Read Component Data - /data/{component-type}/{uuid}`.
-    async fn get_input_content(
-        &self,
-        id: &str,
-        cluster_node_id: Option<&str>,
-    ) -> Result<(), NifiError> {
+    async fn get_input_content(&self, cluster_node_id: Option<&str>) -> Result<(), NifiError> {
         Err(NifiError::UnsupportedEndpoint {
             endpoint: "get_input_content".to_string(),
             version: "unknown".to_string(),
         })
     }
+    /// Gets the output content for a provenance event
+    ///
+    /// Calls `GET /nifi-api/provenance-events/{id}/content/output`.
+    ///
+    /// # Parameters
+    /// - `cluster_node_id`: The id of the node where the content exists if clustered.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    /// - `416`: Requested Range Not Satisfiable based on bytes requested
+    ///
+    /// # Permissions
+    /// Requires `Read Component Provenance Data - /provenance-data/{component-type}/{uuid}`.
+    /// Requires `Read Component Data - /data/{component-type}/{uuid}`.
+    async fn get_output_content(&self, cluster_node_id: Option<&str>) -> Result<(), NifiError> {
+        Err(NifiError::UnsupportedEndpoint {
+            endpoint: "get_output_content".to_string(),
+            version: "unknown".to_string(),
+        })
+    }
+}
+/// The ProvenanceEvents API.
+#[allow(unused_variables, async_fn_in_trait, clippy::too_many_arguments)]
+pub trait ProvenanceEventsApi {
+    /// Returns a sub-resource accessor for config operations.
+    ///
+    /// # Parameters
+    /// - `id`: The provenance event id.
+    type ProvenanceEventsContentApi<'b>: ProvenanceEventsContentApi
+    where
+        Self: 'b;
+    fn content<'b>(&'b self, id: &'b str) -> Self::ProvenanceEventsContentApi<'b>;
     /// Retrieves the latest cached Provenance Events for the specified component
     ///
     /// Calls `GET /nifi-api/provenance-events/latest/{componentId}`.
@@ -61,35 +92,6 @@ pub trait ProvenanceEventsApi {
     ) -> Result<types::LatestProvenanceEventsDto, NifiError> {
         Err(NifiError::UnsupportedEndpoint {
             endpoint: "get_latest_provenance_events".to_string(),
-            version: "unknown".to_string(),
-        })
-    }
-    /// Gets the output content for a provenance event
-    ///
-    /// Calls `GET /nifi-api/provenance-events/{id}/content/output`.
-    ///
-    /// # Parameters
-    /// - `id`: The provenance event id.
-    /// - `cluster_node_id`: The id of the node where the content exists if clustered.
-    ///
-    /// # Errors
-    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
-    /// - `401`: Client could not be authenticated.
-    /// - `403`: Client is not authorized to make this request.
-    /// - `404`: The specified resource could not be found.
-    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
-    /// - `416`: Requested Range Not Satisfiable based on bytes requested
-    ///
-    /// # Permissions
-    /// Requires `Read Component Provenance Data - /provenance-data/{component-type}/{uuid}`.
-    /// Requires `Read Component Data - /data/{component-type}/{uuid}`.
-    async fn get_output_content(
-        &self,
-        id: &str,
-        cluster_node_id: Option<&str>,
-    ) -> Result<(), NifiError> {
-        Err(NifiError::UnsupportedEndpoint {
-            endpoint: "get_output_content".to_string(),
             version: "unknown".to_string(),
         })
     }
@@ -137,7 +139,7 @@ pub trait ProvenanceEventsApi {
     /// Requires `Write Component Data - /data/{component-type}/{uuid}`.
     async fn submit_replay(
         &self,
-        body: types::SubmitReplayRequestEntity,
+        body: &types::SubmitReplayRequestEntity,
     ) -> Result<types::ProvenanceEventDto, NifiError> {
         Err(NifiError::UnsupportedEndpoint {
             endpoint: "submit_replay".to_string(),
@@ -161,7 +163,7 @@ pub trait ProvenanceEventsApi {
     /// Requires `Write Component Data - /data/{component-type}/{uuid}`.
     async fn submit_replay_latest_event(
         &self,
-        body: types::ReplayLastEventRequestEntity,
+        body: &types::ReplayLastEventRequestEntity,
     ) -> Result<types::ReplayLastEventResponseEntity, NifiError> {
         Err(NifiError::UnsupportedEndpoint {
             endpoint: "submit_replay_latest_event".to_string(),
