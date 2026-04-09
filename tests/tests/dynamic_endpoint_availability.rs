@@ -11,7 +11,7 @@ async fn endpoint_controller_services_clear_bulletins_unsupported() {
     let client = helpers::dynamic_logged_in_client().await;
     let result = client
         .controller_services_api()
-        .clear_bulletins("root", &Default::default())
+        .clear_bulletins("root", Default::default())
         .await;
     let err = result.unwrap_err();
     assert!(
@@ -29,7 +29,7 @@ async fn endpoint_controller_clear_flow_analysis_rule_bulletins_unsupported() {
     let client = helpers::dynamic_logged_in_client().await;
     let result = client
         .controller_api()
-        .clear_flow_analysis_rule_bulletins("root", &Default::default())
+        .clear_flow_analysis_rule_bulletins("root", Default::default())
         .await;
     let err = result.unwrap_err();
     assert!(
@@ -47,7 +47,7 @@ async fn endpoint_controller_clear_parameter_provider_bulletins_unsupported() {
     let client = helpers::dynamic_logged_in_client().await;
     let result = client
         .controller_api()
-        .clear_parameter_provider_bulletins("root", &Default::default())
+        .clear_parameter_provider_bulletins("root", Default::default())
         .await;
     let err = result.unwrap_err();
     assert!(
@@ -65,7 +65,7 @@ async fn endpoint_controller_clear_registry_client_bulletins_unsupported() {
     let client = helpers::dynamic_logged_in_client().await;
     let result = client
         .controller_api()
-        .clear_registry_client_bulletins("root", &Default::default())
+        .clear_registry_client_bulletins("root", Default::default())
         .await;
     let err = result.unwrap_err();
     assert!(
@@ -83,7 +83,7 @@ async fn endpoint_controller_analyze_flow_registry_client_configuration_unsuppor
     let client = helpers::dynamic_logged_in_client().await;
     let result = client
         .controller_api()
-        .analyze_flow_registry_client_configuration("root", &Default::default())
+        .analyze_flow_registry_client_configuration("root", Default::default())
         .await;
     let err = result.unwrap_err();
     assert!(
@@ -101,7 +101,7 @@ async fn endpoint_controller_submit_registry_client_config_verification_request_
     let client = helpers::dynamic_logged_in_client().await;
     let result = client
         .controller_api()
-        .submit_registry_client_config_verification_request("root", &Default::default())
+        .submit_registry_client_config_verification_request("root", Default::default())
         .await;
     let err = result.unwrap_err();
     assert!(
@@ -208,7 +208,7 @@ async fn endpoint_flow_clear_bulletins_1_available() {
     let client = helpers::dynamic_logged_in_client().await;
     let result = client
         .flow_api()
-        .clear_bulletins_1("root", &Default::default())
+        .clear_bulletins_1("root", Default::default())
         .await;
     assert!(
         result.is_ok(),
@@ -226,7 +226,7 @@ async fn endpoint_flow_clear_bulletins_1_unsupported() {
     let client = helpers::dynamic_logged_in_client().await;
     let result = client
         .flow_api()
-        .clear_bulletins_1("root", &Default::default())
+        .clear_bulletins_1("root", Default::default())
         .await;
     let err = result.unwrap_err();
     assert!(
@@ -244,7 +244,7 @@ async fn endpoint_inputports_clear_bulletins_2_unsupported() {
     let client = helpers::dynamic_logged_in_client().await;
     let result = client
         .inputports_api()
-        .clear_bulletins_2("root", &Default::default())
+        .clear_bulletins_2("root", Default::default())
         .await;
     let err = result.unwrap_err();
     assert!(
@@ -262,7 +262,7 @@ async fn endpoint_outputports_clear_bulletins_3_unsupported() {
     let client = helpers::dynamic_logged_in_client().await;
     let result = client
         .outputports_api()
-        .clear_bulletins_3("root", &Default::default())
+        .clear_bulletins_3("root", Default::default())
         .await;
     let err = result.unwrap_err();
     assert!(
@@ -280,7 +280,7 @@ async fn endpoint_parameterproviders_clear_bulletins_4_unsupported() {
     let client = helpers::dynamic_logged_in_client().await;
     let result = client
         .parameterproviders_api()
-        .clear_bulletins_4("root", &Default::default())
+        .clear_bulletins_4("root", Default::default())
         .await;
     let err = result.unwrap_err();
     assert!(
@@ -298,7 +298,7 @@ async fn endpoint_processors_clear_bulletins_5_unsupported() {
     let client = helpers::dynamic_logged_in_client().await;
     let result = client
         .processors_api()
-        .clear_bulletins_5("root", &Default::default())
+        .clear_bulletins_5("root", Default::default())
         .await;
     let err = result.unwrap_err();
     assert!(
@@ -316,7 +316,7 @@ async fn endpoint_remoteprocessgroups_clear_bulletins_6_available() {
     let client = helpers::dynamic_logged_in_client().await;
     let result = client
         .remoteprocessgroups_api()
-        .clear_bulletins_6("root", &Default::default())
+        .clear_bulletins_6("root", Default::default())
         .await;
     assert!(
         result.is_ok(),
@@ -334,7 +334,7 @@ async fn endpoint_remoteprocessgroups_clear_bulletins_6_unsupported() {
     let client = helpers::dynamic_logged_in_client().await;
     let result = client
         .remoteprocessgroups_api()
-        .clear_bulletins_6("root", &Default::default())
+        .clear_bulletins_6("root", Default::default())
         .await;
     let err = result.unwrap_err();
     assert!(
@@ -352,7 +352,7 @@ async fn endpoint_reportingtasks_clear_bulletins_7_unsupported() {
     let client = helpers::dynamic_logged_in_client().await;
     let result = client
         .reportingtasks_api()
-        .clear_bulletins_7("root", &Default::default())
+        .clear_bulletins_7("root", Default::default())
         .await;
     let err = result.unwrap_err();
     assert!(

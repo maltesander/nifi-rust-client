@@ -165,11 +165,9 @@ fn build_call_args(
         args.push(format!("\"{val}\""));
     }
 
-    // Add request body (if any) — use a simple `todo!()` stand-in; but since
-    // these are enum-param tests the real interesting param is the query param,
-    // and the body is not what we're testing. Use `&Default::default()`.
+    // Add request body (if any) — the body is not what we're testing.
     if endpoint.request_type.is_some() {
-        args.push("&Default::default()".to_string());
+        args.push("Default::default()".to_string());
     }
 
     // Add query params.

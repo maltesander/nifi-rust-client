@@ -176,7 +176,7 @@ fn build_call_args(
 
     // Add request body (if any).
     if endpoint.request_type.is_some() {
-        args.push("&Default::default()".to_string());
+        args.push("Default::default()".to_string());
     }
 
     // Add query params.
