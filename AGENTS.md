@@ -275,12 +275,14 @@ Controls how `DynamicClient` maps a detected NiFi version to a supported API mod
 | `Latest` | Highest supported minor within the same major. |
 
 Design decisions:
+
 - Major version boundaries are never crossed (e.g. NiFi 1.x → 2.x is always an error).
 - Non-strict resolutions emit `tracing::warn!` with both the detected and resolved versions.
 - Patch component is ignored during comparison — only major.minor is matched.
 - Uses the `semver` crate for ordering.
 
 Implementation split:
+
 - `crates/nifi-rust-client/src/dynamic/strategy.rs` — hand-written; contains the enum, `resolve_version()` function, and unit tests.
 - `DynamicClient` integration — generated; `detect_version()` calls `strategy.resolve()` after fetching `/flow/about`.
 
