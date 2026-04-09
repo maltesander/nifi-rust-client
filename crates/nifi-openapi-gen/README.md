@@ -125,6 +125,7 @@ The generator is organized into four module groups plus two binaries:
 | `src/docs/versions_table.rs` | Rewrite the supported-versions table in `README.md` |
 | `src/docs/api_changes.rs` | Generate per-version API change summaries |
 | `src/docs/readme_examples.rs` | Rewrite the static-mode feature flag example in `crates/nifi-rust-client/README.md` |
+| `src/docs/resource_accessors.rs` | Generate the resource accessors table in `crates/nifi-rust-client/README.md` |
 | **`src/repo/`** | **Repository sync** |
 | `src/repo/lib_rs.rs` | Regenerate `lib.rs` with cfg-gated re-exports |
 | `src/repo/cargo_features.rs` | Sync Cargo.toml feature flags for both crates |

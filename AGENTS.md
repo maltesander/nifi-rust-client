@@ -18,7 +18,7 @@ crates/
       emit/               # Code emitters (api, types, tests, dynamic/)
         common.rs         # Shared emit helpers (field_type_to_rust, etc.)
         dynamic/          # Dynamic multi-version emitters
-      docs/               # Documentation generators (README table, API changes)
+      docs/               # Documentation generators (README tables, API changes, resource accessors)
       repo/               # Repo sync (lib.rs, Cargo.toml, cleanup)
       parser.rs           # OpenAPI spec parser
       diff.rs             # Generic OpenAPI spec differ
