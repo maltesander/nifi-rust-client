@@ -76,3 +76,20 @@ fn field_presence_output_is_valid() {
         "should have version feature gates"
     );
 }
+
+#[test]
+fn endpoint_availability_contains_added_endpoints() {
+    let all_specs = load_all_specs();
+    if all_specs.len() < 2 {
+        return;
+    }
+    let diffs = compute_diffs(&all_specs);
+    let output = nifi_openapi_gen::emit_endpoint_availability_tests(&all_specs, &diffs);
+
+    assert!(output.contains("UnsupportedEndpoint"), "should test UnsupportedEndpoint on older versions");
+    assert!(output.contains("cfg(feature"), "should have feature-gated tests");
+    assert!(
+        output.contains("listen_ports") || output.contains("clear_bulletins"),
+        "should reference known added endpoints"
+    );
+}
