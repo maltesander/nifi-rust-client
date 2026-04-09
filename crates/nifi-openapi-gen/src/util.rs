@@ -45,6 +45,7 @@ pub(crate) fn collect_all_tags(
 
 /// For a given tag, collect all endpoints (including sub-group endpoints flattened) across versions.
 /// Returns BTreeMap<fn_name, BTreeMap<version_str, EndpointInfo>>
+#[allow(dead_code)]
 pub(crate) fn collect_tag_endpoints<'a>(
     versions: &[(&'a str, &'a str, &'a str, &'a ApiSpec)],
     tag: &str,
