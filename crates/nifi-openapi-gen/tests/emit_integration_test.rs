@@ -109,3 +109,18 @@ fn query_param_coverage_contains_flow_metrics_strategy() {
     );
     assert!(output.contains("cfg(feature"), "should have feature-gated tests");
 }
+
+#[test]
+fn integration_coverage_content_not_empty() {
+    let all_specs = load_all_specs();
+    if all_specs.len() < 2 {
+        return;
+    }
+    let diffs = compute_diffs(&all_specs);
+    let output = nifi_openapi_gen::docs::integration_coverage::generate_integration_coverage_content(
+        &all_specs, &diffs,
+    );
+
+    assert!(!output.is_empty(), "coverage content should not be empty");
+    assert!(output.contains("NiFi versions"), "should mention NiFi versions in summary");
+}

@@ -348,6 +348,19 @@ fn main() {
                 write_if_changed(&tests_dir.join("dynamic_query_param_coverage.rs"), &param_tests, &mut written);
             }
         }
+
+        // Integration coverage in nifi-openapi-gen README
+        {
+            const START: &str = "<!-- INTEGRATION_COVERAGE_START -->";
+            const END: &str = "<!-- INTEGRATION_COVERAGE_END -->";
+            let content = nifi_openapi_gen::docs::generate_integration_coverage_content(&all_parsed, &diffs);
+            update_file_between_markers(
+                &codegen_dir.join("README.md"),
+                START,
+                END,
+                &content,
+            );
+        }
     }
 
     println!("Done. {} file(s) updated.", written);
