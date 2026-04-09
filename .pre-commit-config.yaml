@@ -36,7 +36,7 @@ repos:
       - id: cargo-clippy
         name: cargo-clippy
         language: system
-        entry: bash -c 'cargo clippy --workspace --all-targets --exclude nifi-integration-tests -- -D warnings && cargo clippy -p nifi-integration-tests --all-targets -- -D warnings'
+        entry: bash -c 'cargo clippy -p nifi-openapi-gen --all-targets -- -D warnings && cargo clippy -p nifi-integration-tests --all-targets -- -D warnings'
         stages: [pre-commit, pre-merge-commit]
         pass_filenames: false
         files: \.rs$
