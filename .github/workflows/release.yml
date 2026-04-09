@@ -41,10 +41,8 @@ jobs:
         run: cargo install cargo-deny --locked
       - run: cargo deny check
 
-      - name: Verify packaging
-        run: |
-          cargo package -p nifi-openapi-gen --allow-dirty
-          cargo package -p nifi-rust-client --allow-dirty --no-verify
+      - name: Verify packaging (nifi-openapi-gen)
+        run: cargo package -p nifi-openapi-gen --allow-dirty
 
   publish:
     name: Publish to crates.io
@@ -72,6 +70,9 @@ jobs:
             fi
             sleep 10
           done
+
+      - name: Verify packaging (nifi-rust-client)
+        run: cargo package -p nifi-rust-client --allow-dirty
 
       - name: Publish nifi-rust-client
         run: cargo publish -p nifi-rust-client
