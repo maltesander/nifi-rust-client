@@ -151,3 +151,18 @@ pub async fn stop_processor(client: &NifiClient, proc_id: &str, version: i64) ->
         .and_then(|r| r.version)
         .expect("stopped entity has no revision version")
 }
+
+#[cfg(feature = "dynamic")]
+pub async fn dynamic_logged_in_client() -> nifi_rust_client::dynamic::DynamicClient {
+    let client = NifiClientBuilder::new(&nifi_url())
+        .expect("failed to parse NiFi URL")
+        .danger_accept_invalid_certs(true)
+        .build_dynamic()
+        .await
+        .expect("failed to build dynamic client");
+    client
+        .login(&nifi_username(), &nifi_password())
+        .await
+        .expect("failed to log in");
+    client
+}

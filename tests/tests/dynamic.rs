@@ -1,35 +1,12 @@
 #![cfg(feature = "dynamic")]
 
-use nifi_rust_client::NifiClientBuilder;
+mod helpers;
+
 use nifi_rust_client::dynamic::traits::{
     FlowApi, ProcessGroupsApi, ResourcesApi, SystemDiagnosticsApi,
 };
 
-fn nifi_url() -> String {
-    std::env::var("NIFI_URL").unwrap_or_else(|_| "https://localhost:8443".to_string())
-}
-
-fn nifi_username() -> String {
-    std::env::var("NIFI_USERNAME").unwrap_or_else(|_| "admin".to_string())
-}
-
-fn nifi_password() -> String {
-    std::env::var("NIFI_PASSWORD").unwrap_or_else(|_| "adminpassword123".to_string())
-}
-
-async fn dynamic_logged_in_client() -> nifi_rust_client::dynamic::DynamicClient {
-    let client = NifiClientBuilder::new(&nifi_url())
-        .expect("failed to parse NiFi URL")
-        .danger_accept_invalid_certs(true)
-        .build_dynamic()
-        .await
-        .expect("failed to build dynamic client");
-    client
-        .login(&nifi_username(), &nifi_password())
-        .await
-        .expect("failed to log in");
-    client
-}
+use helpers::dynamic_logged_in_client;
 
 #[tokio::test]
 #[ignore = "requires a running NiFi instance (use tests/run.sh)"]
