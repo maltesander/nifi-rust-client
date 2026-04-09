@@ -63,25 +63,29 @@ impl ProvenanceApi for V2_7_2ProvenanceApi<'_> {
     }
     async fn submit_lineage_request(
         &self,
-        body: types::LineageEntity,
+        body: &types::LineageEntity,
     ) -> Result<types::LineageDto, NifiError> {
         let api = crate::v2_7_2::api::provenance::ProvenanceApi {
             client: self.client,
         };
         Ok(api
-            .submit_lineage_request(&crate::v2_7_2::types::LineageEntity::try_from(body)?)
+            .submit_lineage_request(&crate::v2_7_2::types::LineageEntity::try_from(
+                body.clone(),
+            )?)
             .await?
             .into())
     }
     async fn submit_provenance_request(
         &self,
-        body: types::ProvenanceEntity,
+        body: &types::ProvenanceEntity,
     ) -> Result<types::ProvenanceDto, NifiError> {
         let api = crate::v2_7_2::api::provenance::ProvenanceApi {
             client: self.client,
         };
         Ok(api
-            .submit_provenance_request(&crate::v2_7_2::types::ProvenanceEntity::try_from(body)?)
+            .submit_provenance_request(&crate::v2_7_2::types::ProvenanceEntity::try_from(
+                body.clone(),
+            )?)
             .await?
             .into())
     }

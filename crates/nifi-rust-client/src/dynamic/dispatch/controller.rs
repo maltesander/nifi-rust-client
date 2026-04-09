@@ -3,6 +3,13 @@
 #[allow(unused_imports)]
 use crate::NifiError;
 use crate::dynamic::traits::ControllerApi;
+use crate::dynamic::traits::ControllerBulletinsApi;
+use crate::dynamic::traits::ControllerConfigApi;
+use crate::dynamic::traits::ControllerContentApi;
+use crate::dynamic::traits::ControllerDescriptorsApi;
+use crate::dynamic::traits::ControllerDetailsApi;
+use crate::dynamic::traits::ControllerRunStatusApi;
+use crate::dynamic::traits::ControllerStateApi;
 #[allow(unused_imports)]
 use crate::dynamic::types;
 /// Dynamic dispatch enum for the Controller API. Use via the [`ControllerApi`] trait.
@@ -13,85 +20,103 @@ pub enum ControllerApiDispatch<'a> {
     V2_7_2(super::super::impls::v2_7_2::V2_7_2ControllerApi<'a>),
     V2_8_0(super::super::impls::v2_8_0::V2_8_0ControllerApi<'a>),
 }
+impl<'a> ControllerApiDispatch<'a> {
+    fn client(&self) -> &'a crate::NifiClient {
+        match self {
+            Self::V2_6_0(api) => api.client,
+            Self::V2_7_2(api) => api.client,
+            Self::V2_8_0(api) => api.client,
+        }
+    }
+    fn version(&self) -> crate::dynamic::DetectedVersion {
+        match self {
+            Self::V2_6_0(_) => crate::dynamic::DetectedVersion::V2_6_0,
+            Self::V2_7_2(_) => crate::dynamic::DetectedVersion::V2_7_2,
+            Self::V2_8_0(_) => crate::dynamic::DetectedVersion::V2_8_0,
+        }
+    }
+}
 impl ControllerApi for ControllerApiDispatch<'_> {
-    async fn analyze_flow_analysis_rule_configuration(
-        &self,
-        id: &str,
-        body: types::ConfigurationAnalysisEntity,
-    ) -> Result<types::ConfigurationAnalysisDto, NifiError> {
-        match self {
-            Self::V2_6_0(api) => api.analyze_flow_analysis_rule_configuration(id, body).await,
-            Self::V2_7_2(api) => api.analyze_flow_analysis_rule_configuration(id, body).await,
-            Self::V2_8_0(api) => api.analyze_flow_analysis_rule_configuration(id, body).await,
+    type ControllerBulletinsApi<'b>
+        = ControllerBulletinsApiDispatch<'b>
+    where
+        Self: 'b;
+    fn bulletins<'b>(&'b self, id: &'b str) -> Self::ControllerBulletinsApi<'b> {
+        ControllerBulletinsApiDispatch {
+            client: self.client(),
+            id: id.to_string(),
+            version: self.version(),
         }
     }
-    async fn analyze_flow_registry_client_configuration(
-        &self,
-        id: &str,
-        body: types::ConfigurationAnalysisEntity,
-    ) -> Result<types::ConfigurationAnalysisDto, NifiError> {
-        match self {
-            Self::V2_6_0(api) => {
-                api.analyze_flow_registry_client_configuration(id, body)
-                    .await
-            }
-            Self::V2_7_2(api) => {
-                api.analyze_flow_registry_client_configuration(id, body)
-                    .await
-            }
-            Self::V2_8_0(api) => {
-                api.analyze_flow_registry_client_configuration(id, body)
-                    .await
-            }
+    type ControllerConfigApi<'b>
+        = ControllerConfigApiDispatch<'b>
+    where
+        Self: 'b;
+    fn config<'b>(&'b self, id: &'b str) -> Self::ControllerConfigApi<'b> {
+        ControllerConfigApiDispatch {
+            client: self.client(),
+            id: id.to_string(),
+            version: self.version(),
         }
     }
-    async fn clear_flow_analysis_rule_bulletins(
-        &self,
-        id: &str,
-        body: types::ClearBulletinsRequestEntity,
-    ) -> Result<types::ClearBulletinsResultEntity, NifiError> {
-        match self {
-            Self::V2_6_0(api) => api.clear_flow_analysis_rule_bulletins(id, body).await,
-            Self::V2_7_2(api) => api.clear_flow_analysis_rule_bulletins(id, body).await,
-            Self::V2_8_0(api) => api.clear_flow_analysis_rule_bulletins(id, body).await,
+    type ControllerContentApi<'b>
+        = ControllerContentApiDispatch<'b>
+    where
+        Self: 'b;
+    fn content<'b>(&'b self, id: &'b str) -> Self::ControllerContentApi<'b> {
+        ControllerContentApiDispatch {
+            client: self.client(),
+            id: id.to_string(),
+            version: self.version(),
         }
     }
-    async fn clear_parameter_provider_bulletins(
-        &self,
-        id: &str,
-        body: types::ClearBulletinsRequestEntity,
-    ) -> Result<types::ClearBulletinsResultEntity, NifiError> {
-        match self {
-            Self::V2_6_0(api) => api.clear_parameter_provider_bulletins(id, body).await,
-            Self::V2_7_2(api) => api.clear_parameter_provider_bulletins(id, body).await,
-            Self::V2_8_0(api) => api.clear_parameter_provider_bulletins(id, body).await,
+    type ControllerDescriptorsApi<'b>
+        = ControllerDescriptorsApiDispatch<'b>
+    where
+        Self: 'b;
+    fn descriptors<'b>(&'b self, id: &'b str) -> Self::ControllerDescriptorsApi<'b> {
+        ControllerDescriptorsApiDispatch {
+            client: self.client(),
+            id: id.to_string(),
+            version: self.version(),
         }
     }
-    async fn clear_registry_client_bulletins(
-        &self,
-        id: &str,
-        body: types::ClearBulletinsRequestEntity,
-    ) -> Result<types::ClearBulletinsResultEntity, NifiError> {
-        match self {
-            Self::V2_6_0(api) => api.clear_registry_client_bulletins(id, body).await,
-            Self::V2_7_2(api) => api.clear_registry_client_bulletins(id, body).await,
-            Self::V2_8_0(api) => api.clear_registry_client_bulletins(id, body).await,
+    type ControllerDetailsApi<'b>
+        = ControllerDetailsApiDispatch<'b>
+    where
+        Self: 'b;
+    fn details<'b>(&'b self, id: &'b str) -> Self::ControllerDetailsApi<'b> {
+        ControllerDetailsApiDispatch {
+            client: self.client(),
+            id: id.to_string(),
+            version: self.version(),
         }
     }
-    async fn clear_state(
-        &self,
-        id: &str,
-        body: types::ComponentStateEntity,
-    ) -> Result<types::ComponentStateDto, NifiError> {
-        match self {
-            Self::V2_6_0(api) => api.clear_state(id, body).await,
-            Self::V2_7_2(api) => api.clear_state(id, body).await,
-            Self::V2_8_0(api) => api.clear_state(id, body).await,
+    type ControllerRunStatusApi<'b>
+        = ControllerRunStatusApiDispatch<'b>
+    where
+        Self: 'b;
+    fn run_status<'b>(&'b self, id: &'b str) -> Self::ControllerRunStatusApi<'b> {
+        ControllerRunStatusApiDispatch {
+            client: self.client(),
+            id: id.to_string(),
+            version: self.version(),
+        }
+    }
+    type ControllerStateApi<'b>
+        = ControllerStateApiDispatch<'b>
+    where
+        Self: 'b;
+    fn state<'b>(&'b self, id: &'b str) -> Self::ControllerStateApi<'b> {
+        ControllerStateApiDispatch {
+            client: self.client(),
+            id: id.to_string(),
+            version: self.version(),
         }
     }
     async fn create_bulletin(
         &self,
-        body: types::BulletinEntity,
+        body: &types::BulletinEntity,
     ) -> Result<types::BulletinEntity, NifiError> {
         match self {
             Self::V2_6_0(api) => api.create_bulletin(body).await,
@@ -101,7 +126,7 @@ impl ControllerApi for ControllerApiDispatch<'_> {
     }
     async fn create_controller_service(
         &self,
-        body: types::ControllerServiceEntity,
+        body: &types::ControllerServiceEntity,
     ) -> Result<types::ControllerServiceEntity, NifiError> {
         match self {
             Self::V2_6_0(api) => api.create_controller_service(body).await,
@@ -111,7 +136,7 @@ impl ControllerApi for ControllerApiDispatch<'_> {
     }
     async fn create_flow_analysis_rule(
         &self,
-        body: types::FlowAnalysisRuleEntity,
+        body: &types::FlowAnalysisRuleEntity,
     ) -> Result<types::FlowAnalysisRuleEntity, NifiError> {
         match self {
             Self::V2_6_0(api) => api.create_flow_analysis_rule(body).await,
@@ -121,7 +146,7 @@ impl ControllerApi for ControllerApiDispatch<'_> {
     }
     async fn create_flow_registry_client(
         &self,
-        body: types::FlowRegistryClientEntity,
+        body: &types::FlowRegistryClientEntity,
     ) -> Result<types::FlowRegistryClientEntity, NifiError> {
         match self {
             Self::V2_6_0(api) => api.create_flow_registry_client(body).await,
@@ -131,7 +156,7 @@ impl ControllerApi for ControllerApiDispatch<'_> {
     }
     async fn create_parameter_provider(
         &self,
-        body: types::ParameterProviderEntity,
+        body: &types::ParameterProviderEntity,
     ) -> Result<types::ParameterProviderEntity, NifiError> {
         match self {
             Self::V2_6_0(api) => api.create_parameter_provider(body).await,
@@ -141,32 +166,12 @@ impl ControllerApi for ControllerApiDispatch<'_> {
     }
     async fn create_reporting_task(
         &self,
-        body: types::ReportingTaskEntity,
+        body: &types::ReportingTaskEntity,
     ) -> Result<types::ReportingTaskEntity, NifiError> {
         match self {
             Self::V2_6_0(api) => api.create_reporting_task(body).await,
             Self::V2_7_2(api) => api.create_reporting_task(body).await,
             Self::V2_8_0(api) => api.create_reporting_task(body).await,
-        }
-    }
-    async fn delete_flow_analysis_rule_verification_request(
-        &self,
-        id: &str,
-        request_id: &str,
-    ) -> Result<types::VerifyConfigRequestDto, NifiError> {
-        match self {
-            Self::V2_6_0(api) => {
-                api.delete_flow_analysis_rule_verification_request(id, request_id)
-                    .await
-            }
-            Self::V2_7_2(api) => {
-                api.delete_flow_analysis_rule_verification_request(id, request_id)
-                    .await
-            }
-            Self::V2_8_0(api) => {
-                api.delete_flow_analysis_rule_verification_request(id, request_id)
-                    .await
-            }
         }
     }
     async fn delete_flow_registry_client(
@@ -241,33 +246,6 @@ impl ControllerApi for ControllerApiDispatch<'_> {
             Self::V2_8_0(api) => api.delete_node(id).await,
         }
     }
-    async fn delete_registry_client_verification_request(
-        &self,
-        id: &str,
-        request_id: &str,
-    ) -> Result<types::VerifyConfigRequestDto, NifiError> {
-        match self {
-            Self::V2_6_0(api) => {
-                api.delete_registry_client_verification_request(id, request_id)
-                    .await
-            }
-            Self::V2_7_2(api) => {
-                api.delete_registry_client_verification_request(id, request_id)
-                    .await
-            }
-            Self::V2_8_0(api) => {
-                api.delete_registry_client_verification_request(id, request_id)
-                    .await
-            }
-        }
-    }
-    async fn download_nar(&self, id: &str) -> Result<(), NifiError> {
-        match self {
-            Self::V2_6_0(api) => api.download_nar(id).await,
-            Self::V2_7_2(api) => api.download_nar(id).await,
-            Self::V2_8_0(api) => api.download_nar(id).await,
-        }
-    }
     async fn get_cluster(&self) -> Result<types::ClusterDto, NifiError> {
         match self {
             Self::V2_6_0(api) => api.get_cluster().await,
@@ -294,57 +272,6 @@ impl ControllerApi for ControllerApiDispatch<'_> {
             Self::V2_8_0(api) => api.get_flow_analysis_rule(id).await,
         }
     }
-    async fn get_flow_analysis_rule_property_descriptor(
-        &self,
-        id: &str,
-        property_name: &str,
-        sensitive: Option<bool>,
-    ) -> Result<types::PropertyDescriptorDto, NifiError> {
-        match self {
-            Self::V2_6_0(api) => {
-                api.get_flow_analysis_rule_property_descriptor(id, property_name, sensitive)
-                    .await
-            }
-            Self::V2_7_2(api) => {
-                api.get_flow_analysis_rule_property_descriptor(id, property_name, sensitive)
-                    .await
-            }
-            Self::V2_8_0(api) => {
-                api.get_flow_analysis_rule_property_descriptor(id, property_name, sensitive)
-                    .await
-            }
-        }
-    }
-    async fn get_flow_analysis_rule_state(
-        &self,
-        id: &str,
-    ) -> Result<types::ComponentStateDto, NifiError> {
-        match self {
-            Self::V2_6_0(api) => api.get_flow_analysis_rule_state(id).await,
-            Self::V2_7_2(api) => api.get_flow_analysis_rule_state(id).await,
-            Self::V2_8_0(api) => api.get_flow_analysis_rule_state(id).await,
-        }
-    }
-    async fn get_flow_analysis_rule_verification_request(
-        &self,
-        id: &str,
-        request_id: &str,
-    ) -> Result<types::VerifyConfigRequestDto, NifiError> {
-        match self {
-            Self::V2_6_0(api) => {
-                api.get_flow_analysis_rule_verification_request(id, request_id)
-                    .await
-            }
-            Self::V2_7_2(api) => {
-                api.get_flow_analysis_rule_verification_request(id, request_id)
-                    .await
-            }
-            Self::V2_8_0(api) => {
-                api.get_flow_analysis_rule_verification_request(id, request_id)
-                    .await
-            }
-        }
-    }
     async fn get_flow_analysis_rules(&self) -> Result<types::FlowAnalysisRulesEntity, NifiError> {
         match self {
             Self::V2_6_0(api) => api.get_flow_analysis_rules().await,
@@ -369,13 +296,6 @@ impl ControllerApi for ControllerApiDispatch<'_> {
             Self::V2_6_0(api) => api.get_flow_registry_clients().await,
             Self::V2_7_2(api) => api.get_flow_registry_clients().await,
             Self::V2_8_0(api) => api.get_flow_registry_clients().await,
-        }
-    }
-    async fn get_nar_details(&self, id: &str) -> Result<types::NarDetailsEntity, NifiError> {
-        match self {
-            Self::V2_6_0(api) => api.get_nar_details(id).await,
-            Self::V2_7_2(api) => api.get_nar_details(id).await,
-            Self::V2_8_0(api) => api.get_nar_details(id).await,
         }
     }
     async fn get_nar_summaries(&self) -> Result<types::NarSummariesEntity, NifiError> {
@@ -406,27 +326,6 @@ impl ControllerApi for ControllerApiDispatch<'_> {
             Self::V2_8_0(api) => api.get_node_status_history().await,
         }
     }
-    async fn get_property_descriptor(
-        &self,
-        id: &str,
-        property_name: &str,
-        sensitive: Option<bool>,
-    ) -> Result<types::PropertyDescriptorDto, NifiError> {
-        match self {
-            Self::V2_6_0(api) => {
-                api.get_property_descriptor(id, property_name, sensitive)
-                    .await
-            }
-            Self::V2_7_2(api) => {
-                api.get_property_descriptor(id, property_name, sensitive)
-                    .await
-            }
-            Self::V2_8_0(api) => {
-                api.get_property_descriptor(id, property_name, sensitive)
-                    .await
-            }
-        }
-    }
     async fn get_registry_client_types(
         &self,
     ) -> Result<types::FlowRegistryClientTypesEntity, NifiError> {
@@ -436,29 +335,9 @@ impl ControllerApi for ControllerApiDispatch<'_> {
             Self::V2_8_0(api) => api.get_registry_client_types().await,
         }
     }
-    async fn get_registry_client_verification_request(
-        &self,
-        id: &str,
-        request_id: &str,
-    ) -> Result<types::VerifyConfigRequestDto, NifiError> {
-        match self {
-            Self::V2_6_0(api) => {
-                api.get_registry_client_verification_request(id, request_id)
-                    .await
-            }
-            Self::V2_7_2(api) => {
-                api.get_registry_client_verification_request(id, request_id)
-                    .await
-            }
-            Self::V2_8_0(api) => {
-                api.get_registry_client_verification_request(id, request_id)
-                    .await
-            }
-        }
-    }
     async fn import_reporting_task_snapshot(
         &self,
-        body: types::VersionedReportingTaskImportRequestEntity,
+        body: &types::VersionedReportingTaskImportRequestEntity,
     ) -> Result<types::VersionedReportingTaskImportResponseEntity, NifiError> {
         match self {
             Self::V2_6_0(api) => api.import_reporting_task_snapshot(body).await,
@@ -503,49 +382,9 @@ impl ControllerApi for ControllerApiDispatch<'_> {
             }
         }
     }
-    async fn submit_flow_analysis_rule_config_verification_request(
-        &self,
-        id: &str,
-        body: types::VerifyConfigRequestEntity,
-    ) -> Result<types::VerifyConfigRequestDto, NifiError> {
-        match self {
-            Self::V2_6_0(api) => {
-                api.submit_flow_analysis_rule_config_verification_request(id, body)
-                    .await
-            }
-            Self::V2_7_2(api) => {
-                api.submit_flow_analysis_rule_config_verification_request(id, body)
-                    .await
-            }
-            Self::V2_8_0(api) => {
-                api.submit_flow_analysis_rule_config_verification_request(id, body)
-                    .await
-            }
-        }
-    }
-    async fn submit_registry_client_config_verification_request(
-        &self,
-        id: &str,
-        body: types::VerifyConfigRequestEntity,
-    ) -> Result<types::VerifyConfigRequestDto, NifiError> {
-        match self {
-            Self::V2_6_0(api) => {
-                api.submit_registry_client_config_verification_request(id, body)
-                    .await
-            }
-            Self::V2_7_2(api) => {
-                api.submit_registry_client_config_verification_request(id, body)
-                    .await
-            }
-            Self::V2_8_0(api) => {
-                api.submit_registry_client_config_verification_request(id, body)
-                    .await
-            }
-        }
-    }
     async fn update_controller_config(
         &self,
-        body: types::ControllerConfigurationEntity,
+        body: &types::ControllerConfigurationEntity,
     ) -> Result<types::ControllerConfigurationEntity, NifiError> {
         match self {
             Self::V2_6_0(api) => api.update_controller_config(body).await,
@@ -556,7 +395,7 @@ impl ControllerApi for ControllerApiDispatch<'_> {
     async fn update_flow_analysis_rule(
         &self,
         id: &str,
-        body: types::FlowAnalysisRuleEntity,
+        body: &types::FlowAnalysisRuleEntity,
     ) -> Result<types::FlowAnalysisRuleEntity, NifiError> {
         match self {
             Self::V2_6_0(api) => api.update_flow_analysis_rule(id, body).await,
@@ -567,7 +406,7 @@ impl ControllerApi for ControllerApiDispatch<'_> {
     async fn update_flow_registry_client(
         &self,
         id: &str,
-        body: types::FlowRegistryClientEntity,
+        body: &types::FlowRegistryClientEntity,
     ) -> Result<types::FlowRegistryClientEntity, NifiError> {
         match self {
             Self::V2_6_0(api) => api.update_flow_registry_client(id, body).await,
@@ -578,23 +417,12 @@ impl ControllerApi for ControllerApiDispatch<'_> {
     async fn update_node(
         &self,
         id: &str,
-        body: types::NodeEntity,
+        body: &types::NodeEntity,
     ) -> Result<types::NodeDto, NifiError> {
         match self {
             Self::V2_6_0(api) => api.update_node(id, body).await,
             Self::V2_7_2(api) => api.update_node(id, body).await,
             Self::V2_8_0(api) => api.update_node(id, body).await,
-        }
-    }
-    async fn update_run_status(
-        &self,
-        id: &str,
-        body: types::FlowAnalysisRuleRunStatusEntity,
-    ) -> Result<types::FlowAnalysisRuleEntity, NifiError> {
-        match self {
-            Self::V2_6_0(api) => api.update_run_status(id, body).await,
-            Self::V2_7_2(api) => api.update_run_status(id, body).await,
-            Self::V2_8_0(api) => api.update_run_status(id, body).await,
         }
     }
     async fn upload_nar(
@@ -606,6 +434,774 @@ impl ControllerApi for ControllerApiDispatch<'_> {
             Self::V2_6_0(api) => api.upload_nar(filename, data).await,
             Self::V2_7_2(api) => api.upload_nar(filename, data).await,
             Self::V2_8_0(api) => api.upload_nar(filename, data).await,
+        }
+    }
+}
+/// Sub-resource dispatch struct for [ControllerBulletinsApi].
+pub struct ControllerBulletinsApiDispatch<'a> {
+    pub(crate) client: &'a crate::NifiClient,
+    pub(crate) id: String,
+    pub(crate) version: crate::dynamic::DetectedVersion,
+}
+impl ControllerBulletinsApi for ControllerBulletinsApiDispatch<'_> {
+    async fn clear_flow_analysis_rule_bulletins(
+        &self,
+        body: &types::ClearBulletinsRequestEntity,
+    ) -> Result<types::ClearBulletinsResultEntity, NifiError> {
+        match self.version {
+            crate::dynamic::DetectedVersion::V2_6_0 => Err(NifiError::UnsupportedEndpoint {
+                endpoint: "clear_flow_analysis_rule_bulletins".to_string(),
+                version: "2.6.0".to_string(),
+            }),
+            crate::dynamic::DetectedVersion::V2_7_2 => {
+                let api = crate::v2_7_2::api::controller::ControllerBulletinsApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api
+                    .clear_flow_analysis_rule_bulletins(
+                        &crate::v2_7_2::types::ClearBulletinsRequestEntity::try_from(body.clone())?,
+                    )
+                    .await?
+                    .into())
+            }
+            crate::dynamic::DetectedVersion::V2_8_0 => {
+                let api = crate::v2_8_0::api::controller::ControllerBulletinsApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api
+                    .clear_flow_analysis_rule_bulletins(
+                        &crate::v2_8_0::types::ClearBulletinsRequestEntity::try_from(body.clone())?,
+                    )
+                    .await?
+                    .into())
+            }
+            _ => Err(NifiError::UnsupportedEndpoint {
+                endpoint: "clear_flow_analysis_rule_bulletins".to_string(),
+                version: "unknown".to_string(),
+            }),
+        }
+    }
+    async fn clear_parameter_provider_bulletins(
+        &self,
+        body: &types::ClearBulletinsRequestEntity,
+    ) -> Result<types::ClearBulletinsResultEntity, NifiError> {
+        match self.version {
+            crate::dynamic::DetectedVersion::V2_6_0 => Err(NifiError::UnsupportedEndpoint {
+                endpoint: "clear_parameter_provider_bulletins".to_string(),
+                version: "2.6.0".to_string(),
+            }),
+            crate::dynamic::DetectedVersion::V2_7_2 => {
+                let api = crate::v2_7_2::api::controller::ControllerBulletinsApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api
+                    .clear_parameter_provider_bulletins(
+                        &crate::v2_7_2::types::ClearBulletinsRequestEntity::try_from(body.clone())?,
+                    )
+                    .await?
+                    .into())
+            }
+            crate::dynamic::DetectedVersion::V2_8_0 => {
+                let api = crate::v2_8_0::api::controller::ControllerBulletinsApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api
+                    .clear_parameter_provider_bulletins(
+                        &crate::v2_8_0::types::ClearBulletinsRequestEntity::try_from(body.clone())?,
+                    )
+                    .await?
+                    .into())
+            }
+            _ => Err(NifiError::UnsupportedEndpoint {
+                endpoint: "clear_parameter_provider_bulletins".to_string(),
+                version: "unknown".to_string(),
+            }),
+        }
+    }
+    async fn clear_registry_client_bulletins(
+        &self,
+        body: &types::ClearBulletinsRequestEntity,
+    ) -> Result<types::ClearBulletinsResultEntity, NifiError> {
+        match self.version {
+            crate::dynamic::DetectedVersion::V2_6_0 => Err(NifiError::UnsupportedEndpoint {
+                endpoint: "clear_registry_client_bulletins".to_string(),
+                version: "2.6.0".to_string(),
+            }),
+            crate::dynamic::DetectedVersion::V2_7_2 => {
+                let api = crate::v2_7_2::api::controller::ControllerBulletinsApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api
+                    .clear_registry_client_bulletins(
+                        &crate::v2_7_2::types::ClearBulletinsRequestEntity::try_from(body.clone())?,
+                    )
+                    .await?
+                    .into())
+            }
+            crate::dynamic::DetectedVersion::V2_8_0 => {
+                let api = crate::v2_8_0::api::controller::ControllerBulletinsApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api
+                    .clear_registry_client_bulletins(
+                        &crate::v2_8_0::types::ClearBulletinsRequestEntity::try_from(body.clone())?,
+                    )
+                    .await?
+                    .into())
+            }
+            _ => Err(NifiError::UnsupportedEndpoint {
+                endpoint: "clear_registry_client_bulletins".to_string(),
+                version: "unknown".to_string(),
+            }),
+        }
+    }
+}
+/// Sub-resource dispatch struct for [ControllerConfigApi].
+pub struct ControllerConfigApiDispatch<'a> {
+    pub(crate) client: &'a crate::NifiClient,
+    pub(crate) id: String,
+    pub(crate) version: crate::dynamic::DetectedVersion,
+}
+impl ControllerConfigApi for ControllerConfigApiDispatch<'_> {
+    async fn analyze_flow_analysis_rule_configuration(
+        &self,
+        body: &types::ConfigurationAnalysisEntity,
+    ) -> Result<types::ConfigurationAnalysisDto, NifiError> {
+        match self.version {
+            crate::dynamic::DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::controller::ControllerConfigApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api
+                    .analyze_flow_analysis_rule_configuration(
+                        &crate::v2_6_0::types::ConfigurationAnalysisEntity::try_from(body.clone())?,
+                    )
+                    .await?
+                    .into())
+            }
+            crate::dynamic::DetectedVersion::V2_7_2 => {
+                let api = crate::v2_7_2::api::controller::ControllerConfigApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api
+                    .analyze_flow_analysis_rule_configuration(
+                        &crate::v2_7_2::types::ConfigurationAnalysisEntity::try_from(body.clone())?,
+                    )
+                    .await?
+                    .into())
+            }
+            crate::dynamic::DetectedVersion::V2_8_0 => {
+                let api = crate::v2_8_0::api::controller::ControllerConfigApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api
+                    .analyze_flow_analysis_rule_configuration(
+                        &crate::v2_8_0::types::ConfigurationAnalysisEntity::try_from(body.clone())?,
+                    )
+                    .await?
+                    .into())
+            }
+            _ => Err(NifiError::UnsupportedEndpoint {
+                endpoint: "analyze_flow_analysis_rule_configuration".to_string(),
+                version: "unknown".to_string(),
+            }),
+        }
+    }
+    async fn analyze_flow_registry_client_configuration(
+        &self,
+        body: &types::ConfigurationAnalysisEntity,
+    ) -> Result<types::ConfigurationAnalysisDto, NifiError> {
+        match self.version {
+            crate::dynamic::DetectedVersion::V2_6_0 => Err(NifiError::UnsupportedEndpoint {
+                endpoint: "analyze_flow_registry_client_configuration".to_string(),
+                version: "2.6.0".to_string(),
+            }),
+            crate::dynamic::DetectedVersion::V2_7_2 => {
+                let api = crate::v2_7_2::api::controller::ControllerConfigApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api
+                    .analyze_flow_registry_client_configuration(
+                        &crate::v2_7_2::types::ConfigurationAnalysisEntity::try_from(body.clone())?,
+                    )
+                    .await?
+                    .into())
+            }
+            crate::dynamic::DetectedVersion::V2_8_0 => {
+                let api = crate::v2_8_0::api::controller::ControllerConfigApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api
+                    .analyze_flow_registry_client_configuration(
+                        &crate::v2_8_0::types::ConfigurationAnalysisEntity::try_from(body.clone())?,
+                    )
+                    .await?
+                    .into())
+            }
+            _ => Err(NifiError::UnsupportedEndpoint {
+                endpoint: "analyze_flow_registry_client_configuration".to_string(),
+                version: "unknown".to_string(),
+            }),
+        }
+    }
+    async fn delete_flow_analysis_rule_verification_request(
+        &self,
+        request_id: &str,
+    ) -> Result<types::VerifyConfigRequestDto, NifiError> {
+        match self.version {
+            crate::dynamic::DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::controller::ControllerConfigApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api
+                    .delete_flow_analysis_rule_verification_request(request_id)
+                    .await?
+                    .into())
+            }
+            crate::dynamic::DetectedVersion::V2_7_2 => {
+                let api = crate::v2_7_2::api::controller::ControllerConfigApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api
+                    .delete_flow_analysis_rule_verification_request(request_id)
+                    .await?
+                    .into())
+            }
+            crate::dynamic::DetectedVersion::V2_8_0 => {
+                let api = crate::v2_8_0::api::controller::ControllerConfigApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api
+                    .delete_flow_analysis_rule_verification_request(request_id)
+                    .await?
+                    .into())
+            }
+            _ => Err(NifiError::UnsupportedEndpoint {
+                endpoint: "delete_flow_analysis_rule_verification_request".to_string(),
+                version: "unknown".to_string(),
+            }),
+        }
+    }
+    async fn delete_registry_client_verification_request(
+        &self,
+        request_id: &str,
+    ) -> Result<types::VerifyConfigRequestDto, NifiError> {
+        match self.version {
+            crate::dynamic::DetectedVersion::V2_6_0 => Err(NifiError::UnsupportedEndpoint {
+                endpoint: "delete_registry_client_verification_request".to_string(),
+                version: "2.6.0".to_string(),
+            }),
+            crate::dynamic::DetectedVersion::V2_7_2 => {
+                let api = crate::v2_7_2::api::controller::ControllerConfigApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api
+                    .delete_registry_client_verification_request(request_id)
+                    .await?
+                    .into())
+            }
+            crate::dynamic::DetectedVersion::V2_8_0 => {
+                let api = crate::v2_8_0::api::controller::ControllerConfigApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api
+                    .delete_registry_client_verification_request(request_id)
+                    .await?
+                    .into())
+            }
+            _ => Err(NifiError::UnsupportedEndpoint {
+                endpoint: "delete_registry_client_verification_request".to_string(),
+                version: "unknown".to_string(),
+            }),
+        }
+    }
+    async fn get_flow_analysis_rule_verification_request(
+        &self,
+        request_id: &str,
+    ) -> Result<types::VerifyConfigRequestDto, NifiError> {
+        match self.version {
+            crate::dynamic::DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::controller::ControllerConfigApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api
+                    .get_flow_analysis_rule_verification_request(request_id)
+                    .await?
+                    .into())
+            }
+            crate::dynamic::DetectedVersion::V2_7_2 => {
+                let api = crate::v2_7_2::api::controller::ControllerConfigApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api
+                    .get_flow_analysis_rule_verification_request(request_id)
+                    .await?
+                    .into())
+            }
+            crate::dynamic::DetectedVersion::V2_8_0 => {
+                let api = crate::v2_8_0::api::controller::ControllerConfigApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api
+                    .get_flow_analysis_rule_verification_request(request_id)
+                    .await?
+                    .into())
+            }
+            _ => Err(NifiError::UnsupportedEndpoint {
+                endpoint: "get_flow_analysis_rule_verification_request".to_string(),
+                version: "unknown".to_string(),
+            }),
+        }
+    }
+    async fn get_registry_client_verification_request(
+        &self,
+        request_id: &str,
+    ) -> Result<types::VerifyConfigRequestDto, NifiError> {
+        match self.version {
+            crate::dynamic::DetectedVersion::V2_6_0 => Err(NifiError::UnsupportedEndpoint {
+                endpoint: "get_registry_client_verification_request".to_string(),
+                version: "2.6.0".to_string(),
+            }),
+            crate::dynamic::DetectedVersion::V2_7_2 => {
+                let api = crate::v2_7_2::api::controller::ControllerConfigApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api
+                    .get_registry_client_verification_request(request_id)
+                    .await?
+                    .into())
+            }
+            crate::dynamic::DetectedVersion::V2_8_0 => {
+                let api = crate::v2_8_0::api::controller::ControllerConfigApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api
+                    .get_registry_client_verification_request(request_id)
+                    .await?
+                    .into())
+            }
+            _ => Err(NifiError::UnsupportedEndpoint {
+                endpoint: "get_registry_client_verification_request".to_string(),
+                version: "unknown".to_string(),
+            }),
+        }
+    }
+    async fn submit_flow_analysis_rule_config_verification_request(
+        &self,
+        body: &types::VerifyConfigRequestEntity,
+    ) -> Result<types::VerifyConfigRequestDto, NifiError> {
+        match self.version {
+            crate::dynamic::DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::controller::ControllerConfigApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api
+                    .submit_flow_analysis_rule_config_verification_request(
+                        &crate::v2_6_0::types::VerifyConfigRequestEntity::try_from(body.clone())?,
+                    )
+                    .await?
+                    .into())
+            }
+            crate::dynamic::DetectedVersion::V2_7_2 => {
+                let api = crate::v2_7_2::api::controller::ControllerConfigApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api
+                    .submit_flow_analysis_rule_config_verification_request(
+                        &crate::v2_7_2::types::VerifyConfigRequestEntity::try_from(body.clone())?,
+                    )
+                    .await?
+                    .into())
+            }
+            crate::dynamic::DetectedVersion::V2_8_0 => {
+                let api = crate::v2_8_0::api::controller::ControllerConfigApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api
+                    .submit_flow_analysis_rule_config_verification_request(
+                        &crate::v2_8_0::types::VerifyConfigRequestEntity::try_from(body.clone())?,
+                    )
+                    .await?
+                    .into())
+            }
+            _ => Err(NifiError::UnsupportedEndpoint {
+                endpoint: "submit_flow_analysis_rule_config_verification_request".to_string(),
+                version: "unknown".to_string(),
+            }),
+        }
+    }
+    async fn submit_registry_client_config_verification_request(
+        &self,
+        body: &types::VerifyConfigRequestEntity,
+    ) -> Result<types::VerifyConfigRequestDto, NifiError> {
+        match self.version {
+            crate::dynamic::DetectedVersion::V2_6_0 => Err(NifiError::UnsupportedEndpoint {
+                endpoint: "submit_registry_client_config_verification_request".to_string(),
+                version: "2.6.0".to_string(),
+            }),
+            crate::dynamic::DetectedVersion::V2_7_2 => {
+                let api = crate::v2_7_2::api::controller::ControllerConfigApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api
+                    .submit_registry_client_config_verification_request(
+                        &crate::v2_7_2::types::VerifyConfigRequestEntity::try_from(body.clone())?,
+                    )
+                    .await?
+                    .into())
+            }
+            crate::dynamic::DetectedVersion::V2_8_0 => {
+                let api = crate::v2_8_0::api::controller::ControllerConfigApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api
+                    .submit_registry_client_config_verification_request(
+                        &crate::v2_8_0::types::VerifyConfigRequestEntity::try_from(body.clone())?,
+                    )
+                    .await?
+                    .into())
+            }
+            _ => Err(NifiError::UnsupportedEndpoint {
+                endpoint: "submit_registry_client_config_verification_request".to_string(),
+                version: "unknown".to_string(),
+            }),
+        }
+    }
+}
+/// Sub-resource dispatch struct for [ControllerContentApi].
+pub struct ControllerContentApiDispatch<'a> {
+    pub(crate) client: &'a crate::NifiClient,
+    pub(crate) id: String,
+    pub(crate) version: crate::dynamic::DetectedVersion,
+}
+impl ControllerContentApi for ControllerContentApiDispatch<'_> {
+    async fn download_nar(&self) -> Result<(), NifiError> {
+        match self.version {
+            crate::dynamic::DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::controller::ControllerContentApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                api.download_nar().await
+            }
+            crate::dynamic::DetectedVersion::V2_7_2 => {
+                let api = crate::v2_7_2::api::controller::ControllerContentApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                api.download_nar().await
+            }
+            crate::dynamic::DetectedVersion::V2_8_0 => {
+                let api = crate::v2_8_0::api::controller::ControllerContentApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                api.download_nar().await
+            }
+            _ => Err(NifiError::UnsupportedEndpoint {
+                endpoint: "download_nar".to_string(),
+                version: "unknown".to_string(),
+            }),
+        }
+    }
+}
+/// Sub-resource dispatch struct for [ControllerDescriptorsApi].
+pub struct ControllerDescriptorsApiDispatch<'a> {
+    pub(crate) client: &'a crate::NifiClient,
+    pub(crate) id: String,
+    pub(crate) version: crate::dynamic::DetectedVersion,
+}
+impl ControllerDescriptorsApi for ControllerDescriptorsApiDispatch<'_> {
+    async fn get_flow_analysis_rule_property_descriptor(
+        &self,
+        property_name: &str,
+        sensitive: Option<bool>,
+    ) -> Result<types::PropertyDescriptorDto, NifiError> {
+        match self.version {
+            crate::dynamic::DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::controller::ControllerDescriptorsApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api
+                    .get_flow_analysis_rule_property_descriptor(property_name, sensitive)
+                    .await?
+                    .into())
+            }
+            crate::dynamic::DetectedVersion::V2_7_2 => {
+                let api = crate::v2_7_2::api::controller::ControllerDescriptorsApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api
+                    .get_flow_analysis_rule_property_descriptor(property_name, sensitive)
+                    .await?
+                    .into())
+            }
+            crate::dynamic::DetectedVersion::V2_8_0 => {
+                let api = crate::v2_8_0::api::controller::ControllerDescriptorsApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api
+                    .get_flow_analysis_rule_property_descriptor(property_name, sensitive)
+                    .await?
+                    .into())
+            }
+            _ => Err(NifiError::UnsupportedEndpoint {
+                endpoint: "get_flow_analysis_rule_property_descriptor".to_string(),
+                version: "unknown".to_string(),
+            }),
+        }
+    }
+    async fn get_property_descriptor(
+        &self,
+        property_name: &str,
+        sensitive: Option<bool>,
+    ) -> Result<types::PropertyDescriptorDto, NifiError> {
+        match self.version {
+            crate::dynamic::DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::controller::ControllerDescriptorsApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api
+                    .get_property_descriptor(property_name, sensitive)
+                    .await?
+                    .into())
+            }
+            crate::dynamic::DetectedVersion::V2_7_2 => {
+                let api = crate::v2_7_2::api::controller::ControllerDescriptorsApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api
+                    .get_property_descriptor(property_name, sensitive)
+                    .await?
+                    .into())
+            }
+            crate::dynamic::DetectedVersion::V2_8_0 => {
+                let api = crate::v2_8_0::api::controller::ControllerDescriptorsApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api
+                    .get_property_descriptor(property_name, sensitive)
+                    .await?
+                    .into())
+            }
+            _ => Err(NifiError::UnsupportedEndpoint {
+                endpoint: "get_property_descriptor".to_string(),
+                version: "unknown".to_string(),
+            }),
+        }
+    }
+}
+/// Sub-resource dispatch struct for [ControllerDetailsApi].
+pub struct ControllerDetailsApiDispatch<'a> {
+    pub(crate) client: &'a crate::NifiClient,
+    pub(crate) id: String,
+    pub(crate) version: crate::dynamic::DetectedVersion,
+}
+impl ControllerDetailsApi for ControllerDetailsApiDispatch<'_> {
+    async fn get_nar_details(&self) -> Result<types::NarDetailsEntity, NifiError> {
+        match self.version {
+            crate::dynamic::DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::controller::ControllerDetailsApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api.get_nar_details().await?.into())
+            }
+            crate::dynamic::DetectedVersion::V2_7_2 => {
+                let api = crate::v2_7_2::api::controller::ControllerDetailsApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api.get_nar_details().await?.into())
+            }
+            crate::dynamic::DetectedVersion::V2_8_0 => {
+                let api = crate::v2_8_0::api::controller::ControllerDetailsApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api.get_nar_details().await?.into())
+            }
+            _ => Err(NifiError::UnsupportedEndpoint {
+                endpoint: "get_nar_details".to_string(),
+                version: "unknown".to_string(),
+            }),
+        }
+    }
+}
+/// Sub-resource dispatch struct for [ControllerRunStatusApi].
+pub struct ControllerRunStatusApiDispatch<'a> {
+    pub(crate) client: &'a crate::NifiClient,
+    pub(crate) id: String,
+    pub(crate) version: crate::dynamic::DetectedVersion,
+}
+impl ControllerRunStatusApi for ControllerRunStatusApiDispatch<'_> {
+    async fn update_run_status(
+        &self,
+        body: &types::FlowAnalysisRuleRunStatusEntity,
+    ) -> Result<types::FlowAnalysisRuleEntity, NifiError> {
+        match self.version {
+            crate::dynamic::DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::controller::ControllerRunStatusApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api
+                    .update_run_status(
+                        &crate::v2_6_0::types::FlowAnalysisRuleRunStatusEntity::try_from(
+                            body.clone(),
+                        )?,
+                    )
+                    .await?
+                    .into())
+            }
+            crate::dynamic::DetectedVersion::V2_7_2 => {
+                let api = crate::v2_7_2::api::controller::ControllerRunStatusApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api
+                    .update_run_status(
+                        &crate::v2_7_2::types::FlowAnalysisRuleRunStatusEntity::try_from(
+                            body.clone(),
+                        )?,
+                    )
+                    .await?
+                    .into())
+            }
+            crate::dynamic::DetectedVersion::V2_8_0 => {
+                let api = crate::v2_8_0::api::controller::ControllerRunStatusApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api
+                    .update_run_status(
+                        &crate::v2_8_0::types::FlowAnalysisRuleRunStatusEntity::try_from(
+                            body.clone(),
+                        )?,
+                    )
+                    .await?
+                    .into())
+            }
+            _ => Err(NifiError::UnsupportedEndpoint {
+                endpoint: "update_run_status".to_string(),
+                version: "unknown".to_string(),
+            }),
+        }
+    }
+}
+/// Sub-resource dispatch struct for [ControllerStateApi].
+pub struct ControllerStateApiDispatch<'a> {
+    pub(crate) client: &'a crate::NifiClient,
+    pub(crate) id: String,
+    pub(crate) version: crate::dynamic::DetectedVersion,
+}
+impl ControllerStateApi for ControllerStateApiDispatch<'_> {
+    async fn clear_state(
+        &self,
+        body: &types::ComponentStateEntity,
+    ) -> Result<types::ComponentStateDto, NifiError> {
+        match self.version {
+            crate::dynamic::DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::controller::ControllerStateApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api
+                    .clear_state(&crate::v2_6_0::types::ComponentStateEntity::try_from(
+                        body.clone(),
+                    )?)
+                    .await?
+                    .into())
+            }
+            crate::dynamic::DetectedVersion::V2_7_2 => {
+                let api = crate::v2_7_2::api::controller::ControllerStateApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api
+                    .clear_state(&crate::v2_7_2::types::ComponentStateEntity::try_from(
+                        body.clone(),
+                    )?)
+                    .await?
+                    .into())
+            }
+            crate::dynamic::DetectedVersion::V2_8_0 => {
+                let api = crate::v2_8_0::api::controller::ControllerStateApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api
+                    .clear_state(&crate::v2_8_0::types::ComponentStateEntity::try_from(
+                        body.clone(),
+                    )?)
+                    .await?
+                    .into())
+            }
+            _ => Err(NifiError::UnsupportedEndpoint {
+                endpoint: "clear_state".to_string(),
+                version: "unknown".to_string(),
+            }),
+        }
+    }
+    async fn get_flow_analysis_rule_state(&self) -> Result<types::ComponentStateDto, NifiError> {
+        match self.version {
+            crate::dynamic::DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::controller::ControllerStateApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api.get_flow_analysis_rule_state().await?.into())
+            }
+            crate::dynamic::DetectedVersion::V2_7_2 => {
+                let api = crate::v2_7_2::api::controller::ControllerStateApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api.get_flow_analysis_rule_state().await?.into())
+            }
+            crate::dynamic::DetectedVersion::V2_8_0 => {
+                let api = crate::v2_8_0::api::controller::ControllerStateApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api.get_flow_analysis_rule_state().await?.into())
+            }
+            _ => Err(NifiError::UnsupportedEndpoint {
+                endpoint: "get_flow_analysis_rule_state".to_string(),
+                version: "unknown".to_string(),
+            }),
         }
     }
 }

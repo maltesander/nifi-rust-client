@@ -3,6 +3,13 @@
 #[allow(unused_imports)]
 use crate::NifiError;
 use crate::dynamic::traits::FlowApi;
+use crate::dynamic::traits::FlowBranchesApi;
+use crate::dynamic::traits::FlowBreadcrumbsApi;
+use crate::dynamic::traits::FlowBucketsApi;
+use crate::dynamic::traits::FlowBulletinsApi;
+use crate::dynamic::traits::FlowControllerServicesApi;
+use crate::dynamic::traits::FlowStatisticsApi;
+use crate::dynamic::traits::FlowStatusApi;
 #[allow(unused_imports)]
 use crate::dynamic::types;
 /// Dynamic dispatch enum for the Flow API. Use via the [`FlowApi`] trait.
@@ -13,27 +20,98 @@ pub enum FlowApiDispatch<'a> {
     V2_7_2(super::super::impls::v2_7_2::V2_7_2FlowApi<'a>),
     V2_8_0(super::super::impls::v2_8_0::V2_8_0FlowApi<'a>),
 }
-impl FlowApi for FlowApiDispatch<'_> {
-    async fn activate_controller_services(
-        &self,
-        id: &str,
-        body: types::ActivateControllerServicesEntity,
-    ) -> Result<types::ActivateControllerServicesEntity, NifiError> {
+impl<'a> FlowApiDispatch<'a> {
+    fn client(&self) -> &'a crate::NifiClient {
         match self {
-            Self::V2_6_0(api) => api.activate_controller_services(id, body).await,
-            Self::V2_7_2(api) => api.activate_controller_services(id, body).await,
-            Self::V2_8_0(api) => api.activate_controller_services(id, body).await,
+            Self::V2_6_0(api) => api.client,
+            Self::V2_7_2(api) => api.client,
+            Self::V2_8_0(api) => api.client,
         }
     }
-    async fn clear_bulletins_1(
-        &self,
-        id: &str,
-        body: types::ClearBulletinsForGroupRequestEntity,
-    ) -> Result<types::ClearBulletinsForGroupResultsEntity, NifiError> {
+    fn version(&self) -> crate::dynamic::DetectedVersion {
         match self {
-            Self::V2_6_0(api) => api.clear_bulletins_1(id, body).await,
-            Self::V2_7_2(api) => api.clear_bulletins_1(id, body).await,
-            Self::V2_8_0(api) => api.clear_bulletins_1(id, body).await,
+            Self::V2_6_0(_) => crate::dynamic::DetectedVersion::V2_6_0,
+            Self::V2_7_2(_) => crate::dynamic::DetectedVersion::V2_7_2,
+            Self::V2_8_0(_) => crate::dynamic::DetectedVersion::V2_8_0,
+        }
+    }
+}
+impl FlowApi for FlowApiDispatch<'_> {
+    type FlowBranchesApi<'b>
+        = FlowBranchesApiDispatch<'b>
+    where
+        Self: 'b;
+    fn branches<'b>(&'b self, id: &'b str) -> Self::FlowBranchesApi<'b> {
+        FlowBranchesApiDispatch {
+            client: self.client(),
+            id: id.to_string(),
+            version: self.version(),
+        }
+    }
+    type FlowBreadcrumbsApi<'b>
+        = FlowBreadcrumbsApiDispatch<'b>
+    where
+        Self: 'b;
+    fn breadcrumbs<'b>(&'b self, id: &'b str) -> Self::FlowBreadcrumbsApi<'b> {
+        FlowBreadcrumbsApiDispatch {
+            client: self.client(),
+            id: id.to_string(),
+            version: self.version(),
+        }
+    }
+    type FlowBucketsApi<'b>
+        = FlowBucketsApiDispatch<'b>
+    where
+        Self: 'b;
+    fn buckets<'b>(&'b self, id: &'b str) -> Self::FlowBucketsApi<'b> {
+        FlowBucketsApiDispatch {
+            client: self.client(),
+            id: id.to_string(),
+            version: self.version(),
+        }
+    }
+    type FlowBulletinsApi<'b>
+        = FlowBulletinsApiDispatch<'b>
+    where
+        Self: 'b;
+    fn bulletins<'b>(&'b self, id: &'b str) -> Self::FlowBulletinsApi<'b> {
+        FlowBulletinsApiDispatch {
+            client: self.client(),
+            id: id.to_string(),
+            version: self.version(),
+        }
+    }
+    type FlowControllerServicesApi<'b>
+        = FlowControllerServicesApiDispatch<'b>
+    where
+        Self: 'b;
+    fn controller_services<'b>(&'b self, id: &'b str) -> Self::FlowControllerServicesApi<'b> {
+        FlowControllerServicesApiDispatch {
+            client: self.client(),
+            id: id.to_string(),
+            version: self.version(),
+        }
+    }
+    type FlowStatisticsApi<'b>
+        = FlowStatisticsApiDispatch<'b>
+    where
+        Self: 'b;
+    fn statistics<'b>(&'b self, id: &'b str) -> Self::FlowStatisticsApi<'b> {
+        FlowStatisticsApiDispatch {
+            client: self.client(),
+            id: id.to_string(),
+            version: self.version(),
+        }
+    }
+    type FlowStatusApi<'b>
+        = FlowStatusApiDispatch<'b>
+    where
+        Self: 'b;
+    fn status<'b>(&'b self, id: &'b str) -> Self::FlowStatusApi<'b> {
+        FlowStatusApiDispatch {
+            client: self.client(),
+            id: id.to_string(),
+            version: self.version(),
         }
     }
     async fn download_reporting_task_snapshot(
@@ -114,31 +192,6 @@ impl FlowApi for FlowApiDispatch<'_> {
             Self::V2_8_0(api) => api.get_banners().await,
         }
     }
-    async fn get_branches(&self, id: &str) -> Result<types::FlowRegistryBranchesEntity, NifiError> {
-        match self {
-            Self::V2_6_0(api) => api.get_branches(id).await,
-            Self::V2_7_2(api) => api.get_branches(id).await,
-            Self::V2_8_0(api) => api.get_branches(id).await,
-        }
-    }
-    async fn get_breadcrumbs(&self, id: &str) -> Result<types::FlowBreadcrumbEntity, NifiError> {
-        match self {
-            Self::V2_6_0(api) => api.get_breadcrumbs(id).await,
-            Self::V2_7_2(api) => api.get_breadcrumbs(id).await,
-            Self::V2_8_0(api) => api.get_breadcrumbs(id).await,
-        }
-    }
-    async fn get_buckets(
-        &self,
-        id: &str,
-        branch: Option<&str>,
-    ) -> Result<types::FlowRegistryBucketsEntity, NifiError> {
-        match self {
-            Self::V2_6_0(api) => api.get_buckets(id, branch).await,
-            Self::V2_7_2(api) => api.get_buckets(id, branch).await,
-            Self::V2_8_0(api) => api.get_buckets(id, branch).await,
-        }
-    }
     async fn get_bulletin_board(
         &self,
         after: Option<&str>,
@@ -185,58 +238,6 @@ impl FlowApi for FlowApiDispatch<'_> {
             Self::V2_6_0(api) => api.get_component_history(component_id).await,
             Self::V2_7_2(api) => api.get_component_history(component_id).await,
             Self::V2_8_0(api) => api.get_component_history(component_id).await,
-        }
-    }
-    async fn get_connection_statistics(
-        &self,
-        id: &str,
-        nodewise: Option<bool>,
-        cluster_node_id: Option<&str>,
-    ) -> Result<types::ConnectionStatisticsEntity, NifiError> {
-        match self {
-            Self::V2_6_0(api) => {
-                api.get_connection_statistics(id, nodewise, cluster_node_id)
-                    .await
-            }
-            Self::V2_7_2(api) => {
-                api.get_connection_statistics(id, nodewise, cluster_node_id)
-                    .await
-            }
-            Self::V2_8_0(api) => {
-                api.get_connection_statistics(id, nodewise, cluster_node_id)
-                    .await
-            }
-        }
-    }
-    async fn get_connection_status(
-        &self,
-        id: &str,
-        nodewise: Option<bool>,
-        cluster_node_id: Option<&str>,
-    ) -> Result<types::ConnectionStatusEntity, NifiError> {
-        match self {
-            Self::V2_6_0(api) => {
-                api.get_connection_status(id, nodewise, cluster_node_id)
-                    .await
-            }
-            Self::V2_7_2(api) => {
-                api.get_connection_status(id, nodewise, cluster_node_id)
-                    .await
-            }
-            Self::V2_8_0(api) => {
-                api.get_connection_status(id, nodewise, cluster_node_id)
-                    .await
-            }
-        }
-    }
-    async fn get_connection_status_history(
-        &self,
-        id: &str,
-    ) -> Result<types::StatusHistoryEntity, NifiError> {
-        match self {
-            Self::V2_6_0(api) => api.get_connection_status_history(id).await,
-            Self::V2_7_2(api) => api.get_connection_status_history(id).await,
-            Self::V2_8_0(api) => api.get_connection_status_history(id).await,
         }
     }
     async fn get_content_viewers(&self) -> Result<types::ContentViewerEntity, NifiError> {
@@ -337,47 +338,6 @@ impl FlowApi for FlowApiDispatch<'_> {
             }
         }
     }
-    async fn get_controller_services_from_group(
-        &self,
-        id: &str,
-        include_ancestor_groups: Option<bool>,
-        include_descendant_groups: Option<bool>,
-        include_referencing_components: Option<bool>,
-        ui_only: Option<bool>,
-    ) -> Result<types::ControllerServicesEntity, NifiError> {
-        match self {
-            Self::V2_6_0(api) => {
-                api.get_controller_services_from_group(
-                    id,
-                    include_ancestor_groups,
-                    include_descendant_groups,
-                    include_referencing_components,
-                    ui_only,
-                )
-                .await
-            }
-            Self::V2_7_2(api) => {
-                api.get_controller_services_from_group(
-                    id,
-                    include_ancestor_groups,
-                    include_descendant_groups,
-                    include_referencing_components,
-                    ui_only,
-                )
-                .await
-            }
-            Self::V2_8_0(api) => {
-                api.get_controller_services_from_group(
-                    id,
-                    include_ancestor_groups,
-                    include_descendant_groups,
-                    include_referencing_components,
-                    ui_only,
-                )
-                .await
-            }
-        }
-    }
     async fn get_controller_status(&self) -> Result<types::ControllerStatusDto, NifiError> {
         match self {
             Self::V2_6_0(api) => api.get_controller_status().await,
@@ -390,29 +350,6 @@ impl FlowApi for FlowApiDispatch<'_> {
             Self::V2_6_0(api) => api.get_current_user().await,
             Self::V2_7_2(api) => api.get_current_user().await,
             Self::V2_8_0(api) => api.get_current_user().await,
-        }
-    }
-    async fn get_details(
-        &self,
-        id: &str,
-        registry_id: &str,
-        bucket_id: &str,
-        flow_id: &str,
-        branch: Option<&str>,
-    ) -> Result<types::VersionedFlowDto, NifiError> {
-        match self {
-            Self::V2_6_0(api) => {
-                api.get_details(id, registry_id, bucket_id, flow_id, branch)
-                    .await
-            }
-            Self::V2_7_2(api) => {
-                api.get_details(id, registry_id, bucket_id, flow_id, branch)
-                    .await
-            }
-            Self::V2_8_0(api) => {
-                api.get_details(id, registry_id, bucket_id, flow_id, branch)
-                    .await
-            }
         }
     }
     async fn get_flow(
@@ -565,66 +502,11 @@ impl FlowApi for FlowApiDispatch<'_> {
             }
         }
     }
-    async fn get_flows(
-        &self,
-        id: &str,
-        registry_id: &str,
-        bucket_id: &str,
-        branch: Option<&str>,
-    ) -> Result<types::VersionedFlowsEntity, NifiError> {
-        match self {
-            Self::V2_6_0(api) => api.get_flows(id, registry_id, bucket_id, branch).await,
-            Self::V2_7_2(api) => api.get_flows(id, registry_id, bucket_id, branch).await,
-            Self::V2_8_0(api) => api.get_flows(id, registry_id, bucket_id, branch).await,
-        }
-    }
-    async fn get_input_port_status(
-        &self,
-        id: &str,
-        nodewise: Option<bool>,
-        cluster_node_id: Option<&str>,
-    ) -> Result<types::PortStatusEntity, NifiError> {
-        match self {
-            Self::V2_6_0(api) => {
-                api.get_input_port_status(id, nodewise, cluster_node_id)
-                    .await
-            }
-            Self::V2_7_2(api) => {
-                api.get_input_port_status(id, nodewise, cluster_node_id)
-                    .await
-            }
-            Self::V2_8_0(api) => {
-                api.get_input_port_status(id, nodewise, cluster_node_id)
-                    .await
-            }
-        }
-    }
     async fn get_listen_ports(&self) -> Result<types::ListenPortsEntity, NifiError> {
         match self {
             Self::V2_6_0(api) => api.get_listen_ports().await,
             Self::V2_7_2(api) => api.get_listen_ports().await,
             Self::V2_8_0(api) => api.get_listen_ports().await,
-        }
-    }
-    async fn get_output_port_status(
-        &self,
-        id: &str,
-        nodewise: Option<bool>,
-        cluster_node_id: Option<&str>,
-    ) -> Result<types::PortStatusEntity, NifiError> {
-        match self {
-            Self::V2_6_0(api) => {
-                api.get_output_port_status(id, nodewise, cluster_node_id)
-                    .await
-            }
-            Self::V2_7_2(api) => {
-                api.get_output_port_status(id, nodewise, cluster_node_id)
-                    .await
-            }
-            Self::V2_8_0(api) => {
-                api.get_output_port_status(id, nodewise, cluster_node_id)
-                    .await
-            }
         }
     }
     async fn get_parameter_contexts(&self) -> Result<types::ParameterContextsEntity, NifiError> {
@@ -703,38 +585,6 @@ impl FlowApi for FlowApiDispatch<'_> {
             Self::V2_8_0(api) => api.get_prioritizers().await,
         }
     }
-    async fn get_process_group_status(
-        &self,
-        id: &str,
-        recursive: Option<bool>,
-        nodewise: Option<bool>,
-        cluster_node_id: Option<&str>,
-    ) -> Result<types::ProcessGroupStatusEntity, NifiError> {
-        match self {
-            Self::V2_6_0(api) => {
-                api.get_process_group_status(id, recursive, nodewise, cluster_node_id)
-                    .await
-            }
-            Self::V2_7_2(api) => {
-                api.get_process_group_status(id, recursive, nodewise, cluster_node_id)
-                    .await
-            }
-            Self::V2_8_0(api) => {
-                api.get_process_group_status(id, recursive, nodewise, cluster_node_id)
-                    .await
-            }
-        }
-    }
-    async fn get_process_group_status_history(
-        &self,
-        id: &str,
-    ) -> Result<types::StatusHistoryEntity, NifiError> {
-        match self {
-            Self::V2_6_0(api) => api.get_process_group_status_history(id).await,
-            Self::V2_7_2(api) => api.get_process_group_status_history(id).await,
-            Self::V2_8_0(api) => api.get_process_group_status_history(id).await,
-        }
-    }
     async fn get_processor_definition(
         &self,
         group: &str,
@@ -755,37 +605,6 @@ impl FlowApi for FlowApiDispatch<'_> {
                 api.get_processor_definition(group, artifact, version, r#type)
                     .await
             }
-        }
-    }
-    async fn get_processor_status(
-        &self,
-        id: &str,
-        nodewise: Option<bool>,
-        cluster_node_id: Option<&str>,
-    ) -> Result<types::ProcessorStatusEntity, NifiError> {
-        match self {
-            Self::V2_6_0(api) => {
-                api.get_processor_status(id, nodewise, cluster_node_id)
-                    .await
-            }
-            Self::V2_7_2(api) => {
-                api.get_processor_status(id, nodewise, cluster_node_id)
-                    .await
-            }
-            Self::V2_8_0(api) => {
-                api.get_processor_status(id, nodewise, cluster_node_id)
-                    .await
-            }
-        }
-    }
-    async fn get_processor_status_history(
-        &self,
-        id: &str,
-    ) -> Result<types::StatusHistoryEntity, NifiError> {
-        match self {
-            Self::V2_6_0(api) => api.get_processor_status_history(id).await,
-            Self::V2_7_2(api) => api.get_processor_status_history(id).await,
-            Self::V2_8_0(api) => api.get_processor_status_history(id).await,
         }
     }
     async fn get_processor_types(
@@ -814,37 +633,6 @@ impl FlowApi for FlowApiDispatch<'_> {
             Self::V2_6_0(api) => api.get_registry_clients().await,
             Self::V2_7_2(api) => api.get_registry_clients().await,
             Self::V2_8_0(api) => api.get_registry_clients().await,
-        }
-    }
-    async fn get_remote_process_group_status(
-        &self,
-        id: &str,
-        nodewise: Option<bool>,
-        cluster_node_id: Option<&str>,
-    ) -> Result<types::RemoteProcessGroupStatusEntity, NifiError> {
-        match self {
-            Self::V2_6_0(api) => {
-                api.get_remote_process_group_status(id, nodewise, cluster_node_id)
-                    .await
-            }
-            Self::V2_7_2(api) => {
-                api.get_remote_process_group_status(id, nodewise, cluster_node_id)
-                    .await
-            }
-            Self::V2_8_0(api) => {
-                api.get_remote_process_group_status(id, nodewise, cluster_node_id)
-                    .await
-            }
-        }
-    }
-    async fn get_remote_process_group_status_history(
-        &self,
-        id: &str,
-    ) -> Result<types::StatusHistoryEntity, NifiError> {
-        match self {
-            Self::V2_6_0(api) => api.get_remote_process_group_status_history(id).await,
-            Self::V2_7_2(api) => api.get_remote_process_group_status_history(id).await,
-            Self::V2_8_0(api) => api.get_remote_process_group_status_history(id).await,
         }
     }
     async fn get_reporting_task_definition(
@@ -914,98 +702,6 @@ impl FlowApi for FlowApiDispatch<'_> {
             Self::V2_8_0(api) => api.get_runtime_manifest().await,
         }
     }
-    async fn get_version_differences(
-        &self,
-        id: &str,
-        registry_id: &str,
-        branch_id_a: &str,
-        bucket_id_a: &str,
-        flow_id_a: &str,
-        version_a: &str,
-        branch_id_b: &str,
-        bucket_id_b: &str,
-        flow_id_b: &str,
-        version_b: &str,
-        offset: Option<i32>,
-        limit: Option<i32>,
-    ) -> Result<types::FlowComparisonEntity, NifiError> {
-        match self {
-            Self::V2_6_0(api) => {
-                api.get_version_differences(
-                    id,
-                    registry_id,
-                    branch_id_a,
-                    bucket_id_a,
-                    flow_id_a,
-                    version_a,
-                    branch_id_b,
-                    bucket_id_b,
-                    flow_id_b,
-                    version_b,
-                    offset,
-                    limit,
-                )
-                .await
-            }
-            Self::V2_7_2(api) => {
-                api.get_version_differences(
-                    id,
-                    registry_id,
-                    branch_id_a,
-                    bucket_id_a,
-                    flow_id_a,
-                    version_a,
-                    branch_id_b,
-                    bucket_id_b,
-                    flow_id_b,
-                    version_b,
-                    offset,
-                    limit,
-                )
-                .await
-            }
-            Self::V2_8_0(api) => {
-                api.get_version_differences(
-                    id,
-                    registry_id,
-                    branch_id_a,
-                    bucket_id_a,
-                    flow_id_a,
-                    version_a,
-                    branch_id_b,
-                    bucket_id_b,
-                    flow_id_b,
-                    version_b,
-                    offset,
-                    limit,
-                )
-                .await
-            }
-        }
-    }
-    async fn get_versions(
-        &self,
-        id: &str,
-        registry_id: &str,
-        bucket_id: &str,
-        flow_id: &str,
-        branch: Option<&str>,
-    ) -> Result<types::VersionedFlowSnapshotMetadataSetEntity, NifiError> {
-        match self {
-            Self::V2_6_0(api) => {
-                api.get_versions(id, registry_id, bucket_id, flow_id, branch)
-                    .await
-            }
-            Self::V2_7_2(api) => {
-                api.get_versions(id, registry_id, bucket_id, flow_id, branch)
-                    .await
-            }
-            Self::V2_8_0(api) => {
-                api.get_versions(id, registry_id, bucket_id, flow_id, branch)
-                    .await
-            }
-        }
-    }
     async fn query_history(
         &self,
         offset: &str,
@@ -1062,7 +758,7 @@ impl FlowApi for FlowApiDispatch<'_> {
     async fn schedule_components(
         &self,
         id: &str,
-        body: types::ScheduleComponentsEntity,
+        body: &types::ScheduleComponentsEntity,
     ) -> Result<types::ScheduleComponentsEntity, NifiError> {
         match self {
             Self::V2_6_0(api) => api.schedule_components(id, body).await,
@@ -1089,6 +785,931 @@ impl FlowApi for FlowApiDispatch<'_> {
             Self::V2_6_0(api) => api.search_flow(q, a).await,
             Self::V2_7_2(api) => api.search_flow(q, a).await,
             Self::V2_8_0(api) => api.search_flow(q, a).await,
+        }
+    }
+}
+/// Sub-resource dispatch struct for [FlowBranchesApi].
+pub struct FlowBranchesApiDispatch<'a> {
+    pub(crate) client: &'a crate::NifiClient,
+    pub(crate) id: String,
+    pub(crate) version: crate::dynamic::DetectedVersion,
+}
+impl FlowBranchesApi for FlowBranchesApiDispatch<'_> {
+    async fn get_branches(&self) -> Result<types::FlowRegistryBranchesEntity, NifiError> {
+        match self.version {
+            crate::dynamic::DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::flow::FlowBranchesApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api.get_branches().await?.into())
+            }
+            crate::dynamic::DetectedVersion::V2_7_2 => {
+                let api = crate::v2_7_2::api::flow::FlowBranchesApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api.get_branches().await?.into())
+            }
+            crate::dynamic::DetectedVersion::V2_8_0 => {
+                let api = crate::v2_8_0::api::flow::FlowBranchesApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api.get_branches().await?.into())
+            }
+            _ => Err(NifiError::UnsupportedEndpoint {
+                endpoint: "get_branches".to_string(),
+                version: "unknown".to_string(),
+            }),
+        }
+    }
+    async fn get_version_differences(
+        &self,
+        registry_id: &str,
+        branch_id_a: &str,
+        bucket_id_a: &str,
+        flow_id_a: &str,
+        version_a: &str,
+        branch_id_b: &str,
+        bucket_id_b: &str,
+        flow_id_b: &str,
+        version_b: &str,
+        offset: Option<i32>,
+        limit: Option<i32>,
+    ) -> Result<types::FlowComparisonEntity, NifiError> {
+        match self.version {
+            crate::dynamic::DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::flow::FlowBranchesApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api
+                    .get_version_differences(
+                        registry_id,
+                        branch_id_a,
+                        bucket_id_a,
+                        flow_id_a,
+                        version_a,
+                        branch_id_b,
+                        bucket_id_b,
+                        flow_id_b,
+                        version_b,
+                        offset,
+                        limit,
+                    )
+                    .await?
+                    .into())
+            }
+            crate::dynamic::DetectedVersion::V2_7_2 => {
+                let api = crate::v2_7_2::api::flow::FlowBranchesApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api
+                    .get_version_differences(
+                        registry_id,
+                        branch_id_a,
+                        bucket_id_a,
+                        flow_id_a,
+                        version_a,
+                        branch_id_b,
+                        bucket_id_b,
+                        flow_id_b,
+                        version_b,
+                        offset,
+                        limit,
+                    )
+                    .await?
+                    .into())
+            }
+            crate::dynamic::DetectedVersion::V2_8_0 => {
+                let api = crate::v2_8_0::api::flow::FlowBranchesApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api
+                    .get_version_differences(
+                        registry_id,
+                        branch_id_a,
+                        bucket_id_a,
+                        flow_id_a,
+                        version_a,
+                        branch_id_b,
+                        bucket_id_b,
+                        flow_id_b,
+                        version_b,
+                        offset,
+                        limit,
+                    )
+                    .await?
+                    .into())
+            }
+            _ => Err(NifiError::UnsupportedEndpoint {
+                endpoint: "get_version_differences".to_string(),
+                version: "unknown".to_string(),
+            }),
+        }
+    }
+}
+/// Sub-resource dispatch struct for [FlowBreadcrumbsApi].
+pub struct FlowBreadcrumbsApiDispatch<'a> {
+    pub(crate) client: &'a crate::NifiClient,
+    pub(crate) id: String,
+    pub(crate) version: crate::dynamic::DetectedVersion,
+}
+impl FlowBreadcrumbsApi for FlowBreadcrumbsApiDispatch<'_> {
+    async fn get_breadcrumbs(&self) -> Result<types::FlowBreadcrumbEntity, NifiError> {
+        match self.version {
+            crate::dynamic::DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::flow::FlowBreadcrumbsApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api.get_breadcrumbs().await?.into())
+            }
+            crate::dynamic::DetectedVersion::V2_7_2 => {
+                let api = crate::v2_7_2::api::flow::FlowBreadcrumbsApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api.get_breadcrumbs().await?.into())
+            }
+            crate::dynamic::DetectedVersion::V2_8_0 => {
+                let api = crate::v2_8_0::api::flow::FlowBreadcrumbsApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api.get_breadcrumbs().await?.into())
+            }
+            _ => Err(NifiError::UnsupportedEndpoint {
+                endpoint: "get_breadcrumbs".to_string(),
+                version: "unknown".to_string(),
+            }),
+        }
+    }
+}
+/// Sub-resource dispatch struct for [FlowBucketsApi].
+pub struct FlowBucketsApiDispatch<'a> {
+    pub(crate) client: &'a crate::NifiClient,
+    pub(crate) id: String,
+    pub(crate) version: crate::dynamic::DetectedVersion,
+}
+impl FlowBucketsApi for FlowBucketsApiDispatch<'_> {
+    async fn get_buckets(
+        &self,
+        branch: Option<&str>,
+    ) -> Result<types::FlowRegistryBucketsEntity, NifiError> {
+        match self.version {
+            crate::dynamic::DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::flow::FlowBucketsApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api.get_buckets(branch).await?.into())
+            }
+            crate::dynamic::DetectedVersion::V2_7_2 => {
+                let api = crate::v2_7_2::api::flow::FlowBucketsApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api.get_buckets(branch).await?.into())
+            }
+            crate::dynamic::DetectedVersion::V2_8_0 => {
+                let api = crate::v2_8_0::api::flow::FlowBucketsApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api.get_buckets(branch).await?.into())
+            }
+            _ => Err(NifiError::UnsupportedEndpoint {
+                endpoint: "get_buckets".to_string(),
+                version: "unknown".to_string(),
+            }),
+        }
+    }
+    async fn get_details(
+        &self,
+        registry_id: &str,
+        bucket_id: &str,
+        flow_id: &str,
+        branch: Option<&str>,
+    ) -> Result<types::VersionedFlowDto, NifiError> {
+        match self.version {
+            crate::dynamic::DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::flow::FlowBucketsApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api
+                    .get_details(registry_id, bucket_id, flow_id, branch)
+                    .await?
+                    .into())
+            }
+            crate::dynamic::DetectedVersion::V2_7_2 => {
+                let api = crate::v2_7_2::api::flow::FlowBucketsApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api
+                    .get_details(registry_id, bucket_id, flow_id, branch)
+                    .await?
+                    .into())
+            }
+            crate::dynamic::DetectedVersion::V2_8_0 => {
+                let api = crate::v2_8_0::api::flow::FlowBucketsApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api
+                    .get_details(registry_id, bucket_id, flow_id, branch)
+                    .await?
+                    .into())
+            }
+            _ => Err(NifiError::UnsupportedEndpoint {
+                endpoint: "get_details".to_string(),
+                version: "unknown".to_string(),
+            }),
+        }
+    }
+    async fn get_flows(
+        &self,
+        registry_id: &str,
+        bucket_id: &str,
+        branch: Option<&str>,
+    ) -> Result<types::VersionedFlowsEntity, NifiError> {
+        match self.version {
+            crate::dynamic::DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::flow::FlowBucketsApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api.get_flows(registry_id, bucket_id, branch).await?.into())
+            }
+            crate::dynamic::DetectedVersion::V2_7_2 => {
+                let api = crate::v2_7_2::api::flow::FlowBucketsApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api.get_flows(registry_id, bucket_id, branch).await?.into())
+            }
+            crate::dynamic::DetectedVersion::V2_8_0 => {
+                let api = crate::v2_8_0::api::flow::FlowBucketsApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api.get_flows(registry_id, bucket_id, branch).await?.into())
+            }
+            _ => Err(NifiError::UnsupportedEndpoint {
+                endpoint: "get_flows".to_string(),
+                version: "unknown".to_string(),
+            }),
+        }
+    }
+    async fn get_versions(
+        &self,
+        registry_id: &str,
+        bucket_id: &str,
+        flow_id: &str,
+        branch: Option<&str>,
+    ) -> Result<types::VersionedFlowSnapshotMetadataSetEntity, NifiError> {
+        match self.version {
+            crate::dynamic::DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::flow::FlowBucketsApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api
+                    .get_versions(registry_id, bucket_id, flow_id, branch)
+                    .await?
+                    .into())
+            }
+            crate::dynamic::DetectedVersion::V2_7_2 => {
+                let api = crate::v2_7_2::api::flow::FlowBucketsApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api
+                    .get_versions(registry_id, bucket_id, flow_id, branch)
+                    .await?
+                    .into())
+            }
+            crate::dynamic::DetectedVersion::V2_8_0 => {
+                let api = crate::v2_8_0::api::flow::FlowBucketsApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api
+                    .get_versions(registry_id, bucket_id, flow_id, branch)
+                    .await?
+                    .into())
+            }
+            _ => Err(NifiError::UnsupportedEndpoint {
+                endpoint: "get_versions".to_string(),
+                version: "unknown".to_string(),
+            }),
+        }
+    }
+}
+/// Sub-resource dispatch struct for [FlowBulletinsApi].
+pub struct FlowBulletinsApiDispatch<'a> {
+    pub(crate) client: &'a crate::NifiClient,
+    pub(crate) id: String,
+    pub(crate) version: crate::dynamic::DetectedVersion,
+}
+impl FlowBulletinsApi for FlowBulletinsApiDispatch<'_> {
+    async fn clear_bulletins_1(
+        &self,
+        body: &types::ClearBulletinsForGroupRequestEntity,
+    ) -> Result<types::ClearBulletinsForGroupResultsEntity, NifiError> {
+        match self.version {
+            crate::dynamic::DetectedVersion::V2_6_0 => Err(NifiError::UnsupportedEndpoint {
+                endpoint: "clear_bulletins_1".to_string(),
+                version: "2.6.0".to_string(),
+            }),
+            crate::dynamic::DetectedVersion::V2_7_2 => {
+                let api = crate::v2_7_2::api::flow::FlowBulletinsApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api
+                    .clear_bulletins_1(
+                        &crate::v2_7_2::types::ClearBulletinsForGroupRequestEntity::try_from(
+                            body.clone(),
+                        )?,
+                    )
+                    .await?
+                    .into())
+            }
+            crate::dynamic::DetectedVersion::V2_8_0 => {
+                let api = crate::v2_8_0::api::flow::FlowBulletinsApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api
+                    .clear_bulletins_1(
+                        &crate::v2_8_0::types::ClearBulletinsForGroupRequestEntity::try_from(
+                            body.clone(),
+                        )?,
+                    )
+                    .await?
+                    .into())
+            }
+            _ => Err(NifiError::UnsupportedEndpoint {
+                endpoint: "clear_bulletins_1".to_string(),
+                version: "unknown".to_string(),
+            }),
+        }
+    }
+}
+/// Sub-resource dispatch struct for [FlowControllerServicesApi].
+pub struct FlowControllerServicesApiDispatch<'a> {
+    pub(crate) client: &'a crate::NifiClient,
+    pub(crate) id: String,
+    pub(crate) version: crate::dynamic::DetectedVersion,
+}
+impl FlowControllerServicesApi for FlowControllerServicesApiDispatch<'_> {
+    async fn activate_controller_services(
+        &self,
+        body: &types::ActivateControllerServicesEntity,
+    ) -> Result<types::ActivateControllerServicesEntity, NifiError> {
+        match self.version {
+            crate::dynamic::DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::flow::FlowControllerServicesApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api
+                    .activate_controller_services(
+                        &crate::v2_6_0::types::ActivateControllerServicesEntity::try_from(
+                            body.clone(),
+                        )?,
+                    )
+                    .await?
+                    .into())
+            }
+            crate::dynamic::DetectedVersion::V2_7_2 => {
+                let api = crate::v2_7_2::api::flow::FlowControllerServicesApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api
+                    .activate_controller_services(
+                        &crate::v2_7_2::types::ActivateControllerServicesEntity::try_from(
+                            body.clone(),
+                        )?,
+                    )
+                    .await?
+                    .into())
+            }
+            crate::dynamic::DetectedVersion::V2_8_0 => {
+                let api = crate::v2_8_0::api::flow::FlowControllerServicesApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api
+                    .activate_controller_services(
+                        &crate::v2_8_0::types::ActivateControllerServicesEntity::try_from(
+                            body.clone(),
+                        )?,
+                    )
+                    .await?
+                    .into())
+            }
+            _ => Err(NifiError::UnsupportedEndpoint {
+                endpoint: "activate_controller_services".to_string(),
+                version: "unknown".to_string(),
+            }),
+        }
+    }
+    async fn get_controller_services_from_group(
+        &self,
+        include_ancestor_groups: Option<bool>,
+        include_descendant_groups: Option<bool>,
+        include_referencing_components: Option<bool>,
+        ui_only: Option<bool>,
+    ) -> Result<types::ControllerServicesEntity, NifiError> {
+        match self.version {
+            crate::dynamic::DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::flow::FlowControllerServicesApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api
+                    .get_controller_services_from_group(
+                        include_ancestor_groups,
+                        include_descendant_groups,
+                        include_referencing_components,
+                        ui_only,
+                    )
+                    .await?
+                    .into())
+            }
+            crate::dynamic::DetectedVersion::V2_7_2 => {
+                let api = crate::v2_7_2::api::flow::FlowControllerServicesApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api
+                    .get_controller_services_from_group(
+                        include_ancestor_groups,
+                        include_descendant_groups,
+                        include_referencing_components,
+                        ui_only,
+                    )
+                    .await?
+                    .into())
+            }
+            crate::dynamic::DetectedVersion::V2_8_0 => {
+                let api = crate::v2_8_0::api::flow::FlowControllerServicesApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api
+                    .get_controller_services_from_group(
+                        include_ancestor_groups,
+                        include_descendant_groups,
+                        include_referencing_components,
+                        ui_only,
+                    )
+                    .await?
+                    .into())
+            }
+            _ => Err(NifiError::UnsupportedEndpoint {
+                endpoint: "get_controller_services_from_group".to_string(),
+                version: "unknown".to_string(),
+            }),
+        }
+    }
+}
+/// Sub-resource dispatch struct for [FlowStatisticsApi].
+pub struct FlowStatisticsApiDispatch<'a> {
+    pub(crate) client: &'a crate::NifiClient,
+    pub(crate) id: String,
+    pub(crate) version: crate::dynamic::DetectedVersion,
+}
+impl FlowStatisticsApi for FlowStatisticsApiDispatch<'_> {
+    async fn get_connection_statistics(
+        &self,
+        nodewise: Option<bool>,
+        cluster_node_id: Option<&str>,
+    ) -> Result<types::ConnectionStatisticsEntity, NifiError> {
+        match self.version {
+            crate::dynamic::DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::flow::FlowStatisticsApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api
+                    .get_connection_statistics(nodewise, cluster_node_id)
+                    .await?
+                    .into())
+            }
+            crate::dynamic::DetectedVersion::V2_7_2 => {
+                let api = crate::v2_7_2::api::flow::FlowStatisticsApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api
+                    .get_connection_statistics(nodewise, cluster_node_id)
+                    .await?
+                    .into())
+            }
+            crate::dynamic::DetectedVersion::V2_8_0 => {
+                let api = crate::v2_8_0::api::flow::FlowStatisticsApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api
+                    .get_connection_statistics(nodewise, cluster_node_id)
+                    .await?
+                    .into())
+            }
+            _ => Err(NifiError::UnsupportedEndpoint {
+                endpoint: "get_connection_statistics".to_string(),
+                version: "unknown".to_string(),
+            }),
+        }
+    }
+}
+/// Sub-resource dispatch struct for [FlowStatusApi].
+pub struct FlowStatusApiDispatch<'a> {
+    pub(crate) client: &'a crate::NifiClient,
+    pub(crate) id: String,
+    pub(crate) version: crate::dynamic::DetectedVersion,
+}
+impl FlowStatusApi for FlowStatusApiDispatch<'_> {
+    async fn get_connection_status(
+        &self,
+        nodewise: Option<bool>,
+        cluster_node_id: Option<&str>,
+    ) -> Result<types::ConnectionStatusEntity, NifiError> {
+        match self.version {
+            crate::dynamic::DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::flow::FlowStatusApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api
+                    .get_connection_status(nodewise, cluster_node_id)
+                    .await?
+                    .into())
+            }
+            crate::dynamic::DetectedVersion::V2_7_2 => {
+                let api = crate::v2_7_2::api::flow::FlowStatusApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api
+                    .get_connection_status(nodewise, cluster_node_id)
+                    .await?
+                    .into())
+            }
+            crate::dynamic::DetectedVersion::V2_8_0 => {
+                let api = crate::v2_8_0::api::flow::FlowStatusApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api
+                    .get_connection_status(nodewise, cluster_node_id)
+                    .await?
+                    .into())
+            }
+            _ => Err(NifiError::UnsupportedEndpoint {
+                endpoint: "get_connection_status".to_string(),
+                version: "unknown".to_string(),
+            }),
+        }
+    }
+    async fn get_connection_status_history(&self) -> Result<types::StatusHistoryEntity, NifiError> {
+        match self.version {
+            crate::dynamic::DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::flow::FlowStatusApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api.get_connection_status_history().await?.into())
+            }
+            crate::dynamic::DetectedVersion::V2_7_2 => {
+                let api = crate::v2_7_2::api::flow::FlowStatusApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api.get_connection_status_history().await?.into())
+            }
+            crate::dynamic::DetectedVersion::V2_8_0 => {
+                let api = crate::v2_8_0::api::flow::FlowStatusApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api.get_connection_status_history().await?.into())
+            }
+            _ => Err(NifiError::UnsupportedEndpoint {
+                endpoint: "get_connection_status_history".to_string(),
+                version: "unknown".to_string(),
+            }),
+        }
+    }
+    async fn get_input_port_status(
+        &self,
+        nodewise: Option<bool>,
+        cluster_node_id: Option<&str>,
+    ) -> Result<types::PortStatusEntity, NifiError> {
+        match self.version {
+            crate::dynamic::DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::flow::FlowStatusApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api
+                    .get_input_port_status(nodewise, cluster_node_id)
+                    .await?
+                    .into())
+            }
+            crate::dynamic::DetectedVersion::V2_7_2 => {
+                let api = crate::v2_7_2::api::flow::FlowStatusApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api
+                    .get_input_port_status(nodewise, cluster_node_id)
+                    .await?
+                    .into())
+            }
+            crate::dynamic::DetectedVersion::V2_8_0 => {
+                let api = crate::v2_8_0::api::flow::FlowStatusApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api
+                    .get_input_port_status(nodewise, cluster_node_id)
+                    .await?
+                    .into())
+            }
+            _ => Err(NifiError::UnsupportedEndpoint {
+                endpoint: "get_input_port_status".to_string(),
+                version: "unknown".to_string(),
+            }),
+        }
+    }
+    async fn get_output_port_status(
+        &self,
+        nodewise: Option<bool>,
+        cluster_node_id: Option<&str>,
+    ) -> Result<types::PortStatusEntity, NifiError> {
+        match self.version {
+            crate::dynamic::DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::flow::FlowStatusApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api
+                    .get_output_port_status(nodewise, cluster_node_id)
+                    .await?
+                    .into())
+            }
+            crate::dynamic::DetectedVersion::V2_7_2 => {
+                let api = crate::v2_7_2::api::flow::FlowStatusApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api
+                    .get_output_port_status(nodewise, cluster_node_id)
+                    .await?
+                    .into())
+            }
+            crate::dynamic::DetectedVersion::V2_8_0 => {
+                let api = crate::v2_8_0::api::flow::FlowStatusApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api
+                    .get_output_port_status(nodewise, cluster_node_id)
+                    .await?
+                    .into())
+            }
+            _ => Err(NifiError::UnsupportedEndpoint {
+                endpoint: "get_output_port_status".to_string(),
+                version: "unknown".to_string(),
+            }),
+        }
+    }
+    async fn get_process_group_status(
+        &self,
+        recursive: Option<bool>,
+        nodewise: Option<bool>,
+        cluster_node_id: Option<&str>,
+    ) -> Result<types::ProcessGroupStatusEntity, NifiError> {
+        match self.version {
+            crate::dynamic::DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::flow::FlowStatusApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api
+                    .get_process_group_status(recursive, nodewise, cluster_node_id)
+                    .await?
+                    .into())
+            }
+            crate::dynamic::DetectedVersion::V2_7_2 => {
+                let api = crate::v2_7_2::api::flow::FlowStatusApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api
+                    .get_process_group_status(recursive, nodewise, cluster_node_id)
+                    .await?
+                    .into())
+            }
+            crate::dynamic::DetectedVersion::V2_8_0 => {
+                let api = crate::v2_8_0::api::flow::FlowStatusApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api
+                    .get_process_group_status(recursive, nodewise, cluster_node_id)
+                    .await?
+                    .into())
+            }
+            _ => Err(NifiError::UnsupportedEndpoint {
+                endpoint: "get_process_group_status".to_string(),
+                version: "unknown".to_string(),
+            }),
+        }
+    }
+    async fn get_process_group_status_history(
+        &self,
+    ) -> Result<types::StatusHistoryEntity, NifiError> {
+        match self.version {
+            crate::dynamic::DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::flow::FlowStatusApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api.get_process_group_status_history().await?.into())
+            }
+            crate::dynamic::DetectedVersion::V2_7_2 => {
+                let api = crate::v2_7_2::api::flow::FlowStatusApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api.get_process_group_status_history().await?.into())
+            }
+            crate::dynamic::DetectedVersion::V2_8_0 => {
+                let api = crate::v2_8_0::api::flow::FlowStatusApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api.get_process_group_status_history().await?.into())
+            }
+            _ => Err(NifiError::UnsupportedEndpoint {
+                endpoint: "get_process_group_status_history".to_string(),
+                version: "unknown".to_string(),
+            }),
+        }
+    }
+    async fn get_processor_status(
+        &self,
+        nodewise: Option<bool>,
+        cluster_node_id: Option<&str>,
+    ) -> Result<types::ProcessorStatusEntity, NifiError> {
+        match self.version {
+            crate::dynamic::DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::flow::FlowStatusApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api
+                    .get_processor_status(nodewise, cluster_node_id)
+                    .await?
+                    .into())
+            }
+            crate::dynamic::DetectedVersion::V2_7_2 => {
+                let api = crate::v2_7_2::api::flow::FlowStatusApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api
+                    .get_processor_status(nodewise, cluster_node_id)
+                    .await?
+                    .into())
+            }
+            crate::dynamic::DetectedVersion::V2_8_0 => {
+                let api = crate::v2_8_0::api::flow::FlowStatusApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api
+                    .get_processor_status(nodewise, cluster_node_id)
+                    .await?
+                    .into())
+            }
+            _ => Err(NifiError::UnsupportedEndpoint {
+                endpoint: "get_processor_status".to_string(),
+                version: "unknown".to_string(),
+            }),
+        }
+    }
+    async fn get_processor_status_history(&self) -> Result<types::StatusHistoryEntity, NifiError> {
+        match self.version {
+            crate::dynamic::DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::flow::FlowStatusApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api.get_processor_status_history().await?.into())
+            }
+            crate::dynamic::DetectedVersion::V2_7_2 => {
+                let api = crate::v2_7_2::api::flow::FlowStatusApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api.get_processor_status_history().await?.into())
+            }
+            crate::dynamic::DetectedVersion::V2_8_0 => {
+                let api = crate::v2_8_0::api::flow::FlowStatusApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api.get_processor_status_history().await?.into())
+            }
+            _ => Err(NifiError::UnsupportedEndpoint {
+                endpoint: "get_processor_status_history".to_string(),
+                version: "unknown".to_string(),
+            }),
+        }
+    }
+    async fn get_remote_process_group_status(
+        &self,
+        nodewise: Option<bool>,
+        cluster_node_id: Option<&str>,
+    ) -> Result<types::RemoteProcessGroupStatusEntity, NifiError> {
+        match self.version {
+            crate::dynamic::DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::flow::FlowStatusApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api
+                    .get_remote_process_group_status(nodewise, cluster_node_id)
+                    .await?
+                    .into())
+            }
+            crate::dynamic::DetectedVersion::V2_7_2 => {
+                let api = crate::v2_7_2::api::flow::FlowStatusApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api
+                    .get_remote_process_group_status(nodewise, cluster_node_id)
+                    .await?
+                    .into())
+            }
+            crate::dynamic::DetectedVersion::V2_8_0 => {
+                let api = crate::v2_8_0::api::flow::FlowStatusApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api
+                    .get_remote_process_group_status(nodewise, cluster_node_id)
+                    .await?
+                    .into())
+            }
+            _ => Err(NifiError::UnsupportedEndpoint {
+                endpoint: "get_remote_process_group_status".to_string(),
+                version: "unknown".to_string(),
+            }),
+        }
+    }
+    async fn get_remote_process_group_status_history(
+        &self,
+    ) -> Result<types::StatusHistoryEntity, NifiError> {
+        match self.version {
+            crate::dynamic::DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::flow::FlowStatusApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api.get_remote_process_group_status_history().await?.into())
+            }
+            crate::dynamic::DetectedVersion::V2_7_2 => {
+                let api = crate::v2_7_2::api::flow::FlowStatusApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api.get_remote_process_group_status_history().await?.into())
+            }
+            crate::dynamic::DetectedVersion::V2_8_0 => {
+                let api = crate::v2_8_0::api::flow::FlowStatusApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api.get_remote_process_group_status_history().await?.into())
+            }
+            _ => Err(NifiError::UnsupportedEndpoint {
+                endpoint: "get_remote_process_group_status_history".to_string(),
+                version: "unknown".to_string(),
+            }),
         }
     }
 }

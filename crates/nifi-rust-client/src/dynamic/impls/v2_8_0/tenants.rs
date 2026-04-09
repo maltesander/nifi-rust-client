@@ -10,24 +10,26 @@ pub(crate) struct V2_8_0TenantsApi<'a> {
 }
 #[allow(unused_variables)]
 impl TenantsApi for V2_8_0TenantsApi<'_> {
-    async fn create_user(&self, body: types::UserEntity) -> Result<types::UserEntity, NifiError> {
+    async fn create_user(&self, body: &types::UserEntity) -> Result<types::UserEntity, NifiError> {
         let api = crate::v2_8_0::api::tenants::TenantsApi {
             client: self.client,
         };
         Ok(api
-            .create_user(&crate::v2_8_0::types::UserEntity::try_from(body)?)
+            .create_user(&crate::v2_8_0::types::UserEntity::try_from(body.clone())?)
             .await?
             .into())
     }
     async fn create_user_group(
         &self,
-        body: types::UserGroupEntity,
+        body: &types::UserGroupEntity,
     ) -> Result<types::UserGroupEntity, NifiError> {
         let api = crate::v2_8_0::api::tenants::TenantsApi {
             client: self.client,
         };
         Ok(api
-            .create_user_group(&crate::v2_8_0::types::UserGroupEntity::try_from(body)?)
+            .create_user_group(&crate::v2_8_0::types::UserGroupEntity::try_from(
+                body.clone(),
+            )?)
             .await?
             .into())
     }
@@ -94,26 +96,32 @@ impl TenantsApi for V2_8_0TenantsApi<'_> {
     async fn update_user(
         &self,
         id: &str,
-        body: types::UserEntity,
+        body: &types::UserEntity,
     ) -> Result<types::UserEntity, NifiError> {
         let api = crate::v2_8_0::api::tenants::TenantsApi {
             client: self.client,
         };
         Ok(api
-            .update_user(id, &crate::v2_8_0::types::UserEntity::try_from(body)?)
+            .update_user(
+                id,
+                &crate::v2_8_0::types::UserEntity::try_from(body.clone())?,
+            )
             .await?
             .into())
     }
     async fn update_user_group(
         &self,
         id: &str,
-        body: types::UserGroupEntity,
+        body: &types::UserGroupEntity,
     ) -> Result<types::UserGroupEntity, NifiError> {
         let api = crate::v2_8_0::api::tenants::TenantsApi {
             client: self.client,
         };
         Ok(api
-            .update_user_group(id, &crate::v2_8_0::types::UserGroupEntity::try_from(body)?)
+            .update_user_group(
+                id,
+                &crate::v2_8_0::types::UserGroupEntity::try_from(body.clone())?,
+            )
             .await?
             .into())
     }

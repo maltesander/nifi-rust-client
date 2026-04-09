@@ -389,28 +389,7 @@ fn emit_sub_dispatch_method(
         }
     };
 
-    // --- Build forward args for the static sub-struct method call ---
-    let mut forward_args = Vec::new();
-    // Secondary path params
-    for name in &path_param_names {
-        forward_args.push(escape_keyword(name));
-    }
-    // Query params
-    for (qp, _) in &merged_query_params {
-        forward_args.push(escape_keyword(&qp.rust_name));
-    }
-    // Body
-    if ep.method != HttpMethod::Delete {
-        match &ep.body_kind {
-            Some(RequestBodyKind::Json) => forward_args.push("body".to_string()),
-            Some(RequestBodyKind::OctetStream) => {
-                forward_args.push("filename".to_string());
-                forward_args.push("data".to_string());
-            }
-            Some(RequestBodyKind::FormEncoded) | None => {}
-        }
-    }
-    let forward_args_str = forward_args.join(", ");
+    let is_void = ep.response_type.is_none() && ep.response_inner.is_none();
 
     // --- Method signature ---
     out.push_str(&format!(
@@ -419,6 +398,7 @@ fn emit_sub_dispatch_method(
 
     // --- Version match dispatch ---
     // For each version, construct the static sub-struct and call the method
+    // with proper type conversions (dynamic -> version-specific -> dynamic)
     out.push_str("        match self.version {\n");
     for (ver, mod_name, _feature, spec) in versions {
         let variant = version_to_variant(ver);
@@ -431,9 +411,80 @@ fn emit_sub_dispatch_method(
             continue;
         }
 
+        let ver_info = &ep_by_version[ver];
+        let ver_ep = ver_info.endpoint;
+
         // Find the static sub-struct name for this version
         let static_sub_struct_name = find_static_sub_struct_name(spec, &sg.struct_name);
         let static_module = find_static_module_name(spec, &sg.struct_name);
+
+        // Build call arguments with type conversions
+        let mut call_args = Vec::new();
+
+        // Secondary path params (pass directly — they're &str)
+        for name in &path_param_names {
+            call_args.push(escape_keyword(name));
+        }
+
+        // Query params — convert enums, handle forced options
+        for qp in &ver_ep.query_params {
+            if qp.name == *primary {
+                continue;
+            }
+            let forced_option = merged_query_params
+                .iter()
+                .find(|(mq, _)| mq.rust_name == qp.rust_name)
+                .map(|(_, count)| *count < all_version_count)
+                .unwrap_or(false);
+
+            if qp.enum_type_name.is_some() {
+                let type_name = qp.enum_type_name.as_deref().unwrap();
+                if qp.required && !forced_option {
+                    call_args.push(format!(
+                        "crate::{mod_name}::types::{type_name}::try_from({name})?",
+                        name = escape_keyword(&qp.rust_name),
+                    ));
+                } else if qp.required && forced_option {
+                    call_args.push(format!(
+                        "crate::{mod_name}::types::{type_name}::try_from({name}.ok_or_else(|| NifiError::UnsupportedEndpoint {{ endpoint: \"{fn_name} (missing required param {raw_name})\".to_string(), version: \"{ver}\".to_string() }})?)?",
+                        name = escape_keyword(&qp.rust_name),
+                        raw_name = qp.rust_name,
+                    ));
+                } else {
+                    call_args.push(format!(
+                        "{name}.map(crate::{mod_name}::types::{type_name}::try_from).transpose()?",
+                        name = escape_keyword(&qp.rust_name),
+                    ));
+                }
+            } else if qp.required && forced_option {
+                call_args.push(format!(
+                    "{name}.ok_or_else(|| NifiError::UnsupportedEndpoint {{ endpoint: \"{fn_name} (missing required param {raw_name})\".to_string(), version: \"{ver}\".to_string() }})?",
+                    name = escape_keyword(&qp.rust_name),
+                    raw_name = qp.rust_name,
+                ));
+            } else {
+                call_args.push(escape_keyword(&qp.rust_name));
+            }
+        }
+
+        // Body param with type conversion
+        if ver_ep.method != HttpMethod::Delete {
+            match &ver_ep.body_kind {
+                Some(RequestBodyKind::Json) => {
+                    let req_type = ver_ep.request_type.as_deref().unwrap_or("serde_json::Value");
+                    call_args.push(format!(
+                        "&crate::{mod_name}::types::{req_type}::try_from(body.clone())?",
+                    ));
+                }
+                Some(RequestBodyKind::OctetStream) => {
+                    call_args.push("filename".to_string());
+                    call_args.push("data".to_string());
+                }
+                Some(RequestBodyKind::FormEncoded) | None => {}
+            }
+        }
+
+        let args_str = call_args.join(", ");
 
         out.push_str(&format!(
             "            crate::dynamic::DetectedVersion::{variant} => {{\n"
@@ -448,9 +499,15 @@ fn emit_sub_dispatch_method(
             "                    {primary}: &self.{primary},\n"
         ));
         out.push_str("                };\n");
-        out.push_str(&format!(
-            "                api.{fn_name}({forward_args_str}).await\n"
-        ));
+        if is_void {
+            out.push_str(&format!(
+                "                api.{fn_name}({args_str}).await\n"
+            ));
+        } else {
+            out.push_str(&format!(
+                "                Ok(api.{fn_name}({args_str}).await?.into())\n"
+            ));
+        }
         out.push_str("            }\n");
     }
     out.push_str("            _ => Err(NifiError::UnsupportedEndpoint { endpoint: \"");
@@ -711,6 +768,18 @@ mod tests {
         assert!(
             content.contains("id: &self.id"),
             "Should pass &self.id to static sub-struct"
+        );
+
+        // Type conversion: body should use try_from with clone (rustfmt may split lines)
+        assert!(
+            content.contains("try_from(body.clone())") || content.contains("body.clone()"),
+            "Sub-resource body arg should use body.clone() for conversion. Content:\n{content}"
+        );
+        // Type conversion: non-void return should use Ok(... .into())
+        // Check in the sub-resource impl section specifically
+        assert!(
+            sub_section.contains(".into()"),
+            "Sub-resource non-void return should use .into(). Content:\n{content}"
         );
 
         // mod.rs re-exports both dispatch enum and sub-resource dispatch struct

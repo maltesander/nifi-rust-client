@@ -12,13 +12,15 @@ pub(crate) struct V2_6_0SnippetsApi<'a> {
 impl SnippetsApi for V2_6_0SnippetsApi<'_> {
     async fn create_snippet(
         &self,
-        body: types::SnippetEntity,
+        body: &types::SnippetEntity,
     ) -> Result<types::SnippetEntity, NifiError> {
         let api = crate::v2_6_0::api::snippets::SnippetsApi {
             client: self.client,
         };
         Ok(api
-            .create_snippet(&crate::v2_6_0::types::SnippetEntity::try_from(body)?)
+            .create_snippet(&crate::v2_6_0::types::SnippetEntity::try_from(
+                body.clone(),
+            )?)
             .await?
             .into())
     }
@@ -38,13 +40,16 @@ impl SnippetsApi for V2_6_0SnippetsApi<'_> {
     async fn update_snippet(
         &self,
         id: &str,
-        body: types::SnippetEntity,
+        body: &types::SnippetEntity,
     ) -> Result<types::SnippetEntity, NifiError> {
         let api = crate::v2_6_0::api::snippets::SnippetsApi {
             client: self.client,
         };
         Ok(api
-            .update_snippet(id, &crate::v2_6_0::types::SnippetEntity::try_from(body)?)
+            .update_snippet(
+                id,
+                &crate::v2_6_0::types::SnippetEntity::try_from(body.clone())?,
+            )
             .await?
             .into())
     }

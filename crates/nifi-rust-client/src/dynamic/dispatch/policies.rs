@@ -13,10 +13,26 @@ pub enum PoliciesApiDispatch<'a> {
     V2_7_2(super::super::impls::v2_7_2::V2_7_2PoliciesApi<'a>),
     V2_8_0(super::super::impls::v2_8_0::V2_8_0PoliciesApi<'a>),
 }
+impl<'a> PoliciesApiDispatch<'a> {
+    fn client(&self) -> &'a crate::NifiClient {
+        match self {
+            Self::V2_6_0(api) => api.client,
+            Self::V2_7_2(api) => api.client,
+            Self::V2_8_0(api) => api.client,
+        }
+    }
+    fn version(&self) -> crate::dynamic::DetectedVersion {
+        match self {
+            Self::V2_6_0(_) => crate::dynamic::DetectedVersion::V2_6_0,
+            Self::V2_7_2(_) => crate::dynamic::DetectedVersion::V2_7_2,
+            Self::V2_8_0(_) => crate::dynamic::DetectedVersion::V2_8_0,
+        }
+    }
+}
 impl PoliciesApi for PoliciesApiDispatch<'_> {
     async fn create_access_policy(
         &self,
-        body: types::AccessPolicyEntity,
+        body: &types::AccessPolicyEntity,
     ) -> Result<types::AccessPolicyEntity, NifiError> {
         match self {
             Self::V2_6_0(api) => api.create_access_policy(body).await,
@@ -67,7 +83,7 @@ impl PoliciesApi for PoliciesApiDispatch<'_> {
     async fn update_access_policy(
         &self,
         id: &str,
-        body: types::AccessPolicyEntity,
+        body: &types::AccessPolicyEntity,
     ) -> Result<types::AccessPolicyEntity, NifiError> {
         match self {
             Self::V2_6_0(api) => api.update_access_policy(id, body).await,

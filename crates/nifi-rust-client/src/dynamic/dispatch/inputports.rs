@@ -3,6 +3,8 @@
 #[allow(unused_imports)]
 use crate::NifiError;
 use crate::dynamic::traits::InputPortsApi;
+use crate::dynamic::traits::InputPortsBulletinsApi;
+use crate::dynamic::traits::InputPortsRunStatusApi;
 #[allow(unused_imports)]
 use crate::dynamic::types;
 /// Dynamic dispatch enum for the InputPorts API. Use via the [`InputPortsApi`] trait.
@@ -13,16 +15,43 @@ pub enum InputPortsApiDispatch<'a> {
     V2_7_2(super::super::impls::v2_7_2::V2_7_2InputPortsApi<'a>),
     V2_8_0(super::super::impls::v2_8_0::V2_8_0InputPortsApi<'a>),
 }
-impl InputPortsApi for InputPortsApiDispatch<'_> {
-    async fn clear_bulletins_2(
-        &self,
-        id: &str,
-        body: types::ClearBulletinsRequestEntity,
-    ) -> Result<types::ClearBulletinsResultEntity, NifiError> {
+impl<'a> InputPortsApiDispatch<'a> {
+    fn client(&self) -> &'a crate::NifiClient {
         match self {
-            Self::V2_6_0(api) => api.clear_bulletins_2(id, body).await,
-            Self::V2_7_2(api) => api.clear_bulletins_2(id, body).await,
-            Self::V2_8_0(api) => api.clear_bulletins_2(id, body).await,
+            Self::V2_6_0(api) => api.client,
+            Self::V2_7_2(api) => api.client,
+            Self::V2_8_0(api) => api.client,
+        }
+    }
+    fn version(&self) -> crate::dynamic::DetectedVersion {
+        match self {
+            Self::V2_6_0(_) => crate::dynamic::DetectedVersion::V2_6_0,
+            Self::V2_7_2(_) => crate::dynamic::DetectedVersion::V2_7_2,
+            Self::V2_8_0(_) => crate::dynamic::DetectedVersion::V2_8_0,
+        }
+    }
+}
+impl InputPortsApi for InputPortsApiDispatch<'_> {
+    type InputPortsBulletinsApi<'b>
+        = InputPortsBulletinsApiDispatch<'b>
+    where
+        Self: 'b;
+    fn bulletins<'b>(&'b self, id: &'b str) -> Self::InputPortsBulletinsApi<'b> {
+        InputPortsBulletinsApiDispatch {
+            client: self.client(),
+            id: id.to_string(),
+            version: self.version(),
+        }
+    }
+    type InputPortsRunStatusApi<'b>
+        = InputPortsRunStatusApiDispatch<'b>
+    where
+        Self: 'b;
+    fn run_status<'b>(&'b self, id: &'b str) -> Self::InputPortsRunStatusApi<'b> {
+        InputPortsRunStatusApiDispatch {
+            client: self.client(),
+            id: id.to_string(),
+            version: self.version(),
         }
     }
     async fn get_input_port(&self, id: &str) -> Result<types::PortEntity, NifiError> {
@@ -57,7 +86,7 @@ impl InputPortsApi for InputPortsApiDispatch<'_> {
     async fn update_input_port(
         &self,
         id: &str,
-        body: types::PortEntity,
+        body: &types::PortEntity,
     ) -> Result<types::PortEntity, NifiError> {
         match self {
             Self::V2_6_0(api) => api.update_input_port(id, body).await,
@@ -65,15 +94,106 @@ impl InputPortsApi for InputPortsApiDispatch<'_> {
             Self::V2_8_0(api) => api.update_input_port(id, body).await,
         }
     }
+}
+/// Sub-resource dispatch struct for [InputPortsBulletinsApi].
+pub struct InputPortsBulletinsApiDispatch<'a> {
+    pub(crate) client: &'a crate::NifiClient,
+    pub(crate) id: String,
+    pub(crate) version: crate::dynamic::DetectedVersion,
+}
+impl InputPortsBulletinsApi for InputPortsBulletinsApiDispatch<'_> {
+    async fn clear_bulletins_2(
+        &self,
+        body: &types::ClearBulletinsRequestEntity,
+    ) -> Result<types::ClearBulletinsResultEntity, NifiError> {
+        match self.version {
+            crate::dynamic::DetectedVersion::V2_6_0 => Err(NifiError::UnsupportedEndpoint {
+                endpoint: "clear_bulletins_2".to_string(),
+                version: "2.6.0".to_string(),
+            }),
+            crate::dynamic::DetectedVersion::V2_7_2 => {
+                let api = crate::v2_7_2::api::inputports::InputPortsBulletinsApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api
+                    .clear_bulletins_2(
+                        &crate::v2_7_2::types::ClearBulletinsRequestEntity::try_from(body.clone())?,
+                    )
+                    .await?
+                    .into())
+            }
+            crate::dynamic::DetectedVersion::V2_8_0 => {
+                let api = crate::v2_8_0::api::inputports::InputPortsBulletinsApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api
+                    .clear_bulletins_2(
+                        &crate::v2_8_0::types::ClearBulletinsRequestEntity::try_from(body.clone())?,
+                    )
+                    .await?
+                    .into())
+            }
+            _ => Err(NifiError::UnsupportedEndpoint {
+                endpoint: "clear_bulletins_2".to_string(),
+                version: "unknown".to_string(),
+            }),
+        }
+    }
+}
+/// Sub-resource dispatch struct for [InputPortsRunStatusApi].
+pub struct InputPortsRunStatusApiDispatch<'a> {
+    pub(crate) client: &'a crate::NifiClient,
+    pub(crate) id: String,
+    pub(crate) version: crate::dynamic::DetectedVersion,
+}
+impl InputPortsRunStatusApi for InputPortsRunStatusApiDispatch<'_> {
     async fn update_run_status_2(
         &self,
-        id: &str,
-        body: types::PortRunStatusEntity,
+        body: &types::PortRunStatusEntity,
     ) -> Result<types::ProcessorEntity, NifiError> {
-        match self {
-            Self::V2_6_0(api) => api.update_run_status_2(id, body).await,
-            Self::V2_7_2(api) => api.update_run_status_2(id, body).await,
-            Self::V2_8_0(api) => api.update_run_status_2(id, body).await,
+        match self.version {
+            crate::dynamic::DetectedVersion::V2_6_0 => {
+                let api = crate::v2_6_0::api::inputports::InputPortsRunStatusApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api
+                    .update_run_status_2(&crate::v2_6_0::types::PortRunStatusEntity::try_from(
+                        body.clone(),
+                    )?)
+                    .await?
+                    .into())
+            }
+            crate::dynamic::DetectedVersion::V2_7_2 => {
+                let api = crate::v2_7_2::api::inputports::InputPortsRunStatusApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api
+                    .update_run_status_2(&crate::v2_7_2::types::PortRunStatusEntity::try_from(
+                        body.clone(),
+                    )?)
+                    .await?
+                    .into())
+            }
+            crate::dynamic::DetectedVersion::V2_8_0 => {
+                let api = crate::v2_8_0::api::inputports::InputPortsRunStatusApi {
+                    client: self.client,
+                    id: &self.id,
+                };
+                Ok(api
+                    .update_run_status_2(&crate::v2_8_0::types::PortRunStatusEntity::try_from(
+                        body.clone(),
+                    )?)
+                    .await?
+                    .into())
+            }
+            _ => Err(NifiError::UnsupportedEndpoint {
+                endpoint: "update_run_status_2".to_string(),
+                version: "unknown".to_string(),
+            }),
         }
     }
 }

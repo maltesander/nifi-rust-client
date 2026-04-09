@@ -12,13 +12,15 @@ pub(crate) struct V2_7_2PoliciesApi<'a> {
 impl PoliciesApi for V2_7_2PoliciesApi<'_> {
     async fn create_access_policy(
         &self,
-        body: types::AccessPolicyEntity,
+        body: &types::AccessPolicyEntity,
     ) -> Result<types::AccessPolicyEntity, NifiError> {
         let api = crate::v2_7_2::api::policies::PoliciesApi {
             client: self.client,
         };
         Ok(api
-            .create_access_policy(&crate::v2_7_2::types::AccessPolicyEntity::try_from(body)?)
+            .create_access_policy(&crate::v2_7_2::types::AccessPolicyEntity::try_from(
+                body.clone(),
+            )?)
             .await?
             .into())
     }
@@ -59,7 +61,7 @@ impl PoliciesApi for V2_7_2PoliciesApi<'_> {
     async fn update_access_policy(
         &self,
         id: &str,
-        body: types::AccessPolicyEntity,
+        body: &types::AccessPolicyEntity,
     ) -> Result<types::AccessPolicyEntity, NifiError> {
         let api = crate::v2_7_2::api::policies::PoliciesApi {
             client: self.client,
@@ -67,7 +69,7 @@ impl PoliciesApi for V2_7_2PoliciesApi<'_> {
         Ok(api
             .update_access_policy(
                 id,
-                &crate::v2_7_2::types::AccessPolicyEntity::try_from(body)?,
+                &crate::v2_7_2::types::AccessPolicyEntity::try_from(body.clone())?,
             )
             .await?
             .into())

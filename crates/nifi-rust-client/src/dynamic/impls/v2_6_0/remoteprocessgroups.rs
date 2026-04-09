@@ -4,12 +4,77 @@
 use crate::NifiError;
 use crate::dynamic::traits::RemoteProcessGroupsApi;
 #[allow(unused_imports)]
+use crate::dynamic::traits::RemoteProcessGroupsBulletinsApi;
+#[allow(unused_imports)]
+use crate::dynamic::traits::RemoteProcessGroupsInputPortsApi;
+#[allow(unused_imports)]
+use crate::dynamic::traits::RemoteProcessGroupsOutputPortsApi;
+#[allow(unused_imports)]
+use crate::dynamic::traits::RemoteProcessGroupsRunStatusApi;
+#[allow(unused_imports)]
+use crate::dynamic::traits::RemoteProcessGroupsStateApi;
+#[allow(unused_imports)]
 use crate::dynamic::types;
 pub(crate) struct V2_6_0RemoteProcessGroupsApi<'a> {
     pub(crate) client: &'a crate::NifiClient,
 }
 #[allow(unused_variables)]
 impl RemoteProcessGroupsApi for V2_6_0RemoteProcessGroupsApi<'_> {
+    type RemoteProcessGroupsBulletinsApi<'b>
+        = crate::dynamic::dispatch::RemoteProcessGroupsBulletinsApiDispatch<'b>
+    where
+        Self: 'b;
+    fn bulletins<'b>(&'b self, id: &'b str) -> Self::RemoteProcessGroupsBulletinsApi<'b> {
+        crate::dynamic::dispatch::RemoteProcessGroupsBulletinsApiDispatch {
+            client: self.client,
+            id: id.to_string(),
+            version: crate::dynamic::DetectedVersion::V2_6_0,
+        }
+    }
+    type RemoteProcessGroupsInputPortsApi<'b>
+        = crate::dynamic::dispatch::RemoteProcessGroupsInputPortsApiDispatch<'b>
+    where
+        Self: 'b;
+    fn input_ports<'b>(&'b self, id: &'b str) -> Self::RemoteProcessGroupsInputPortsApi<'b> {
+        crate::dynamic::dispatch::RemoteProcessGroupsInputPortsApiDispatch {
+            client: self.client,
+            id: id.to_string(),
+            version: crate::dynamic::DetectedVersion::V2_6_0,
+        }
+    }
+    type RemoteProcessGroupsOutputPortsApi<'b>
+        = crate::dynamic::dispatch::RemoteProcessGroupsOutputPortsApiDispatch<'b>
+    where
+        Self: 'b;
+    fn output_ports<'b>(&'b self, id: &'b str) -> Self::RemoteProcessGroupsOutputPortsApi<'b> {
+        crate::dynamic::dispatch::RemoteProcessGroupsOutputPortsApiDispatch {
+            client: self.client,
+            id: id.to_string(),
+            version: crate::dynamic::DetectedVersion::V2_6_0,
+        }
+    }
+    type RemoteProcessGroupsRunStatusApi<'b>
+        = crate::dynamic::dispatch::RemoteProcessGroupsRunStatusApiDispatch<'b>
+    where
+        Self: 'b;
+    fn run_status<'b>(&'b self, id: &'b str) -> Self::RemoteProcessGroupsRunStatusApi<'b> {
+        crate::dynamic::dispatch::RemoteProcessGroupsRunStatusApiDispatch {
+            client: self.client,
+            id: id.to_string(),
+            version: crate::dynamic::DetectedVersion::V2_6_0,
+        }
+    }
+    type RemoteProcessGroupsStateApi<'b>
+        = crate::dynamic::dispatch::RemoteProcessGroupsStateApiDispatch<'b>
+    where
+        Self: 'b;
+    fn state<'b>(&'b self, id: &'b str) -> Self::RemoteProcessGroupsStateApi<'b> {
+        crate::dynamic::dispatch::RemoteProcessGroupsStateApiDispatch {
+            client: self.client,
+            id: id.to_string(),
+            version: crate::dynamic::DetectedVersion::V2_6_0,
+        }
+    }
     async fn get_remote_process_group(
         &self,
         id: &str,
@@ -18,13 +83,6 @@ impl RemoteProcessGroupsApi for V2_6_0RemoteProcessGroupsApi<'_> {
             client: self.client,
         };
         Ok(api.get_remote_process_group(id).await?.into())
-    }
-    async fn get_state_3(&self, id: &str) -> Result<types::ComponentStateDto, NifiError> {
-        let api = crate::v2_6_0::api::remoteprocessgroups::RemoteProcessGroupsStateApi {
-            client: self.client,
-            id,
-        };
-        Ok(api.get_state_3().await?.into())
     }
     async fn remove_remote_process_group(
         &self,
@@ -44,7 +102,7 @@ impl RemoteProcessGroupsApi for V2_6_0RemoteProcessGroupsApi<'_> {
     async fn update_remote_process_group(
         &self,
         id: &str,
-        body: types::RemoteProcessGroupEntity,
+        body: &types::RemoteProcessGroupEntity,
     ) -> Result<types::RemoteProcessGroupEntity, NifiError> {
         let api = crate::v2_6_0::api::remoteprocessgroups::RemoteProcessGroupsApi {
             client: self.client,
@@ -52,111 +110,7 @@ impl RemoteProcessGroupsApi for V2_6_0RemoteProcessGroupsApi<'_> {
         Ok(api
             .update_remote_process_group(
                 id,
-                &crate::v2_6_0::types::RemoteProcessGroupEntity::try_from(body)?,
-            )
-            .await?
-            .into())
-    }
-    async fn update_remote_process_group_input_port(
-        &self,
-        id: &str,
-        port_id: &str,
-        body: types::RemoteProcessGroupPortEntity,
-    ) -> Result<types::RemoteProcessGroupPortEntity, NifiError> {
-        let api = crate::v2_6_0::api::remoteprocessgroups::RemoteProcessGroupsInputPortsApi {
-            client: self.client,
-            id,
-        };
-        Ok(api
-            .update_remote_process_group_input_port(
-                port_id,
-                &crate::v2_6_0::types::RemoteProcessGroupPortEntity::try_from(body)?,
-            )
-            .await?
-            .into())
-    }
-    async fn update_remote_process_group_input_port_run_status(
-        &self,
-        id: &str,
-        port_id: &str,
-        body: types::RemotePortRunStatusEntity,
-    ) -> Result<types::RemoteProcessGroupPortEntity, NifiError> {
-        let api = crate::v2_6_0::api::remoteprocessgroups::RemoteProcessGroupsInputPortsApi {
-            client: self.client,
-            id,
-        };
-        Ok(api
-            .update_remote_process_group_input_port_run_status(
-                port_id,
-                &crate::v2_6_0::types::RemotePortRunStatusEntity::try_from(body)?,
-            )
-            .await?
-            .into())
-    }
-    async fn update_remote_process_group_output_port(
-        &self,
-        id: &str,
-        port_id: &str,
-        body: types::RemoteProcessGroupPortEntity,
-    ) -> Result<types::RemoteProcessGroupPortEntity, NifiError> {
-        let api = crate::v2_6_0::api::remoteprocessgroups::RemoteProcessGroupsOutputPortsApi {
-            client: self.client,
-            id,
-        };
-        Ok(api
-            .update_remote_process_group_output_port(
-                port_id,
-                &crate::v2_6_0::types::RemoteProcessGroupPortEntity::try_from(body)?,
-            )
-            .await?
-            .into())
-    }
-    async fn update_remote_process_group_output_port_run_status(
-        &self,
-        id: &str,
-        port_id: &str,
-        body: types::RemotePortRunStatusEntity,
-    ) -> Result<types::RemoteProcessGroupPortEntity, NifiError> {
-        let api = crate::v2_6_0::api::remoteprocessgroups::RemoteProcessGroupsOutputPortsApi {
-            client: self.client,
-            id,
-        };
-        Ok(api
-            .update_remote_process_group_output_port_run_status(
-                port_id,
-                &crate::v2_6_0::types::RemotePortRunStatusEntity::try_from(body)?,
-            )
-            .await?
-            .into())
-    }
-    async fn update_remote_process_group_run_status(
-        &self,
-        id: &str,
-        body: types::RemotePortRunStatusEntity,
-    ) -> Result<types::RemoteProcessGroupEntity, NifiError> {
-        let api = crate::v2_6_0::api::remoteprocessgroups::RemoteProcessGroupsRunStatusApi {
-            client: self.client,
-            id,
-        };
-        Ok(api
-            .update_remote_process_group_run_status(
-                &crate::v2_6_0::types::RemotePortRunStatusEntity::try_from(body)?,
-            )
-            .await?
-            .into())
-    }
-    async fn update_remote_process_group_run_statuses(
-        &self,
-        id: &str,
-        body: types::RemotePortRunStatusEntity,
-    ) -> Result<types::RemoteProcessGroupEntity, NifiError> {
-        let api = crate::v2_6_0::api::remoteprocessgroups::RemoteProcessGroupsRunStatusApi {
-            client: self.client,
-            id,
-        };
-        Ok(api
-            .update_remote_process_group_run_statuses(
-                &crate::v2_6_0::types::RemotePortRunStatusEntity::try_from(body)?,
+                &crate::v2_6_0::types::RemoteProcessGroupEntity::try_from(body.clone())?,
             )
             .await?
             .into())

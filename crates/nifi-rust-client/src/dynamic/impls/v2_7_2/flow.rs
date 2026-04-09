@@ -4,43 +4,102 @@
 use crate::NifiError;
 use crate::dynamic::traits::FlowApi;
 #[allow(unused_imports)]
+use crate::dynamic::traits::FlowBranchesApi;
+#[allow(unused_imports)]
+use crate::dynamic::traits::FlowBreadcrumbsApi;
+#[allow(unused_imports)]
+use crate::dynamic::traits::FlowBucketsApi;
+#[allow(unused_imports)]
+use crate::dynamic::traits::FlowBulletinsApi;
+#[allow(unused_imports)]
+use crate::dynamic::traits::FlowControllerServicesApi;
+#[allow(unused_imports)]
+use crate::dynamic::traits::FlowStatisticsApi;
+#[allow(unused_imports)]
+use crate::dynamic::traits::FlowStatusApi;
+#[allow(unused_imports)]
 use crate::dynamic::types;
 pub(crate) struct V2_7_2FlowApi<'a> {
     pub(crate) client: &'a crate::NifiClient,
 }
 #[allow(unused_variables)]
 impl FlowApi for V2_7_2FlowApi<'_> {
-    async fn activate_controller_services(
-        &self,
-        id: &str,
-        body: types::ActivateControllerServicesEntity,
-    ) -> Result<types::ActivateControllerServicesEntity, NifiError> {
-        let api = crate::v2_7_2::api::flow::FlowControllerServicesApi {
+    type FlowBranchesApi<'b>
+        = crate::dynamic::dispatch::FlowBranchesApiDispatch<'b>
+    where
+        Self: 'b;
+    fn branches<'b>(&'b self, id: &'b str) -> Self::FlowBranchesApi<'b> {
+        crate::dynamic::dispatch::FlowBranchesApiDispatch {
             client: self.client,
-            id,
-        };
-        Ok(api
-            .activate_controller_services(
-                &crate::v2_7_2::types::ActivateControllerServicesEntity::try_from(body)?,
-            )
-            .await?
-            .into())
+            id: id.to_string(),
+            version: crate::dynamic::DetectedVersion::V2_7_2,
+        }
     }
-    async fn clear_bulletins_1(
-        &self,
-        id: &str,
-        body: types::ClearBulletinsForGroupRequestEntity,
-    ) -> Result<types::ClearBulletinsForGroupResultsEntity, NifiError> {
-        let api = crate::v2_7_2::api::flow::FlowBulletinsApi {
+    type FlowBreadcrumbsApi<'b>
+        = crate::dynamic::dispatch::FlowBreadcrumbsApiDispatch<'b>
+    where
+        Self: 'b;
+    fn breadcrumbs<'b>(&'b self, id: &'b str) -> Self::FlowBreadcrumbsApi<'b> {
+        crate::dynamic::dispatch::FlowBreadcrumbsApiDispatch {
             client: self.client,
-            id,
-        };
-        Ok(api
-            .clear_bulletins_1(
-                &crate::v2_7_2::types::ClearBulletinsForGroupRequestEntity::try_from(body)?,
-            )
-            .await?
-            .into())
+            id: id.to_string(),
+            version: crate::dynamic::DetectedVersion::V2_7_2,
+        }
+    }
+    type FlowBucketsApi<'b>
+        = crate::dynamic::dispatch::FlowBucketsApiDispatch<'b>
+    where
+        Self: 'b;
+    fn buckets<'b>(&'b self, id: &'b str) -> Self::FlowBucketsApi<'b> {
+        crate::dynamic::dispatch::FlowBucketsApiDispatch {
+            client: self.client,
+            id: id.to_string(),
+            version: crate::dynamic::DetectedVersion::V2_7_2,
+        }
+    }
+    type FlowBulletinsApi<'b>
+        = crate::dynamic::dispatch::FlowBulletinsApiDispatch<'b>
+    where
+        Self: 'b;
+    fn bulletins<'b>(&'b self, id: &'b str) -> Self::FlowBulletinsApi<'b> {
+        crate::dynamic::dispatch::FlowBulletinsApiDispatch {
+            client: self.client,
+            id: id.to_string(),
+            version: crate::dynamic::DetectedVersion::V2_7_2,
+        }
+    }
+    type FlowControllerServicesApi<'b>
+        = crate::dynamic::dispatch::FlowControllerServicesApiDispatch<'b>
+    where
+        Self: 'b;
+    fn controller_services<'b>(&'b self, id: &'b str) -> Self::FlowControllerServicesApi<'b> {
+        crate::dynamic::dispatch::FlowControllerServicesApiDispatch {
+            client: self.client,
+            id: id.to_string(),
+            version: crate::dynamic::DetectedVersion::V2_7_2,
+        }
+    }
+    type FlowStatisticsApi<'b>
+        = crate::dynamic::dispatch::FlowStatisticsApiDispatch<'b>
+    where
+        Self: 'b;
+    fn statistics<'b>(&'b self, id: &'b str) -> Self::FlowStatisticsApi<'b> {
+        crate::dynamic::dispatch::FlowStatisticsApiDispatch {
+            client: self.client,
+            id: id.to_string(),
+            version: crate::dynamic::DetectedVersion::V2_7_2,
+        }
+    }
+    type FlowStatusApi<'b>
+        = crate::dynamic::dispatch::FlowStatusApiDispatch<'b>
+    where
+        Self: 'b;
+    fn status<'b>(&'b self, id: &'b str) -> Self::FlowStatusApi<'b> {
+        crate::dynamic::dispatch::FlowStatusApiDispatch {
+            client: self.client,
+            id: id.to_string(),
+            version: crate::dynamic::DetectedVersion::V2_7_2,
+        }
     }
     async fn download_reporting_task_snapshot(
         &self,
@@ -99,31 +158,6 @@ impl FlowApi for V2_7_2FlowApi<'_> {
         };
         Ok(api.get_banners().await?.into())
     }
-    async fn get_branches(&self, id: &str) -> Result<types::FlowRegistryBranchesEntity, NifiError> {
-        let api = crate::v2_7_2::api::flow::FlowBranchesApi {
-            client: self.client,
-            id,
-        };
-        Ok(api.get_branches().await?.into())
-    }
-    async fn get_breadcrumbs(&self, id: &str) -> Result<types::FlowBreadcrumbEntity, NifiError> {
-        let api = crate::v2_7_2::api::flow::FlowBreadcrumbsApi {
-            client: self.client,
-            id,
-        };
-        Ok(api.get_breadcrumbs().await?.into())
-    }
-    async fn get_buckets(
-        &self,
-        id: &str,
-        branch: Option<&str>,
-    ) -> Result<types::FlowRegistryBucketsEntity, NifiError> {
-        let api = crate::v2_7_2::api::flow::FlowBucketsApi {
-            client: self.client,
-            id,
-        };
-        Ok(api.get_buckets(branch).await?.into())
-    }
     async fn get_bulletin_board(
         &self,
         after: Option<&str>,
@@ -161,46 +195,6 @@ impl FlowApi for V2_7_2FlowApi<'_> {
             client: self.client,
         };
         Ok(api.get_component_history(component_id).await?.into())
-    }
-    async fn get_connection_statistics(
-        &self,
-        id: &str,
-        nodewise: Option<bool>,
-        cluster_node_id: Option<&str>,
-    ) -> Result<types::ConnectionStatisticsEntity, NifiError> {
-        let api = crate::v2_7_2::api::flow::FlowStatisticsApi {
-            client: self.client,
-            id,
-        };
-        Ok(api
-            .get_connection_statistics(nodewise, cluster_node_id)
-            .await?
-            .into())
-    }
-    async fn get_connection_status(
-        &self,
-        id: &str,
-        nodewise: Option<bool>,
-        cluster_node_id: Option<&str>,
-    ) -> Result<types::ConnectionStatusEntity, NifiError> {
-        let api = crate::v2_7_2::api::flow::FlowStatusApi {
-            client: self.client,
-            id,
-        };
-        Ok(api
-            .get_connection_status(nodewise, cluster_node_id)
-            .await?
-            .into())
-    }
-    async fn get_connection_status_history(
-        &self,
-        id: &str,
-    ) -> Result<types::StatusHistoryEntity, NifiError> {
-        let api = crate::v2_7_2::api::flow::FlowStatusApi {
-            client: self.client,
-            id,
-        };
-        Ok(api.get_connection_status_history().await?.into())
     }
     async fn get_content_viewers(&self) -> Result<types::ContentViewerEntity, NifiError> {
         let api = crate::v2_7_2::api::flow::FlowApi {
@@ -262,28 +256,6 @@ impl FlowApi for V2_7_2FlowApi<'_> {
             .await?
             .into())
     }
-    async fn get_controller_services_from_group(
-        &self,
-        id: &str,
-        include_ancestor_groups: Option<bool>,
-        include_descendant_groups: Option<bool>,
-        include_referencing_components: Option<bool>,
-        ui_only: Option<bool>,
-    ) -> Result<types::ControllerServicesEntity, NifiError> {
-        let api = crate::v2_7_2::api::flow::FlowControllerServicesApi {
-            client: self.client,
-            id,
-        };
-        Ok(api
-            .get_controller_services_from_group(
-                include_ancestor_groups,
-                include_descendant_groups,
-                include_referencing_components,
-                ui_only,
-            )
-            .await?
-            .into())
-    }
     async fn get_controller_status(&self) -> Result<types::ControllerStatusDto, NifiError> {
         let api = crate::v2_7_2::api::flow::FlowApi {
             client: self.client,
@@ -295,23 +267,6 @@ impl FlowApi for V2_7_2FlowApi<'_> {
             client: self.client,
         };
         Ok(api.get_current_user().await?.into())
-    }
-    async fn get_details(
-        &self,
-        id: &str,
-        registry_id: &str,
-        bucket_id: &str,
-        flow_id: &str,
-        branch: Option<&str>,
-    ) -> Result<types::VersionedFlowDto, NifiError> {
-        let api = crate::v2_7_2::api::flow::FlowBucketsApi {
-            client: self.client,
-            id,
-        };
-        Ok(api
-            .get_details(registry_id, bucket_id, flow_id, branch)
-            .await?
-            .into())
     }
     async fn get_flow(
         &self,
@@ -411,54 +366,11 @@ impl FlowApi for V2_7_2FlowApi<'_> {
             .await?
             .into())
     }
-    async fn get_flows(
-        &self,
-        id: &str,
-        registry_id: &str,
-        bucket_id: &str,
-        branch: Option<&str>,
-    ) -> Result<types::VersionedFlowsEntity, NifiError> {
-        let api = crate::v2_7_2::api::flow::FlowBucketsApi {
-            client: self.client,
-            id,
-        };
-        Ok(api.get_flows(registry_id, bucket_id, branch).await?.into())
-    }
-    async fn get_input_port_status(
-        &self,
-        id: &str,
-        nodewise: Option<bool>,
-        cluster_node_id: Option<&str>,
-    ) -> Result<types::PortStatusEntity, NifiError> {
-        let api = crate::v2_7_2::api::flow::FlowStatusApi {
-            client: self.client,
-            id,
-        };
-        Ok(api
-            .get_input_port_status(nodewise, cluster_node_id)
-            .await?
-            .into())
-    }
     async fn get_listen_ports(&self) -> Result<types::ListenPortsEntity, NifiError> {
         let api = crate::v2_7_2::api::flow::FlowApi {
             client: self.client,
         };
         Ok(api.get_listen_ports().await?.into())
-    }
-    async fn get_output_port_status(
-        &self,
-        id: &str,
-        nodewise: Option<bool>,
-        cluster_node_id: Option<&str>,
-    ) -> Result<types::PortStatusEntity, NifiError> {
-        let api = crate::v2_7_2::api::flow::FlowStatusApi {
-            client: self.client,
-            id,
-        };
-        Ok(api
-            .get_output_port_status(nodewise, cluster_node_id)
-            .await?
-            .into())
     }
     async fn get_parameter_contexts(&self) -> Result<types::ParameterContextsEntity, NifiError> {
         let api = crate::v2_7_2::api::flow::FlowApi {
@@ -507,32 +419,6 @@ impl FlowApi for V2_7_2FlowApi<'_> {
         };
         Ok(api.get_prioritizers().await?.into())
     }
-    async fn get_process_group_status(
-        &self,
-        id: &str,
-        recursive: Option<bool>,
-        nodewise: Option<bool>,
-        cluster_node_id: Option<&str>,
-    ) -> Result<types::ProcessGroupStatusEntity, NifiError> {
-        let api = crate::v2_7_2::api::flow::FlowStatusApi {
-            client: self.client,
-            id,
-        };
-        Ok(api
-            .get_process_group_status(recursive, nodewise, cluster_node_id)
-            .await?
-            .into())
-    }
-    async fn get_process_group_status_history(
-        &self,
-        id: &str,
-    ) -> Result<types::StatusHistoryEntity, NifiError> {
-        let api = crate::v2_7_2::api::flow::FlowStatusApi {
-            client: self.client,
-            id,
-        };
-        Ok(api.get_process_group_status_history().await?.into())
-    }
     async fn get_processor_definition(
         &self,
         group: &str,
@@ -547,31 +433,6 @@ impl FlowApi for V2_7_2FlowApi<'_> {
             .get_processor_definition(group, artifact, version, r#type)
             .await?
             .into())
-    }
-    async fn get_processor_status(
-        &self,
-        id: &str,
-        nodewise: Option<bool>,
-        cluster_node_id: Option<&str>,
-    ) -> Result<types::ProcessorStatusEntity, NifiError> {
-        let api = crate::v2_7_2::api::flow::FlowStatusApi {
-            client: self.client,
-            id,
-        };
-        Ok(api
-            .get_processor_status(nodewise, cluster_node_id)
-            .await?
-            .into())
-    }
-    async fn get_processor_status_history(
-        &self,
-        id: &str,
-    ) -> Result<types::StatusHistoryEntity, NifiError> {
-        let api = crate::v2_7_2::api::flow::FlowStatusApi {
-            client: self.client,
-            id,
-        };
-        Ok(api.get_processor_status_history().await?.into())
     }
     async fn get_processor_types(
         &self,
@@ -592,31 +453,6 @@ impl FlowApi for V2_7_2FlowApi<'_> {
             client: self.client,
         };
         Ok(api.get_registry_clients().await?.into())
-    }
-    async fn get_remote_process_group_status(
-        &self,
-        id: &str,
-        nodewise: Option<bool>,
-        cluster_node_id: Option<&str>,
-    ) -> Result<types::RemoteProcessGroupStatusEntity, NifiError> {
-        let api = crate::v2_7_2::api::flow::FlowStatusApi {
-            client: self.client,
-            id,
-        };
-        Ok(api
-            .get_remote_process_group_status(nodewise, cluster_node_id)
-            .await?
-            .into())
-    }
-    async fn get_remote_process_group_status_history(
-        &self,
-        id: &str,
-    ) -> Result<types::StatusHistoryEntity, NifiError> {
-        let api = crate::v2_7_2::api::flow::FlowStatusApi {
-            client: self.client,
-            id,
-        };
-        Ok(api.get_remote_process_group_status_history().await?.into())
     }
     async fn get_reporting_task_definition(
         &self,
@@ -671,59 +507,6 @@ impl FlowApi for V2_7_2FlowApi<'_> {
         };
         Ok(api.get_runtime_manifest().await?.into())
     }
-    async fn get_version_differences(
-        &self,
-        id: &str,
-        registry_id: &str,
-        branch_id_a: &str,
-        bucket_id_a: &str,
-        flow_id_a: &str,
-        version_a: &str,
-        branch_id_b: &str,
-        bucket_id_b: &str,
-        flow_id_b: &str,
-        version_b: &str,
-        offset: Option<i32>,
-        limit: Option<i32>,
-    ) -> Result<types::FlowComparisonEntity, NifiError> {
-        let api = crate::v2_7_2::api::flow::FlowBranchesApi {
-            client: self.client,
-            id,
-        };
-        Ok(api
-            .get_version_differences(
-                registry_id,
-                branch_id_a,
-                bucket_id_a,
-                flow_id_a,
-                version_a,
-                branch_id_b,
-                bucket_id_b,
-                flow_id_b,
-                version_b,
-                offset,
-                limit,
-            )
-            .await?
-            .into())
-    }
-    async fn get_versions(
-        &self,
-        id: &str,
-        registry_id: &str,
-        bucket_id: &str,
-        flow_id: &str,
-        branch: Option<&str>,
-    ) -> Result<types::VersionedFlowSnapshotMetadataSetEntity, NifiError> {
-        let api = crate::v2_7_2::api::flow::FlowBucketsApi {
-            client: self.client,
-            id,
-        };
-        Ok(api
-            .get_versions(registry_id, bucket_id, flow_id, branch)
-            .await?
-            .into())
-    }
     async fn query_history(
         &self,
         offset: &str,
@@ -755,7 +538,7 @@ impl FlowApi for V2_7_2FlowApi<'_> {
     async fn schedule_components(
         &self,
         id: &str,
-        body: types::ScheduleComponentsEntity,
+        body: &types::ScheduleComponentsEntity,
     ) -> Result<types::ScheduleComponentsEntity, NifiError> {
         let api = crate::v2_7_2::api::flow::FlowApi {
             client: self.client,
@@ -763,7 +546,7 @@ impl FlowApi for V2_7_2FlowApi<'_> {
         Ok(api
             .schedule_components(
                 id,
-                &crate::v2_7_2::types::ScheduleComponentsEntity::try_from(body)?,
+                &crate::v2_7_2::types::ScheduleComponentsEntity::try_from(body.clone())?,
             )
             .await?
             .into())
