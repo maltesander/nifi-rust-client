@@ -1,5 +1,9 @@
 # nifi-openapi-gen
 
+> **Published to crates.io** solely so that `nifi-rust-client` can use it as a
+> build-dependency. Not intended for general use — API may change without notice.
+> Versioned in lockstep with `nifi-rust-client`.
+
 Internal code generator for `nifi-rust-client`. Reads an OpenAPI 3.0.1 spec and writes:
 
 - `src/v{version}/types/<tag>.rs` + `common.rs` + `mod.rs` — per-tag DTO/entity structs
@@ -72,12 +76,9 @@ NIFI_VERSION=x.y.z cargo run -p nifi-openapi-gen --bin generate
 cargo build --no-default-features --features nifi-x-y-z
 cargo build --features dynamic
 
-# 4. Commit the generated files
+# 4. Commit the spec and repo-level files (generated src/ is produced by build.rs)
 git add specs/x.y.z/ \
-        ../nifi-rust-client/src/vx_y_z/ \
-        ../nifi-rust-client/src/lib.rs \
         ../nifi-rust-client/Cargo.toml \
-        ../nifi-rust-client/tests/vx_y_z_generated_tests.rs \
         ../../tests/Cargo.toml \
         ../../README.md \
         ../../crates/nifi-rust-client/README.md \
