@@ -157,7 +157,7 @@ pub trait ProvenanceApi {
     /// Requires `Read - /data/{component-type}/{uuid}`.
     async fn submit_lineage_request(
         &self,
-        body: types::LineageEntity,
+        body: &types::LineageEntity,
     ) -> Result<types::LineageDto, NifiError> {
         Err(NifiError::UnsupportedEndpoint {
             endpoint: "submit_lineage_request".to_string(),
@@ -181,7 +181,7 @@ pub trait ProvenanceApi {
     /// Requires `Read - /data/{component-type}/{uuid}`.
     async fn submit_provenance_request(
         &self,
-        body: types::ProvenanceEntity,
+        body: &types::ProvenanceEntity,
     ) -> Result<types::ProvenanceDto, NifiError> {
         Err(NifiError::UnsupportedEndpoint {
             endpoint: "submit_provenance_request".to_string(),

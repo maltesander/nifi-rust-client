@@ -4,41 +4,12 @@
 use crate::NifiError;
 #[allow(unused_imports)]
 use crate::dynamic::types;
-/// The ReportingTasks API.
+/// Sub-resource trait for ReportingTasksBulletinsApi.
 #[allow(unused_variables, async_fn_in_trait, clippy::too_many_arguments)]
-pub trait ReportingTasksApi {
-    /// Performs analysis of the component's configuration, providing information about which attributes are referenced.
-    ///
-    /// Calls `POST /nifi-api/reporting-tasks/{id}/config/analysis`.
-    ///
-    /// # Parameters
-    /// - `id`: The reporting task id.
-    ///
-    /// # Errors
-    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
-    /// - `401`: Client could not be authenticated.
-    /// - `403`: Client is not authorized to make this request.
-    /// - `404`: The specified resource could not be found.
-    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
-    ///
-    /// # Permissions
-    /// Requires `Read - /reporting-tasks/{uuid}`.
-    async fn analyze_configuration_3(
-        &self,
-        id: &str,
-        body: types::ConfigurationAnalysisEntity,
-    ) -> Result<types::ConfigurationAnalysisDto, NifiError> {
-        Err(NifiError::UnsupportedEndpoint {
-            endpoint: "analyze_configuration_3".to_string(),
-            version: "unknown".to_string(),
-        })
-    }
+pub trait ReportingTasksBulletinsApi {
     /// Clears bulletins for a reporting task
     ///
     /// Calls `POST /nifi-api/reporting-tasks/{id}/bulletins/clear-requests`.
-    ///
-    /// # Parameters
-    /// - `id`: The reporting task id.
     ///
     /// # Errors
     /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
@@ -53,20 +24,20 @@ pub trait ReportingTasksApi {
     /// *Supported in NiFi: 2.7.2, 2.8.0*
     async fn clear_bulletins_7(
         &self,
-        id: &str,
-        body: types::ClearBulletinsRequestEntity,
+        body: &types::ClearBulletinsRequestEntity,
     ) -> Result<types::ClearBulletinsResultEntity, NifiError> {
         Err(NifiError::UnsupportedEndpoint {
             endpoint: "clear_bulletins_7".to_string(),
             version: "unknown".to_string(),
         })
     }
-    /// Clears the state for a reporting task
+}
+/// Sub-resource trait for ReportingTasksConfigApi.
+#[allow(unused_variables, async_fn_in_trait, clippy::too_many_arguments)]
+pub trait ReportingTasksConfigApi {
+    /// Performs analysis of the component's configuration, providing information about which attributes are referenced.
     ///
-    /// Calls `POST /nifi-api/reporting-tasks/{id}/state/clear-requests`.
-    ///
-    /// # Parameters
-    /// - `id`: The reporting task id.
+    /// Calls `POST /nifi-api/reporting-tasks/{id}/config/analysis`.
     ///
     /// # Errors
     /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
@@ -76,14 +47,13 @@ pub trait ReportingTasksApi {
     /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
     ///
     /// # Permissions
-    /// Requires `Write - /reporting-tasks/{uuid}`.
-    async fn clear_state_4(
+    /// Requires `Read - /reporting-tasks/{uuid}`.
+    async fn analyze_configuration_3(
         &self,
-        id: &str,
-        body: types::ComponentStateEntity,
-    ) -> Result<types::ComponentStateDto, NifiError> {
+        body: &types::ConfigurationAnalysisEntity,
+    ) -> Result<types::ConfigurationAnalysisDto, NifiError> {
         Err(NifiError::UnsupportedEndpoint {
-            endpoint: "clear_state_4".to_string(),
+            endpoint: "analyze_configuration_3".to_string(),
             version: "unknown".to_string(),
         })
     }
@@ -94,7 +64,6 @@ pub trait ReportingTasksApi {
     /// Calls `DELETE /nifi-api/reporting-tasks/{id}/config/verification-requests/{requestId}`.
     ///
     /// # Parameters
-    /// - `id`: The ID of the Reporting Task
     /// - `request_id`: The ID of the Verification Request
     ///
     /// # Errors
@@ -108,7 +77,6 @@ pub trait ReportingTasksApi {
     /// Requires `Only the user that submitted the request can remove it`.
     async fn delete_verification_request_3(
         &self,
-        id: &str,
         request_id: &str,
     ) -> Result<types::VerifyConfigRequestDto, NifiError> {
         Err(NifiError::UnsupportedEndpoint {
@@ -116,12 +84,66 @@ pub trait ReportingTasksApi {
             version: "unknown".to_string(),
         })
     }
+    /// Returns the Verification Request with the given ID
+    ///
+    /// Returns the Verification Request with the given ID. Once an Verification Request has been created, that request can subsequently be retrieved via this endpoint, and the request that is fetched will contain the updated state, such as percent complete, the current state of the request, and any failures.
+    ///
+    /// Calls `GET /nifi-api/reporting-tasks/{id}/config/verification-requests/{requestId}`.
+    ///
+    /// # Parameters
+    /// - `request_id`: The ID of the Verification Request
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Only the user that submitted the request can get it`.
+    async fn get_verification_request_3(
+        &self,
+        request_id: &str,
+    ) -> Result<types::VerifyConfigRequestDto, NifiError> {
+        Err(NifiError::UnsupportedEndpoint {
+            endpoint: "get_verification_request_3".to_string(),
+            version: "unknown".to_string(),
+        })
+    }
+    /// Performs verification of the Reporting Task's configuration
+    ///
+    /// This will initiate the process of verifying a given Reporting Task configuration. This may be a long-running task. As a result, this endpoint will immediately return a ReportingTaskConfigVerificationRequestEntity, and the process of performing the verification will occur asynchronously in the background. The client may then periodically poll the status of the request by issuing a GET request to /reporting-tasks/{taskId}/verification-requests/{requestId}. Once the request is completed, the client is expected to issue a DELETE request to /reporting-tasks/{serviceId}/verification-requests/{requestId}.
+    ///
+    /// Calls `POST /nifi-api/reporting-tasks/{id}/config/verification-requests`.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /reporting-tasks/{uuid}`.
+    async fn submit_config_verification_request_2(
+        &self,
+        body: &types::VerifyConfigRequestEntity,
+    ) -> Result<types::VerifyConfigRequestDto, NifiError> {
+        Err(NifiError::UnsupportedEndpoint {
+            endpoint: "submit_config_verification_request_2".to_string(),
+            version: "unknown".to_string(),
+        })
+    }
+}
+/// Sub-resource trait for ReportingTasksDescriptorsApi.
+#[allow(unused_variables, async_fn_in_trait, clippy::too_many_arguments)]
+pub trait ReportingTasksDescriptorsApi {
     /// Gets a reporting task property descriptor
     ///
     /// Calls `GET /nifi-api/reporting-tasks/{id}/descriptors`.
     ///
     /// # Parameters
-    /// - `id`: The reporting task id.
     /// - `property_name`: The property name.
     /// - `sensitive`: Property Descriptor requested sensitive status
     ///
@@ -136,7 +158,6 @@ pub trait ReportingTasksApi {
     /// Requires `Read - /reporting-tasks/{uuid}`.
     async fn get_property_descriptor_4(
         &self,
-        id: &str,
         property_name: &str,
         sensitive: Option<bool>,
     ) -> Result<types::PropertyDescriptorDto, NifiError> {
@@ -145,6 +166,121 @@ pub trait ReportingTasksApi {
             version: "unknown".to_string(),
         })
     }
+}
+/// Sub-resource trait for ReportingTasksRunStatusApi.
+#[allow(unused_variables, async_fn_in_trait, clippy::too_many_arguments)]
+pub trait ReportingTasksRunStatusApi {
+    /// Updates run status of a reporting task
+    ///
+    /// Calls `PUT /nifi-api/reporting-tasks/{id}/run-status`.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Write - /reporting-tasks/{uuid} or  or /operation/reporting-tasks/{uuid}`.
+    async fn update_run_status_5(
+        &self,
+        body: &types::ReportingTaskRunStatusEntity,
+    ) -> Result<types::ReportingTaskEntity, NifiError> {
+        Err(NifiError::UnsupportedEndpoint {
+            endpoint: "update_run_status_5".to_string(),
+            version: "unknown".to_string(),
+        })
+    }
+}
+/// Sub-resource trait for ReportingTasksStateApi.
+#[allow(unused_variables, async_fn_in_trait, clippy::too_many_arguments)]
+pub trait ReportingTasksStateApi {
+    /// Clears the state for a reporting task
+    ///
+    /// Calls `POST /nifi-api/reporting-tasks/{id}/state/clear-requests`.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Write - /reporting-tasks/{uuid}`.
+    async fn clear_state_4(
+        &self,
+        body: &types::ComponentStateEntity,
+    ) -> Result<types::ComponentStateDto, NifiError> {
+        Err(NifiError::UnsupportedEndpoint {
+            endpoint: "clear_state_4".to_string(),
+            version: "unknown".to_string(),
+        })
+    }
+    /// Gets the state for a reporting task
+    ///
+    /// Calls `GET /nifi-api/reporting-tasks/{id}/state`.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Write - /reporting-tasks/{uuid}`.
+    async fn get_state_4(&self) -> Result<types::ComponentStateDto, NifiError> {
+        Err(NifiError::UnsupportedEndpoint {
+            endpoint: "get_state_4".to_string(),
+            version: "unknown".to_string(),
+        })
+    }
+}
+/// The ReportingTasks API.
+#[allow(unused_variables, async_fn_in_trait, clippy::too_many_arguments)]
+pub trait ReportingTasksApi {
+    /// Returns a sub-resource accessor for config operations.
+    ///
+    /// # Parameters
+    /// - `id`: The reporting task id.
+    type ReportingTasksBulletinsApi<'b>: ReportingTasksBulletinsApi
+    where
+        Self: 'b;
+    fn bulletins<'b>(&'b self, id: &'b str) -> Self::ReportingTasksBulletinsApi<'b>;
+    /// Returns a sub-resource accessor for config operations.
+    ///
+    /// # Parameters
+    /// - `id`: The reporting task id.
+    type ReportingTasksConfigApi<'b>: ReportingTasksConfigApi
+    where
+        Self: 'b;
+    fn config<'b>(&'b self, id: &'b str) -> Self::ReportingTasksConfigApi<'b>;
+    /// Returns a sub-resource accessor for config operations.
+    ///
+    /// # Parameters
+    /// - `id`: The reporting task id.
+    type ReportingTasksDescriptorsApi<'b>: ReportingTasksDescriptorsApi
+    where
+        Self: 'b;
+    fn descriptors<'b>(&'b self, id: &'b str) -> Self::ReportingTasksDescriptorsApi<'b>;
+    /// Returns a sub-resource accessor for config operations.
+    ///
+    /// # Parameters
+    /// - `id`: The reporting task id.
+    type ReportingTasksRunStatusApi<'b>: ReportingTasksRunStatusApi
+    where
+        Self: 'b;
+    fn run_status<'b>(&'b self, id: &'b str) -> Self::ReportingTasksRunStatusApi<'b>;
+    /// Returns a sub-resource accessor for config operations.
+    ///
+    /// # Parameters
+    /// - `id`: The reporting task id.
+    type ReportingTasksStateApi<'b>: ReportingTasksStateApi
+    where
+        Self: 'b;
+    fn state<'b>(&'b self, id: &'b str) -> Self::ReportingTasksStateApi<'b>;
     /// Gets a reporting task
     ///
     /// Calls `GET /nifi-api/reporting-tasks/{id}`.
@@ -164,57 +300,6 @@ pub trait ReportingTasksApi {
     async fn get_reporting_task(&self, id: &str) -> Result<types::ReportingTaskEntity, NifiError> {
         Err(NifiError::UnsupportedEndpoint {
             endpoint: "get_reporting_task".to_string(),
-            version: "unknown".to_string(),
-        })
-    }
-    /// Gets the state for a reporting task
-    ///
-    /// Calls `GET /nifi-api/reporting-tasks/{id}/state`.
-    ///
-    /// # Parameters
-    /// - `id`: The reporting task id.
-    ///
-    /// # Errors
-    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
-    /// - `401`: Client could not be authenticated.
-    /// - `403`: Client is not authorized to make this request.
-    /// - `404`: The specified resource could not be found.
-    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
-    ///
-    /// # Permissions
-    /// Requires `Write - /reporting-tasks/{uuid}`.
-    async fn get_state_4(&self, id: &str) -> Result<types::ComponentStateDto, NifiError> {
-        Err(NifiError::UnsupportedEndpoint {
-            endpoint: "get_state_4".to_string(),
-            version: "unknown".to_string(),
-        })
-    }
-    /// Returns the Verification Request with the given ID
-    ///
-    /// Returns the Verification Request with the given ID. Once an Verification Request has been created, that request can subsequently be retrieved via this endpoint, and the request that is fetched will contain the updated state, such as percent complete, the current state of the request, and any failures.
-    ///
-    /// Calls `GET /nifi-api/reporting-tasks/{id}/config/verification-requests/{requestId}`.
-    ///
-    /// # Parameters
-    /// - `id`: The ID of the Reporting Task
-    /// - `request_id`: The ID of the Verification Request
-    ///
-    /// # Errors
-    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
-    /// - `401`: Client could not be authenticated.
-    /// - `403`: Client is not authorized to make this request.
-    /// - `404`: The specified resource could not be found.
-    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
-    ///
-    /// # Permissions
-    /// Requires `Only the user that submitted the request can get it`.
-    async fn get_verification_request_3(
-        &self,
-        id: &str,
-        request_id: &str,
-    ) -> Result<types::VerifyConfigRequestDto, NifiError> {
-        Err(NifiError::UnsupportedEndpoint {
-            endpoint: "get_verification_request_3".to_string(),
             version: "unknown".to_string(),
         })
     }
@@ -251,34 +336,6 @@ pub trait ReportingTasksApi {
             version: "unknown".to_string(),
         })
     }
-    /// Performs verification of the Reporting Task's configuration
-    ///
-    /// This will initiate the process of verifying a given Reporting Task configuration. This may be a long-running task. As a result, this endpoint will immediately return a ReportingTaskConfigVerificationRequestEntity, and the process of performing the verification will occur asynchronously in the background. The client may then periodically poll the status of the request by issuing a GET request to /reporting-tasks/{taskId}/verification-requests/{requestId}. Once the request is completed, the client is expected to issue a DELETE request to /reporting-tasks/{serviceId}/verification-requests/{requestId}.
-    ///
-    /// Calls `POST /nifi-api/reporting-tasks/{id}/config/verification-requests`.
-    ///
-    /// # Parameters
-    /// - `id`: The reporting task id.
-    ///
-    /// # Errors
-    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
-    /// - `401`: Client could not be authenticated.
-    /// - `403`: Client is not authorized to make this request.
-    /// - `404`: The specified resource could not be found.
-    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
-    ///
-    /// # Permissions
-    /// Requires `Read - /reporting-tasks/{uuid}`.
-    async fn submit_config_verification_request_2(
-        &self,
-        id: &str,
-        body: types::VerifyConfigRequestEntity,
-    ) -> Result<types::VerifyConfigRequestDto, NifiError> {
-        Err(NifiError::UnsupportedEndpoint {
-            endpoint: "submit_config_verification_request_2".to_string(),
-            version: "unknown".to_string(),
-        })
-    }
     /// Updates a reporting task
     ///
     /// Calls `PUT /nifi-api/reporting-tasks/{id}`.
@@ -299,36 +356,10 @@ pub trait ReportingTasksApi {
     async fn update_reporting_task(
         &self,
         id: &str,
-        body: types::ReportingTaskEntity,
+        body: &types::ReportingTaskEntity,
     ) -> Result<types::ReportingTaskEntity, NifiError> {
         Err(NifiError::UnsupportedEndpoint {
             endpoint: "update_reporting_task".to_string(),
-            version: "unknown".to_string(),
-        })
-    }
-    /// Updates run status of a reporting task
-    ///
-    /// Calls `PUT /nifi-api/reporting-tasks/{id}/run-status`.
-    ///
-    /// # Parameters
-    /// - `id`: The reporting task id.
-    ///
-    /// # Errors
-    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
-    /// - `401`: Client could not be authenticated.
-    /// - `403`: Client is not authorized to make this request.
-    /// - `404`: The specified resource could not be found.
-    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
-    ///
-    /// # Permissions
-    /// Requires `Write - /reporting-tasks/{uuid} or  or /operation/reporting-tasks/{uuid}`.
-    async fn update_run_status_5(
-        &self,
-        id: &str,
-        body: types::ReportingTaskRunStatusEntity,
-    ) -> Result<types::ReportingTaskEntity, NifiError> {
-        Err(NifiError::UnsupportedEndpoint {
-            endpoint: "update_run_status_5".to_string(),
             version: "unknown".to_string(),
         })
     }

@@ -80,7 +80,7 @@ pub trait LabelsApi {
     async fn update_label(
         &self,
         id: &str,
-        body: types::LabelEntity,
+        body: &types::LabelEntity,
     ) -> Result<types::LabelEntity, NifiError> {
         Err(NifiError::UnsupportedEndpoint {
             endpoint: "update_label".to_string(),

@@ -321,8 +321,8 @@ fn trait_method_with_json_body() {
 
     // Should have body param with types:: prefix
     assert!(
-        proc_rs.contains("body: types::ProcessorEntity"),
-        "Should have typed body param: {proc_rs}"
+        proc_rs.contains("body: &types::ProcessorEntity"),
+        "Should have borrowed body param: {proc_rs}"
     );
 }
 

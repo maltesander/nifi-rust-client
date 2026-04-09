@@ -4,41 +4,12 @@
 use crate::NifiError;
 #[allow(unused_imports)]
 use crate::dynamic::types;
-/// The Controller Services API.
+/// Sub-resource trait for ControllerServicesBulletinsApi.
 #[allow(unused_variables, async_fn_in_trait, clippy::too_many_arguments)]
-pub trait ControllerServicesApi {
-    /// Performs analysis of the component's configuration, providing information about which attributes are referenced.
-    ///
-    /// Calls `POST /nifi-api/controller-services/{id}/config/analysis`.
-    ///
-    /// # Parameters
-    /// - `id`: The controller service id.
-    ///
-    /// # Errors
-    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
-    /// - `401`: Client could not be authenticated.
-    /// - `403`: Client is not authorized to make this request.
-    /// - `404`: The specified resource could not be found.
-    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
-    ///
-    /// # Permissions
-    /// Requires `Read - /controller-services/{uuid}`.
-    async fn analyze_configuration(
-        &self,
-        id: &str,
-        body: types::ConfigurationAnalysisEntity,
-    ) -> Result<types::ConfigurationAnalysisDto, NifiError> {
-        Err(NifiError::UnsupportedEndpoint {
-            endpoint: "analyze_configuration".to_string(),
-            version: "unknown".to_string(),
-        })
-    }
+pub trait ControllerServicesBulletinsApi {
     /// Clears bulletins for a controller service
     ///
     /// Calls `POST /nifi-api/controller-services/{id}/bulletins/clear-requests`.
-    ///
-    /// # Parameters
-    /// - `id`: The controller service id.
     ///
     /// # Errors
     /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
@@ -53,20 +24,20 @@ pub trait ControllerServicesApi {
     /// *Supported in NiFi: 2.7.2, 2.8.0*
     async fn clear_bulletins(
         &self,
-        id: &str,
-        body: types::ClearBulletinsRequestEntity,
+        body: &types::ClearBulletinsRequestEntity,
     ) -> Result<types::ClearBulletinsResultEntity, NifiError> {
         Err(NifiError::UnsupportedEndpoint {
             endpoint: "clear_bulletins".to_string(),
             version: "unknown".to_string(),
         })
     }
-    /// Clears the state for a controller service
+}
+/// Sub-resource trait for ControllerServicesConfigApi.
+#[allow(unused_variables, async_fn_in_trait, clippy::too_many_arguments)]
+pub trait ControllerServicesConfigApi {
+    /// Performs analysis of the component's configuration, providing information about which attributes are referenced.
     ///
-    /// Calls `POST /nifi-api/controller-services/{id}/state/clear-requests`.
-    ///
-    /// # Parameters
-    /// - `id`: The controller service id.
+    /// Calls `POST /nifi-api/controller-services/{id}/config/analysis`.
     ///
     /// # Errors
     /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
@@ -76,14 +47,13 @@ pub trait ControllerServicesApi {
     /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
     ///
     /// # Permissions
-    /// Requires `Write - /controller-services/{uuid}`.
-    async fn clear_state_1(
+    /// Requires `Read - /controller-services/{uuid}`.
+    async fn analyze_configuration(
         &self,
-        id: &str,
-        body: types::ComponentStateEntity,
-    ) -> Result<types::ComponentStateDto, NifiError> {
+        body: &types::ConfigurationAnalysisEntity,
+    ) -> Result<types::ConfigurationAnalysisDto, NifiError> {
         Err(NifiError::UnsupportedEndpoint {
-            endpoint: "clear_state_1".to_string(),
+            endpoint: "analyze_configuration".to_string(),
             version: "unknown".to_string(),
         })
     }
@@ -94,7 +64,6 @@ pub trait ControllerServicesApi {
     /// Calls `DELETE /nifi-api/controller-services/{id}/config/verification-requests/{requestId}`.
     ///
     /// # Parameters
-    /// - `id`: The ID of the Controller Service
     /// - `request_id`: The ID of the Verification Request
     ///
     /// # Errors
@@ -108,7 +77,6 @@ pub trait ControllerServicesApi {
     /// Requires `Only the user that submitted the request can remove it`.
     async fn delete_verification_request(
         &self,
-        id: &str,
         request_id: &str,
     ) -> Result<types::VerifyConfigRequestDto, NifiError> {
         Err(NifiError::UnsupportedEndpoint {
@@ -116,6 +84,258 @@ pub trait ControllerServicesApi {
             version: "unknown".to_string(),
         })
     }
+    /// Returns the Verification Request with the given ID
+    ///
+    /// Returns the Verification Request with the given ID. Once an Verification Request has been created, that request can subsequently be retrieved via this endpoint, and the request that is fetched will contain the updated state, such as percent complete, the current state of the request, and any failures.
+    ///
+    /// Calls `GET /nifi-api/controller-services/{id}/config/verification-requests/{requestId}`.
+    ///
+    /// # Parameters
+    /// - `request_id`: The ID of the Verification Request
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Only the user that submitted the request can get it`.
+    async fn get_verification_request(
+        &self,
+        request_id: &str,
+    ) -> Result<types::VerifyConfigRequestDto, NifiError> {
+        Err(NifiError::UnsupportedEndpoint {
+            endpoint: "get_verification_request".to_string(),
+            version: "unknown".to_string(),
+        })
+    }
+    /// Performs verification of the Controller Service's configuration
+    ///
+    /// This will initiate the process of verifying a given Controller Service configuration. This may be a long-running task. As a result, this endpoint will immediately return a ControllerServiceConfigVerificationRequestEntity, and the process of performing the verification will occur asynchronously in the background. The client may then periodically poll the status of the request by issuing a GET request to /controller-services/{serviceId}/verification-requests/{requestId}. Once the request is completed, the client is expected to issue a DELETE request to /controller-services/{serviceId}/verification-requests/{requestId}.
+    ///
+    /// Calls `POST /nifi-api/controller-services/{id}/config/verification-requests`.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /controller-services/{uuid}`.
+    async fn submit_config_verification_request(
+        &self,
+        body: &types::VerifyConfigRequestEntity,
+    ) -> Result<types::VerifyConfigRequestDto, NifiError> {
+        Err(NifiError::UnsupportedEndpoint {
+            endpoint: "submit_config_verification_request".to_string(),
+            version: "unknown".to_string(),
+        })
+    }
+}
+/// Sub-resource trait for ControllerServicesDescriptorsApi.
+#[allow(unused_variables, async_fn_in_trait, clippy::too_many_arguments)]
+pub trait ControllerServicesDescriptorsApi {
+    /// Gets a controller service property descriptor
+    ///
+    /// Calls `GET /nifi-api/controller-services/{id}/descriptors`.
+    ///
+    /// # Parameters
+    /// - `property_name`: The property name to return the descriptor for.
+    /// - `sensitive`: Property Descriptor requested sensitive status
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /controller-services/{uuid}`.
+    async fn get_property_descriptor_1(
+        &self,
+        property_name: &str,
+        sensitive: Option<bool>,
+    ) -> Result<types::PropertyDescriptorDto, NifiError> {
+        Err(NifiError::UnsupportedEndpoint {
+            endpoint: "get_property_descriptor_1".to_string(),
+            version: "unknown".to_string(),
+        })
+    }
+}
+/// Sub-resource trait for ControllerServicesReferencesApi.
+#[allow(unused_variables, async_fn_in_trait, clippy::too_many_arguments)]
+pub trait ControllerServicesReferencesApi {
+    /// Gets a controller service
+    ///
+    /// Calls `GET /nifi-api/controller-services/{id}/references`.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /controller-services/{uuid}`.
+    async fn get_controller_service_references(
+        &self,
+    ) -> Result<types::ControllerServiceReferencingComponentsEntity, NifiError> {
+        Err(NifiError::UnsupportedEndpoint {
+            endpoint: "get_controller_service_references".to_string(),
+            version: "unknown".to_string(),
+        })
+    }
+    /// Updates a controller services references
+    ///
+    /// Calls `PUT /nifi-api/controller-services/{id}/references`.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Write - /{component-type}/{uuid} or /operate/{component-type}/{uuid} - For each referencing component specified`.
+    async fn update_controller_service_references(
+        &self,
+        body: &types::UpdateControllerServiceReferenceRequestEntity,
+    ) -> Result<types::ControllerServiceReferencingComponentsEntity, NifiError> {
+        Err(NifiError::UnsupportedEndpoint {
+            endpoint: "update_controller_service_references".to_string(),
+            version: "unknown".to_string(),
+        })
+    }
+}
+/// Sub-resource trait for ControllerServicesRunStatusApi.
+#[allow(unused_variables, async_fn_in_trait, clippy::too_many_arguments)]
+pub trait ControllerServicesRunStatusApi {
+    /// Updates run status of a controller service
+    ///
+    /// Calls `PUT /nifi-api/controller-services/{id}/run-status`.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Write - /controller-services/{uuid} or /operation/controller-services/{uuid}`.
+    async fn update_run_status_1(
+        &self,
+        body: &types::ControllerServiceRunStatusEntity,
+    ) -> Result<types::ControllerServiceEntity, NifiError> {
+        Err(NifiError::UnsupportedEndpoint {
+            endpoint: "update_run_status_1".to_string(),
+            version: "unknown".to_string(),
+        })
+    }
+}
+/// Sub-resource trait for ControllerServicesStateApi.
+#[allow(unused_variables, async_fn_in_trait, clippy::too_many_arguments)]
+pub trait ControllerServicesStateApi {
+    /// Clears the state for a controller service
+    ///
+    /// Calls `POST /nifi-api/controller-services/{id}/state/clear-requests`.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Write - /controller-services/{uuid}`.
+    async fn clear_state_1(
+        &self,
+        body: &types::ComponentStateEntity,
+    ) -> Result<types::ComponentStateDto, NifiError> {
+        Err(NifiError::UnsupportedEndpoint {
+            endpoint: "clear_state_1".to_string(),
+            version: "unknown".to_string(),
+        })
+    }
+    /// Gets the state for a controller service
+    ///
+    /// Calls `GET /nifi-api/controller-services/{id}/state`.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Write - /controller-services/{uuid}`.
+    async fn get_state(&self) -> Result<types::ComponentStateDto, NifiError> {
+        Err(NifiError::UnsupportedEndpoint {
+            endpoint: "get_state".to_string(),
+            version: "unknown".to_string(),
+        })
+    }
+}
+/// The Controller Services API.
+#[allow(unused_variables, async_fn_in_trait, clippy::too_many_arguments)]
+pub trait ControllerServicesApi {
+    /// Returns a sub-resource accessor for config operations.
+    ///
+    /// # Parameters
+    /// - `id`: The controller service id.
+    type ControllerServicesBulletinsApi<'b>: ControllerServicesBulletinsApi
+    where
+        Self: 'b;
+    fn bulletins<'b>(&'b self, id: &'b str) -> Self::ControllerServicesBulletinsApi<'b>;
+    /// Returns a sub-resource accessor for config operations.
+    ///
+    /// # Parameters
+    /// - `id`: The controller service id.
+    type ControllerServicesConfigApi<'b>: ControllerServicesConfigApi
+    where
+        Self: 'b;
+    fn config<'b>(&'b self, id: &'b str) -> Self::ControllerServicesConfigApi<'b>;
+    /// Returns a sub-resource accessor for config operations.
+    ///
+    /// # Parameters
+    /// - `id`: The controller service id.
+    type ControllerServicesDescriptorsApi<'b>: ControllerServicesDescriptorsApi
+    where
+        Self: 'b;
+    fn descriptors<'b>(&'b self, id: &'b str) -> Self::ControllerServicesDescriptorsApi<'b>;
+    /// Returns a sub-resource accessor for config operations.
+    ///
+    /// # Parameters
+    /// - `id`: The controller service id.
+    type ControllerServicesReferencesApi<'b>: ControllerServicesReferencesApi
+    where
+        Self: 'b;
+    fn references<'b>(&'b self, id: &'b str) -> Self::ControllerServicesReferencesApi<'b>;
+    /// Returns a sub-resource accessor for config operations.
+    ///
+    /// # Parameters
+    /// - `id`: The controller service id.
+    type ControllerServicesRunStatusApi<'b>: ControllerServicesRunStatusApi
+    where
+        Self: 'b;
+    fn run_status<'b>(&'b self, id: &'b str) -> Self::ControllerServicesRunStatusApi<'b>;
+    /// Returns a sub-resource accessor for config operations.
+    ///
+    /// # Parameters
+    /// - `id`: The controller service id.
+    type ControllerServicesStateApi<'b>: ControllerServicesStateApi
+    where
+        Self: 'b;
+    fn state<'b>(&'b self, id: &'b str) -> Self::ControllerServicesStateApi<'b>;
     /// Gets a controller service
     ///
     /// If the uiOnly query parameter is provided with a value of true, the returned entity may only contain fields that are necessary for rendering the NiFi User Interface. As such, the selected fields may change at any time, even during incremental releases, without warning. As a result, this parameter should not be provided by any client other than the UI.
@@ -142,111 +362,6 @@ pub trait ControllerServicesApi {
     ) -> Result<types::ControllerServiceEntity, NifiError> {
         Err(NifiError::UnsupportedEndpoint {
             endpoint: "get_controller_service".to_string(),
-            version: "unknown".to_string(),
-        })
-    }
-    /// Gets a controller service
-    ///
-    /// Calls `GET /nifi-api/controller-services/{id}/references`.
-    ///
-    /// # Parameters
-    /// - `id`: The controller service id.
-    ///
-    /// # Errors
-    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
-    /// - `401`: Client could not be authenticated.
-    /// - `403`: Client is not authorized to make this request.
-    /// - `404`: The specified resource could not be found.
-    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
-    ///
-    /// # Permissions
-    /// Requires `Read - /controller-services/{uuid}`.
-    async fn get_controller_service_references(
-        &self,
-        id: &str,
-    ) -> Result<types::ControllerServiceReferencingComponentsEntity, NifiError> {
-        Err(NifiError::UnsupportedEndpoint {
-            endpoint: "get_controller_service_references".to_string(),
-            version: "unknown".to_string(),
-        })
-    }
-    /// Gets a controller service property descriptor
-    ///
-    /// Calls `GET /nifi-api/controller-services/{id}/descriptors`.
-    ///
-    /// # Parameters
-    /// - `id`: The controller service id.
-    /// - `property_name`: The property name to return the descriptor for.
-    /// - `sensitive`: Property Descriptor requested sensitive status
-    ///
-    /// # Errors
-    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
-    /// - `401`: Client could not be authenticated.
-    /// - `403`: Client is not authorized to make this request.
-    /// - `404`: The specified resource could not be found.
-    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
-    ///
-    /// # Permissions
-    /// Requires `Read - /controller-services/{uuid}`.
-    async fn get_property_descriptor_1(
-        &self,
-        id: &str,
-        property_name: &str,
-        sensitive: Option<bool>,
-    ) -> Result<types::PropertyDescriptorDto, NifiError> {
-        Err(NifiError::UnsupportedEndpoint {
-            endpoint: "get_property_descriptor_1".to_string(),
-            version: "unknown".to_string(),
-        })
-    }
-    /// Gets the state for a controller service
-    ///
-    /// Calls `GET /nifi-api/controller-services/{id}/state`.
-    ///
-    /// # Parameters
-    /// - `id`: The controller service id.
-    ///
-    /// # Errors
-    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
-    /// - `401`: Client could not be authenticated.
-    /// - `403`: Client is not authorized to make this request.
-    /// - `404`: The specified resource could not be found.
-    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
-    ///
-    /// # Permissions
-    /// Requires `Write - /controller-services/{uuid}`.
-    async fn get_state(&self, id: &str) -> Result<types::ComponentStateDto, NifiError> {
-        Err(NifiError::UnsupportedEndpoint {
-            endpoint: "get_state".to_string(),
-            version: "unknown".to_string(),
-        })
-    }
-    /// Returns the Verification Request with the given ID
-    ///
-    /// Returns the Verification Request with the given ID. Once an Verification Request has been created, that request can subsequently be retrieved via this endpoint, and the request that is fetched will contain the updated state, such as percent complete, the current state of the request, and any failures.
-    ///
-    /// Calls `GET /nifi-api/controller-services/{id}/config/verification-requests/{requestId}`.
-    ///
-    /// # Parameters
-    /// - `id`: The ID of the Controller Service
-    /// - `request_id`: The ID of the Verification Request
-    ///
-    /// # Errors
-    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
-    /// - `401`: Client could not be authenticated.
-    /// - `403`: Client is not authorized to make this request.
-    /// - `404`: The specified resource could not be found.
-    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
-    ///
-    /// # Permissions
-    /// Requires `Only the user that submitted the request can get it`.
-    async fn get_verification_request(
-        &self,
-        id: &str,
-        request_id: &str,
-    ) -> Result<types::VerifyConfigRequestDto, NifiError> {
-        Err(NifiError::UnsupportedEndpoint {
-            endpoint: "get_verification_request".to_string(),
             version: "unknown".to_string(),
         })
     }
@@ -284,34 +399,6 @@ pub trait ControllerServicesApi {
             version: "unknown".to_string(),
         })
     }
-    /// Performs verification of the Controller Service's configuration
-    ///
-    /// This will initiate the process of verifying a given Controller Service configuration. This may be a long-running task. As a result, this endpoint will immediately return a ControllerServiceConfigVerificationRequestEntity, and the process of performing the verification will occur asynchronously in the background. The client may then periodically poll the status of the request by issuing a GET request to /controller-services/{serviceId}/verification-requests/{requestId}. Once the request is completed, the client is expected to issue a DELETE request to /controller-services/{serviceId}/verification-requests/{requestId}.
-    ///
-    /// Calls `POST /nifi-api/controller-services/{id}/config/verification-requests`.
-    ///
-    /// # Parameters
-    /// - `id`: The controller service id.
-    ///
-    /// # Errors
-    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
-    /// - `401`: Client could not be authenticated.
-    /// - `403`: Client is not authorized to make this request.
-    /// - `404`: The specified resource could not be found.
-    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
-    ///
-    /// # Permissions
-    /// Requires `Read - /controller-services/{uuid}`.
-    async fn submit_config_verification_request(
-        &self,
-        id: &str,
-        body: types::VerifyConfigRequestEntity,
-    ) -> Result<types::VerifyConfigRequestDto, NifiError> {
-        Err(NifiError::UnsupportedEndpoint {
-            endpoint: "submit_config_verification_request".to_string(),
-            version: "unknown".to_string(),
-        })
-    }
     /// Updates a controller service
     ///
     /// Calls `PUT /nifi-api/controller-services/{id}`.
@@ -332,62 +419,10 @@ pub trait ControllerServicesApi {
     async fn update_controller_service(
         &self,
         id: &str,
-        body: types::ControllerServiceEntity,
+        body: &types::ControllerServiceEntity,
     ) -> Result<types::ControllerServiceEntity, NifiError> {
         Err(NifiError::UnsupportedEndpoint {
             endpoint: "update_controller_service".to_string(),
-            version: "unknown".to_string(),
-        })
-    }
-    /// Updates a controller services references
-    ///
-    /// Calls `PUT /nifi-api/controller-services/{id}/references`.
-    ///
-    /// # Parameters
-    /// - `id`: The controller service id.
-    ///
-    /// # Errors
-    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
-    /// - `401`: Client could not be authenticated.
-    /// - `403`: Client is not authorized to make this request.
-    /// - `404`: The specified resource could not be found.
-    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
-    ///
-    /// # Permissions
-    /// Requires `Write - /{component-type}/{uuid} or /operate/{component-type}/{uuid} - For each referencing component specified`.
-    async fn update_controller_service_references(
-        &self,
-        id: &str,
-        body: types::UpdateControllerServiceReferenceRequestEntity,
-    ) -> Result<types::ControllerServiceReferencingComponentsEntity, NifiError> {
-        Err(NifiError::UnsupportedEndpoint {
-            endpoint: "update_controller_service_references".to_string(),
-            version: "unknown".to_string(),
-        })
-    }
-    /// Updates run status of a controller service
-    ///
-    /// Calls `PUT /nifi-api/controller-services/{id}/run-status`.
-    ///
-    /// # Parameters
-    /// - `id`: The controller service id.
-    ///
-    /// # Errors
-    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
-    /// - `401`: Client could not be authenticated.
-    /// - `403`: Client is not authorized to make this request.
-    /// - `404`: The specified resource could not be found.
-    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
-    ///
-    /// # Permissions
-    /// Requires `Write - /controller-services/{uuid} or /operation/controller-services/{uuid}`.
-    async fn update_run_status_1(
-        &self,
-        id: &str,
-        body: types::ControllerServiceRunStatusEntity,
-    ) -> Result<types::ControllerServiceEntity, NifiError> {
-        Err(NifiError::UnsupportedEndpoint {
-            endpoint: "update_run_status_1".to_string(),
             version: "unknown".to_string(),
         })
     }

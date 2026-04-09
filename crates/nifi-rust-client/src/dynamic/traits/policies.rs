@@ -22,7 +22,7 @@ pub trait PoliciesApi {
     /// Requires `Write - /policies/{resource}`.
     async fn create_access_policy(
         &self,
-        body: types::AccessPolicyEntity,
+        body: &types::AccessPolicyEntity,
     ) -> Result<types::AccessPolicyEntity, NifiError> {
         Err(NifiError::UnsupportedEndpoint {
             endpoint: "create_access_policy".to_string(),
@@ -131,7 +131,7 @@ pub trait PoliciesApi {
     async fn update_access_policy(
         &self,
         id: &str,
-        body: types::AccessPolicyEntity,
+        body: &types::AccessPolicyEntity,
     ) -> Result<types::AccessPolicyEntity, NifiError> {
         Err(NifiError::UnsupportedEndpoint {
             endpoint: "update_access_policy".to_string(),

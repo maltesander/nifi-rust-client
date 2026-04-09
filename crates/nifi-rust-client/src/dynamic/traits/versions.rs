@@ -4,9 +4,40 @@
 use crate::NifiError;
 #[allow(unused_imports)]
 use crate::dynamic::types;
+/// Sub-resource trait for VersionsDownloadApi.
+#[allow(unused_variables, async_fn_in_trait, clippy::too_many_arguments)]
+pub trait VersionsDownloadApi {
+    /// Gets the latest version of a Process Group for download
+    ///
+    /// Calls `GET /nifi-api/versions/process-groups/{id}/download`.
+    ///
+    /// # Errors
+    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
+    /// - `401`: Client could not be authenticated.
+    /// - `403`: Client is not authorized to make this request.
+    /// - `404`: The specified resource could not be found.
+    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
+    ///
+    /// # Permissions
+    /// Requires `Read - /process-groups/{uuid}`.
+    async fn export_flow_version(&self) -> Result<(), NifiError> {
+        Err(NifiError::UnsupportedEndpoint {
+            endpoint: "export_flow_version".to_string(),
+            version: "unknown".to_string(),
+        })
+    }
+}
 /// The Versions API.
 #[allow(unused_variables, async_fn_in_trait, clippy::too_many_arguments)]
 pub trait VersionsApi {
+    /// Returns a sub-resource accessor for config operations.
+    ///
+    /// # Parameters
+    /// - `id`: The process group id.
+    type VersionsDownloadApi<'b>: VersionsDownloadApi
+    where
+        Self: 'b;
+    fn download<'b>(&'b self, id: &'b str) -> Self::VersionsDownloadApi<'b>;
     /// Create a version control request
     ///
     /// Creates a request so that a Process Group can be placed under Version Control or have its Version Control configuration changed. Creating this request will prevent any other threads from simultaneously saving local changes to Version Control. It will not, however, actually save the local flow to the Flow Registry. A POST to /versions/process-groups/{id} should be used to initiate saving of the local flow to the Flow Registry. Note: This endpoint is subject to change as NiFi and it's REST API evolve.
@@ -24,7 +55,7 @@ pub trait VersionsApi {
     /// Requires `Write - /process-groups/{uuid}`.
     async fn create_version_control_request(
         &self,
-        body: types::CreateActiveRequestEntity,
+        body: &types::CreateActiveRequestEntity,
     ) -> Result<(), NifiError> {
         Err(NifiError::UnsupportedEndpoint {
             endpoint: "create_version_control_request".to_string(),
@@ -115,28 +146,6 @@ pub trait VersionsApi {
     ) -> Result<(), NifiError> {
         Err(NifiError::UnsupportedEndpoint {
             endpoint: "delete_version_control_request".to_string(),
-            version: "unknown".to_string(),
-        })
-    }
-    /// Gets the latest version of a Process Group for download
-    ///
-    /// Calls `GET /nifi-api/versions/process-groups/{id}/download`.
-    ///
-    /// # Parameters
-    /// - `id`: The process group id.
-    ///
-    /// # Errors
-    /// - `400`: NiFi was unable to complete the request because it was invalid. The request should not be retried without modification.
-    /// - `401`: Client could not be authenticated.
-    /// - `403`: Client is not authorized to make this request.
-    /// - `404`: The specified resource could not be found.
-    /// - `409`: The request was valid but NiFi was not in the appropriate state to process it.
-    ///
-    /// # Permissions
-    /// Requires `Read - /process-groups/{uuid}`.
-    async fn export_flow_version(&self, id: &str) -> Result<(), NifiError> {
-        Err(NifiError::UnsupportedEndpoint {
-            endpoint: "export_flow_version".to_string(),
             version: "unknown".to_string(),
         })
     }
@@ -247,7 +256,7 @@ pub trait VersionsApi {
     async fn initiate_revert_flow_version(
         &self,
         id: &str,
-        body: types::VersionControlInformationEntity,
+        body: &types::VersionControlInformationEntity,
     ) -> Result<types::VersionedFlowUpdateRequestEntity, NifiError> {
         Err(NifiError::UnsupportedEndpoint {
             endpoint: "initiate_revert_flow_version".to_string(),
@@ -280,7 +289,7 @@ pub trait VersionsApi {
     async fn initiate_version_control_update(
         &self,
         id: &str,
-        body: types::VersionControlInformationEntity,
+        body: &types::VersionControlInformationEntity,
     ) -> Result<types::VersionedFlowUpdateRequestEntity, NifiError> {
         Err(NifiError::UnsupportedEndpoint {
             endpoint: "initiate_version_control_update".to_string(),
@@ -311,7 +320,7 @@ pub trait VersionsApi {
     async fn save_to_flow_registry(
         &self,
         id: &str,
-        body: types::StartVersionControlRequestEntity,
+        body: &types::StartVersionControlRequestEntity,
     ) -> Result<types::VersionControlInformationEntity, NifiError> {
         Err(NifiError::UnsupportedEndpoint {
             endpoint: "save_to_flow_registry".to_string(),
@@ -374,7 +383,7 @@ pub trait VersionsApi {
     async fn update_flow_version(
         &self,
         id: &str,
-        body: types::VersionedFlowSnapshotEntity,
+        body: &types::VersionedFlowSnapshotEntity,
     ) -> Result<types::VersionControlInformationEntity, NifiError> {
         Err(NifiError::UnsupportedEndpoint {
             endpoint: "update_flow_version".to_string(),
@@ -402,7 +411,7 @@ pub trait VersionsApi {
     async fn update_version_control_request(
         &self,
         id: &str,
-        body: types::VersionControlComponentMappingEntity,
+        body: &types::VersionControlComponentMappingEntity,
     ) -> Result<types::VersionControlInformationEntity, NifiError> {
         Err(NifiError::UnsupportedEndpoint {
             endpoint: "update_version_control_request".to_string(),

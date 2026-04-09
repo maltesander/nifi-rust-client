@@ -4,15 +4,14 @@
 use crate::NifiError;
 #[allow(unused_imports)]
 use crate::dynamic::types;
-/// The DataTransfer API.
+/// Sub-resource trait for DataTransferTransactionsApi.
 #[allow(unused_variables, async_fn_in_trait, clippy::too_many_arguments)]
-pub trait DataTransferApi {
+pub trait DataTransferTransactionsApi {
     /// Commit or cancel the specified transaction
     ///
     /// Calls `DELETE /nifi-api/data-transfer/input-ports/{portId}/transactions/{transactionId}`.
     ///
     /// # Parameters
-    /// - `port_id`: The input port id.
     /// - `transaction_id`: The transaction id.
     /// - `response_code`: The response code. Available values are BAD_CHECKSUM(19), CONFIRM_TRANSACTION(12) or CANCEL_TRANSACTION(15).
     ///
@@ -28,7 +27,6 @@ pub trait DataTransferApi {
     /// Requires `Write - /data-transfer/input-ports/{uuid}`.
     async fn commit_input_port_transaction(
         &self,
-        port_id: &str,
         transaction_id: &str,
         response_code: i32,
     ) -> Result<types::TransactionResultEntity, NifiError> {
@@ -42,7 +40,6 @@ pub trait DataTransferApi {
     /// Calls `DELETE /nifi-api/data-transfer/output-ports/{portId}/transactions/{transactionId}`.
     ///
     /// # Parameters
-    /// - `port_id`: The output port id.
     /// - `transaction_id`: The transaction id.
     /// - `response_code`: The response code. Available values are CONFIRM_TRANSACTION(12) or CANCEL_TRANSACTION(15).
     /// - `checksum`: A checksum calculated at client side using CRC32 to check flow file content integrity. It must match with the value calculated at server side.
@@ -59,7 +56,6 @@ pub trait DataTransferApi {
     /// Requires `Write - /data-transfer/output-ports/{uuid}`.
     async fn commit_output_port_transaction(
         &self,
-        port_id: &str,
         transaction_id: &str,
         response_code: i32,
         checksum: &str,
@@ -74,7 +70,6 @@ pub trait DataTransferApi {
     /// Calls `POST /nifi-api/data-transfer/{portType}/{portId}/transactions`.
     ///
     /// # Parameters
-    /// - `port_id`
     /// - `port_type`: The port type.
     ///
     /// # Errors
@@ -89,7 +84,6 @@ pub trait DataTransferApi {
     /// Requires `Write - /data-transfer/{component-type}/{uuid}`.
     async fn create_port_transaction(
         &self,
-        port_id: &str,
         port_type: &str,
     ) -> Result<types::TransactionResultEntity, NifiError> {
         Err(NifiError::UnsupportedEndpoint {
@@ -102,7 +96,6 @@ pub trait DataTransferApi {
     /// Calls `PUT /nifi-api/data-transfer/input-ports/{portId}/transactions/{transactionId}`.
     ///
     /// # Parameters
-    /// - `port_id`
     /// - `transaction_id`
     ///
     /// # Errors
@@ -116,7 +109,6 @@ pub trait DataTransferApi {
     /// Requires `Write - /data-transfer/input-ports/{uuid}`.
     async fn extend_input_port_transaction_t_t_l(
         &self,
-        port_id: &str,
         transaction_id: &str,
     ) -> Result<types::TransactionResultEntity, NifiError> {
         Err(NifiError::UnsupportedEndpoint {
@@ -129,7 +121,6 @@ pub trait DataTransferApi {
     /// Calls `PUT /nifi-api/data-transfer/output-ports/{portId}/transactions/{transactionId}`.
     ///
     /// # Parameters
-    /// - `port_id`
     /// - `transaction_id`
     ///
     /// # Errors
@@ -144,7 +135,6 @@ pub trait DataTransferApi {
     /// Requires `Write - /data-transfer/output-ports/{uuid}`.
     async fn extend_output_port_transaction_t_t_l(
         &self,
-        port_id: &str,
         transaction_id: &str,
     ) -> Result<types::TransactionResultEntity, NifiError> {
         Err(NifiError::UnsupportedEndpoint {
@@ -157,7 +147,6 @@ pub trait DataTransferApi {
     /// Calls `POST /nifi-api/data-transfer/input-ports/{portId}/transactions/{transactionId}/flow-files`.
     ///
     /// # Parameters
-    /// - `port_id`: The input port id.
     /// - `transaction_id`
     ///
     /// # Errors
@@ -172,7 +161,6 @@ pub trait DataTransferApi {
     /// Requires `Write - /data-transfer/input-ports/{uuid}`.
     async fn receive_flow_files(
         &self,
-        port_id: &str,
         transaction_id: &str,
         filename: Option<&str>,
         data: Vec<u8>,
@@ -187,7 +175,6 @@ pub trait DataTransferApi {
     /// Calls `GET /nifi-api/data-transfer/output-ports/{portId}/transactions/{transactionId}/flow-files`.
     ///
     /// # Parameters
-    /// - `port_id`: The output port id.
     /// - `transaction_id`
     ///
     /// # Errors
@@ -200,14 +187,22 @@ pub trait DataTransferApi {
     ///
     /// # Permissions
     /// Requires `Write - /data-transfer/output-ports/{uuid}`.
-    async fn transfer_flow_files(
-        &self,
-        port_id: &str,
-        transaction_id: &str,
-    ) -> Result<(), NifiError> {
+    async fn transfer_flow_files(&self, transaction_id: &str) -> Result<(), NifiError> {
         Err(NifiError::UnsupportedEndpoint {
             endpoint: "transfer_flow_files".to_string(),
             version: "unknown".to_string(),
         })
     }
+}
+/// The DataTransfer API.
+#[allow(unused_variables, async_fn_in_trait, clippy::too_many_arguments)]
+pub trait DataTransferApi {
+    /// Returns a sub-resource accessor for config operations.
+    ///
+    /// # Parameters
+    /// - `port_id`: The input port id.
+    type DataTransferTransactionsApi<'b>: DataTransferTransactionsApi
+    where
+        Self: 'b;
+    fn transactions<'b>(&'b self, port_id: &'b str) -> Self::DataTransferTransactionsApi<'b>;
 }
