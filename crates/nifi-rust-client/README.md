@@ -71,7 +71,7 @@ let diag = client.systemdiagnostics_api()
     .await?;
 ```
 
-All 28 API groups have corresponding traits in `dynamic::traits` (e.g., `FlowApi`, `ProcessorsApi`), plus sub-resource traits for endpoints with path parameters (e.g., `ControllerServicesConfigApi`, `ProcessorsRunStatusApi`). Import the trait to call methods on a dispatch enum, or use traits for generic code:
+All API groups have corresponding traits in `dynamic::traits` (e.g., `FlowApi`, `ProcessorsApi`), plus sub-resource traits for endpoints with path parameters (e.g., `ControllerServicesConfigApi`, `ProcessorsRunStatusApi`). Import the trait to call methods on a dispatch enum, or use traits for generic code:
 
 ```rust
 use nifi_rust_client::dynamic::traits::{FlowApi, ControllerServicesApi, ControllerServicesConfigApi};

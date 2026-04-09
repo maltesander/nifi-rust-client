@@ -69,7 +69,6 @@ let client = NifiClientBuilder::new("https://nifi.example.com:8443")?
 client.login("admin", "password").await?;
 println!("Connected to NiFi {}", client.detected_version());
 
-// Typed enum query params with IDE autocomplete
 let diag = client.systemdiagnostics_api()
     .get_system_diagnostics(Some(true), Some(DiagnosticLevel::Verbose), None)
     .await?;
