@@ -8,6 +8,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-04-10
+
+### Added
+
+- Add build.rs to integration test crate ([6ccfd40](https://github.com/maltesander/nifi-rust-client/commit/6ccfd40))
+- Add build.rs to nifi-rust-client for build-time code generation ([4f03247](https://github.com/maltesander/nifi-rust-client/commit/4f03247))
+- Add build_api module for build.rs callers ([3dfcad1](https://github.com/maltesander/nifi-rust-client/commit/3dfcad1))
+- Add field presence integration tests and coverage tracking ([0394b5c](https://github.com/maltesander/nifi-rust-client/commit/0394b5c))
+
+### Changed
+
+- Move credentials and retry into config/ module ([4bfed11](https://github.com/maltesander/nifi-rust-client/commit/4bfed11))
+- Remove code generation from binary, now handled by build.rs ([115a742](https://github.com/maltesander/nifi-rust-client/commit/115a742))
+- Compact conversion emitter using impl_from! macro ([1473ad2](https://github.com/maltesander/nifi-rust-client/commit/1473ad2))
+
+### Fixed
+
+- Use correct docs.rs URL for nifi-openapi-gen ([2907943](https://github.com/maltesander/nifi-rust-client/commit/2907943))
+- Use separate NiFi instances for static and dynamic tests ([6a4e354](https://github.com/maltesander/nifi-rust-client/commit/6a4e354))
+
+### Documentation
+
+- Update for build-time code generation architecture ([5bf36dd](https://github.com/maltesander/nifi-rust-client/commit/5bf36dd))
+
 ## [0.4.0] - 2026-04-09
 
 ### Breaking Changes
@@ -264,7 +288,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Structured error handling** — `NifiError` via `snafu` with distinct variants for HTTP, auth, serialization, and network errors.
 - **Tracing** — all HTTP requests emit a `tracing::debug!` event with method and path before sending.
 
-[Unreleased]: https://github.com/maltesander/nifi-rust-client/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/maltesander/nifi-rust-client/compare/v0.4.1...HEAD
+[0.4.1]: https://github.com/maltesander/nifi-rust-client/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/maltesander/nifi-rust-client/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/maltesander/nifi-rust-client/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/maltesander/nifi-rust-client/compare/v0.2.1...v0.3.0
