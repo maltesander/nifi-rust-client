@@ -172,8 +172,8 @@ pub async fn dynamic_logged_in_client() -> nifi_rust_client::dynamic::DynamicCli
         .expect("failed to parse NiFi URL")
         .danger_accept_invalid_certs(true)
         .build_dynamic()
-        .await
         .expect("failed to build dynamic client");
+    // login() authenticates AND detects the NiFi version automatically.
     client
         .login(&nifi_username(), &nifi_password())
         .await

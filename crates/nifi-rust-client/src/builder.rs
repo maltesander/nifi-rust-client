@@ -198,9 +198,8 @@ impl NifiClientBuilder {
 
     /// Build a [`DynamicClient`](crate::dynamic::DynamicClient) that auto-detects the NiFi version.
     ///
-    /// Connects to the NiFi instance, calls the about endpoint to detect
-    /// the API version, and returns a client that dispatches to the correct
-    /// generated API module at runtime.
+    /// Version detection happens lazily — either when `login()` is called
+    /// (recommended) or when `detect_version()` is called explicitly.
     ///
     /// # Example
     ///
@@ -210,16 +209,16 @@ impl NifiClientBuilder {
     ///
     /// let client = NifiClientBuilder::new("https://nifi.example.com:8443")?
     ///     .danger_accept_invalid_certs(true)
-    ///     .build_dynamic()
-    ///     .await?;
+    ///     .build_dynamic()?;
     ///
+    /// // login() authenticates AND detects the NiFi version automatically.
     /// client.login("admin", "password").await?;
     /// # Ok(())
     /// # }
     /// ```
     #[cfg(feature = "dynamic")]
-    pub async fn build_dynamic(self) -> Result<crate::dynamic::DynamicClient, NifiError> {
+    pub fn build_dynamic(self) -> Result<crate::dynamic::DynamicClient, NifiError> {
         let client = self.build()?;
-        crate::dynamic::DynamicClient::from_client(client).await
+        Ok(crate::dynamic::DynamicClient::new(client))
     }
 }

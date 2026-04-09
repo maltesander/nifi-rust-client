@@ -111,28 +111,68 @@ fn emit_about_structs(out: &mut String) {
 
 fn emit_dynamic_client(out: &mut String, versions: &[(&str, &str, &str, &ApiSpec)]) {
     // Struct
-    out.push_str("/// A dynamic NiFi client that detects the server version at connect time\n");
+    out.push_str("/// A dynamic NiFi client that detects the server version lazily\n");
     out.push_str("/// and dispatches API calls to the correct version's generated code.\n");
-    out.push_str("#[derive(Debug)]\n");
+    out.push_str("///\n");
+    out.push_str("/// Version detection happens automatically on `login()`, or can be triggered\n");
+    out.push_str("/// explicitly via `detect_version()` or `from_client()`.\n");
     out.push_str("pub struct DynamicClient {\n");
     out.push_str("    client: NifiClient,\n");
-    out.push_str("    version: DetectedVersion,\n");
+    out.push_str("    version: tokio::sync::OnceCell<DetectedVersion>,\n");
+    out.push_str("}\n\n");
+
+    // Manual Debug impl (OnceCell<T> is Debug if T is Debug)
+    out.push_str("impl std::fmt::Debug for DynamicClient {\n");
+    out.push_str("    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {\n");
+    out.push_str("        f.debug_struct(\"DynamicClient\")\n");
+    out.push_str("            .field(\"version\", &self.version.get())\n");
+    out.push_str("            .finish()\n");
+    out.push_str("    }\n");
     out.push_str("}\n\n");
 
     out.push_str("impl DynamicClient {\n");
 
-    // from_client()
-    out.push_str("    /// Wrap an existing `NifiClient` and detect the NiFi server version via GET /flow/about.\n");
+    // new()
+    out.push_str("    /// Create a new `DynamicClient` without detecting the server version yet.\n");
+    out.push_str("    /// Version detection will happen automatically on `login()` or can be\n");
+    out.push_str("    /// triggered explicitly via `detect_version()`.\n");
+    out.push_str("    pub fn new(client: NifiClient) -> Self {\n");
+    out.push_str("        Self { client, version: tokio::sync::OnceCell::new() }\n");
+    out.push_str("    }\n\n");
+
+    // from_client() — eagerly detects (backwards-compatible)
+    out.push_str("    /// Wrap an existing `NifiClient` and detect the NiFi server version\n");
+    out.push_str("    /// immediately via GET /flow/about.\n");
+    out.push_str("    ///\n");
+    out.push_str("    /// The client must already be authenticated if the NiFi instance requires it.\n");
+    out.push_str("    /// For unauthenticated setup, use `new()` + `login()` instead — login\n");
+    out.push_str("    /// triggers version detection automatically.\n");
     out.push_str("    pub async fn from_client(client: NifiClient) -> Result<Self, NifiError> {\n");
-    out.push_str("        let resp: AboutResponse = client.get(\"/flow/about\").await?;\n");
-    out.push_str("        let version = version_from_str(&resp.about.version)?;\n");
-    out.push_str("        Ok(Self { client, version })\n");
+    out.push_str("        let dc = Self::new(client);\n");
+    out.push_str("        dc.detect_version().await?;\n");
+    out.push_str("        Ok(dc)\n");
+    out.push_str("    }\n\n");
+
+    // detect_version()
+    out.push_str("    /// Detect the NiFi server version via GET /flow/about.\n");
+    out.push_str("    /// Returns the cached version if already detected.\n");
+    out.push_str("    pub async fn detect_version(&self) -> Result<DetectedVersion, NifiError> {\n");
+    out.push_str("        self.version.get_or_try_init(|| async {\n");
+    out.push_str("            let resp: AboutResponse = self.client.get(\"/flow/about\").await?;\n");
+    out.push_str("            version_from_str(&resp.about.version)\n");
+    out.push_str("        }).await.copied()\n");
     out.push_str("    }\n\n");
 
     // detected_version()
-    out.push_str("    /// Returns the detected NiFi server version.\n");
+    out.push_str("    /// Returns the detected NiFi server version, or `None` if not yet detected.\n");
     out.push_str("    pub fn detected_version(&self) -> DetectedVersion {\n");
-    out.push_str("        self.version\n");
+    out.push_str("        *self.version.get().expect(\"NiFi version not yet detected — call login() or detect_version() first\")\n");
+    out.push_str("    }\n\n");
+
+    // version()
+    out.push_str("    /// Returns the detected version if available, or `None`.\n");
+    out.push_str("    pub fn version(&self) -> Option<DetectedVersion> {\n");
+    out.push_str("        self.version.get().copied()\n");
     out.push_str("    }\n\n");
 
     // inner()
@@ -141,10 +181,12 @@ fn emit_dynamic_client(out: &mut String, versions: &[(&str, &str, &str, &ApiSpec
     out.push_str("        &self.client\n");
     out.push_str("    }\n\n");
 
-    // login()
-    out.push_str("    /// Authenticate with the NiFi instance.\n");
+    // login() — now also triggers version detection
+    out.push_str("    /// Authenticate with the NiFi instance and detect the server version.\n");
     out.push_str("    pub async fn login(&self, username: &str, password: &str) -> Result<(), NifiError> {\n");
-    out.push_str("        self.client.login(username, password).await\n");
+    out.push_str("        self.client.login(username, password).await?;\n");
+    out.push_str("        self.detect_version().await?;\n");
+    out.push_str("        Ok(())\n");
     out.push_str("    }\n\n");
 
     // logout()
@@ -161,9 +203,12 @@ fn emit_dynamic_client(out: &mut String, versions: &[(&str, &str, &str, &ApiSpec
             "    /// Access the [{tag} API](https://nifi.apache.org/nifi-docs/rest-api.html) with dynamic dispatch.\n"
         ));
         out.push_str(&format!(
+            "    ///\n    /// # Panics\n    /// Panics if the NiFi version has not been detected yet. Call `login()` or `detect_version()` first.\n"
+        ));
+        out.push_str(&format!(
             "    pub fn {accessor_fn}(&self) -> dispatch::{dispatch_name}<'_> {{\n"
         ));
-        out.push_str("        match self.version {\n");
+        out.push_str("        match self.detected_version() {\n");
         for (ver, mod_name, _, _) in versions {
             let variant = version_to_variant(ver);
             let prefix = version_struct_prefix(mod_name);
