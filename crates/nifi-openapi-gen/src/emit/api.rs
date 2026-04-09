@@ -852,13 +852,16 @@ mod tests {
 
         // Root trait impl
         assert!(
-            content.contains("impl crate::v2_8_0::traits::ControllerServicesApi for ControllerServicesApi"),
+            content.contains(
+                "impl crate::v2_8_0::traits::ControllerServicesApi for ControllerServicesApi"
+            ),
             "Missing root trait impl. Content:\n{content}"
         );
 
         // GAT binding
         assert!(
-            content.contains("type ControllerServicesConfigApi<'b> = ControllerServicesConfigApi<'b>"),
+            content
+                .contains("type ControllerServicesConfigApi<'b> = ControllerServicesConfigApi<'b>"),
             "Missing GAT binding. Content:\n{content}"
         );
 

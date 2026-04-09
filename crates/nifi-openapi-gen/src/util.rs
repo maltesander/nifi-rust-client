@@ -277,8 +277,7 @@ pub(crate) fn collect_tag_sub_groups<'a>(
     versions: &[(&'a str, &'a str, &'a str, &'a ApiSpec)],
     tag: &str,
 ) -> TagSubGroups<'a> {
-    let mut root_endpoints: BTreeMap<String, BTreeMap<&'a str, EndpointInfo<'a>>> =
-        BTreeMap::new();
+    let mut root_endpoints: BTreeMap<String, BTreeMap<&'a str, EndpointInfo<'a>>> = BTreeMap::new();
     let mut sub_map: BTreeMap<String, CollectedSubGroup<'a>> = BTreeMap::new();
 
     for (ver, _mod_name, _feature, spec) in versions {
@@ -300,15 +299,16 @@ pub(crate) fn collect_tag_sub_groups<'a>(
                     );
             }
             for sg in &tg.sub_groups {
-                let collected = sub_map.entry(sg.accessor_fn.clone()).or_insert_with(|| {
-                    CollectedSubGroup {
-                        struct_name: sg.struct_name.clone(),
-                        accessor_fn: sg.accessor_fn.clone(),
-                        primary_param: sg.primary_param.clone(),
-                        primary_param_doc: sg.primary_param_doc.clone(),
-                        endpoints: BTreeMap::new(),
-                    }
-                });
+                let collected =
+                    sub_map
+                        .entry(sg.accessor_fn.clone())
+                        .or_insert_with(|| CollectedSubGroup {
+                            struct_name: sg.struct_name.clone(),
+                            accessor_fn: sg.accessor_fn.clone(),
+                            primary_param: sg.primary_param.clone(),
+                            primary_param_doc: sg.primary_param_doc.clone(),
+                            endpoints: BTreeMap::new(),
+                        });
                 for ep in &sg.endpoints {
                     collected
                         .endpoints

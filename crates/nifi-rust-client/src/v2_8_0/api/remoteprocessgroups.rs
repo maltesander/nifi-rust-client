@@ -433,3 +433,155 @@ impl<'a> RemoteProcessGroupsStateApi<'a> {
         Ok(e.component_state.unwrap_or_default())
     }
 }
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_8_0::traits::RemoteProcessGroupsApi for RemoteProcessGroupsApi<'_> {
+    type RemoteProcessGroupsBulletinsApi<'b>
+        = RemoteProcessGroupsBulletinsApi<'b>
+    where
+        Self: 'b;
+    fn bulletins<'b>(&'b self, id: &'b str) -> Self::RemoteProcessGroupsBulletinsApi<'b> {
+        RemoteProcessGroupsBulletinsApi {
+            client: self.client,
+            id,
+        }
+    }
+    type RemoteProcessGroupsInputPortsApi<'b>
+        = RemoteProcessGroupsInputPortsApi<'b>
+    where
+        Self: 'b;
+    fn input_ports<'b>(&'b self, id: &'b str) -> Self::RemoteProcessGroupsInputPortsApi<'b> {
+        RemoteProcessGroupsInputPortsApi {
+            client: self.client,
+            id,
+        }
+    }
+    type RemoteProcessGroupsOutputPortsApi<'b>
+        = RemoteProcessGroupsOutputPortsApi<'b>
+    where
+        Self: 'b;
+    fn output_ports<'b>(&'b self, id: &'b str) -> Self::RemoteProcessGroupsOutputPortsApi<'b> {
+        RemoteProcessGroupsOutputPortsApi {
+            client: self.client,
+            id,
+        }
+    }
+    type RemoteProcessGroupsRunStatusApi<'b>
+        = RemoteProcessGroupsRunStatusApi<'b>
+    where
+        Self: 'b;
+    fn run_status<'b>(&'b self, id: &'b str) -> Self::RemoteProcessGroupsRunStatusApi<'b> {
+        RemoteProcessGroupsRunStatusApi {
+            client: self.client,
+            id,
+        }
+    }
+    type RemoteProcessGroupsStateApi<'b>
+        = RemoteProcessGroupsStateApi<'b>
+    where
+        Self: 'b;
+    fn state<'b>(&'b self, id: &'b str) -> Self::RemoteProcessGroupsStateApi<'b> {
+        RemoteProcessGroupsStateApi {
+            client: self.client,
+            id,
+        }
+    }
+    async fn remove_remote_process_group(
+        &self,
+        id: &str,
+        version: Option<&str>,
+        client_id: Option<&str>,
+        disconnected_node_acknowledged: Option<bool>,
+    ) -> Result<crate::v2_8_0::types::RemoteProcessGroupEntity, NifiError> {
+        self.remove_remote_process_group(id, version, client_id, disconnected_node_acknowledged)
+            .await
+    }
+    async fn get_remote_process_group(
+        &self,
+        id: &str,
+    ) -> Result<crate::v2_8_0::types::RemoteProcessGroupEntity, NifiError> {
+        self.get_remote_process_group(id).await
+    }
+    async fn update_remote_process_group(
+        &self,
+        id: &str,
+        body: &crate::v2_8_0::types::RemoteProcessGroupEntity,
+    ) -> Result<crate::v2_8_0::types::RemoteProcessGroupEntity, NifiError> {
+        self.update_remote_process_group(id, body).await
+    }
+}
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_8_0::traits::RemoteProcessGroupsBulletinsApi
+    for RemoteProcessGroupsBulletinsApi<'_>
+{
+    async fn clear_bulletins_6(
+        &self,
+        body: &crate::v2_8_0::types::ClearBulletinsRequestEntity,
+    ) -> Result<crate::v2_8_0::types::ClearBulletinsResultEntity, NifiError> {
+        self.clear_bulletins_6(body).await
+    }
+}
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_8_0::traits::RemoteProcessGroupsInputPortsApi
+    for RemoteProcessGroupsInputPortsApi<'_>
+{
+    async fn update_remote_process_group_input_port(
+        &self,
+        port_id: &str,
+        body: &crate::v2_8_0::types::RemoteProcessGroupPortEntity,
+    ) -> Result<crate::v2_8_0::types::RemoteProcessGroupPortEntity, NifiError> {
+        self.update_remote_process_group_input_port(port_id, body)
+            .await
+    }
+    async fn update_remote_process_group_input_port_run_status(
+        &self,
+        port_id: &str,
+        body: &crate::v2_8_0::types::RemotePortRunStatusEntity,
+    ) -> Result<crate::v2_8_0::types::RemoteProcessGroupPortEntity, NifiError> {
+        self.update_remote_process_group_input_port_run_status(port_id, body)
+            .await
+    }
+}
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_8_0::traits::RemoteProcessGroupsOutputPortsApi
+    for RemoteProcessGroupsOutputPortsApi<'_>
+{
+    async fn update_remote_process_group_output_port(
+        &self,
+        port_id: &str,
+        body: &crate::v2_8_0::types::RemoteProcessGroupPortEntity,
+    ) -> Result<crate::v2_8_0::types::RemoteProcessGroupPortEntity, NifiError> {
+        self.update_remote_process_group_output_port(port_id, body)
+            .await
+    }
+    async fn update_remote_process_group_output_port_run_status(
+        &self,
+        port_id: &str,
+        body: &crate::v2_8_0::types::RemotePortRunStatusEntity,
+    ) -> Result<crate::v2_8_0::types::RemoteProcessGroupPortEntity, NifiError> {
+        self.update_remote_process_group_output_port_run_status(port_id, body)
+            .await
+    }
+}
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_8_0::traits::RemoteProcessGroupsRunStatusApi
+    for RemoteProcessGroupsRunStatusApi<'_>
+{
+    async fn update_remote_process_group_run_statuses(
+        &self,
+        body: &crate::v2_8_0::types::RemotePortRunStatusEntity,
+    ) -> Result<crate::v2_8_0::types::RemoteProcessGroupEntity, NifiError> {
+        self.update_remote_process_group_run_statuses(body).await
+    }
+    async fn update_remote_process_group_run_status(
+        &self,
+        body: &crate::v2_8_0::types::RemotePortRunStatusEntity,
+    ) -> Result<crate::v2_8_0::types::RemoteProcessGroupEntity, NifiError> {
+        self.update_remote_process_group_run_status(body).await
+    }
+}
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_8_0::traits::RemoteProcessGroupsStateApi for RemoteProcessGroupsStateApi<'_> {
+    async fn get_state_3(&self) -> Result<crate::v2_8_0::types::ComponentStateDto, NifiError> {
+        self.get_state_3().await
+    }
+}

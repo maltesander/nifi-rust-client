@@ -92,3 +92,22 @@ impl<'a> CountersApi<'a> {
         Ok(e.counter.unwrap_or_default())
     }
 }
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_7_2::traits::CountersApi for CountersApi<'_> {
+    async fn get_counters(
+        &self,
+        nodewise: Option<bool>,
+        cluster_node_id: Option<&str>,
+    ) -> Result<crate::v2_7_2::types::CountersDto, NifiError> {
+        self.get_counters(nodewise, cluster_node_id).await
+    }
+    async fn update_all_counters(&self) -> Result<crate::v2_7_2::types::CountersDto, NifiError> {
+        self.update_all_counters().await
+    }
+    async fn update_counter(
+        &self,
+        id: &str,
+    ) -> Result<crate::v2_7_2::types::CounterDto, NifiError> {
+        self.update_counter(id).await
+    }
+}

@@ -224,3 +224,54 @@ impl<'a> ProvenanceApi<'a> {
         Ok(e.provenance.unwrap_or_default())
     }
 }
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_8_0::traits::ProvenanceApi for ProvenanceApi<'_> {
+    async fn submit_provenance_request(
+        &self,
+        body: &crate::v2_8_0::types::ProvenanceEntity,
+    ) -> Result<crate::v2_8_0::types::ProvenanceDto, NifiError> {
+        self.submit_provenance_request(body).await
+    }
+    async fn submit_lineage_request(
+        &self,
+        body: &crate::v2_8_0::types::LineageEntity,
+    ) -> Result<crate::v2_8_0::types::LineageDto, NifiError> {
+        self.submit_lineage_request(body).await
+    }
+    async fn delete_lineage(
+        &self,
+        id: &str,
+        cluster_node_id: Option<&str>,
+    ) -> Result<crate::v2_8_0::types::LineageDto, NifiError> {
+        self.delete_lineage(id, cluster_node_id).await
+    }
+    async fn get_lineage(
+        &self,
+        id: &str,
+        cluster_node_id: Option<&str>,
+    ) -> Result<crate::v2_8_0::types::LineageDto, NifiError> {
+        self.get_lineage(id, cluster_node_id).await
+    }
+    async fn get_search_options(
+        &self,
+    ) -> Result<crate::v2_8_0::types::ProvenanceOptionsDto, NifiError> {
+        self.get_search_options().await
+    }
+    async fn delete_provenance(
+        &self,
+        id: &str,
+        cluster_node_id: Option<&str>,
+    ) -> Result<crate::v2_8_0::types::ProvenanceDto, NifiError> {
+        self.delete_provenance(id, cluster_node_id).await
+    }
+    async fn get_provenance(
+        &self,
+        id: &str,
+        cluster_node_id: Option<&str>,
+        summarize: Option<bool>,
+        incremental_results: Option<bool>,
+    ) -> Result<crate::v2_8_0::types::ProvenanceDto, NifiError> {
+        self.get_provenance(id, cluster_node_id, summarize, incremental_results)
+            .await
+    }
+}

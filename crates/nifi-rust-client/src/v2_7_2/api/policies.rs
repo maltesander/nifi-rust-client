@@ -149,3 +149,42 @@ impl<'a> PoliciesApi<'a> {
         self.client.put(&format!("/policies/{id}"), body).await
     }
 }
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_7_2::traits::PoliciesApi for PoliciesApi<'_> {
+    async fn create_access_policy(
+        &self,
+        body: &crate::v2_7_2::types::AccessPolicyEntity,
+    ) -> Result<crate::v2_7_2::types::AccessPolicyEntity, NifiError> {
+        self.create_access_policy(body).await
+    }
+    async fn get_access_policy_for_resource(
+        &self,
+        action: &str,
+        resource: &str,
+    ) -> Result<crate::v2_7_2::types::AccessPolicyEntity, NifiError> {
+        self.get_access_policy_for_resource(action, resource).await
+    }
+    async fn remove_access_policy(
+        &self,
+        id: &str,
+        version: Option<&str>,
+        client_id: Option<&str>,
+        disconnected_node_acknowledged: Option<bool>,
+    ) -> Result<crate::v2_7_2::types::AccessPolicyEntity, NifiError> {
+        self.remove_access_policy(id, version, client_id, disconnected_node_acknowledged)
+            .await
+    }
+    async fn get_access_policy(
+        &self,
+        id: &str,
+    ) -> Result<crate::v2_7_2::types::AccessPolicyEntity, NifiError> {
+        self.get_access_policy(id).await
+    }
+    async fn update_access_policy(
+        &self,
+        id: &str,
+        body: &crate::v2_7_2::types::AccessPolicyEntity,
+    ) -> Result<crate::v2_7_2::types::AccessPolicyEntity, NifiError> {
+        self.update_access_policy(id, body).await
+    }
+}

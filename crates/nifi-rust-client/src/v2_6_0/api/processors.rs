@@ -520,3 +520,171 @@ impl<'a> ProcessorsThreadsApi<'a> {
             .await
     }
 }
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_6_0::traits::ProcessorsApi for ProcessorsApi<'_> {
+    type ProcessorsConfigApi<'b>
+        = ProcessorsConfigApi<'b>
+    where
+        Self: 'b;
+    fn config<'b>(&'b self, id: &'b str) -> Self::ProcessorsConfigApi<'b> {
+        ProcessorsConfigApi {
+            client: self.client,
+            id,
+        }
+    }
+    type ProcessorsDescriptorsApi<'b>
+        = ProcessorsDescriptorsApi<'b>
+    where
+        Self: 'b;
+    fn descriptors<'b>(&'b self, id: &'b str) -> Self::ProcessorsDescriptorsApi<'b> {
+        ProcessorsDescriptorsApi {
+            client: self.client,
+            id,
+        }
+    }
+    type ProcessorsDiagnosticsApi<'b>
+        = ProcessorsDiagnosticsApi<'b>
+    where
+        Self: 'b;
+    fn diagnostics<'b>(&'b self, id: &'b str) -> Self::ProcessorsDiagnosticsApi<'b> {
+        ProcessorsDiagnosticsApi {
+            client: self.client,
+            id,
+        }
+    }
+    type ProcessorsRunStatusApi<'b>
+        = ProcessorsRunStatusApi<'b>
+    where
+        Self: 'b;
+    fn run_status<'b>(&'b self, id: &'b str) -> Self::ProcessorsRunStatusApi<'b> {
+        ProcessorsRunStatusApi {
+            client: self.client,
+            id,
+        }
+    }
+    type ProcessorsStateApi<'b>
+        = ProcessorsStateApi<'b>
+    where
+        Self: 'b;
+    fn state<'b>(&'b self, id: &'b str) -> Self::ProcessorsStateApi<'b> {
+        ProcessorsStateApi {
+            client: self.client,
+            id,
+        }
+    }
+    type ProcessorsThreadsApi<'b>
+        = ProcessorsThreadsApi<'b>
+    where
+        Self: 'b;
+    fn threads<'b>(&'b self, id: &'b str) -> Self::ProcessorsThreadsApi<'b> {
+        ProcessorsThreadsApi {
+            client: self.client,
+            id,
+        }
+    }
+    async fn get_processor_run_status_details(
+        &self,
+        body: &crate::v2_6_0::types::RunStatusDetailsRequestEntity,
+    ) -> Result<crate::v2_6_0::types::ProcessorsRunStatusDetailsEntity, NifiError> {
+        self.get_processor_run_status_details(body).await
+    }
+    async fn delete_processor(
+        &self,
+        id: &str,
+        version: Option<&str>,
+        client_id: Option<&str>,
+        disconnected_node_acknowledged: Option<bool>,
+    ) -> Result<crate::v2_6_0::types::ProcessorEntity, NifiError> {
+        self.delete_processor(id, version, client_id, disconnected_node_acknowledged)
+            .await
+    }
+    async fn get_processor(
+        &self,
+        id: &str,
+    ) -> Result<crate::v2_6_0::types::ProcessorEntity, NifiError> {
+        self.get_processor(id).await
+    }
+    async fn update_processor(
+        &self,
+        id: &str,
+        body: &crate::v2_6_0::types::ProcessorEntity,
+    ) -> Result<crate::v2_6_0::types::ProcessorEntity, NifiError> {
+        self.update_processor(id, body).await
+    }
+}
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_6_0::traits::ProcessorsConfigApi for ProcessorsConfigApi<'_> {
+    async fn analyze_configuration_2(
+        &self,
+        body: &crate::v2_6_0::types::ConfigurationAnalysisEntity,
+    ) -> Result<crate::v2_6_0::types::ConfigurationAnalysisDto, NifiError> {
+        self.analyze_configuration_2(body).await
+    }
+    async fn submit_processor_verification_request(
+        &self,
+        body: &crate::v2_6_0::types::VerifyConfigRequestEntity,
+    ) -> Result<crate::v2_6_0::types::VerifyConfigRequestDto, NifiError> {
+        self.submit_processor_verification_request(body).await
+    }
+    async fn delete_verification_request_2(
+        &self,
+        request_id: &str,
+    ) -> Result<crate::v2_6_0::types::VerifyConfigRequestDto, NifiError> {
+        self.delete_verification_request_2(request_id).await
+    }
+    async fn get_verification_request_2(
+        &self,
+        request_id: &str,
+    ) -> Result<crate::v2_6_0::types::VerifyConfigRequestDto, NifiError> {
+        self.get_verification_request_2(request_id).await
+    }
+}
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_6_0::traits::ProcessorsDescriptorsApi for ProcessorsDescriptorsApi<'_> {
+    async fn get_property_descriptor_3(
+        &self,
+        client_id: Option<&str>,
+        property_name: &str,
+        sensitive: Option<bool>,
+    ) -> Result<crate::v2_6_0::types::PropertyDescriptorDto, NifiError> {
+        self.get_property_descriptor_3(client_id, property_name, sensitive)
+            .await
+    }
+}
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_6_0::traits::ProcessorsDiagnosticsApi for ProcessorsDiagnosticsApi<'_> {
+    async fn get_processor_diagnostics(
+        &self,
+    ) -> Result<crate::v2_6_0::types::ProcessorEntity, NifiError> {
+        self.get_processor_diagnostics().await
+    }
+}
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_6_0::traits::ProcessorsRunStatusApi for ProcessorsRunStatusApi<'_> {
+    async fn update_run_status_4(
+        &self,
+        body: &crate::v2_6_0::types::ProcessorRunStatusEntity,
+    ) -> Result<crate::v2_6_0::types::ProcessorEntity, NifiError> {
+        self.update_run_status_4(body).await
+    }
+}
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_6_0::traits::ProcessorsStateApi for ProcessorsStateApi<'_> {
+    async fn get_state_2(&self) -> Result<crate::v2_6_0::types::ComponentStateDto, NifiError> {
+        self.get_state_2().await
+    }
+    async fn clear_state_3(
+        &self,
+        body: &crate::v2_6_0::types::ComponentStateEntity,
+    ) -> Result<crate::v2_6_0::types::ComponentStateDto, NifiError> {
+        self.clear_state_3(body).await
+    }
+}
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_6_0::traits::ProcessorsThreadsApi for ProcessorsThreadsApi<'_> {
+    async fn terminate_processor(
+        &self,
+    ) -> Result<crate::v2_6_0::types::ProcessorEntity, NifiError> {
+        self.terminate_processor().await
+    }
+}

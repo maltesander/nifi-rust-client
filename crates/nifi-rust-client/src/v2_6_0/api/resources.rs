@@ -25,3 +25,9 @@ impl<'a> ResourcesApi<'a> {
         self.client.get("/resources").await
     }
 }
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_6_0::traits::ResourcesApi for ResourcesApi<'_> {
+    async fn get_resources(&self) -> Result<crate::v2_6_0::types::ResourcesEntity, NifiError> {
+        self.get_resources().await
+    }
+}

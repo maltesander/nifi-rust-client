@@ -2014,3 +2014,589 @@ impl<'a> FlowStatusApi<'a> {
             .await
     }
 }
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_8_0::traits::FlowApi for FlowApi<'_> {
+    type FlowBranchesApi<'b>
+        = FlowBranchesApi<'b>
+    where
+        Self: 'b;
+    fn branches<'b>(&'b self, id: &'b str) -> Self::FlowBranchesApi<'b> {
+        FlowBranchesApi {
+            client: self.client,
+            id,
+        }
+    }
+    type FlowBreadcrumbsApi<'b>
+        = FlowBreadcrumbsApi<'b>
+    where
+        Self: 'b;
+    fn breadcrumbs<'b>(&'b self, id: &'b str) -> Self::FlowBreadcrumbsApi<'b> {
+        FlowBreadcrumbsApi {
+            client: self.client,
+            id,
+        }
+    }
+    type FlowBucketsApi<'b>
+        = FlowBucketsApi<'b>
+    where
+        Self: 'b;
+    fn buckets<'b>(&'b self, id: &'b str) -> Self::FlowBucketsApi<'b> {
+        FlowBucketsApi {
+            client: self.client,
+            id,
+        }
+    }
+    type FlowBulletinsApi<'b>
+        = FlowBulletinsApi<'b>
+    where
+        Self: 'b;
+    fn bulletins<'b>(&'b self, id: &'b str) -> Self::FlowBulletinsApi<'b> {
+        FlowBulletinsApi {
+            client: self.client,
+            id,
+        }
+    }
+    type FlowControllerServicesApi<'b>
+        = FlowControllerServicesApi<'b>
+    where
+        Self: 'b;
+    fn controller_services<'b>(&'b self, id: &'b str) -> Self::FlowControllerServicesApi<'b> {
+        FlowControllerServicesApi {
+            client: self.client,
+            id,
+        }
+    }
+    type FlowStatisticsApi<'b>
+        = FlowStatisticsApi<'b>
+    where
+        Self: 'b;
+    fn statistics<'b>(&'b self, id: &'b str) -> Self::FlowStatisticsApi<'b> {
+        FlowStatisticsApi {
+            client: self.client,
+            id,
+        }
+    }
+    type FlowStatusApi<'b>
+        = FlowStatusApi<'b>
+    where
+        Self: 'b;
+    fn status<'b>(&'b self, id: &'b str) -> Self::FlowStatusApi<'b> {
+        FlowStatusApi {
+            client: self.client,
+            id,
+        }
+    }
+    async fn get_about_info(&self) -> Result<crate::v2_8_0::types::AboutDto, NifiError> {
+        self.get_about_info().await
+    }
+    async fn get_additional_details(
+        &self,
+        group: &str,
+        artifact: &str,
+        version: &str,
+        r#type: &str,
+    ) -> Result<crate::v2_8_0::types::AdditionalDetailsEntity, NifiError> {
+        self.get_additional_details(group, artifact, version, r#type)
+            .await
+    }
+    async fn get_banners(&self) -> Result<crate::v2_8_0::types::BannerDto, NifiError> {
+        self.get_banners().await
+    }
+    async fn get_bulletin_board(
+        &self,
+        after: Option<&str>,
+        source_name: Option<&str>,
+        message: Option<&str>,
+        source_id: Option<&str>,
+        group_id: Option<&str>,
+        limit: Option<&str>,
+    ) -> Result<crate::v2_8_0::types::BulletinBoardDto, NifiError> {
+        self.get_bulletin_board(after, source_name, message, source_id, group_id, limit)
+            .await
+    }
+    async fn generate_client_id(&self) -> Result<(), NifiError> {
+        self.generate_client_id().await
+    }
+    async fn search_cluster(
+        &self,
+        q: &str,
+    ) -> Result<crate::v2_8_0::types::ClusterSearchResultsEntity, NifiError> {
+        self.search_cluster(q).await
+    }
+    async fn get_cluster_summary(
+        &self,
+    ) -> Result<crate::v2_8_0::types::ClusterSummaryDto, NifiError> {
+        self.get_cluster_summary().await
+    }
+    async fn get_flow_config(
+        &self,
+    ) -> Result<crate::v2_8_0::types::FlowConfigurationDto, NifiError> {
+        self.get_flow_config().await
+    }
+    async fn get_content_viewers(
+        &self,
+    ) -> Result<crate::v2_8_0::types::ContentViewerEntity, NifiError> {
+        self.get_content_viewers().await
+    }
+    async fn get_controller_service_definition(
+        &self,
+        group: &str,
+        artifact: &str,
+        version: &str,
+        r#type: &str,
+    ) -> Result<crate::v2_8_0::types::ControllerServiceDefinition, NifiError> {
+        self.get_controller_service_definition(group, artifact, version, r#type)
+            .await
+    }
+    async fn get_controller_service_types(
+        &self,
+        service_type: Option<&str>,
+        service_bundle_group: Option<&str>,
+        service_bundle_artifact: Option<&str>,
+        service_bundle_version: Option<&str>,
+        bundle_group_filter: Option<&str>,
+        bundle_artifact_filter: Option<&str>,
+        type_filter: Option<&str>,
+    ) -> Result<crate::v2_8_0::types::ControllerServiceTypesEntity, NifiError> {
+        self.get_controller_service_types(
+            service_type,
+            service_bundle_group,
+            service_bundle_artifact,
+            service_bundle_version,
+            bundle_group_filter,
+            bundle_artifact_filter,
+            type_filter,
+        )
+        .await
+    }
+    async fn get_bulletins(
+        &self,
+    ) -> Result<crate::v2_8_0::types::ControllerBulletinsEntity, NifiError> {
+        self.get_bulletins().await
+    }
+    async fn get_controller_services_from_controller(
+        &self,
+        ui_only: Option<bool>,
+        include_referencing_components: Option<bool>,
+    ) -> Result<crate::v2_8_0::types::ControllerServicesEntity, NifiError> {
+        self.get_controller_services_from_controller(ui_only, include_referencing_components)
+            .await
+    }
+    async fn get_current_user(&self) -> Result<crate::v2_8_0::types::CurrentUserEntity, NifiError> {
+        self.get_current_user().await
+    }
+    async fn get_flow_analysis_rule_definition(
+        &self,
+        group: &str,
+        artifact: &str,
+        version: &str,
+        r#type: &str,
+    ) -> Result<crate::v2_8_0::types::FlowAnalysisRuleDefinition, NifiError> {
+        self.get_flow_analysis_rule_definition(group, artifact, version, r#type)
+            .await
+    }
+    async fn get_flow_analysis_rule_types(
+        &self,
+        bundle_group_filter: Option<&str>,
+        bundle_artifact_filter: Option<&str>,
+        r#type: Option<&str>,
+    ) -> Result<crate::v2_8_0::types::FlowAnalysisRuleTypesEntity, NifiError> {
+        self.get_flow_analysis_rule_types(bundle_group_filter, bundle_artifact_filter, r#type)
+            .await
+    }
+    async fn get_all_flow_analysis_results(
+        &self,
+    ) -> Result<crate::v2_8_0::types::FlowAnalysisResultEntity, NifiError> {
+        self.get_all_flow_analysis_results().await
+    }
+    async fn get_flow_analysis_results(
+        &self,
+        process_group_id: &str,
+    ) -> Result<crate::v2_8_0::types::FlowAnalysisResultEntity, NifiError> {
+        self.get_flow_analysis_results(process_group_id).await
+    }
+    async fn get_flow_registry_client_definition(
+        &self,
+        group: &str,
+        artifact: &str,
+        version: &str,
+        r#type: &str,
+    ) -> Result<crate::v2_8_0::types::FlowRegistryClientDefinition, NifiError> {
+        self.get_flow_registry_client_definition(group, artifact, version, r#type)
+            .await
+    }
+    async fn query_history(
+        &self,
+        offset: &str,
+        count: &str,
+        sort_column: Option<&str>,
+        sort_order: Option<&str>,
+        start_date: Option<&str>,
+        end_date: Option<&str>,
+        user_identity: Option<&str>,
+        source_id: Option<&str>,
+    ) -> Result<crate::v2_8_0::types::HistoryDto, NifiError> {
+        self.query_history(
+            offset,
+            count,
+            sort_column,
+            sort_order,
+            start_date,
+            end_date,
+            user_identity,
+            source_id,
+        )
+        .await
+    }
+    async fn get_component_history(
+        &self,
+        component_id: &str,
+    ) -> Result<crate::v2_8_0::types::ComponentHistoryDto, NifiError> {
+        self.get_component_history(component_id).await
+    }
+    async fn get_action(&self, id: &str) -> Result<crate::v2_8_0::types::ActionEntity, NifiError> {
+        self.get_action(id).await
+    }
+    async fn get_listen_ports(&self) -> Result<crate::v2_8_0::types::ListenPortsEntity, NifiError> {
+        self.get_listen_ports().await
+    }
+    async fn get_flow_metrics(
+        &self,
+        producer: &str,
+        included_registries: Option<crate::v2_8_0::types::IncludedRegistries>,
+        sample_name: Option<&str>,
+        sample_label_value: Option<&str>,
+        root_field_name: Option<&str>,
+        flow_metrics_reporting_strategy: Option<crate::v2_8_0::types::FlowMetricsReportingStrategy>,
+    ) -> Result<(), NifiError> {
+        self.get_flow_metrics(
+            producer,
+            included_registries,
+            sample_name,
+            sample_label_value,
+            root_field_name,
+            flow_metrics_reporting_strategy,
+        )
+        .await
+    }
+    async fn get_parameter_contexts(
+        &self,
+    ) -> Result<crate::v2_8_0::types::ParameterContextsEntity, NifiError> {
+        self.get_parameter_contexts().await
+    }
+    async fn get_parameter_provider_definition(
+        &self,
+        group: &str,
+        artifact: &str,
+        version: &str,
+        r#type: &str,
+    ) -> Result<crate::v2_8_0::types::ParameterProviderDefinition, NifiError> {
+        self.get_parameter_provider_definition(group, artifact, version, r#type)
+            .await
+    }
+    async fn get_parameter_provider_types(
+        &self,
+        bundle_group_filter: Option<&str>,
+        bundle_artifact_filter: Option<&str>,
+        r#type: Option<&str>,
+    ) -> Result<crate::v2_8_0::types::ParameterProviderTypesEntity, NifiError> {
+        self.get_parameter_provider_types(bundle_group_filter, bundle_artifact_filter, r#type)
+            .await
+    }
+    async fn get_parameter_providers(
+        &self,
+    ) -> Result<crate::v2_8_0::types::ParameterProvidersEntity, NifiError> {
+        self.get_parameter_providers().await
+    }
+    async fn get_prioritizers(
+        &self,
+    ) -> Result<crate::v2_8_0::types::PrioritizerTypesEntity, NifiError> {
+        self.get_prioritizers().await
+    }
+    async fn get_flow(
+        &self,
+        id: &str,
+        ui_only: Option<bool>,
+    ) -> Result<crate::v2_8_0::types::ProcessGroupFlowEntity, NifiError> {
+        self.get_flow(id, ui_only).await
+    }
+    async fn schedule_components(
+        &self,
+        id: &str,
+        body: &crate::v2_8_0::types::ScheduleComponentsEntity,
+    ) -> Result<crate::v2_8_0::types::ScheduleComponentsEntity, NifiError> {
+        self.schedule_components(id, body).await
+    }
+    async fn get_processor_definition(
+        &self,
+        group: &str,
+        artifact: &str,
+        version: &str,
+        r#type: &str,
+    ) -> Result<crate::v2_8_0::types::ProcessorDefinition, NifiError> {
+        self.get_processor_definition(group, artifact, version, r#type)
+            .await
+    }
+    async fn get_processor_types(
+        &self,
+        bundle_group_filter: Option<&str>,
+        bundle_artifact_filter: Option<&str>,
+        r#type: Option<&str>,
+    ) -> Result<crate::v2_8_0::types::ProcessorTypesEntity, NifiError> {
+        self.get_processor_types(bundle_group_filter, bundle_artifact_filter, r#type)
+            .await
+    }
+    async fn get_registry_clients(
+        &self,
+    ) -> Result<crate::v2_8_0::types::FlowRegistryClientsEntity, NifiError> {
+        self.get_registry_clients().await
+    }
+    async fn get_reporting_task_definition(
+        &self,
+        group: &str,
+        artifact: &str,
+        version: &str,
+        r#type: &str,
+    ) -> Result<crate::v2_8_0::types::ReportingTaskDefinition, NifiError> {
+        self.get_reporting_task_definition(group, artifact, version, r#type)
+            .await
+    }
+    async fn get_reporting_task_types(
+        &self,
+        bundle_group_filter: Option<&str>,
+        bundle_artifact_filter: Option<&str>,
+        r#type: Option<&str>,
+    ) -> Result<crate::v2_8_0::types::ReportingTaskTypesEntity, NifiError> {
+        self.get_reporting_task_types(bundle_group_filter, bundle_artifact_filter, r#type)
+            .await
+    }
+    async fn get_reporting_tasks(
+        &self,
+    ) -> Result<crate::v2_8_0::types::ReportingTasksEntity, NifiError> {
+        self.get_reporting_tasks().await
+    }
+    async fn download_reporting_task_snapshot(
+        &self,
+        reporting_task_id: Option<&str>,
+    ) -> Result<(), NifiError> {
+        self.download_reporting_task_snapshot(reporting_task_id)
+            .await
+    }
+    async fn get_reporting_task_snapshot(
+        &self,
+        reporting_task_id: Option<&str>,
+    ) -> Result<crate::v2_8_0::types::VersionedReportingTaskSnapshot, NifiError> {
+        self.get_reporting_task_snapshot(reporting_task_id).await
+    }
+    async fn get_runtime_manifest(
+        &self,
+    ) -> Result<crate::v2_8_0::types::RuntimeManifest, NifiError> {
+        self.get_runtime_manifest().await
+    }
+    async fn search_flow(
+        &self,
+        q: Option<&str>,
+        a: Option<&str>,
+    ) -> Result<crate::v2_8_0::types::SearchResultsDto, NifiError> {
+        self.search_flow(q, a).await
+    }
+    async fn get_controller_status(
+        &self,
+    ) -> Result<crate::v2_8_0::types::ControllerStatusDto, NifiError> {
+        self.get_controller_status().await
+    }
+}
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_8_0::traits::FlowBranchesApi for FlowBranchesApi<'_> {
+    async fn get_branches(
+        &self,
+    ) -> Result<crate::v2_8_0::types::FlowRegistryBranchesEntity, NifiError> {
+        self.get_branches().await
+    }
+    async fn get_version_differences(
+        &self,
+        registry_id: &str,
+        branch_id_a: &str,
+        bucket_id_a: &str,
+        flow_id_a: &str,
+        version_a: &str,
+        branch_id_b: &str,
+        bucket_id_b: &str,
+        flow_id_b: &str,
+        version_b: &str,
+        offset: Option<i32>,
+        limit: Option<i32>,
+    ) -> Result<crate::v2_8_0::types::FlowComparisonEntity, NifiError> {
+        self.get_version_differences(
+            registry_id,
+            branch_id_a,
+            bucket_id_a,
+            flow_id_a,
+            version_a,
+            branch_id_b,
+            bucket_id_b,
+            flow_id_b,
+            version_b,
+            offset,
+            limit,
+        )
+        .await
+    }
+}
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_8_0::traits::FlowBreadcrumbsApi for FlowBreadcrumbsApi<'_> {
+    async fn get_breadcrumbs(
+        &self,
+    ) -> Result<crate::v2_8_0::types::FlowBreadcrumbEntity, NifiError> {
+        self.get_breadcrumbs().await
+    }
+}
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_8_0::traits::FlowBucketsApi for FlowBucketsApi<'_> {
+    async fn get_buckets(
+        &self,
+        branch: Option<&str>,
+    ) -> Result<crate::v2_8_0::types::FlowRegistryBucketsEntity, NifiError> {
+        self.get_buckets(branch).await
+    }
+    async fn get_flows(
+        &self,
+        registry_id: &str,
+        bucket_id: &str,
+        branch: Option<&str>,
+    ) -> Result<crate::v2_8_0::types::VersionedFlowsEntity, NifiError> {
+        self.get_flows(registry_id, bucket_id, branch).await
+    }
+    async fn get_details(
+        &self,
+        registry_id: &str,
+        bucket_id: &str,
+        flow_id: &str,
+        branch: Option<&str>,
+    ) -> Result<crate::v2_8_0::types::VersionedFlowDto, NifiError> {
+        self.get_details(registry_id, bucket_id, flow_id, branch)
+            .await
+    }
+    async fn get_versions(
+        &self,
+        registry_id: &str,
+        bucket_id: &str,
+        flow_id: &str,
+        branch: Option<&str>,
+    ) -> Result<crate::v2_8_0::types::VersionedFlowSnapshotMetadataSetEntity, NifiError> {
+        self.get_versions(registry_id, bucket_id, flow_id, branch)
+            .await
+    }
+}
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_8_0::traits::FlowBulletinsApi for FlowBulletinsApi<'_> {
+    async fn clear_bulletins_1(
+        &self,
+        body: &crate::v2_8_0::types::ClearBulletinsForGroupRequestEntity,
+    ) -> Result<crate::v2_8_0::types::ClearBulletinsForGroupResultsEntity, NifiError> {
+        self.clear_bulletins_1(body).await
+    }
+}
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_8_0::traits::FlowControllerServicesApi for FlowControllerServicesApi<'_> {
+    async fn get_controller_services_from_group(
+        &self,
+        include_ancestor_groups: Option<bool>,
+        include_descendant_groups: Option<bool>,
+        include_referencing_components: Option<bool>,
+        ui_only: Option<bool>,
+    ) -> Result<crate::v2_8_0::types::ControllerServicesEntity, NifiError> {
+        self.get_controller_services_from_group(
+            include_ancestor_groups,
+            include_descendant_groups,
+            include_referencing_components,
+            ui_only,
+        )
+        .await
+    }
+    async fn activate_controller_services(
+        &self,
+        body: &crate::v2_8_0::types::ActivateControllerServicesEntity,
+    ) -> Result<crate::v2_8_0::types::ActivateControllerServicesEntity, NifiError> {
+        self.activate_controller_services(body).await
+    }
+}
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_8_0::traits::FlowStatisticsApi for FlowStatisticsApi<'_> {
+    async fn get_connection_statistics(
+        &self,
+        nodewise: Option<bool>,
+        cluster_node_id: Option<&str>,
+    ) -> Result<crate::v2_8_0::types::ConnectionStatisticsEntity, NifiError> {
+        self.get_connection_statistics(nodewise, cluster_node_id)
+            .await
+    }
+}
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_8_0::traits::FlowStatusApi for FlowStatusApi<'_> {
+    async fn get_connection_status(
+        &self,
+        nodewise: Option<bool>,
+        cluster_node_id: Option<&str>,
+    ) -> Result<crate::v2_8_0::types::ConnectionStatusEntity, NifiError> {
+        self.get_connection_status(nodewise, cluster_node_id).await
+    }
+    async fn get_connection_status_history(
+        &self,
+    ) -> Result<crate::v2_8_0::types::StatusHistoryEntity, NifiError> {
+        self.get_connection_status_history().await
+    }
+    async fn get_input_port_status(
+        &self,
+        nodewise: Option<bool>,
+        cluster_node_id: Option<&str>,
+    ) -> Result<crate::v2_8_0::types::PortStatusEntity, NifiError> {
+        self.get_input_port_status(nodewise, cluster_node_id).await
+    }
+    async fn get_output_port_status(
+        &self,
+        nodewise: Option<bool>,
+        cluster_node_id: Option<&str>,
+    ) -> Result<crate::v2_8_0::types::PortStatusEntity, NifiError> {
+        self.get_output_port_status(nodewise, cluster_node_id).await
+    }
+    async fn get_process_group_status(
+        &self,
+        recursive: Option<bool>,
+        nodewise: Option<bool>,
+        cluster_node_id: Option<&str>,
+    ) -> Result<crate::v2_8_0::types::ProcessGroupStatusEntity, NifiError> {
+        self.get_process_group_status(recursive, nodewise, cluster_node_id)
+            .await
+    }
+    async fn get_process_group_status_history(
+        &self,
+    ) -> Result<crate::v2_8_0::types::StatusHistoryEntity, NifiError> {
+        self.get_process_group_status_history().await
+    }
+    async fn get_processor_status(
+        &self,
+        nodewise: Option<bool>,
+        cluster_node_id: Option<&str>,
+    ) -> Result<crate::v2_8_0::types::ProcessorStatusEntity, NifiError> {
+        self.get_processor_status(nodewise, cluster_node_id).await
+    }
+    async fn get_processor_status_history(
+        &self,
+    ) -> Result<crate::v2_8_0::types::StatusHistoryEntity, NifiError> {
+        self.get_processor_status_history().await
+    }
+    async fn get_remote_process_group_status(
+        &self,
+        nodewise: Option<bool>,
+        cluster_node_id: Option<&str>,
+    ) -> Result<crate::v2_8_0::types::RemoteProcessGroupStatusEntity, NifiError> {
+        self.get_remote_process_group_status(nodewise, cluster_node_id)
+            .await
+    }
+    async fn get_remote_process_group_status_history(
+        &self,
+    ) -> Result<crate::v2_8_0::types::StatusHistoryEntity, NifiError> {
+        self.get_remote_process_group_status_history().await
+    }
+}

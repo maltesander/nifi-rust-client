@@ -234,3 +234,68 @@ impl<'a> DataTransferTransactionsApi<'a> {
             .await
     }
 }
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_6_0::traits::DataTransferApi for DataTransferApi<'_> {
+    type DataTransferTransactionsApi<'b>
+        = DataTransferTransactionsApi<'b>
+    where
+        Self: 'b;
+    fn transactions<'b>(&'b self, port_id: &'b str) -> Self::DataTransferTransactionsApi<'b> {
+        DataTransferTransactionsApi {
+            client: self.client,
+            port_id,
+        }
+    }
+}
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_6_0::traits::DataTransferTransactionsApi for DataTransferTransactionsApi<'_> {
+    async fn commit_input_port_transaction(
+        &self,
+        transaction_id: &str,
+        response_code: i32,
+    ) -> Result<crate::v2_6_0::types::TransactionResultEntity, NifiError> {
+        self.commit_input_port_transaction(transaction_id, response_code)
+            .await
+    }
+    async fn extend_input_port_transaction_t_t_l(
+        &self,
+        transaction_id: &str,
+    ) -> Result<crate::v2_6_0::types::TransactionResultEntity, NifiError> {
+        self.extend_input_port_transaction_t_t_l(transaction_id)
+            .await
+    }
+    async fn receive_flow_files(
+        &self,
+        transaction_id: &str,
+        filename: Option<&str>,
+        data: Vec<u8>,
+    ) -> Result<(), NifiError> {
+        self.receive_flow_files(transaction_id, filename, data)
+            .await
+    }
+    async fn commit_output_port_transaction(
+        &self,
+        transaction_id: &str,
+        response_code: i32,
+        checksum: &str,
+    ) -> Result<crate::v2_6_0::types::TransactionResultEntity, NifiError> {
+        self.commit_output_port_transaction(transaction_id, response_code, checksum)
+            .await
+    }
+    async fn extend_output_port_transaction_t_t_l(
+        &self,
+        transaction_id: &str,
+    ) -> Result<crate::v2_6_0::types::TransactionResultEntity, NifiError> {
+        self.extend_output_port_transaction_t_t_l(transaction_id)
+            .await
+    }
+    async fn transfer_flow_files(&self, transaction_id: &str) -> Result<(), NifiError> {
+        self.transfer_flow_files(transaction_id).await
+    }
+    async fn create_port_transaction(
+        &self,
+        port_type: &str,
+    ) -> Result<crate::v2_6_0::types::TransactionResultEntity, NifiError> {
+        self.create_port_transaction(port_type).await
+    }
+}

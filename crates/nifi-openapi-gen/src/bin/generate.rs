@@ -24,7 +24,7 @@ use nifi_openapi_gen::{
     emit_dynamic_conversions, emit_dynamic_dispatch, emit_dynamic_impls, emit_dynamic_tests,
     emit_dynamic_traits, emit_dynamic_types, emit_endpoint_availability_tests,
     emit_enum_coverage_tests, emit_field_presence_tests, emit_query_param_coverage_tests,
-    emit_types, load,
+    emit_static_traits, emit_types, load,
 };
 
 fn write_if_changed(path: &std::path::Path, content: &str, written: &mut usize) {
@@ -96,9 +96,12 @@ fn main() {
         for (filename, content) in emit_api_with_prefix(spec, &types_prefix) {
             targets.push((versioned_src.join("api").join(&filename), content));
         }
+        for (filename, content) in emit_static_traits(spec, &types_prefix) {
+            targets.push((versioned_src.join("traits").join(&filename), content));
+        }
         targets.push((
             versioned_src.join("mod.rs"),
-            "pub mod api;\npub mod types;\n".to_string(),
+            "pub mod api;\npub mod traits;\npub mod types;\n".to_string(),
         ));
     }
 

@@ -454,3 +454,115 @@ impl<'a> VersionsDownloadApi<'a> {
             .await
     }
 }
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_6_0::traits::VersionsApi for VersionsApi<'_> {
+    type VersionsDownloadApi<'b>
+        = VersionsDownloadApi<'b>
+    where
+        Self: 'b;
+    fn download<'b>(&'b self, id: &'b str) -> Self::VersionsDownloadApi<'b> {
+        VersionsDownloadApi {
+            client: self.client,
+            id,
+        }
+    }
+    async fn create_version_control_request(
+        &self,
+        body: &crate::v2_6_0::types::CreateActiveRequestEntity,
+    ) -> Result<(), NifiError> {
+        self.create_version_control_request(body).await
+    }
+    async fn delete_version_control_request(
+        &self,
+        id: &str,
+        disconnected_node_acknowledged: Option<bool>,
+    ) -> Result<(), NifiError> {
+        self.delete_version_control_request(id, disconnected_node_acknowledged)
+            .await
+    }
+    async fn update_version_control_request(
+        &self,
+        id: &str,
+        body: &crate::v2_6_0::types::VersionControlComponentMappingEntity,
+    ) -> Result<crate::v2_6_0::types::VersionControlInformationEntity, NifiError> {
+        self.update_version_control_request(id, body).await
+    }
+    async fn stop_version_control(
+        &self,
+        id: &str,
+        version: Option<&str>,
+        client_id: Option<&str>,
+        disconnected_node_acknowledged: Option<bool>,
+    ) -> Result<crate::v2_6_0::types::VersionControlInformationEntity, NifiError> {
+        self.stop_version_control(id, version, client_id, disconnected_node_acknowledged)
+            .await
+    }
+    async fn get_version_information(
+        &self,
+        id: &str,
+    ) -> Result<crate::v2_6_0::types::VersionControlInformationEntity, NifiError> {
+        self.get_version_information(id).await
+    }
+    async fn save_to_flow_registry(
+        &self,
+        id: &str,
+        body: &crate::v2_6_0::types::StartVersionControlRequestEntity,
+    ) -> Result<crate::v2_6_0::types::VersionControlInformationEntity, NifiError> {
+        self.save_to_flow_registry(id, body).await
+    }
+    async fn update_flow_version(
+        &self,
+        id: &str,
+        body: &crate::v2_6_0::types::VersionedFlowSnapshotEntity,
+    ) -> Result<crate::v2_6_0::types::VersionControlInformationEntity, NifiError> {
+        self.update_flow_version(id, body).await
+    }
+    async fn initiate_revert_flow_version(
+        &self,
+        id: &str,
+        body: &crate::v2_6_0::types::VersionControlInformationEntity,
+    ) -> Result<crate::v2_6_0::types::VersionedFlowUpdateRequestEntity, NifiError> {
+        self.initiate_revert_flow_version(id, body).await
+    }
+    async fn delete_revert_request(
+        &self,
+        id: &str,
+        disconnected_node_acknowledged: Option<bool>,
+    ) -> Result<crate::v2_6_0::types::VersionedFlowUpdateRequestEntity, NifiError> {
+        self.delete_revert_request(id, disconnected_node_acknowledged)
+            .await
+    }
+    async fn get_revert_request(
+        &self,
+        id: &str,
+    ) -> Result<crate::v2_6_0::types::VersionedFlowUpdateRequestEntity, NifiError> {
+        self.get_revert_request(id).await
+    }
+    async fn initiate_version_control_update(
+        &self,
+        id: &str,
+        body: &crate::v2_6_0::types::VersionControlInformationEntity,
+    ) -> Result<crate::v2_6_0::types::VersionedFlowUpdateRequestEntity, NifiError> {
+        self.initiate_version_control_update(id, body).await
+    }
+    async fn delete_update_request_1(
+        &self,
+        id: &str,
+        disconnected_node_acknowledged: Option<bool>,
+    ) -> Result<crate::v2_6_0::types::VersionedFlowUpdateRequestEntity, NifiError> {
+        self.delete_update_request_1(id, disconnected_node_acknowledged)
+            .await
+    }
+    async fn get_update_request(
+        &self,
+        id: &str,
+    ) -> Result<crate::v2_6_0::types::VersionedFlowUpdateRequestEntity, NifiError> {
+        self.get_update_request(id).await
+    }
+}
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_6_0::traits::VersionsDownloadApi for VersionsDownloadApi<'_> {
+    async fn export_flow_version(&self) -> Result<(), NifiError> {
+        self.export_flow_version().await
+    }
+}

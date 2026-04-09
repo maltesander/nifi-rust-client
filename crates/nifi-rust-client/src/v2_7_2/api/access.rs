@@ -42,3 +42,12 @@ impl<'a> AccessApi<'a> {
         self.client.get_void("/access/logout/complete").await
     }
 }
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_7_2::traits::AccessApi for AccessApi<'_> {
+    async fn log_out(&self) -> Result<(), NifiError> {
+        self.log_out().await
+    }
+    async fn log_out_complete(&self) -> Result<(), NifiError> {
+        self.log_out_complete().await
+    }
+}

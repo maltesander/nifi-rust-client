@@ -35,10 +35,7 @@ pub fn emit_static_traits(spec: &ApiSpec, types_prefix: &str) -> Vec<(String, St
     files
 }
 
-fn emit_trait_file(
-    tag_group: &crate::parser::TagGroup,
-    types_prefix: &str,
-) -> String {
+fn emit_trait_file(tag_group: &crate::parser::TagGroup, types_prefix: &str) -> String {
     let mut out = String::new();
 
     out.push_str("use crate::NifiError;\n\n");
@@ -50,9 +47,7 @@ fn emit_trait_file(
 
     // Emit root trait
     out.push_str(&format!("/// The {} API.\n", tag_group.tag));
-    out.push_str(
-        "#[allow(unused_variables, async_fn_in_trait, clippy::too_many_arguments)]\n",
-    );
+    out.push_str("#[allow(unused_variables, async_fn_in_trait, clippy::too_many_arguments)]\n");
     out.push_str(&format!("pub trait {} {{\n", tag_group.struct_name));
 
     // GAT declarations and accessor methods for sub-groups
@@ -79,15 +74,12 @@ fn emit_trait_file(
     out
 }
 
-fn emit_sub_resource_trait(
-    out: &mut String,
-    sg: &crate::parser::SubGroup,
-    types_prefix: &str,
-) {
-    out.push_str(&format!("/// Sub-resource trait for the `{}` sub-group.\n", sg.name));
-    out.push_str(
-        "#[allow(unused_variables, async_fn_in_trait, clippy::too_many_arguments)]\n",
-    );
+fn emit_sub_resource_trait(out: &mut String, sg: &crate::parser::SubGroup, types_prefix: &str) {
+    out.push_str(&format!(
+        "/// Sub-resource trait for the `{}` sub-group.\n",
+        sg.name
+    ));
+    out.push_str("#[allow(unused_variables, async_fn_in_trait, clippy::too_many_arguments)]\n");
     out.push_str(&format!("pub trait {} {{\n", sg.struct_name));
 
     for ep in &sg.endpoints {
@@ -273,8 +265,12 @@ mod tests {
 
         // Root trait with GAT
         assert!(content.contains("pub trait ControllerServicesApi"));
-        assert!(content.contains("type ControllerServicesConfigApi<'b>: ControllerServicesConfigApi"));
-        assert!(content.contains("fn config<'b>(&'b self, id: &'b str) -> Self::ControllerServicesConfigApi<'b>"));
+        assert!(
+            content.contains("type ControllerServicesConfigApi<'b>: ControllerServicesConfigApi")
+        );
+        assert!(content.contains(
+            "fn config<'b>(&'b self, id: &'b str) -> Self::ControllerServicesConfigApi<'b>"
+        ));
 
         // Root method
         assert!(content.contains("async fn get_controller_service("));
@@ -286,9 +282,13 @@ mod tests {
         assert!(content.contains("body: &crate::v2_8_0::types::ConfigurationAnalysisEntity"));
 
         // Sub-resource trait method should NOT have id param
-        let config_trait_start = content.find("pub trait ControllerServicesConfigApi").unwrap();
+        let config_trait_start = content
+            .find("pub trait ControllerServicesConfigApi")
+            .unwrap();
         let config_trait_section = &content[config_trait_start..];
-        let analyze_sig_start = config_trait_section.find("fn analyze_configuration").unwrap();
+        let analyze_sig_start = config_trait_section
+            .find("fn analyze_configuration")
+            .unwrap();
         let analyze_sig_end = config_trait_section[analyze_sig_start..]
             .find('{')
             .or_else(|| config_trait_section[analyze_sig_start..].find(';'))

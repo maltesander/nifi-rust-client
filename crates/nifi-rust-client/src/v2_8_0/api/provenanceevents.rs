@@ -211,3 +211,51 @@ impl<'a> ProvenanceEventsContentApi<'a> {
             .await
     }
 }
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_8_0::traits::ProvenanceEventsApi for ProvenanceEventsApi<'_> {
+    type ProvenanceEventsContentApi<'b>
+        = ProvenanceEventsContentApi<'b>
+    where
+        Self: 'b;
+    fn content<'b>(&'b self, id: &'b str) -> Self::ProvenanceEventsContentApi<'b> {
+        ProvenanceEventsContentApi {
+            client: self.client,
+            id,
+        }
+    }
+    async fn submit_replay_latest_event(
+        &self,
+        body: &crate::v2_8_0::types::ReplayLastEventRequestEntity,
+    ) -> Result<crate::v2_8_0::types::ReplayLastEventResponseEntity, NifiError> {
+        self.submit_replay_latest_event(body).await
+    }
+    async fn get_latest_provenance_events(
+        &self,
+        component_id: &str,
+        limit: Option<i32>,
+    ) -> Result<crate::v2_8_0::types::LatestProvenanceEventsDto, NifiError> {
+        self.get_latest_provenance_events(component_id, limit).await
+    }
+    async fn submit_replay(
+        &self,
+        body: &crate::v2_8_0::types::SubmitReplayRequestEntity,
+    ) -> Result<crate::v2_8_0::types::ProvenanceEventDto, NifiError> {
+        self.submit_replay(body).await
+    }
+    async fn get_provenance_event(
+        &self,
+        id: &str,
+        cluster_node_id: Option<&str>,
+    ) -> Result<crate::v2_8_0::types::ProvenanceEventDto, NifiError> {
+        self.get_provenance_event(id, cluster_node_id).await
+    }
+}
+#[allow(clippy::too_many_arguments)]
+impl crate::v2_8_0::traits::ProvenanceEventsContentApi for ProvenanceEventsContentApi<'_> {
+    async fn get_input_content(&self, cluster_node_id: Option<&str>) -> Result<(), NifiError> {
+        self.get_input_content(cluster_node_id).await
+    }
+    async fn get_output_content(&self, cluster_node_id: Option<&str>) -> Result<(), NifiError> {
+        self.get_output_content(cluster_node_id).await
+    }
+}
