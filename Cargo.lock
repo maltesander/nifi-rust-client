@@ -829,6 +829,7 @@ dependencies = [
 name = "nifi-integration-tests"
 version = "0.4.0"
 dependencies = [
+ "nifi-openapi-gen",
  "nifi-rust-client",
  "tokio",
 ]
