@@ -12,11 +12,7 @@ fn main() {
         .unwrap_or_else(|e| panic!("Cannot find specs dir {}: {e}", specs_dir.display()));
 
     let config = nifi_openapi_gen::build_api::GenerateConfig::from_cargo_env();
-    nifi_openapi_gen::build_api::generate_client(
-        &specs_dir,
-        Path::new(&out_dir),
-        &config,
-    );
+    nifi_openapi_gen::build_api::generate_client(&specs_dir, Path::new(&out_dir), &config);
 
     // Copy hand-written strategy.rs into $OUT_DIR/dynamic/ so the generated
     // dynamic/mod.rs can find it via `pub mod strategy;`.

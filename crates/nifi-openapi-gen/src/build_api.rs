@@ -76,12 +76,18 @@ pub fn generate_client(specs_dir: &Path, out_dir: &Path, config: &GenerateConfig
         let versioned_dir = out_dir.join(&mod_name);
 
         for (filename, content) in crate::emit_types(spec) {
-            write_generated(&versioned_dir.join("types").join(&filename), &with_header(&content));
+            write_generated(
+                &versioned_dir.join("types").join(&filename),
+                &with_header(&content),
+            );
         }
 
         let types_prefix = format!("crate::{mod_name}");
         for (filename, content) in crate::emit_api_with_prefix(spec, &types_prefix) {
-            write_generated(&versioned_dir.join("api").join(&filename), &with_header(&content));
+            write_generated(
+                &versioned_dir.join("api").join(&filename),
+                &with_header(&content),
+            );
         }
 
         for (filename, content) in crate::emit_static_traits(spec, &types_prefix) {
@@ -167,9 +173,7 @@ pub fn generate_integration_tests(specs_dir: &Path, out_dir: &Path, config: &Gen
 fn strip_include_incompatible_lines(content: &str) -> String {
     content
         .lines()
-        .filter(|line| {
-            !line.starts_with("#![") && !line.starts_with("mod helpers;")
-        })
+        .filter(|line| !line.starts_with("#![") && !line.starts_with("mod helpers;"))
         .collect::<Vec<_>>()
         .join("\n")
 }
@@ -202,14 +206,20 @@ fn generate_dynamic(out_dir: &Path, all_parsed: &[(String, ApiSpec)]) {
         all_parsed.iter().map(|(v, s)| (v.as_str(), s)).collect();
 
     for (filename, content) in crate::emit_dynamic_types(&type_specs) {
-        write_generated(&dynamic_dir.join("types").join(&filename), &with_header(&content));
+        write_generated(
+            &dynamic_dir.join("types").join(&filename),
+            &with_header(&content),
+        );
     }
 
     let merged_field_names = crate::collect_merged_field_names(&type_specs);
     let universal_fields = crate::collect_universal_fields(&type_specs);
 
     // Conv specs: (version_str, mod_name, &ApiSpec)
-    let mod_names: Vec<String> = all_parsed.iter().map(|(v, _)| version_to_mod_name(v)).collect();
+    let mod_names: Vec<String> = all_parsed
+        .iter()
+        .map(|(v, _)| version_to_mod_name(v))
+        .collect();
     let conv_specs: Vec<(&str, &str, &ApiSpec)> = all_parsed
         .iter()
         .zip(mod_names.iter())
@@ -226,7 +236,10 @@ fn generate_dynamic(out_dir: &Path, all_parsed: &[(String, ApiSpec)]) {
     }
 
     // Dispatch specs: (version_str, mod_name, feature_name, &ApiSpec)
-    let feature_names: Vec<String> = all_parsed.iter().map(|(v, _)| version_to_feature(v)).collect();
+    let feature_names: Vec<String> = all_parsed
+        .iter()
+        .map(|(v, _)| version_to_feature(v))
+        .collect();
     let dispatch_specs: Vec<(&str, &str, &str, &ApiSpec)> = all_parsed
         .iter()
         .zip(mod_names.iter().zip(feature_names.iter()))
@@ -234,7 +247,10 @@ fn generate_dynamic(out_dir: &Path, all_parsed: &[(String, ApiSpec)]) {
         .collect();
 
     for (filename, content) in crate::emit_dynamic_traits(&dispatch_specs) {
-        write_generated(&dynamic_dir.join("traits").join(&filename), &with_header(&content));
+        write_generated(
+            &dynamic_dir.join("traits").join(&filename),
+            &with_header(&content),
+        );
     }
 
     for (filename, content) in crate::emit_dynamic_dispatch(&dispatch_specs) {
@@ -245,7 +261,10 @@ fn generate_dynamic(out_dir: &Path, all_parsed: &[(String, ApiSpec)]) {
     }
 
     for (filename, content) in crate::emit_dynamic_impls(&dispatch_specs) {
-        write_generated(&dynamic_dir.join("impls").join(&filename), &with_header(&content));
+        write_generated(
+            &dynamic_dir.join("impls").join(&filename),
+            &with_header(&content),
+        );
     }
 
     write_generated(
@@ -296,10 +315,7 @@ fn generate_lib_rs_fragment(versions: &[String], out_dir: &Path, dynamic: bool) 
         let mut pairs: Vec<String> = Vec::new();
         for i in 0..versions.len() {
             for j in (i + 1)..versions.len() {
-                pairs.push(format!(
-                    "all({}, {})",
-                    version_cfgs[i], version_cfgs[j],
-                ));
+                pairs.push(format!("all({}, {})", version_cfgs[i], version_cfgs[j],));
             }
         }
         out.push_str(&format!(
@@ -338,11 +354,7 @@ fn generate_lib_rs_fragment(versions: &[String], out_dir: &Path, dynamic: bool) 
         let cfg = if others.is_empty() {
             format!("feature = \"{}\"", feature)
         } else {
-            format!(
-                "all(feature = \"{}\", {})",
-                feature,
-                others.join(", "),
-            )
+            format!("all(feature = \"{}\", {})", feature, others.join(", "),)
         };
 
         out.push_str(&format!(

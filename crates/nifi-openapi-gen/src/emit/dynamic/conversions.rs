@@ -136,7 +136,9 @@ pub fn emit_dynamic_conversions(
         out.push_str("macro_rules! impl_from {\n");
         out.push_str("    ($Src:ty, $v:ident => $Dst:ty { @direct [ $( $d:ident ),* $(,)? ] $( $field:ident : $expr:expr ),* $(,)? }) => {\n");
         out.push_str("        impl From<$Src> for $Dst {\n");
-        out.push_str("            #[allow(clippy::useless_conversion, clippy::redundant_closure)]\n");
+        out.push_str(
+            "            #[allow(clippy::useless_conversion, clippy::redundant_closure)]\n",
+        );
         out.push_str("            fn from($v: $Src) -> Self {\n");
         out.push_str("                Self {\n");
         out.push_str("                    $( $d: $v.$d, )*\n");
@@ -145,9 +147,13 @@ pub fn emit_dynamic_conversions(
         out.push_str("            }\n");
         out.push_str("        }\n");
         out.push_str("    };\n");
-        out.push_str("    ($Src:ty, $v:ident => $Dst:ty { $( $field:ident : $expr:expr ),* $(,)? }) => {\n");
+        out.push_str(
+            "    ($Src:ty, $v:ident => $Dst:ty { $( $field:ident : $expr:expr ),* $(,)? }) => {\n",
+        );
         out.push_str("        impl From<$Src> for $Dst {\n");
-        out.push_str("            #[allow(clippy::useless_conversion, clippy::redundant_closure)]\n");
+        out.push_str(
+            "            #[allow(clippy::useless_conversion, clippy::redundant_closure)]\n",
+        );
         out.push_str("            fn from($v: $Src) -> Self {\n");
         out.push_str("                Self { $( $field: $expr, )* }\n");
         out.push_str("            }\n");
@@ -213,8 +219,12 @@ pub fn emit_dynamic_conversions(
                                 if is_direct {
                                     direct_fields.push(escaped.to_string());
                                 } else {
-                                    let conversion =
-                                        field_conversion_expr(&escaped, ty, type_name, is_universal);
+                                    let conversion = field_conversion_expr(
+                                        &escaped,
+                                        ty,
+                                        type_name,
+                                        is_universal,
+                                    );
                                     custom_fields.push((escaped.to_string(), conversion));
                                 }
                             }
