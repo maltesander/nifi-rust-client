@@ -13,22 +13,6 @@ pub enum LabelsApiDispatch<'a> {
     V2_7_2(super::super::impls::v2_7_2::V2_7_2LabelsApi<'a>),
     V2_8_0(super::super::impls::v2_8_0::V2_8_0LabelsApi<'a>),
 }
-impl<'a> LabelsApiDispatch<'a> {
-    fn client(&self) -> &'a crate::NifiClient {
-        match self {
-            Self::V2_6_0(api) => api.client,
-            Self::V2_7_2(api) => api.client,
-            Self::V2_8_0(api) => api.client,
-        }
-    }
-    fn version(&self) -> crate::dynamic::DetectedVersion {
-        match self {
-            Self::V2_6_0(_) => crate::dynamic::DetectedVersion::V2_6_0,
-            Self::V2_7_2(_) => crate::dynamic::DetectedVersion::V2_7_2,
-            Self::V2_8_0(_) => crate::dynamic::DetectedVersion::V2_8_0,
-        }
-    }
-}
 impl LabelsApi for LabelsApiDispatch<'_> {
     async fn get_label(&self, id: &str) -> Result<types::LabelEntity, NifiError> {
         match self {

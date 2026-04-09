@@ -93,6 +93,7 @@ pub struct ProvenanceEventsContentApiDispatch<'a> {
 }
 impl ProvenanceEventsContentApi for ProvenanceEventsContentApiDispatch<'_> {
     async fn get_input_content(&self, cluster_node_id: Option<&str>) -> Result<(), NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::provenanceevents::ProvenanceEventsContentApi {
@@ -122,6 +123,7 @@ impl ProvenanceEventsContentApi for ProvenanceEventsContentApiDispatch<'_> {
         }
     }
     async fn get_output_content(&self, cluster_node_id: Option<&str>) -> Result<(), NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::provenanceevents::ProvenanceEventsContentApi {

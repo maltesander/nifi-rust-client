@@ -142,6 +142,7 @@ impl ReportingTasksBulletinsApi for ReportingTasksBulletinsApiDispatch<'_> {
         &self,
         body: &types::ClearBulletinsRequestEntity,
     ) -> Result<types::ClearBulletinsResultEntity, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => Err(NifiError::UnsupportedEndpoint {
                 endpoint: "clear_bulletins_7".to_string(),
@@ -189,6 +190,7 @@ impl ReportingTasksConfigApi for ReportingTasksConfigApiDispatch<'_> {
         &self,
         body: &types::ConfigurationAnalysisEntity,
     ) -> Result<types::ConfigurationAnalysisDto, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::reportingtasks::ReportingTasksConfigApi {
@@ -236,6 +238,7 @@ impl ReportingTasksConfigApi for ReportingTasksConfigApiDispatch<'_> {
         &self,
         request_id: &str,
     ) -> Result<types::VerifyConfigRequestDto, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::reportingtasks::ReportingTasksConfigApi {
@@ -268,6 +271,7 @@ impl ReportingTasksConfigApi for ReportingTasksConfigApiDispatch<'_> {
         &self,
         request_id: &str,
     ) -> Result<types::VerifyConfigRequestDto, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::reportingtasks::ReportingTasksConfigApi {
@@ -300,6 +304,7 @@ impl ReportingTasksConfigApi for ReportingTasksConfigApiDispatch<'_> {
         &self,
         body: &types::VerifyConfigRequestEntity,
     ) -> Result<types::VerifyConfigRequestDto, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::reportingtasks::ReportingTasksConfigApi {
@@ -356,6 +361,7 @@ impl ReportingTasksDescriptorsApi for ReportingTasksDescriptorsApiDispatch<'_> {
         property_name: &str,
         sensitive: Option<bool>,
     ) -> Result<types::PropertyDescriptorDto, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::reportingtasks::ReportingTasksDescriptorsApi {
@@ -405,6 +411,7 @@ impl ReportingTasksRunStatusApi for ReportingTasksRunStatusApiDispatch<'_> {
         &self,
         body: &types::ReportingTaskRunStatusEntity,
     ) -> Result<types::ReportingTaskEntity, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::reportingtasks::ReportingTasksRunStatusApi {
@@ -466,6 +473,7 @@ impl ReportingTasksStateApi for ReportingTasksStateApiDispatch<'_> {
         &self,
         body: &types::ComponentStateEntity,
     ) -> Result<types::ComponentStateDto, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::reportingtasks::ReportingTasksStateApi {
@@ -510,6 +518,7 @@ impl ReportingTasksStateApi for ReportingTasksStateApiDispatch<'_> {
         }
     }
     async fn get_state_4(&self) -> Result<types::ComponentStateDto, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::reportingtasks::ReportingTasksStateApi {

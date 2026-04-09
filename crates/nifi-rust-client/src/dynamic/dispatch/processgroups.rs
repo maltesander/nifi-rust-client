@@ -328,6 +328,7 @@ impl ProcessGroupsConnectionsApi for ProcessGroupsConnectionsApiDispatch<'_> {
         &self,
         body: &types::ConnectionEntity,
     ) -> Result<types::ConnectionEntity, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::processgroups::ProcessGroupsConnectionsApi {
@@ -372,6 +373,7 @@ impl ProcessGroupsConnectionsApi for ProcessGroupsConnectionsApiDispatch<'_> {
         }
     }
     async fn get_connections(&self) -> Result<types::ConnectionsEntity, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::processgroups::ProcessGroupsConnectionsApi {
@@ -412,6 +414,7 @@ impl ProcessGroupsControllerServicesApi for ProcessGroupsControllerServicesApiDi
         &self,
         body: &types::ControllerServiceEntity,
     ) -> Result<types::ControllerServiceEntity, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::processgroups::ProcessGroupsControllerServicesApi {
@@ -467,6 +470,7 @@ impl ProcessGroupsCopyApi for ProcessGroupsCopyApiDispatch<'_> {
         &self,
         body: &types::CopyRequestEntity,
     ) -> Result<types::CopyResponseEntity, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::processgroups::ProcessGroupsCopyApi {
@@ -522,6 +526,7 @@ impl ProcessGroupsDownloadApi for ProcessGroupsDownloadApiDispatch<'_> {
         &self,
         include_referenced_services: Option<bool>,
     ) -> Result<(), NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::processgroups::ProcessGroupsDownloadApi {
@@ -563,6 +568,7 @@ impl ProcessGroupsEmptyAllConnectionsRequestsApi
     async fn create_empty_all_connections_request(
         &self,
     ) -> Result<types::DropRequestDto, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::processgroups::ProcessGroupsEmptyAllConnectionsRequestsApi {
@@ -595,6 +601,7 @@ impl ProcessGroupsEmptyAllConnectionsRequestsApi
         &self,
         drop_request_id: &str,
     ) -> Result<types::DropRequestDto, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::processgroups::ProcessGroupsEmptyAllConnectionsRequestsApi {
@@ -636,6 +643,7 @@ impl ProcessGroupsEmptyAllConnectionsRequestsApi
         &self,
         drop_request_id: &str,
     ) -> Result<types::DropRequestDto, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::processgroups::ProcessGroupsEmptyAllConnectionsRequestsApi {
@@ -676,6 +684,7 @@ impl ProcessGroupsFlowContentsApi for ProcessGroupsFlowContentsApiDispatch<'_> {
         &self,
         body: &types::ProcessGroupImportEntity,
     ) -> Result<types::ProcessGroupImportEntity, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::processgroups::ProcessGroupsFlowContentsApi {
@@ -731,6 +740,7 @@ impl ProcessGroupsFunnelsApi for ProcessGroupsFunnelsApiDispatch<'_> {
         &self,
         body: &types::FunnelEntity,
     ) -> Result<types::FunnelEntity, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::processgroups::ProcessGroupsFunnelsApi {
@@ -769,6 +779,7 @@ impl ProcessGroupsFunnelsApi for ProcessGroupsFunnelsApiDispatch<'_> {
         }
     }
     async fn get_funnels(&self) -> Result<types::FunnelsEntity, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::processgroups::ProcessGroupsFunnelsApi {
@@ -809,6 +820,7 @@ impl ProcessGroupsInputPortsApi for ProcessGroupsInputPortsApiDispatch<'_> {
         &self,
         body: &types::PortEntity,
     ) -> Result<types::PortEntity, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::processgroups::ProcessGroupsInputPortsApi {
@@ -847,6 +859,7 @@ impl ProcessGroupsInputPortsApi for ProcessGroupsInputPortsApiDispatch<'_> {
         }
     }
     async fn get_input_ports(&self) -> Result<types::InputPortsEntity, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::processgroups::ProcessGroupsInputPortsApi {
@@ -887,6 +900,7 @@ impl ProcessGroupsLabelsApi for ProcessGroupsLabelsApiDispatch<'_> {
         &self,
         body: &types::LabelEntity,
     ) -> Result<types::LabelEntity, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::processgroups::ProcessGroupsLabelsApi {
@@ -925,6 +939,7 @@ impl ProcessGroupsLabelsApi for ProcessGroupsLabelsApiDispatch<'_> {
         }
     }
     async fn get_labels(&self) -> Result<types::LabelsEntity, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::processgroups::ProcessGroupsLabelsApi {
@@ -962,6 +977,7 @@ pub struct ProcessGroupsLocalModificationsApiDispatch<'a> {
 }
 impl ProcessGroupsLocalModificationsApi for ProcessGroupsLocalModificationsApiDispatch<'_> {
     async fn get_local_modifications(&self) -> Result<types::FlowComparisonEntity, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::processgroups::ProcessGroupsLocalModificationsApi {
@@ -1002,6 +1018,7 @@ impl ProcessGroupsOutputPortsApi for ProcessGroupsOutputPortsApiDispatch<'_> {
         &self,
         body: &types::PortEntity,
     ) -> Result<types::PortEntity, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::processgroups::ProcessGroupsOutputPortsApi {
@@ -1040,6 +1057,7 @@ impl ProcessGroupsOutputPortsApi for ProcessGroupsOutputPortsApiDispatch<'_> {
         }
     }
     async fn get_output_ports(&self) -> Result<types::OutputPortsEntity, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::processgroups::ProcessGroupsOutputPortsApi {
@@ -1080,6 +1098,7 @@ impl ProcessGroupsPasteApi for ProcessGroupsPasteApiDispatch<'_> {
         &self,
         body: &types::PasteRequestEntity,
     ) -> Result<types::PasteResponseEntity, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::processgroups::ProcessGroupsPasteApi {
@@ -1136,6 +1155,7 @@ impl ProcessGroupsProcessGroupsApi for ProcessGroupsProcessGroupsApiDispatch<'_>
         parameter_context_handling_strategy: Option<types::ParameterContextHandlingStrategy>,
         body: &types::ProcessGroupEntity,
     ) -> Result<types::ProcessGroupEntity, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::processgroups::ProcessGroupsProcessGroupsApi {
@@ -1189,6 +1209,7 @@ impl ProcessGroupsProcessGroupsApi for ProcessGroupsProcessGroupsApiDispatch<'_>
         }
     }
     async fn get_process_groups(&self) -> Result<types::ProcessGroupsEntity, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::processgroups::ProcessGroupsProcessGroupsApi {
@@ -1221,6 +1242,7 @@ impl ProcessGroupsProcessGroupsApi for ProcessGroupsProcessGroupsApiDispatch<'_>
         &self,
         body: &types::ProcessGroupUploadEntity,
     ) -> Result<types::ProcessGroupEntity, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::processgroups::ProcessGroupsProcessGroupsApi {
@@ -1265,6 +1287,7 @@ impl ProcessGroupsProcessGroupsApi for ProcessGroupsProcessGroupsApiDispatch<'_>
         }
     }
     async fn upload_process_group(&self) -> Result<types::ProcessGroupEntity, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::processgroups::ProcessGroupsProcessGroupsApi {
@@ -1305,6 +1328,7 @@ impl ProcessGroupsProcessorsApi for ProcessGroupsProcessorsApiDispatch<'_> {
         &self,
         body: &types::ProcessorEntity,
     ) -> Result<types::ProcessorEntity, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::processgroups::ProcessGroupsProcessorsApi {
@@ -1352,6 +1376,7 @@ impl ProcessGroupsProcessorsApi for ProcessGroupsProcessorsApiDispatch<'_> {
         &self,
         include_descendant_groups: Option<bool>,
     ) -> Result<types::ProcessorsEntity, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::processgroups::ProcessGroupsProcessorsApi {
@@ -1392,6 +1417,7 @@ impl ProcessGroupsRemoteProcessGroupsApi for ProcessGroupsRemoteProcessGroupsApi
         &self,
         body: &types::RemoteProcessGroupEntity,
     ) -> Result<types::RemoteProcessGroupEntity, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::processgroups::ProcessGroupsRemoteProcessGroupsApi {
@@ -1438,6 +1464,7 @@ impl ProcessGroupsRemoteProcessGroupsApi for ProcessGroupsRemoteProcessGroupsApi
     async fn get_remote_process_groups(
         &self,
     ) -> Result<types::RemoteProcessGroupsEntity, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::processgroups::ProcessGroupsRemoteProcessGroupsApi {
@@ -1478,6 +1505,7 @@ impl ProcessGroupsReplaceRequestsApi for ProcessGroupsReplaceRequestsApiDispatch
         &self,
         body: &types::ProcessGroupImportEntity,
     ) -> Result<types::ProcessGroupReplaceRequestEntity, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::processgroups::ProcessGroupsReplaceRequestsApi {
@@ -1533,6 +1561,7 @@ impl ProcessGroupsSnippetInstanceApi for ProcessGroupsSnippetInstanceApiDispatch
         &self,
         body: &types::CopySnippetRequestEntity,
     ) -> Result<types::FlowDto, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::processgroups::ProcessGroupsSnippetInstanceApi {

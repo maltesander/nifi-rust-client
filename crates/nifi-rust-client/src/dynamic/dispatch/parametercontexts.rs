@@ -148,6 +148,7 @@ impl ParameterContextsAssetsApi for ParameterContextsAssetsApiDispatch<'_> {
         filename: Option<&str>,
         data: Vec<u8>,
     ) -> Result<types::AssetDto, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::parametercontexts::ParameterContextsAssetsApi {
@@ -181,6 +182,7 @@ impl ParameterContextsAssetsApi for ParameterContextsAssetsApiDispatch<'_> {
         asset_id: &str,
         disconnected_node_acknowledged: Option<bool>,
     ) -> Result<types::AssetDto, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::parametercontexts::ParameterContextsAssetsApi {
@@ -219,6 +221,7 @@ impl ParameterContextsAssetsApi for ParameterContextsAssetsApiDispatch<'_> {
         }
     }
     async fn get_asset_content(&self, asset_id: &str) -> Result<(), NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::parametercontexts::ParameterContextsAssetsApi {
@@ -248,6 +251,7 @@ impl ParameterContextsAssetsApi for ParameterContextsAssetsApiDispatch<'_> {
         }
     }
     async fn get_assets(&self) -> Result<types::AssetsEntity, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::parametercontexts::ParameterContextsAssetsApi {
@@ -289,6 +293,7 @@ impl ParameterContextsUpdateRequestsApi for ParameterContextsUpdateRequestsApiDi
         request_id: &str,
         disconnected_node_acknowledged: Option<bool>,
     ) -> Result<types::ParameterContextUpdateRequestEntity, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api =
@@ -333,6 +338,7 @@ impl ParameterContextsUpdateRequestsApi for ParameterContextsUpdateRequestsApiDi
         &self,
         request_id: &str,
     ) -> Result<types::ParameterContextUpdateRequestEntity, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api =
@@ -368,6 +374,7 @@ impl ParameterContextsUpdateRequestsApi for ParameterContextsUpdateRequestsApiDi
         &self,
         body: &types::ParameterContextEntity,
     ) -> Result<types::ParameterContextUpdateRequestEntity, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api =
@@ -427,6 +434,7 @@ impl ParameterContextsValidationRequestsApi for ParameterContextsValidationReque
         id: &str,
         disconnected_node_acknowledged: Option<bool>,
     ) -> Result<types::ParameterContextValidationRequestEntity, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api =
@@ -471,6 +479,7 @@ impl ParameterContextsValidationRequestsApi for ParameterContextsValidationReque
         &self,
         id: &str,
     ) -> Result<types::ParameterContextValidationRequestEntity, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api =
@@ -506,6 +515,7 @@ impl ParameterContextsValidationRequestsApi for ParameterContextsValidationReque
         &self,
         body: &types::ParameterContextValidationRequestEntity,
     ) -> Result<types::ParameterContextValidationRequestEntity, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api =

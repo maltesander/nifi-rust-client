@@ -173,6 +173,7 @@ impl ControllerServicesBulletinsApi for ControllerServicesBulletinsApiDispatch<'
         &self,
         body: &types::ClearBulletinsRequestEntity,
     ) -> Result<types::ClearBulletinsResultEntity, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => Err(NifiError::UnsupportedEndpoint {
                 endpoint: "clear_bulletins".to_string(),
@@ -220,6 +221,7 @@ impl ControllerServicesConfigApi for ControllerServicesConfigApiDispatch<'_> {
         &self,
         body: &types::ConfigurationAnalysisEntity,
     ) -> Result<types::ConfigurationAnalysisDto, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::controller_services::ControllerServicesConfigApi {
@@ -267,6 +269,7 @@ impl ControllerServicesConfigApi for ControllerServicesConfigApiDispatch<'_> {
         &self,
         request_id: &str,
     ) -> Result<types::VerifyConfigRequestDto, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::controller_services::ControllerServicesConfigApi {
@@ -299,6 +302,7 @@ impl ControllerServicesConfigApi for ControllerServicesConfigApiDispatch<'_> {
         &self,
         request_id: &str,
     ) -> Result<types::VerifyConfigRequestDto, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::controller_services::ControllerServicesConfigApi {
@@ -331,6 +335,7 @@ impl ControllerServicesConfigApi for ControllerServicesConfigApiDispatch<'_> {
         &self,
         body: &types::VerifyConfigRequestEntity,
     ) -> Result<types::VerifyConfigRequestDto, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::controller_services::ControllerServicesConfigApi {
@@ -387,6 +392,7 @@ impl ControllerServicesDescriptorsApi for ControllerServicesDescriptorsApiDispat
         property_name: &str,
         sensitive: Option<bool>,
     ) -> Result<types::PropertyDescriptorDto, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api =
@@ -438,6 +444,7 @@ impl ControllerServicesReferencesApi for ControllerServicesReferencesApiDispatch
     async fn get_controller_service_references(
         &self,
     ) -> Result<types::ControllerServiceReferencingComponentsEntity, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api =
@@ -473,6 +480,7 @@ impl ControllerServicesReferencesApi for ControllerServicesReferencesApiDispatch
         &self,
         body: &types::UpdateControllerServiceReferenceRequestEntity,
     ) -> Result<types::ControllerServiceReferencingComponentsEntity, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api =
@@ -543,6 +551,7 @@ impl ControllerServicesRunStatusApi for ControllerServicesRunStatusApiDispatch<'
         &self,
         body: &types::ControllerServiceRunStatusEntity,
     ) -> Result<types::ControllerServiceEntity, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::controller_services::ControllerServicesRunStatusApi {
@@ -604,6 +613,7 @@ impl ControllerServicesStateApi for ControllerServicesStateApiDispatch<'_> {
         &self,
         body: &types::ComponentStateEntity,
     ) -> Result<types::ComponentStateDto, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::controller_services::ControllerServicesStateApi {
@@ -648,6 +658,7 @@ impl ControllerServicesStateApi for ControllerServicesStateApiDispatch<'_> {
         }
     }
     async fn get_state(&self) -> Result<types::ComponentStateDto, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::controller_services::ControllerServicesStateApi {

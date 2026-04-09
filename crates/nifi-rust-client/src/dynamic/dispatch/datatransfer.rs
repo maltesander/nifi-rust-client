@@ -55,6 +55,7 @@ impl DataTransferTransactionsApi for DataTransferTransactionsApiDispatch<'_> {
         transaction_id: &str,
         response_code: i32,
     ) -> Result<types::TransactionResultEntity, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::datatransfer::DataTransferTransactionsApi {
@@ -98,6 +99,7 @@ impl DataTransferTransactionsApi for DataTransferTransactionsApiDispatch<'_> {
         response_code: i32,
         checksum: &str,
     ) -> Result<types::TransactionResultEntity, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::datatransfer::DataTransferTransactionsApi {
@@ -139,6 +141,7 @@ impl DataTransferTransactionsApi for DataTransferTransactionsApiDispatch<'_> {
         &self,
         port_type: &str,
     ) -> Result<types::TransactionResultEntity, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::datatransfer::DataTransferTransactionsApi {
@@ -171,6 +174,7 @@ impl DataTransferTransactionsApi for DataTransferTransactionsApiDispatch<'_> {
         &self,
         transaction_id: &str,
     ) -> Result<types::TransactionResultEntity, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::datatransfer::DataTransferTransactionsApi {
@@ -212,6 +216,7 @@ impl DataTransferTransactionsApi for DataTransferTransactionsApiDispatch<'_> {
         &self,
         transaction_id: &str,
     ) -> Result<types::TransactionResultEntity, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::datatransfer::DataTransferTransactionsApi {
@@ -255,6 +260,7 @@ impl DataTransferTransactionsApi for DataTransferTransactionsApiDispatch<'_> {
         filename: Option<&str>,
         data: Vec<u8>,
     ) -> Result<(), NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::datatransfer::DataTransferTransactionsApi {
@@ -284,6 +290,7 @@ impl DataTransferTransactionsApi for DataTransferTransactionsApiDispatch<'_> {
         }
     }
     async fn transfer_flow_files(&self, transaction_id: &str) -> Result<(), NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::datatransfer::DataTransferTransactionsApi {

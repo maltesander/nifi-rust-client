@@ -190,6 +190,7 @@ impl ParameterProvidersApplyParametersRequestsApi
         request_id: &str,
         disconnected_node_acknowledged: Option<bool>,
     ) -> Result<types::ParameterProviderApplyParametersRequestDto, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::parameterproviders::ParameterProvidersApplyParametersRequestsApi {
@@ -231,6 +232,7 @@ impl ParameterProvidersApplyParametersRequestsApi
         &self,
         request_id: &str,
     ) -> Result<types::ParameterProviderApplyParametersRequestDto, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::parameterproviders::ParameterProvidersApplyParametersRequestsApi {
@@ -272,6 +274,7 @@ impl ParameterProvidersApplyParametersRequestsApi
         &self,
         body: &types::ParameterProviderParameterApplicationEntity,
     ) -> Result<types::ParameterProviderApplyParametersRequestDto, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::parameterproviders::ParameterProvidersApplyParametersRequestsApi {
@@ -339,6 +342,7 @@ impl ParameterProvidersBulletinsApi for ParameterProvidersBulletinsApiDispatch<'
         &self,
         body: &types::ClearBulletinsRequestEntity,
     ) -> Result<types::ClearBulletinsResultEntity, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => Err(NifiError::UnsupportedEndpoint {
                 endpoint: "clear_bulletins_4".to_string(),
@@ -386,6 +390,7 @@ impl ParameterProvidersConfigApi for ParameterProvidersConfigApiDispatch<'_> {
         &self,
         body: &types::ConfigurationAnalysisEntity,
     ) -> Result<types::ConfigurationAnalysisDto, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::parameterproviders::ParameterProvidersConfigApi {
@@ -433,6 +438,7 @@ impl ParameterProvidersConfigApi for ParameterProvidersConfigApiDispatch<'_> {
         &self,
         request_id: &str,
     ) -> Result<types::VerifyConfigRequestDto, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::parameterproviders::ParameterProvidersConfigApi {
@@ -465,6 +471,7 @@ impl ParameterProvidersConfigApi for ParameterProvidersConfigApiDispatch<'_> {
         &self,
         request_id: &str,
     ) -> Result<types::VerifyConfigRequestDto, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::parameterproviders::ParameterProvidersConfigApi {
@@ -497,6 +504,7 @@ impl ParameterProvidersConfigApi for ParameterProvidersConfigApiDispatch<'_> {
         &self,
         body: &types::VerifyConfigRequestEntity,
     ) -> Result<types::VerifyConfigRequestDto, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::parameterproviders::ParameterProvidersConfigApi {
@@ -552,6 +560,7 @@ impl ParameterProvidersDescriptorsApi for ParameterProvidersDescriptorsApiDispat
         &self,
         property_name: &str,
     ) -> Result<types::PropertyDescriptorDto, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api =
@@ -595,6 +604,7 @@ impl ParameterProvidersParametersApi for ParameterProvidersParametersApiDispatch
         &self,
         body: &types::ParameterProviderParameterFetchEntity,
     ) -> Result<types::ParameterProviderEntity, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::parameterproviders::ParameterProvidersParametersApi {
@@ -655,6 +665,7 @@ impl ParameterProvidersReferencesApi for ParameterProvidersReferencesApiDispatch
     async fn get_parameter_provider_references(
         &self,
     ) -> Result<types::ParameterProviderReferencingComponentsEntity, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::parameterproviders::ParameterProvidersReferencesApi {
@@ -695,6 +706,7 @@ impl ParameterProvidersStateApi for ParameterProvidersStateApiDispatch<'_> {
         &self,
         body: &types::ComponentStateEntity,
     ) -> Result<types::ComponentStateDto, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::parameterproviders::ParameterProvidersStateApi {
@@ -739,6 +751,7 @@ impl ParameterProvidersStateApi for ParameterProvidersStateApiDispatch<'_> {
         }
     }
     async fn get_state_1(&self) -> Result<types::ComponentStateDto, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::parameterproviders::ParameterProvidersStateApi {

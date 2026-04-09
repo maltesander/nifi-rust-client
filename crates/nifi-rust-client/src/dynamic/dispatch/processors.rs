@@ -176,6 +176,7 @@ impl ProcessorsBulletinsApi for ProcessorsBulletinsApiDispatch<'_> {
         &self,
         body: &types::ClearBulletinsRequestEntity,
     ) -> Result<types::ClearBulletinsResultEntity, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => Err(NifiError::UnsupportedEndpoint {
                 endpoint: "clear_bulletins_5".to_string(),
@@ -223,6 +224,7 @@ impl ProcessorsConfigApi for ProcessorsConfigApiDispatch<'_> {
         &self,
         body: &types::ConfigurationAnalysisEntity,
     ) -> Result<types::ConfigurationAnalysisDto, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::processors::ProcessorsConfigApi {
@@ -270,6 +272,7 @@ impl ProcessorsConfigApi for ProcessorsConfigApiDispatch<'_> {
         &self,
         request_id: &str,
     ) -> Result<types::VerifyConfigRequestDto, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::processors::ProcessorsConfigApi {
@@ -302,6 +305,7 @@ impl ProcessorsConfigApi for ProcessorsConfigApiDispatch<'_> {
         &self,
         request_id: &str,
     ) -> Result<types::VerifyConfigRequestDto, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::processors::ProcessorsConfigApi {
@@ -334,6 +338,7 @@ impl ProcessorsConfigApi for ProcessorsConfigApiDispatch<'_> {
         &self,
         body: &types::VerifyConfigRequestEntity,
     ) -> Result<types::VerifyConfigRequestDto, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::processors::ProcessorsConfigApi {
@@ -391,6 +396,7 @@ impl ProcessorsDescriptorsApi for ProcessorsDescriptorsApiDispatch<'_> {
         property_name: &str,
         sensitive: Option<bool>,
     ) -> Result<types::PropertyDescriptorDto, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::processors::ProcessorsDescriptorsApi {
@@ -437,6 +443,7 @@ pub struct ProcessorsDiagnosticsApiDispatch<'a> {
 }
 impl ProcessorsDiagnosticsApi for ProcessorsDiagnosticsApiDispatch<'_> {
     async fn get_processor_diagnostics(&self) -> Result<types::ProcessorEntity, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::processors::ProcessorsDiagnosticsApi {
@@ -477,6 +484,7 @@ impl ProcessorsRunStatusApi for ProcessorsRunStatusApiDispatch<'_> {
         &self,
         body: &types::ProcessorRunStatusEntity,
     ) -> Result<types::ProcessorEntity, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::processors::ProcessorsRunStatusApi {
@@ -532,6 +540,7 @@ impl ProcessorsStateApi for ProcessorsStateApiDispatch<'_> {
         &self,
         body: &types::ComponentStateEntity,
     ) -> Result<types::ComponentStateDto, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::processors::ProcessorsStateApi {
@@ -576,6 +585,7 @@ impl ProcessorsStateApi for ProcessorsStateApiDispatch<'_> {
         }
     }
     async fn get_state_2(&self) -> Result<types::ComponentStateDto, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::processors::ProcessorsStateApi {
@@ -613,6 +623,7 @@ pub struct ProcessorsThreadsApiDispatch<'a> {
 }
 impl ProcessorsThreadsApi for ProcessorsThreadsApiDispatch<'_> {
     async fn terminate_processor(&self) -> Result<types::ProcessorEntity, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::processors::ProcessorsThreadsApi {

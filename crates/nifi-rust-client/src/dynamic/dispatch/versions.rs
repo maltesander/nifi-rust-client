@@ -228,6 +228,7 @@ pub struct VersionsDownloadApiDispatch<'a> {
 }
 impl VersionsDownloadApi for VersionsDownloadApiDispatch<'_> {
     async fn export_flow_version(&self) -> Result<(), NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::versions::VersionsDownloadApi {

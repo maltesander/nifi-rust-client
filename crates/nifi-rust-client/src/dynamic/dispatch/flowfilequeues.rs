@@ -75,6 +75,7 @@ pub struct FlowFileQueuesDropRequestsApiDispatch<'a> {
 }
 impl FlowFileQueuesDropRequestsApi for FlowFileQueuesDropRequestsApiDispatch<'_> {
     async fn create_drop_request(&self) -> Result<types::DropRequestDto, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::flowfilequeues::FlowFileQueuesDropRequestsApi {
@@ -107,6 +108,7 @@ impl FlowFileQueuesDropRequestsApi for FlowFileQueuesDropRequestsApiDispatch<'_>
         &self,
         drop_request_id: &str,
     ) -> Result<types::DropRequestDto, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::flowfilequeues::FlowFileQueuesDropRequestsApi {
@@ -139,6 +141,7 @@ impl FlowFileQueuesDropRequestsApi for FlowFileQueuesDropRequestsApiDispatch<'_>
         &self,
         drop_request_id: &str,
     ) -> Result<types::DropRequestDto, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::flowfilequeues::FlowFileQueuesDropRequestsApi {
@@ -181,6 +184,7 @@ impl FlowFileQueuesFlowfilesApi for FlowFileQueuesFlowfilesApiDispatch<'_> {
         client_id: Option<&str>,
         cluster_node_id: Option<&str>,
     ) -> Result<(), NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::flowfilequeues::FlowFileQueuesFlowfilesApi {
@@ -217,6 +221,7 @@ impl FlowFileQueuesFlowfilesApi for FlowFileQueuesFlowfilesApiDispatch<'_> {
         flowfile_uuid: &str,
         cluster_node_id: Option<&str>,
     ) -> Result<types::FlowFileDto, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::flowfilequeues::FlowFileQueuesFlowfilesApi {
@@ -263,6 +268,7 @@ pub struct FlowFileQueuesListingRequestsApiDispatch<'a> {
 }
 impl FlowFileQueuesListingRequestsApi for FlowFileQueuesListingRequestsApiDispatch<'_> {
     async fn create_flow_file_listing(&self) -> Result<types::ListingRequestDto, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::flowfilequeues::FlowFileQueuesListingRequestsApi {
@@ -295,6 +301,7 @@ impl FlowFileQueuesListingRequestsApi for FlowFileQueuesListingRequestsApiDispat
         &self,
         listing_request_id: &str,
     ) -> Result<types::ListingRequestDto, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::flowfilequeues::FlowFileQueuesListingRequestsApi {
@@ -327,6 +334,7 @@ impl FlowFileQueuesListingRequestsApi for FlowFileQueuesListingRequestsApiDispat
         &self,
         listing_request_id: &str,
     ) -> Result<types::ListingRequestDto, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::flowfilequeues::FlowFileQueuesListingRequestsApi {

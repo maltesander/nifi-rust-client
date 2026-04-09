@@ -160,6 +160,7 @@ impl RemoteProcessGroupsBulletinsApi for RemoteProcessGroupsBulletinsApiDispatch
         &self,
         body: &types::ClearBulletinsRequestEntity,
     ) -> Result<types::ClearBulletinsResultEntity, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => Err(NifiError::UnsupportedEndpoint {
                 endpoint: "clear_bulletins_6".to_string(),
@@ -210,6 +211,7 @@ impl RemoteProcessGroupsInputPortsApi for RemoteProcessGroupsInputPortsApiDispat
         port_id: &str,
         body: &types::RemoteProcessGroupPortEntity,
     ) -> Result<types::RemoteProcessGroupPortEntity, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api =
@@ -270,6 +272,7 @@ impl RemoteProcessGroupsInputPortsApi for RemoteProcessGroupsInputPortsApiDispat
         port_id: &str,
         body: &types::RemotePortRunStatusEntity,
     ) -> Result<types::RemoteProcessGroupPortEntity, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api =
@@ -332,6 +335,7 @@ impl RemoteProcessGroupsOutputPortsApi for RemoteProcessGroupsOutputPortsApiDisp
         port_id: &str,
         body: &types::RemoteProcessGroupPortEntity,
     ) -> Result<types::RemoteProcessGroupPortEntity, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api =
@@ -392,6 +396,7 @@ impl RemoteProcessGroupsOutputPortsApi for RemoteProcessGroupsOutputPortsApiDisp
         port_id: &str,
         body: &types::RemotePortRunStatusEntity,
     ) -> Result<types::RemoteProcessGroupPortEntity, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api =
@@ -453,6 +458,7 @@ impl RemoteProcessGroupsRunStatusApi for RemoteProcessGroupsRunStatusApiDispatch
         &self,
         body: &types::RemotePortRunStatusEntity,
     ) -> Result<types::RemoteProcessGroupEntity, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api =
@@ -503,6 +509,7 @@ impl RemoteProcessGroupsRunStatusApi for RemoteProcessGroupsRunStatusApiDispatch
         &self,
         body: &types::RemotePortRunStatusEntity,
     ) -> Result<types::RemoteProcessGroupEntity, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api =
@@ -558,6 +565,7 @@ pub struct RemoteProcessGroupsStateApiDispatch<'a> {
 }
 impl RemoteProcessGroupsStateApi for RemoteProcessGroupsStateApiDispatch<'_> {
     async fn get_state_3(&self) -> Result<types::ComponentStateDto, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::remoteprocessgroups::RemoteProcessGroupsStateApi {

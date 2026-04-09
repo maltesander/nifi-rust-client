@@ -106,6 +106,7 @@ impl InputPortsBulletinsApi for InputPortsBulletinsApiDispatch<'_> {
         &self,
         body: &types::ClearBulletinsRequestEntity,
     ) -> Result<types::ClearBulletinsResultEntity, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => Err(NifiError::UnsupportedEndpoint {
                 endpoint: "clear_bulletins_2".to_string(),
@@ -153,6 +154,7 @@ impl InputPortsRunStatusApi for InputPortsRunStatusApiDispatch<'_> {
         &self,
         body: &types::PortRunStatusEntity,
     ) -> Result<types::ProcessorEntity, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::inputports::InputPortsRunStatusApi {

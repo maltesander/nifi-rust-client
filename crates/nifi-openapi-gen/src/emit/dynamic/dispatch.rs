@@ -82,7 +82,10 @@ fn emit_dispatch_file(
     out.push_str("}\n\n");
 
     // Helper methods on the dispatch enum: client() and version()
-    emit_dispatch_helpers(&mut out, versions, &dispatch_name);
+    // Only needed when there are sub-groups (to construct sub-resource dispatch structs)
+    if !sub_groups.sub_groups.is_empty() {
+        emit_dispatch_helpers(&mut out, versions, &dispatch_name);
+    }
 
     // Trait impl for the root trait
     out.push_str(&format!(
@@ -399,6 +402,7 @@ fn emit_sub_dispatch_method(
     // --- Version match dispatch ---
     // For each version, construct the static sub-struct and call the method
     // with proper type conversions (dynamic -> version-specific -> dynamic)
+    out.push_str("        #[allow(unreachable_patterns)]\n");
     out.push_str("        match self.version {\n");
     for (ver, mod_name, _feature, spec) in versions {
         let variant = version_to_variant(ver);

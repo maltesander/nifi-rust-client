@@ -796,6 +796,7 @@ pub struct FlowBranchesApiDispatch<'a> {
 }
 impl FlowBranchesApi for FlowBranchesApiDispatch<'_> {
     async fn get_branches(&self) -> Result<types::FlowRegistryBranchesEntity, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::flow::FlowBranchesApi {
@@ -838,6 +839,7 @@ impl FlowBranchesApi for FlowBranchesApiDispatch<'_> {
         offset: Option<i32>,
         limit: Option<i32>,
     ) -> Result<types::FlowComparisonEntity, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::flow::FlowBranchesApi {
@@ -920,6 +922,7 @@ pub struct FlowBreadcrumbsApiDispatch<'a> {
 }
 impl FlowBreadcrumbsApi for FlowBreadcrumbsApiDispatch<'_> {
     async fn get_breadcrumbs(&self) -> Result<types::FlowBreadcrumbEntity, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::flow::FlowBreadcrumbsApi {
@@ -960,6 +963,7 @@ impl FlowBucketsApi for FlowBucketsApiDispatch<'_> {
         &self,
         branch: Option<&str>,
     ) -> Result<types::FlowRegistryBucketsEntity, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::flow::FlowBucketsApi {
@@ -995,6 +999,7 @@ impl FlowBucketsApi for FlowBucketsApiDispatch<'_> {
         flow_id: &str,
         branch: Option<&str>,
     ) -> Result<types::VersionedFlowDto, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::flow::FlowBucketsApi {
@@ -1038,6 +1043,7 @@ impl FlowBucketsApi for FlowBucketsApiDispatch<'_> {
         bucket_id: &str,
         branch: Option<&str>,
     ) -> Result<types::VersionedFlowsEntity, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::flow::FlowBucketsApi {
@@ -1073,6 +1079,7 @@ impl FlowBucketsApi for FlowBucketsApiDispatch<'_> {
         flow_id: &str,
         branch: Option<&str>,
     ) -> Result<types::VersionedFlowSnapshotMetadataSetEntity, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::flow::FlowBucketsApi {
@@ -1122,6 +1129,7 @@ impl FlowBulletinsApi for FlowBulletinsApiDispatch<'_> {
         &self,
         body: &types::ClearBulletinsForGroupRequestEntity,
     ) -> Result<types::ClearBulletinsForGroupResultsEntity, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => Err(NifiError::UnsupportedEndpoint {
                 endpoint: "clear_bulletins_1".to_string(),
@@ -1173,6 +1181,7 @@ impl FlowControllerServicesApi for FlowControllerServicesApiDispatch<'_> {
         &self,
         body: &types::ActivateControllerServicesEntity,
     ) -> Result<types::ActivateControllerServicesEntity, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::flow::FlowControllerServicesApi {
@@ -1229,6 +1238,7 @@ impl FlowControllerServicesApi for FlowControllerServicesApiDispatch<'_> {
         include_referencing_components: Option<bool>,
         ui_only: Option<bool>,
     ) -> Result<types::ControllerServicesEntity, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::flow::FlowControllerServicesApi {
@@ -1294,6 +1304,7 @@ impl FlowStatisticsApi for FlowStatisticsApiDispatch<'_> {
         nodewise: Option<bool>,
         cluster_node_id: Option<&str>,
     ) -> Result<types::ConnectionStatisticsEntity, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::flow::FlowStatisticsApi {
@@ -1344,6 +1355,7 @@ impl FlowStatusApi for FlowStatusApiDispatch<'_> {
         nodewise: Option<bool>,
         cluster_node_id: Option<&str>,
     ) -> Result<types::ConnectionStatusEntity, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::flow::FlowStatusApi {
@@ -1382,6 +1394,7 @@ impl FlowStatusApi for FlowStatusApiDispatch<'_> {
         }
     }
     async fn get_connection_status_history(&self) -> Result<types::StatusHistoryEntity, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::flow::FlowStatusApi {
@@ -1415,6 +1428,7 @@ impl FlowStatusApi for FlowStatusApiDispatch<'_> {
         nodewise: Option<bool>,
         cluster_node_id: Option<&str>,
     ) -> Result<types::PortStatusEntity, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::flow::FlowStatusApi {
@@ -1457,6 +1471,7 @@ impl FlowStatusApi for FlowStatusApiDispatch<'_> {
         nodewise: Option<bool>,
         cluster_node_id: Option<&str>,
     ) -> Result<types::PortStatusEntity, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::flow::FlowStatusApi {
@@ -1500,6 +1515,7 @@ impl FlowStatusApi for FlowStatusApiDispatch<'_> {
         nodewise: Option<bool>,
         cluster_node_id: Option<&str>,
     ) -> Result<types::ProcessGroupStatusEntity, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::flow::FlowStatusApi {
@@ -1540,6 +1556,7 @@ impl FlowStatusApi for FlowStatusApiDispatch<'_> {
     async fn get_process_group_status_history(
         &self,
     ) -> Result<types::StatusHistoryEntity, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::flow::FlowStatusApi {
@@ -1573,6 +1590,7 @@ impl FlowStatusApi for FlowStatusApiDispatch<'_> {
         nodewise: Option<bool>,
         cluster_node_id: Option<&str>,
     ) -> Result<types::ProcessorStatusEntity, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::flow::FlowStatusApi {
@@ -1611,6 +1629,7 @@ impl FlowStatusApi for FlowStatusApiDispatch<'_> {
         }
     }
     async fn get_processor_status_history(&self) -> Result<types::StatusHistoryEntity, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::flow::FlowStatusApi {
@@ -1644,6 +1663,7 @@ impl FlowStatusApi for FlowStatusApiDispatch<'_> {
         nodewise: Option<bool>,
         cluster_node_id: Option<&str>,
     ) -> Result<types::RemoteProcessGroupStatusEntity, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::flow::FlowStatusApi {
@@ -1684,6 +1704,7 @@ impl FlowStatusApi for FlowStatusApiDispatch<'_> {
     async fn get_remote_process_group_status_history(
         &self,
     ) -> Result<types::StatusHistoryEntity, NifiError> {
+        #[allow(unreachable_patterns)]
         match self.version {
             crate::dynamic::DetectedVersion::V2_6_0 => {
                 let api = crate::v2_6_0::api::flow::FlowStatusApi {
