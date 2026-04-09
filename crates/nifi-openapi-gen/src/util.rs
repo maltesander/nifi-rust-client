@@ -252,7 +252,6 @@ pub fn update_file_between_markers(
 }
 
 /// Info about a sub-group collected across all versions.
-#[allow(dead_code)]
 pub(crate) struct CollectedSubGroup<'a> {
     pub struct_name: String,
     pub accessor_fn: String,
@@ -263,7 +262,6 @@ pub(crate) struct CollectedSubGroup<'a> {
 }
 
 /// Hierarchical grouping of endpoints for a tag across versions.
-#[allow(dead_code)]
 pub(crate) struct TagSubGroups<'a> {
     /// Root endpoints: fn_name → (version_str → EndpointInfo)
     pub root_endpoints: BTreeMap<String, BTreeMap<&'a str, EndpointInfo<'a>>>,
@@ -272,7 +270,6 @@ pub(crate) struct TagSubGroups<'a> {
 }
 
 /// Like `collect_tag_endpoints`, but preserves the sub-group hierarchy instead of flattening.
-#[allow(dead_code)]
 pub(crate) fn collect_tag_sub_groups<'a>(
     versions: &[(&'a str, &'a str, &'a str, &'a ApiSpec)],
     tag: &str,
