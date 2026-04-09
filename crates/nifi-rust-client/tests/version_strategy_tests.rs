@@ -1,4 +1,5 @@
 #![cfg(feature = "dynamic")]
+#![allow(clippy::unwrap_used)]
 
 use nifi_rust_client::NifiClientBuilder;
 use nifi_rust_client::dynamic::VersionResolutionStrategy;
