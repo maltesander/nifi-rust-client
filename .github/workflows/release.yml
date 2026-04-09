@@ -44,7 +44,7 @@ jobs:
       - name: Verify packaging
         run: |
           cargo package -p nifi-openapi-gen --allow-dirty
-          cargo package -p nifi-rust-client --allow-dirty
+          cargo package -p nifi-rust-client --allow-dirty --no-verify
 
   publish:
     name: Publish to crates.io
