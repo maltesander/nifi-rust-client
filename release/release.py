@@ -24,6 +24,7 @@ from datetime import date
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CARGO_TOML = os.path.join(ROOT, "Cargo.toml")
+CLIENT_CARGO_TOML = os.path.join(ROOT, "crates", "nifi-rust-client", "Cargo.toml")
 README = os.path.join(ROOT, "README.md")
 NIFI_RUST_CLIENT_README = os.path.join(ROOT, "crates", "nifi-rust-client", "README.md")
 CHANGELOG = os.path.join(ROOT, "CHANGELOG.md")
@@ -40,7 +41,7 @@ BINARY_EXTENSIONS = {
 }
 
 EXCLUDE_DIRS = {
-    "target", ".git",
+    "target", ".git", ".worktrees",
     os.path.join("docs", "superpowers", "specs"),
     os.path.join("docs", "superpowers", "plans"),
 }
@@ -181,6 +182,25 @@ def update_cargo_toml(old_version, new_version, dry_run):
             f.write(updated)
     else:
         print("      (skipped write — dry-run)")
+
+
+def update_build_dep_version(new_version, dry_run):
+    """Update the nifi-openapi-gen version in nifi-rust-client's build-dependencies."""
+    with open(CLIENT_CARGO_TOML, "r") as f:
+        content = f.read()
+
+    # Match: nifi-openapi-gen = { path = "...", version = "X.Y.Z" }
+    pattern = r'(nifi-openapi-gen\s*=\s*\{[^}]*version\s*=\s*")[^"]*(")'
+    new_content, count = re.subn(pattern, rf'\g<1>{new_version}\2', content)
+    if count:
+        print(f"      crates/nifi-rust-client/Cargo.toml: build-dep version → \"{new_version}\"")
+        if not dry_run:
+            with open(CLIENT_CARGO_TOML, "w") as f:
+                f.write(new_content)
+        else:
+            print("      (skipped write — dry-run)")
+    else:
+        print("      WARNING: nifi-openapi-gen version not found in build-dependencies")
 
 
 def _version_shorthand(version_str):
@@ -499,10 +519,12 @@ def run_checks(dry_run, skip_integration):
 
     checks = [
         ("cargo build --workspace", "Build"),
-        ("cargo test --workspace", "Tests"),
-        ("cargo clippy -p nifi-rust-client --features dynamic -- -D warnings", "Clippy"),
+        ("cargo test --workspace --all-features --exclude nifi-integration-tests", "Tests (all features)"),
+        ("cargo test -p nifi-integration-tests", "Tests (integration compile)"),
+        ("cargo clippy --workspace --all-targets --all-features --exclude nifi-integration-tests -- -D warnings", "Clippy (all features)"),
         ("pre-commit run --all-files", "Pre-commit"),
-        ("cargo publish -p nifi-rust-client --dry-run --allow-dirty", "Package validation"),
+        ("cargo publish -p nifi-openapi-gen --dry-run --allow-dirty", "Package validation (nifi-openapi-gen)"),
+        ("cargo publish -p nifi-rust-client --dry-run --allow-dirty", "Package validation (nifi-rust-client)"),
     ]
 
     if skip_integration:
@@ -524,7 +546,7 @@ def run_checks(dry_run, skip_integration):
                     print(result.stderr, file=sys.stderr)
                 print(
                     f"ERROR: '{label}' check failed. "
-                    "To rollback file changes: git checkout -- Cargo.toml README.md CHANGELOG.md",
+                    "To rollback file changes: git checkout -- Cargo.toml crates/nifi-rust-client/Cargo.toml README.md CHANGELOG.md",
                     file=sys.stderr,
                 )
                 sys.exit(1)
@@ -540,7 +562,7 @@ def commit_release(new_version, dry_run):
     if dry_run:
         print("      Skipped (dry-run)")
         return
-    run("git add Cargo.toml Cargo.lock README.md crates/nifi-rust-client/README.md CHANGELOG.md")
+    run("git add Cargo.toml Cargo.lock crates/nifi-rust-client/Cargo.toml README.md crates/nifi-rust-client/README.md CHANGELOG.md")
     run(f'git commit -m "chore: release v{new_version}"')
     print(f"      chore: release v{new_version}")
 
@@ -608,6 +630,7 @@ def main():
     # [3/9] Update files
     print("[3/9] Updating version in files...")
     update_cargo_toml(old_version, new_version, args.dry_run)
+    update_build_dep_version(new_version, args.dry_run)
     update_readmes(old_version, new_version, args.bump, args.dry_run)
 
     # [4/9] Stale version scan
