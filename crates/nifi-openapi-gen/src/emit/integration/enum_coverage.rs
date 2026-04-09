@@ -1,5 +1,9 @@
+use super::common::{
+    build_accessor, capitalize_first, default_path_param_value, default_required_query_param_value,
+    find_endpoint, trait_use_stmt,
+};
 use crate::diff::VersionDiff;
-use crate::parser::{ApiSpec, Endpoint, HttpMethod, QueryParamType, SubGroup, TagGroup};
+use crate::parser::{ApiSpec, Endpoint, SubGroup};
 use crate::util::{version_to_feature, wire_to_pascal};
 
 /// Generates integration tests verifying enum query-param values are accepted
@@ -149,54 +153,6 @@ async fn {base_name}_unsupported() {{
 
 // ─── Private helpers ──────────────────────────────────────────────────────────
 
-/// Find an endpoint in the spec by HTTP method and path.
-/// Returns `(Endpoint, TagGroup, Option<SubGroup>)`.
-fn find_endpoint<'a>(
-    spec: &'a ApiSpec,
-    method: &HttpMethod,
-    path: &str,
-) -> Option<(&'a Endpoint, &'a TagGroup, Option<&'a SubGroup>)> {
-    for tag in &spec.tags {
-        for ep in &tag.root_endpoints {
-            if &ep.method == method && ep.path == path {
-                return Some((ep, tag, None));
-            }
-        }
-        for sg in &tag.sub_groups {
-            for ep in &sg.endpoints {
-                if &ep.method == method && ep.path == path {
-                    return Some((ep, tag, Some(sg)));
-                }
-            }
-        }
-    }
-    None
-}
-
-/// Build the accessor chain for calling the API, e.g.
-/// `flow_api()` or `processgroups_api().process_groups("root")`.
-fn build_accessor(tag_accessor_fn: &str, sub_group: Option<&SubGroup>) -> String {
-    match sub_group {
-        None => format!("{tag_accessor_fn}()"),
-        Some(sg) => {
-            // The sub-group accessor needs the primary param value.
-            // Use "prometheus" for the known "producer" param, "root" for "id",
-            // otherwise "test-{name}".
-            let param_val = default_path_param_value(&sg.primary_param);
-            format!("{tag_accessor_fn}().{}(\"{param_val}\")", sg.accessor_fn)
-        }
-    }
-}
-
-/// Return a sensible placeholder value for a path parameter.
-fn default_path_param_value(param_name: &str) -> String {
-    match param_name {
-        "producer" => "prometheus".to_string(),
-        "id" | "process_group_id" | "parent_group_id" => "root".to_string(),
-        other => format!("test-{other}"),
-    }
-}
-
 /// Build the argument list for the function call.
 /// `enum_param_name` is the `rust_name` of the enum query param to fill;
 /// `enum_placeholder` is what to substitute for it.
@@ -233,7 +189,7 @@ fn build_call_args(
         } else {
             // Default: None for optional, sensible literal for required.
             if qp.required {
-                args.push(default_query_param_value(qp.ty.as_str_type()));
+                args.push(default_required_query_param_value(&qp.ty));
             } else {
                 args.push("None".to_string());
             }
@@ -243,52 +199,10 @@ fn build_call_args(
     args.join(",\n        ")
 }
 
-/// Produce a use statement for the trait needed to call the given struct's methods.
-fn trait_use_stmt(struct_name: &str) -> String {
-    // struct_name is e.g. "FlowApi" — the dynamic trait has the same name.
-    format!("use nifi_rust_client::dynamic::traits::{struct_name};")
-}
-
-/// Capitalize the first character of a string.
-fn capitalize_first(s: &str) -> String {
-    let mut chars = s.chars();
-    match chars.next() {
-        None => String::new(),
-        Some(c) => c.to_uppercase().collect::<String>() + chars.as_str(),
-    }
-}
-
-trait QueryParamTypeExt {
-    fn as_str_type(&self) -> &'static str;
-}
-
-impl QueryParamTypeExt for QueryParamType {
-    fn as_str_type(&self) -> &'static str {
-        match self {
-            QueryParamType::Str => "str",
-            QueryParamType::Bool => "bool",
-            QueryParamType::I32 => "i32",
-            QueryParamType::I64 => "i64",
-            QueryParamType::F64 => "f64",
-            QueryParamType::Enum(_) => "enum",
-        }
-    }
-}
-
-fn default_query_param_value(ty: &str) -> String {
-    match ty {
-        "bool" => "false".to_string(),
-        "i32" | "i64" => "0".to_string(),
-        "f64" => "0.0".to_string(),
-        "str" => "\"\"".to_string(),
-        _ => "None".to_string(),
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::parser::{ApiSpec, TagGroup};
+    use crate::parser::ApiSpec;
 
     fn empty_spec() -> ApiSpec {
         ApiSpec {
@@ -326,48 +240,5 @@ mod tests {
         }];
         let result = emit_enum_coverage_tests(&specs, &diffs);
         assert_eq!(result, "");
-    }
-
-    #[test]
-    fn capitalize_first_works() {
-        assert_eq!(capitalize_first("includedRegistries"), "IncludedRegistries");
-        assert_eq!(capitalize_first(""), "");
-        assert_eq!(capitalize_first("a"), "A");
-    }
-
-    #[test]
-    fn default_path_param_value_known_params() {
-        assert_eq!(default_path_param_value("producer"), "prometheus");
-        assert_eq!(default_path_param_value("id"), "root");
-        assert_eq!(default_path_param_value("uuid"), "test-uuid");
-    }
-
-    #[test]
-    fn trait_use_stmt_formats_correctly() {
-        assert_eq!(
-            trait_use_stmt("FlowApi"),
-            "use nifi_rust_client::dynamic::traits::FlowApi;"
-        );
-    }
-
-    #[test]
-    fn build_accessor_root_endpoint() {
-        assert_eq!(build_accessor("flow_api", None), "flow_api()");
-    }
-
-    #[test]
-    fn build_accessor_sub_group() {
-        let sg = SubGroup {
-            name: "config".to_string(),
-            struct_name: "FlowConfigApi".to_string(),
-            accessor_fn: "config".to_string(),
-            primary_param: "producer".to_string(),
-            primary_param_doc: None,
-            endpoints: vec![],
-        };
-        assert_eq!(
-            build_accessor("flow_api", Some(&sg)),
-            "flow_api().config(\"prometheus\")"
-        );
     }
 }

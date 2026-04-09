@@ -1,3 +1,4 @@
+pub(super) mod common;
 mod endpoint_availability;
 mod enum_coverage;
 mod field_presence;

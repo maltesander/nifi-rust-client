@@ -1,5 +1,9 @@
+use super::common::{
+    build_accessor, default_path_param_value, default_required_query_param_value, find_endpoint,
+    trait_use_stmt,
+};
 use crate::diff::{EndpointSummary, VersionDiff};
-use crate::parser::{ApiSpec, Endpoint, HttpMethod, SubGroup, TagGroup};
+use crate::parser::{ApiSpec, Endpoint, HttpMethod, SubGroup};
 use crate::util::version_to_feature;
 
 /// Generates integration tests verifying endpoints added in a version work on that
@@ -105,30 +109,6 @@ async fn {base_name}_unsupported() {{
 
 // ─── Private helpers ──────────────────────────────────────────────────────────
 
-/// Find an endpoint in the spec by HTTP method and path.
-/// Returns `(Endpoint, TagGroup, Option<SubGroup>)`.
-fn find_endpoint<'a>(
-    spec: &'a ApiSpec,
-    method: &HttpMethod,
-    path: &str,
-) -> Option<(&'a Endpoint, &'a TagGroup, Option<&'a SubGroup>)> {
-    for tag in &spec.tags {
-        for ep in &tag.root_endpoints {
-            if &ep.method == method && ep.path == path {
-                return Some((ep, tag, None));
-            }
-        }
-        for sg in &tag.sub_groups {
-            for ep in &sg.endpoints {
-                if &ep.method == method && ep.path == path {
-                    return Some((ep, tag, Some(sg)));
-                }
-            }
-        }
-    }
-    None
-}
-
 /// Determine whether it's safe to call an endpoint positively in a test.
 ///
 /// Safe means: GET with no required resource-specific path params,
@@ -165,27 +145,6 @@ fn is_safe_endpoint(
     false
 }
 
-/// Build the accessor chain for calling the API, e.g.
-/// `flow_api()` or `processgroups_api().process_groups("root")`.
-fn build_accessor(tag_accessor_fn: &str, sub_group: Option<&SubGroup>) -> String {
-    match sub_group {
-        None => format!("{tag_accessor_fn}()"),
-        Some(sg) => {
-            let param_val = default_path_param_value(&sg.primary_param);
-            format!("{tag_accessor_fn}().{}(\"{param_val}\")", sg.accessor_fn)
-        }
-    }
-}
-
-/// Return a sensible placeholder value for a path parameter.
-fn default_path_param_value(param_name: &str) -> String {
-    match param_name {
-        "producer" => "prometheus".to_string(),
-        "id" | "process_group_id" | "parent_group_id" => "root".to_string(),
-        other => format!("test-{other}"),
-    }
-}
-
 /// Build the argument list for the function call.
 fn build_call_args(endpoint: &Endpoint, sub_group: Option<&SubGroup>) -> String {
     let mut args: Vec<String> = Vec::new();
@@ -208,7 +167,7 @@ fn build_call_args(endpoint: &Endpoint, sub_group: Option<&SubGroup>) -> String 
     // Add query params — all None (optional) or a default for required ones.
     for qp in &endpoint.query_params {
         if qp.required {
-            args.push(default_query_param_value(&qp.ty));
+            args.push(default_required_query_param_value(&qp.ty));
         } else {
             args.push("None".to_string());
         }
@@ -222,21 +181,6 @@ fn test_base_name(accessor_fn: &str, fn_name: &str) -> String {
     // Strip the trailing "_api" from accessor_fn if present.
     let tag = accessor_fn.strip_suffix("_api").unwrap_or(accessor_fn);
     format!("endpoint_{tag}_{fn_name}")
-}
-
-/// Produce a use statement for the trait needed to call the given struct's methods.
-fn trait_use_stmt(struct_name: &str) -> String {
-    format!("use nifi_rust_client::dynamic::traits::{struct_name};")
-}
-
-fn default_query_param_value(ty: &crate::parser::QueryParamType) -> String {
-    match ty {
-        crate::parser::QueryParamType::Bool => "false".to_string(),
-        crate::parser::QueryParamType::I32 | crate::parser::QueryParamType::I64 => "0".to_string(),
-        crate::parser::QueryParamType::F64 => "0.0".to_string(),
-        crate::parser::QueryParamType::Str => "\"\"".to_string(),
-        crate::parser::QueryParamType::Enum(_) => "None".to_string(),
-    }
 }
 
 #[cfg(test)]
@@ -286,41 +230,5 @@ mod tests {
     fn test_base_name_strips_api_suffix() {
         assert_eq!(test_base_name("flow_api", "get_listen_ports"), "endpoint_flow_get_listen_ports");
         assert_eq!(test_base_name("processors_api", "get_processor"), "endpoint_processors_get_processor");
-    }
-
-    #[test]
-    fn trait_use_stmt_formats_correctly() {
-        assert_eq!(
-            trait_use_stmt("FlowApi"),
-            "use nifi_rust_client::dynamic::traits::FlowApi;"
-        );
-    }
-
-    #[test]
-    fn build_accessor_root_endpoint() {
-        assert_eq!(build_accessor("flow_api", None), "flow_api()");
-    }
-
-    #[test]
-    fn build_accessor_sub_group() {
-        let sg = SubGroup {
-            name: "config".to_string(),
-            struct_name: "FlowConfigApi".to_string(),
-            accessor_fn: "config".to_string(),
-            primary_param: "producer".to_string(),
-            primary_param_doc: None,
-            endpoints: vec![],
-        };
-        assert_eq!(
-            build_accessor("flow_api", Some(&sg)),
-            "flow_api().config(\"prometheus\")"
-        );
-    }
-
-    #[test]
-    fn default_path_param_value_known_params() {
-        assert_eq!(default_path_param_value("producer"), "prometheus");
-        assert_eq!(default_path_param_value("id"), "root");
-        assert_eq!(default_path_param_value("uuid"), "test-uuid");
     }
 }
