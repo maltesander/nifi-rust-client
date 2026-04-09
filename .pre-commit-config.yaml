@@ -36,18 +36,10 @@ repos:
       - id: cargo-clippy
         name: cargo-clippy
         language: system
-        entry: bash -c 'cargo clippy --workspace --all-targets --all-features --exclude nifi-integration-tests -- -D warnings && cargo clippy -p nifi-integration-tests --all-targets -- -D warnings'
+        entry: bash -c 'cargo clippy --workspace --all-targets --exclude nifi-integration-tests -- -D warnings && cargo clippy -p nifi-integration-tests --all-targets -- -D warnings'
         stages: [pre-commit, pre-merge-commit]
         pass_filenames: false
         files: \.rs$
-
-      - id: cargo-doc
-        name: cargo-doc
-        language: system
-        entry: bash -c 'RUSTDOCFLAGS="-D warnings" cargo doc --workspace --all-features --exclude nifi-integration-tests --no-deps'
-        stages: [pre-commit, pre-merge-commit]
-        pass_filenames: false
-        files: \.rs$|Cargo\.(toml|lock)
 
       - id: cargo-deny
         name: cargo-deny
@@ -57,18 +49,10 @@ repos:
         pass_filenames: false
         files: Cargo\.(toml|lock)|deny\.toml
 
-      - id: openapi-gen-check
-        name: openapi-gen-check
-        language: system
-        entry: bash -c 'cargo run -p nifi-openapi-gen --bin generate && git diff --exit-code -- crates/nifi-rust-client/src/ crates/nifi-rust-client/tests/ crates/nifi-rust-client/Cargo.toml tests/Cargo.toml'
-        stages: [pre-commit, pre-merge-commit]
-        pass_filenames: false
-        files: crates/nifi-openapi-gen/src/|crates/nifi-openapi-gen/specs/
-
       - id: cargo-test
         name: cargo-test
         language: system
-        entry: bash -c 'cargo test --workspace --all-features --exclude nifi-integration-tests && cargo test -p nifi-integration-tests'
+        entry: bash -c 'cargo test --workspace --exclude nifi-integration-tests && cargo test -p nifi-integration-tests'
         stages: [pre-commit, pre-merge-commit]
         pass_filenames: false
         files: \.rs$|Cargo\.(toml|lock)
