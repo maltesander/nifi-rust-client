@@ -6,7 +6,7 @@ license.workspace = true
 authors.workspace = true
 repository.workspace = true
 homepage.workspace = true
-documentation.workspace = true
+documentation = "https://docs.rs/nifi-openapi-gen"
 description = "OpenAPI code generator for nifi-rust-client — not intended for general use"
 exclude = ["specs/", "scripts/", "tests/"]
 
