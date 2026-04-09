@@ -44,7 +44,7 @@ pub fn emit_endpoint_availability_tests(
             let call_args = build_call_args(endpoint, sub_group);
 
             // Positive test — only for safe endpoints (no risky required params).
-            if is_safe_endpoint(added, endpoint, sub_group) {
+            if is_safe_endpoint(added, endpoint) {
                 let positive_test = format!(
                     r#"#[cfg(feature = "{to_feature}")]
 #[tokio::test]
@@ -113,53 +113,37 @@ async fn {base_name}_unsupported() {{
 ///
 /// Safe means: GET with no required resource-specific path params,
 /// or POST on a process-groups path where we can use "root" as the ID.
-fn is_safe_endpoint(
-    summary: &EndpointSummary,
-    endpoint: &Endpoint,
-    sub_group: Option<&SubGroup>,
-) -> bool {
-    // GET with no extra (non-baked) path params is always safe.
+fn is_safe_endpoint(summary: &EndpointSummary, endpoint: &Endpoint) -> bool {
+    // GET with no path params (or only "id"-like ones we can fill with "root").
     if summary.method == HttpMethod::Get {
-        let baked_param = sub_group.map(|sg| sg.primary_param.as_str());
-        let extra_path_params: Vec<_> = endpoint
-            .path_params
-            .iter()
-            .filter(|pp| baked_param != Some(pp.name.as_str()))
-            .collect();
-        return extra_path_params.is_empty();
+        return endpoint.path_params.iter().all(|pp| {
+            matches!(
+                pp.name.as_str(),
+                "id" | "process_group_id" | "parent_group_id" | "producer"
+            )
+        });
     }
 
-    // POST on a process-groups path (we can use "root").
+    // POST on a process-groups path (we can use "root" for id).
     if summary.method == HttpMethod::Post && summary.path.contains("process-groups") {
-        // Must have no extra path params beyond what we can fill with "root".
-        let baked_param = sub_group.map(|sg| sg.primary_param.as_str());
-        let extra_path_params: Vec<_> = endpoint
-            .path_params
-            .iter()
-            .filter(|pp| baked_param != Some(pp.name.as_str()))
-            .filter(|pp| {
-                !matches!(
-                    pp.name.as_str(),
-                    "id" | "process_group_id" | "parent_group_id"
-                )
-            })
-            .collect();
-        return extra_path_params.is_empty();
+        return endpoint.path_params.iter().all(|pp| {
+            matches!(
+                pp.name.as_str(),
+                "id" | "process_group_id" | "parent_group_id"
+            )
+        });
     }
 
     false
 }
 
 /// Build the argument list for the function call.
-fn build_call_args(endpoint: &Endpoint, sub_group: Option<&SubGroup>) -> String {
+/// In dynamic mode, sub-group primary params become regular path params.
+fn build_call_args(endpoint: &Endpoint, _sub_group: Option<&SubGroup>) -> String {
     let mut args: Vec<String> = Vec::new();
 
-    // Add path params that aren't already baked into the sub-group accessor.
-    let baked_param = sub_group.map(|sg| sg.primary_param.as_str());
+    // All path params (dynamic traits flatten sub-groups).
     for pp in &endpoint.path_params {
-        if baked_param == Some(pp.name.as_str()) {
-            continue;
-        }
         let val = default_path_param_value(&pp.name);
         args.push(format!("\"{val}\""));
     }

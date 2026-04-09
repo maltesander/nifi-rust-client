@@ -24,16 +24,10 @@ pub(super) fn find_endpoint<'a>(
     None
 }
 
-/// Build the accessor chain for calling the API, e.g.
-/// `flow_api()` or `processgroups_api().process_groups("root")`.
-pub(super) fn build_accessor(tag_accessor_fn: &str, sub_group: Option<&SubGroup>) -> String {
-    match sub_group {
-        None => format!("{tag_accessor_fn}()"),
-        Some(sg) => {
-            let param_val = default_path_param_value(&sg.primary_param);
-            format!("{tag_accessor_fn}().{}(\"{param_val}\")", sg.accessor_fn)
-        }
-    }
+/// Build the accessor for calling the API in dynamic mode.
+/// Dynamic traits flatten sub-groups, so it's always just `accessor_fn()`.
+pub(super) fn build_accessor(tag_accessor_fn: &str, _sub_group: Option<&SubGroup>) -> String {
+    format!("{tag_accessor_fn}()")
 }
 
 /// Return a sensible placeholder value for a path parameter.
@@ -109,7 +103,7 @@ mod tests {
     }
 
     #[test]
-    fn build_accessor_sub_group_producer() {
+    fn build_accessor_sub_group_flattened() {
         let sg = SubGroup {
             name: "metrics".to_string(),
             struct_name: "FlowMetricsApi".to_string(),
@@ -118,26 +112,8 @@ mod tests {
             primary_param_doc: None,
             endpoints: vec![],
         };
-        assert_eq!(
-            build_accessor("flow_api", Some(&sg)),
-            "flow_api().metrics(\"prometheus\")"
-        );
-    }
-
-    #[test]
-    fn build_accessor_sub_group_id() {
-        let sg = SubGroup {
-            name: "config".to_string(),
-            struct_name: "FlowConfigApi".to_string(),
-            accessor_fn: "config".to_string(),
-            primary_param: "id".to_string(),
-            primary_param_doc: None,
-            endpoints: vec![],
-        };
-        assert_eq!(
-            build_accessor("flow_api", Some(&sg)),
-            "flow_api().config(\"root\")"
-        );
+        // Dynamic traits flatten sub-groups — accessor is always just the tag.
+        assert_eq!(build_accessor("flow_api", Some(&sg)), "flow_api()");
     }
 
     #[test]

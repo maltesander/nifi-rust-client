@@ -159,12 +159,8 @@ fn build_call_args(
 ) -> String {
     let mut args: Vec<String> = Vec::new();
 
-    // Add path params that aren't already baked into the sub-group accessor.
-    let baked_param = sub_group.map(|sg| sg.primary_param.as_str());
+    // All path params (dynamic traits flatten sub-groups).
     for pp in &endpoint.path_params {
-        if baked_param == Some(pp.name.as_str()) {
-            continue;
-        }
         let val = default_path_param_value(&pp.name);
         args.push(format!("\"{val}\""));
     }
