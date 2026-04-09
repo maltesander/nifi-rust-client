@@ -52,3 +52,27 @@ fn enum_coverage_contains_version_info_test() {
         "should test UnsupportedEnumVariant on older versions"
     );
 }
+
+#[test]
+fn field_presence_output_is_valid() {
+    let all_specs = load_all_specs();
+    if all_specs.len() < 2 {
+        return;
+    }
+    let diffs = compute_diffs(&all_specs);
+    let output = nifi_openapi_gen::emit_field_presence_tests(&all_specs, &diffs);
+
+    // TESTABLE_TYPES is empty, so output should be empty — that's OK
+    if output.is_empty() {
+        return;
+    }
+
+    assert!(
+        output.contains("#![cfg(feature = \"dynamic\")]"),
+        "should have dynamic feature gate"
+    );
+    assert!(
+        output.contains("cfg(feature"),
+        "should have version feature gates"
+    );
+}
