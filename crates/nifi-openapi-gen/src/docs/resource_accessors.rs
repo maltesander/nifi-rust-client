@@ -229,7 +229,10 @@ mod tests {
 
     #[test]
     fn tag_to_description_splits_pascal_case() {
-        assert_eq!(tag_to_description("ControllerServices"), "Controller services");
+        assert_eq!(
+            tag_to_description("ControllerServices"),
+            "Controller services"
+        );
         assert_eq!(tag_to_description("Flow"), "Flow");
         assert_eq!(tag_to_description("AiServices"), "Ai services");
         assert_eq!(
