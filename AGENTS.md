@@ -184,6 +184,8 @@ Do not use `unwrap` or `expect` in non-test code — clippy denies it.
 ```bash
 ./tests/run.sh                 # start NiFi → run tests → stop NiFi
 ./tests/run.sh --skip-cleanup  # leave NiFi running after tests (faster iteration)
+./tests/run-matrix.sh                        # test all supported NiFi versions
+./tests/run-matrix.sh --versions=2.6.0,2.8.0 # test specific versions only
 ```
 
 Environment variables read by integration tests:

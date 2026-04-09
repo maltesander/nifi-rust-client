@@ -119,7 +119,9 @@ The generator is organized into four module groups plus two binaries:
 | `src/emit/tests.rs` | Emit wiremock test stubs |
 | `src/emit/common.rs` | Shared emit helpers (doc comments, serde attributes) |
 | `src/emit/dynamic/` | Emit all `dynamic/` code — traits, dispatch enums, per-version impls, common types, conversions, tests |
+| `src/emit/integration/` | Emit dynamic integration tests — enum coverage, endpoint availability, field presence, query param coverage |
 | **`src/docs/`** | **Documentation generation** |
+| `src/docs/integration_coverage.rs` | Generate the integration test coverage section in this README |
 | `src/docs/versions_table.rs` | Rewrite the supported-versions table in `README.md` |
 | `src/docs/api_changes.rs` | Generate per-version API change summaries |
 | `src/docs/readme_examples.rs` | Rewrite the static-mode feature flag example in `crates/nifi-rust-client/README.md` |
