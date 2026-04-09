@@ -31,7 +31,7 @@ crates/
   nifi-rust-client/       # Library crate — published to crates.io
     src/
       vx_y_z/             # Generated per version: api/ + types/ + traits/ + mod.rs
-      dynamic/            # Generated: DynamicClient, common types, conversions (dynamic feature)
+      dynamic/            # Generated: traits, dispatch, impls, types, conversions (dynamic feature)
       lib.rs              # Generated: cfg-gated re-exports, auto-managed by generator
     tests/
       *.rs                        # Hand-written wiremock tests per API group
@@ -200,8 +200,8 @@ Environment variables read by integration tests:
 ### How versions are structured
 
 Generated files live in `crates/nifi-rust-client/src/v{major}_{minor}_{patch}/`. Each version
-directory contains `api/`, `types/`, and `mod.rs`. `lib.rs` re-exports `api` and `types` from
-the active version under a stable public path.
+directory contains `api/`, `types/`, `traits/`, and `mod.rs`. `lib.rs` re-exports `api`, `types`,
+and `traits` from the active version under a stable public path.
 
 Naming conventions:
 

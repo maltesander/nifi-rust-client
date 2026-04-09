@@ -4,24 +4,28 @@ Internal code generator for `nifi-rust-client`. Reads an OpenAPI 3.0.1 spec and 
 
 - `src/v{version}/types/<tag>.rs` + `common.rs` + `mod.rs` — per-tag DTO/entity structs
 - `src/v{version}/api/<tag>.rs` + `mod.rs` — per-tag resource structs with async methods
+- `src/v{version}/traits/<tag>.rs` + `mod.rs` — per-version traits for mockability and generic code
 - `src/lib.rs` — cfg-gated re-exports (auto-managed)
 - `tests/v{version}_generated_tests.rs` — wiremock stubs for every endpoint
 
-Stale files within the active version's `api/` and `types/` dirs are deleted automatically. Other versions' directories are never touched. `cargo fmt` is run on all output.
+Stale files within the active version's `api/`, `types/`, and `traits/` dirs are deleted automatically. Other versions' directories are never touched. `cargo fmt` is run on all output.
 
 When the `dynamic` feature is present in `Cargo.toml`, the generator also writes:
 
-- `src/dynamic/types.rs` — common union types with all fields as `Option<T>`
-- `src/dynamic/api.rs` — `DynamicClient` with version-dispatching API methods
-- `src/dynamic/conversions.rs` — `From` impls converting each version's types to common types
+- `src/dynamic/types/<tag>.rs` + `common.rs` + `mod.rs` — common union types with all fields as `Option<T>`
+- `src/dynamic/traits/<tag>.rs` + `mod.rs` — public API traits for dynamic dispatch
+- `src/dynamic/dispatch/<tag>.rs` + `mod.rs` — dispatch enums that route calls to the correct version
+- `src/dynamic/impls/v{version}/` + `mod.rs` — per-version trait implementations
+- `src/dynamic/conversions/` — `From` impls converting each version's types to common types
 - `src/dynamic/mod.rs` — module re-exports
 
 These files are regenerated from scratch on every run, covering all supported versions.
 
-In addition to generating Rust code, the generator keeps three repo-level files in sync on every run (using all spec versions discovered in `specs/`, not just the one being generated):
+In addition to generating Rust code, the generator keeps several repo-level files in sync on every run (using all spec versions discovered in `specs/`, not just the one being generated):
 
 - `README.md` — rewrites the supported-versions table between `<!-- SUPPORTED_VERSIONS_START -->` / `<!-- SUPPORTED_VERSIONS_END -->` markers with live endpoint and type counts and per-version deltas
-- `crates/nifi-rust-client/README.md` — rewrites the static-mode feature flag example between `<!-- STATIC_FEATURE_EXAMPLE_START -->` / `<!-- STATIC_FEATURE_EXAMPLE_END -->` markers
+- `crates/nifi-rust-client/README.md` — rewrites the static-mode feature example, static Rust example, dynamic feature example, resource accessors table, and integration coverage section (each between their own `<!-- ... -->` markers)
+- `NIFI_API_CHANGES.md` — rewrites per-version API change summaries between `<!-- NIFI_API_CHANGES_START -->` / `<!-- NIFI_API_CHANGES_END -->` markers
 - `tests/docker-compose.yml` — updates the `${NIFI_IMAGE_TAG:-x.y.z}` default to match the semver-latest version
 
 ## Running the generator
