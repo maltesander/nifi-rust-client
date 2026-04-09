@@ -131,6 +131,30 @@ pub fn emit_dynamic_conversions(
         let mut out = String::new();
         out.push_str("#![allow(clippy::useless_conversion, clippy::redundant_closure)]\n\n");
 
+        // Emit the impl_from! macro for compact Dto conversions.
+        // Uses $v:ident so caller expressions can reference the source value.
+        out.push_str("macro_rules! impl_from {\n");
+        out.push_str("    ($Src:ty, $v:ident => $Dst:ty { @direct [ $( $d:ident ),* $(,)? ] $( $field:ident : $expr:expr ),* $(,)? }) => {\n");
+        out.push_str("        impl From<$Src> for $Dst {\n");
+        out.push_str("            #[allow(clippy::useless_conversion, clippy::redundant_closure)]\n");
+        out.push_str("            fn from($v: $Src) -> Self {\n");
+        out.push_str("                Self {\n");
+        out.push_str("                    $( $d: $v.$d, )*\n");
+        out.push_str("                    $( $field: $expr, )*\n");
+        out.push_str("                }\n");
+        out.push_str("            }\n");
+        out.push_str("        }\n");
+        out.push_str("    };\n");
+        out.push_str("    ($Src:ty, $v:ident => $Dst:ty { $( $field:ident : $expr:expr ),* $(,)? }) => {\n");
+        out.push_str("        impl From<$Src> for $Dst {\n");
+        out.push_str("            #[allow(clippy::useless_conversion, clippy::redundant_closure)]\n");
+        out.push_str("            fn from($v: $Src) -> Self {\n");
+        out.push_str("                Self { $( $field: $expr, )* }\n");
+        out.push_str("            }\n");
+        out.push_str("        }\n");
+        out.push_str("    };\n");
+        out.push_str("}\n\n");
+
         // Helper to convert a serde-serializable enum to its wire string representation.
         out.push_str("fn enum_to_string(v: &impl serde::Serialize) -> String {\n");
         out.push_str("    serde_json::to_value(v)\n");
@@ -164,23 +188,6 @@ pub fn emit_dynamic_conversions(
                 continue;
             };
 
-            out.push_str(&format!(
-                "impl From<crate::{}::types::{}> for super::super::types::{} {{\n",
-                mod_name, type_name, type_name
-            ));
-            // Use _v for Dto types with no fields in this version (avoids unused variable warning)
-            let uses_param = match kind {
-                TypeKind::Dto => field_lookup
-                    .get(type_name.as_str())
-                    .is_some_and(|f| !f.is_empty()),
-                _ => true, // Entity and StringEnum always use the parameter
-            };
-            let param_name = if uses_param { "v" } else { "_v" };
-            out.push_str(&format!(
-                "    fn from({param_name}: crate::{}::types::{}) -> Self {{\n",
-                mod_name, type_name
-            ));
-
             let uf = universal_fields
                 .get(type_name.as_str())
                 .cloned()
@@ -189,7 +196,11 @@ pub fn emit_dynamic_conversions(
             match kind {
                 TypeKind::Dto => {
                     let version_fields = field_lookup.get(type_name.as_str());
-                    out.push_str("        Self {\n");
+
+                    // Categorize fields into direct (v.field copy) vs custom (needs conversion/wrapping/None)
+                    let mut direct_fields: Vec<String> = Vec::new();
+                    let mut custom_fields: Vec<(String, String)> = Vec::new();
+
                     for field_name in merged_fields {
                         let escaped = escape_keyword(field_name);
                         let is_universal = uf.contains(field_name.as_str());
@@ -197,36 +208,85 @@ pub fn emit_dynamic_conversions(
                             version_fields.and_then(|f| f.get(field_name.as_str()).copied());
                         match field_ty {
                             Some(ty) => {
-                                let conversion =
-                                    field_conversion_expr(&escaped, ty, type_name, is_universal);
-                                out.push_str(&format!("            {escaped}: {conversion},\n"));
+                                let is_direct = !needs_conversion(ty)
+                                    && (matches!(ty, FieldType::Opt(_)) || is_universal);
+                                if is_direct {
+                                    direct_fields.push(escaped.to_string());
+                                } else {
+                                    let conversion =
+                                        field_conversion_expr(&escaped, ty, type_name, is_universal);
+                                    custom_fields.push((escaped.to_string(), conversion));
+                                }
                             }
                             None => {
-                                // Field not present in this version — must be non-universal (Option)
-                                out.push_str(&format!("            {escaped}: None,\n"));
+                                custom_fields.push((escaped.to_string(), "None".to_string()));
                             }
                         }
                     }
-                    out.push_str("        }\n");
+
+                    // Emit macro call
+                    let src_ty = format!("crate::{}::types::{}", mod_name, type_name);
+                    let dst_ty = format!("super::super::types::{}", type_name);
+                    // Use _v when no fields reference the source value
+                    let param = if direct_fields.is_empty() && custom_fields.is_empty() {
+                        "_v"
+                    } else {
+                        "v"
+                    };
+
+                    if direct_fields.is_empty() {
+                        // Use the simple arm (no @direct section)
+                        out.push_str(&format!("impl_from!({src_ty}, {param} => {dst_ty} {{\n"));
+                        for (name, expr) in &custom_fields {
+                            out.push_str(&format!("    {name}: {expr},\n"));
+                        }
+                        out.push_str("});\n\n");
+                    } else {
+                        out.push_str(&format!("impl_from!({src_ty}, v => {dst_ty} {{\n"));
+                        // Emit @direct list
+                        out.push_str("    @direct [");
+                        out.push_str(&direct_fields.join(", "));
+                        out.push_str("]\n");
+                        // Emit custom fields
+                        for (name, expr) in &custom_fields {
+                            out.push_str(&format!("    {name}: {expr},\n"));
+                        }
+                        out.push_str("});\n\n");
+                    }
                 }
                 TypeKind::Entity { field, inner: _ } => {
                     let escaped_field = escape_keyword(field);
-                    // Per-version entity inner field is Option<T>; unwrap with unwrap_or_default
-                    // before converting so we don't need From<Option<T>>.
+                    out.push_str(&format!(
+                        "impl From<crate::{}::types::{}> for super::super::types::{} {{\n",
+                        mod_name, type_name, type_name
+                    ));
+                    out.push_str(&format!(
+                        "    fn from(v: crate::{}::types::{}) -> Self {{\n",
+                        mod_name, type_name
+                    ));
                     out.push_str(&format!(
                         "        Self {{ {escaped_field}: Some(v.{escaped_field}.unwrap_or_default().into()) }}\n"
                     ));
+                    out.push_str("    }\n");
+                    out.push_str("}\n\n");
                 }
                 TypeKind::StringEnum(_) => {
+                    out.push_str(&format!(
+                        "impl From<crate::{}::types::{}> for super::super::types::{} {{\n",
+                        mod_name, type_name, type_name
+                    ));
+                    out.push_str(&format!(
+                        "    fn from(v: crate::{}::types::{}) -> Self {{\n",
+                        mod_name, type_name
+                    ));
                     out.push_str(
                         "        let s = serde_json::to_string(&v).expect(\"serialize enum\");\n",
                     );
                     out.push_str("        serde_json::from_str(&s).expect(\"deserialize enum\")\n");
+                    out.push_str("    }\n");
+                    out.push_str("}\n\n");
                 }
             }
-
-            out.push_str("    }\n");
-            out.push_str("}\n\n");
         }
 
         // Generate TryFrom<dynamic_enum> -> version_enum (narrowing) for each StringEnum.
@@ -578,9 +638,9 @@ mod tests {
             emit_dynamic_conversions(&[("2.7.2", "v2_7_2", &spec)], &merged, &BTreeMap::new());
         let output = get_file(&files, "v2_7_2.rs");
         assert!(output.contains(
-            "impl From<crate::v2_7_2::types::AboutDto> for super::super::types::AboutDto"
+            "impl_from!(crate::v2_7_2::types::AboutDto, v => super::super::types::AboutDto"
         ));
-        assert!(output.contains("title: v.title"));
+        assert!(output.contains("title"));
         assert!(output.contains("version: None"));
     }
 
@@ -605,7 +665,8 @@ mod tests {
         assert!(
             output.contains(
                 "impl From<crate::v2_8_0::types::MyEnum> for super::super::types::MyEnum"
-            )
+            ),
+            "StringEnum should still use explicit impl From block"
         );
         assert!(output.contains("serde_json"));
     }
@@ -683,11 +744,11 @@ mod tests {
 
         // Each version file contains From impl only for that version
         let v1 = get_file(&files, "v2_7_2.rs");
-        assert!(v1.contains("impl From<crate::v2_7_2::types::AboutDto>"));
+        assert!(v1.contains("crate::v2_7_2::types::AboutDto"));
         assert!(!v1.contains("v2_8_0"));
 
         let v2 = get_file(&files, "v2_8_0.rs");
-        assert!(v2.contains("impl From<crate::v2_8_0::types::AboutDto>"));
+        assert!(v2.contains("crate::v2_8_0::types::AboutDto"));
         assert!(!v2.contains("v2_7_2"));
     }
 }
