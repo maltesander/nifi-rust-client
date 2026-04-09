@@ -172,7 +172,7 @@ async fn {base_name}_unsupported() {{
 /// All other params get a default value.
 fn build_call_args(
     endpoint: &Endpoint,
-    sub_group: Option<&SubGroup>,
+    _sub_group: Option<&SubGroup>,
     enum_param_rust_name: &str,
     enum_placeholder: &str,
 ) -> String {

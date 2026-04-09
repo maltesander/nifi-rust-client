@@ -202,9 +202,9 @@ fn emit_dynamic_client(out: &mut String, versions: &[(&str, &str, &str, &ApiSpec
         out.push_str(&format!(
             "    /// Access the [{tag} API](https://nifi.apache.org/nifi-docs/rest-api.html) with dynamic dispatch.\n"
         ));
-        out.push_str(&format!(
+        out.push_str(
             "    ///\n    /// # Panics\n    /// Panics if the NiFi version has not been detected yet. Call `login()` or `detect_version()` first.\n"
-        ));
+        );
         out.push_str(&format!(
             "    pub fn {accessor_fn}(&self) -> dispatch::{dispatch_name}<'_> {{\n"
         ));

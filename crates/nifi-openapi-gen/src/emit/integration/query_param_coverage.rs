@@ -181,7 +181,7 @@ async fn {base_name}_ignored_on_older() {{
 /// All other params get defaults.
 fn build_call_args(
     endpoint: &Endpoint,
-    sub_group: Option<&SubGroup>,
+    _sub_group: Option<&SubGroup>,
     target_param_rust_name: &str,
     target_param_arg: &str,
 ) -> String {
