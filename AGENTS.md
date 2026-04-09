@@ -298,11 +298,14 @@ NIFI_VERSION=x.y.z ./crates/nifi-openapi-gen/scripts/fetch-nifi-spec.sh
 #    the README versions table, and the docker-compose default tag.
 NIFI_VERSION=x.y.z cargo run -p nifi-openapi-gen
 
-# 3. Verify all versions compile
+# 3. Update rust-analyzer.toml if desired (not auto-updated by generator)
+#    e.g. features = ["nifi-x-y-z"] or features = ["dynamic"]
+
+# 4. Verify all versions compile
 cargo build --features dynamic
 cargo build --no-default-features --features nifi-x-y-z
 
-# 4. Commit
+# 5. Commit
 git add crates/nifi-openapi-gen/specs/x.y.z/ \
         crates/nifi-rust-client/src/vx_y_z/ \
         crates/nifi-rust-client/src/lib.rs \
