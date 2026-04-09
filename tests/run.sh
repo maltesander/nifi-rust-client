@@ -67,7 +67,7 @@ NIFI_URL="$NIFI_URL" \
 NIFI_USERNAME="$NIFI_USERNAME" \
 NIFI_PASSWORD="$NIFI_PASSWORD" \
 NIFI_CA_CERT_PATH="$CERTS_DIR/ca.crt" \
-    cargo test -p nifi-integration-tests --no-default-features --features "$NIFI_FEATURE" \
+    cargo test -p nifi-integration-tests --no-default-features --features "$NIFI_FEATURE,dynamic" \
     -- --ignored --nocapture
 
 echo "--- All tests passed."
