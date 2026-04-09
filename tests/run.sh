@@ -40,27 +40,42 @@ else
     echo "--- Reusing existing certificates in tests/scripts/certs/"
 fi
 
-echo "--- Starting NiFi..."
-NIFI_IMAGE_TAG="$NIFI_IMAGE_TAG" docker compose -f "$COMPOSE_FILE" up -d
+# ── Helper: start NiFi, wait for readiness, bootstrap policies ───────────────
 
-echo "--- Waiting for NiFi to be ready (this takes ~90s)..."
-MAX_WAIT=180
-WAITED=0
-until docker compose -f "$COMPOSE_FILE" exec -T nifi \
-        grep -q 'Started Server on https://' /opt/nifi/nifi-current/logs/nifi-app.log 2>/dev/null; do
-    if [[ $WAITED -ge $MAX_WAIT ]]; then
-        echo "ERROR: NiFi did not become ready within ${MAX_WAIT}s"
-        exit 1
-    fi
-    sleep 5
-    WAITED=$((WAITED + 5))
-    echo "    ... ${WAITED}s elapsed"
-done
-echo "--- NiFi is ready."
+start_nifi() {
+    echo "--- Starting NiFi $NIFI_VERSION..."
+    NIFI_IMAGE_TAG="$NIFI_IMAGE_TAG" docker compose -f "$COMPOSE_FILE" up -d
 
-echo "--- Bootstrapping authorization policies..."
-NIFI_URL="$NIFI_URL" NIFI_USERNAME="$NIFI_USERNAME" NIFI_PASSWORD="$NIFI_PASSWORD" \
-    "$SCRIPT_DIR/scripts/bootstrap-policies.sh"
+    echo "--- Waiting for NiFi to be ready (this takes ~90s)..."
+    local max_wait=180 waited=0
+    until docker compose -f "$COMPOSE_FILE" exec -T nifi \
+            grep -q 'Started Server on https://' /opt/nifi/nifi-current/logs/nifi-app.log 2>/dev/null; do
+        if [[ $waited -ge $max_wait ]]; then
+            echo "ERROR: NiFi did not become ready within ${max_wait}s"
+            exit 1
+        fi
+        sleep 5
+        waited=$((waited + 5))
+        echo "    ... ${waited}s elapsed"
+    done
+    echo "--- NiFi is ready."
+
+    echo "--- Bootstrapping authorization policies..."
+    NIFI_URL="$NIFI_URL" NIFI_USERNAME="$NIFI_USERNAME" NIFI_PASSWORD="$NIFI_PASSWORD" \
+        "$SCRIPT_DIR/scripts/bootstrap-policies.sh"
+
+    # Clear cached tokens from any previous NiFi instance.
+    rm -f /tmp/nifi_test_token_*
+}
+
+stop_nifi() {
+    echo "--- Stopping NiFi..."
+    docker compose -f "$COMPOSE_FILE" down
+}
+
+# ── Static tests ─────────────────────────────────────────────────────────────
+
+start_nifi
 
 echo "--- Running integration tests (static mode)..."
 NIFI_URL="$NIFI_URL" \
@@ -69,6 +84,13 @@ NIFI_PASSWORD="$NIFI_PASSWORD" \
 NIFI_CA_CERT_PATH="$CERTS_DIR/ca.crt" \
     cargo test -p nifi-integration-tests --no-default-features --features "$NIFI_FEATURE" \
     -- --ignored --nocapture
+
+# ── Dynamic tests on a fresh NiFi instance ───────────────────────────────────
+# A separate NiFi instance avoids provenance index interference between the
+# static provenance test and the dynamic field-presence test.
+
+stop_nifi
+start_nifi
 
 echo "--- Running integration tests (dynamic mode)..."
 NIFI_URL="$NIFI_URL" \
