@@ -68,9 +68,7 @@ fn emit_trait_file(
 
         // Doc comment for the primary param
         if let Some(doc) = &sg.primary_param_doc {
-            out.push_str(
-                "    /// Returns a sub-resource accessor for config operations.\n",
-            );
+            out.push_str("    /// Returns a sub-resource accessor for config operations.\n");
             out.push_str("    ///\n");
             out.push_str("    /// # Parameters\n");
             out.push_str(&format!("    /// - `{primary}`: {doc}\n"));
@@ -88,7 +86,14 @@ fn emit_trait_file(
 
     // Root endpoint methods
     for (fn_name, ep_by_version) in &sub_groups.root_endpoints {
-        emit_trait_method(&mut out, versions, fn_name, ep_by_version, total_versions, None);
+        emit_trait_method(
+            &mut out,
+            versions,
+            fn_name,
+            ep_by_version,
+            total_versions,
+            None,
+        );
     }
 
     out.push_str("}\n");
@@ -259,8 +264,7 @@ fn emit_doc_comments(
         .path_params
         .iter()
         .any(|p| skip_primary != Some(p.name.as_str()))
-        || (representative.primary_param.is_some()
-            && skip_primary != representative.primary_param);
+        || (representative.primary_param.is_some() && skip_primary != representative.primary_param);
     let has_query_params = !ep.query_params.is_empty();
     if has_path_params || has_query_params {
         out.push_str("    ///\n");
@@ -440,7 +444,9 @@ mod tests {
             content.contains("pub trait ControllerServicesConfigApi"),
             "Missing sub-resource trait"
         );
-        let config_trait_start = content.find("pub trait ControllerServicesConfigApi").unwrap();
+        let config_trait_start = content
+            .find("pub trait ControllerServicesConfigApi")
+            .unwrap();
         let config_section = &content[config_trait_start..];
         let analyze_start = config_section.find("fn analyze_configuration").unwrap();
         let analyze_end = config_section[analyze_start..].find('{').unwrap();

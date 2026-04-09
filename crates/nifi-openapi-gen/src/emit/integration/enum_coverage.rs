@@ -90,7 +90,7 @@ pub fn emit_enum_coverage_tests(all_specs: &[(String, ApiSpec)], diffs: &[Versio
                     let variant_lower = variant.to_lowercase();
                     let base_name = format!("enum_{type_lower}_{variant_lower}");
 
-                    let use_trait = trait_use_stmt(&tag_group.struct_name);
+                    let use_trait = trait_use_stmt(&tag_group.struct_name, sub_group);
                     let use_type =
                         format!("use nifi_rust_client::dynamic::types::{enum_type_name};");
                     let enum_arg = format!("Some({enum_type_name}::{variant})");
@@ -175,21 +175,25 @@ async fn {base_name}_unsupported() {{
 /// All other params get a default value.
 fn build_call_args(
     endpoint: &Endpoint,
-    _sub_group: Option<&SubGroup>,
+    sub_group: Option<&SubGroup>,
     enum_param_rust_name: &str,
     enum_placeholder: &str,
 ) -> String {
     let mut args: Vec<String> = Vec::new();
+    let primary_param = sub_group.map(|sg| sg.primary_param.as_str());
 
-    // All path params (dynamic traits flatten sub-groups).
+    // Path params (excluding primary for sub-group endpoints).
     for pp in &endpoint.path_params {
+        if primary_param == Some(pp.name.as_str()) {
+            continue;
+        }
         let val = default_path_param_value(&pp.name);
         args.push(format!("\"{val}\""));
     }
 
-    // Add request body (if any) — the body is not what we're testing.
+    // Add request body (if any) — borrowed.
     if endpoint.request_type.is_some() {
-        args.push("Default::default()".to_string());
+        args.push("&Default::default()".to_string());
     }
 
     // Add query params.

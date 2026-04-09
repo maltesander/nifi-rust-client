@@ -88,9 +88,7 @@ fn emit_dispatch_file(
     }
 
     // Trait impl for the root trait
-    out.push_str(&format!(
-        "impl {struct_name} for {dispatch_name}<'_> {{\n"
-    ));
+    out.push_str(&format!("impl {struct_name} for {dispatch_name}<'_> {{\n"));
 
     // GAT declarations and accessor methods for sub-resources
     for sg in &sub_groups.sub_groups {
@@ -109,9 +107,7 @@ fn emit_dispatch_file(
         ));
         out.push_str(&format!("        {sub_dispatch_name} {{\n"));
         out.push_str("            client: self.client(),\n");
-        out.push_str(&format!(
-            "            {primary}: {primary}.to_string(),\n"
-        ));
+        out.push_str(&format!("            {primary}: {primary}.to_string(),\n"));
         out.push_str("            version: self.version(),\n");
         out.push_str("        }\n");
         out.push_str("    }\n\n");
@@ -184,9 +180,7 @@ fn emit_sub_resource_dispatch_struct(
     out.push_str(&format!("pub struct {sub_dispatch_name}<'a> {{\n"));
     out.push_str("    pub(crate) client: &'a crate::NifiClient,\n");
     out.push_str(&format!("    pub(crate) {primary}: String,\n"));
-    out.push_str(
-        "    pub(crate) version: crate::dynamic::DetectedVersion,\n",
-    );
+    out.push_str("    pub(crate) version: crate::dynamic::DetectedVersion,\n");
     out.push_str("}\n\n");
 
     // Trait impl
@@ -475,7 +469,10 @@ fn emit_sub_dispatch_method(
         if ver_ep.method != HttpMethod::Delete {
             match &ver_ep.body_kind {
                 Some(RequestBodyKind::Json) => {
-                    let req_type = ver_ep.request_type.as_deref().unwrap_or("serde_json::Value");
+                    let req_type = ver_ep
+                        .request_type
+                        .as_deref()
+                        .unwrap_or("serde_json::Value");
                     call_args.push(format!(
                         "&crate::{mod_name}::types::{req_type}::try_from(body.clone())?",
                     ));
@@ -496,9 +493,7 @@ fn emit_sub_dispatch_method(
         out.push_str(&format!(
             "                let api = crate::{mod_name}::api::{static_module}::{static_sub_struct_name} {{\n"
         ));
-        out.push_str(
-            "                    client: self.client,\n"
-        );
+        out.push_str("                    client: self.client,\n");
         out.push_str(&format!(
             "                    {primary}: &self.{primary},\n"
         ));
@@ -682,13 +677,17 @@ mod tests {
 
         // Root trait impl has GAT
         assert!(
-            content.contains("type ControllerServicesConfigApi<'b> = ControllerServicesConfigApiDispatch<'b>"),
+            content.contains(
+                "type ControllerServicesConfigApi<'b> = ControllerServicesConfigApiDispatch<'b>"
+            ),
             "Missing GAT in root trait impl"
         );
 
         // Root trait impl has accessor method
         assert!(
-            content.contains("fn config<'b>(&'b self, id: &'b str) -> Self::ControllerServicesConfigApi<'b>"),
+            content.contains(
+                "fn config<'b>(&'b self, id: &'b str) -> Self::ControllerServicesConfigApi<'b>"
+            ),
             "Missing accessor method in root trait impl"
         );
 
@@ -720,7 +719,9 @@ mod tests {
 
         // Sub-resource trait impl exists
         assert!(
-            content.contains("impl ControllerServicesConfigApi for ControllerServicesConfigApiDispatch<'_>"),
+            content.contains(
+                "impl ControllerServicesConfigApi for ControllerServicesConfigApiDispatch<'_>"
+            ),
             "Missing sub-resource trait impl"
         );
 
@@ -766,7 +767,8 @@ mod tests {
 
         // Static sub-struct construction
         assert!(
-            content.contains("crate::v2_8_0::api::controller_services::ControllerServicesConfigApi"),
+            content
+                .contains("crate::v2_8_0::api::controller_services::ControllerServicesConfigApi"),
             "Should construct static sub-struct"
         );
         assert!(

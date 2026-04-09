@@ -6,12 +6,15 @@ mod helpers;
 #[tokio::test]
 #[ignore = "requires a running NiFi instance (use tests/run.sh)"]
 async fn endpoint_controller_services_clear_bulletins_unsupported() {
-    use nifi_rust_client::dynamic::traits::ControllerServicesApi;
+    use nifi_rust_client::dynamic::traits::{
+        ControllerServicesApi, ControllerServicesBulletinsApi,
+    };
 
     let client = helpers::dynamic_logged_in_client().await;
     let result = client
         .controller_services_api()
-        .clear_bulletins("root", Default::default())
+        .bulletins("root")
+        .clear_bulletins(&Default::default())
         .await;
     let err = result.unwrap_err();
     assert!(
@@ -24,12 +27,13 @@ async fn endpoint_controller_services_clear_bulletins_unsupported() {
 #[tokio::test]
 #[ignore = "requires a running NiFi instance (use tests/run.sh)"]
 async fn endpoint_controller_clear_flow_analysis_rule_bulletins_unsupported() {
-    use nifi_rust_client::dynamic::traits::ControllerApi;
+    use nifi_rust_client::dynamic::traits::{ControllerApi, ControllerBulletinsApi};
 
     let client = helpers::dynamic_logged_in_client().await;
     let result = client
         .controller_api()
-        .clear_flow_analysis_rule_bulletins("root", Default::default())
+        .bulletins("root")
+        .clear_flow_analysis_rule_bulletins(&Default::default())
         .await;
     let err = result.unwrap_err();
     assert!(
@@ -42,12 +46,13 @@ async fn endpoint_controller_clear_flow_analysis_rule_bulletins_unsupported() {
 #[tokio::test]
 #[ignore = "requires a running NiFi instance (use tests/run.sh)"]
 async fn endpoint_controller_clear_parameter_provider_bulletins_unsupported() {
-    use nifi_rust_client::dynamic::traits::ControllerApi;
+    use nifi_rust_client::dynamic::traits::{ControllerApi, ControllerBulletinsApi};
 
     let client = helpers::dynamic_logged_in_client().await;
     let result = client
         .controller_api()
-        .clear_parameter_provider_bulletins("root", Default::default())
+        .bulletins("root")
+        .clear_parameter_provider_bulletins(&Default::default())
         .await;
     let err = result.unwrap_err();
     assert!(
@@ -60,12 +65,13 @@ async fn endpoint_controller_clear_parameter_provider_bulletins_unsupported() {
 #[tokio::test]
 #[ignore = "requires a running NiFi instance (use tests/run.sh)"]
 async fn endpoint_controller_clear_registry_client_bulletins_unsupported() {
-    use nifi_rust_client::dynamic::traits::ControllerApi;
+    use nifi_rust_client::dynamic::traits::{ControllerApi, ControllerBulletinsApi};
 
     let client = helpers::dynamic_logged_in_client().await;
     let result = client
         .controller_api()
-        .clear_registry_client_bulletins("root", Default::default())
+        .bulletins("root")
+        .clear_registry_client_bulletins(&Default::default())
         .await;
     let err = result.unwrap_err();
     assert!(
@@ -78,12 +84,13 @@ async fn endpoint_controller_clear_registry_client_bulletins_unsupported() {
 #[tokio::test]
 #[ignore = "requires a running NiFi instance (use tests/run.sh)"]
 async fn endpoint_controller_analyze_flow_registry_client_configuration_unsupported() {
-    use nifi_rust_client::dynamic::traits::ControllerApi;
+    use nifi_rust_client::dynamic::traits::{ControllerApi, ControllerConfigApi};
 
     let client = helpers::dynamic_logged_in_client().await;
     let result = client
         .controller_api()
-        .analyze_flow_registry_client_configuration("root", Default::default())
+        .config("root")
+        .analyze_flow_registry_client_configuration(&Default::default())
         .await;
     let err = result.unwrap_err();
     assert!(
@@ -96,12 +103,13 @@ async fn endpoint_controller_analyze_flow_registry_client_configuration_unsuppor
 #[tokio::test]
 #[ignore = "requires a running NiFi instance (use tests/run.sh)"]
 async fn endpoint_controller_submit_registry_client_config_verification_request_unsupported() {
-    use nifi_rust_client::dynamic::traits::ControllerApi;
+    use nifi_rust_client::dynamic::traits::{ControllerApi, ControllerConfigApi};
 
     let client = helpers::dynamic_logged_in_client().await;
     let result = client
         .controller_api()
-        .submit_registry_client_config_verification_request("root", Default::default())
+        .config("root")
+        .submit_registry_client_config_verification_request(&Default::default())
         .await;
     let err = result.unwrap_err();
     assert!(
@@ -114,12 +122,13 @@ async fn endpoint_controller_submit_registry_client_config_verification_request_
 #[tokio::test]
 #[ignore = "requires a running NiFi instance (use tests/run.sh)"]
 async fn endpoint_controller_delete_registry_client_verification_request_unsupported() {
-    use nifi_rust_client::dynamic::traits::ControllerApi;
+    use nifi_rust_client::dynamic::traits::{ControllerApi, ControllerConfigApi};
 
     let client = helpers::dynamic_logged_in_client().await;
     let result = client
         .controller_api()
-        .delete_registry_client_verification_request("root", "test-request_id")
+        .config("root")
+        .delete_registry_client_verification_request("test-request_id")
         .await;
     let err = result.unwrap_err();
     assert!(
@@ -132,12 +141,13 @@ async fn endpoint_controller_delete_registry_client_verification_request_unsuppo
 #[tokio::test]
 #[ignore = "requires a running NiFi instance (use tests/run.sh)"]
 async fn endpoint_controller_get_registry_client_verification_request_unsupported() {
-    use nifi_rust_client::dynamic::traits::ControllerApi;
+    use nifi_rust_client::dynamic::traits::{ControllerApi, ControllerConfigApi};
 
     let client = helpers::dynamic_logged_in_client().await;
     let result = client
         .controller_api()
-        .get_registry_client_verification_request("root", "test-request_id")
+        .config("root")
+        .get_registry_client_verification_request("test-request_id")
         .await;
     let err = result.unwrap_err();
     assert!(
@@ -203,12 +213,13 @@ async fn endpoint_flow_get_listen_ports_unsupported() {
 #[tokio::test]
 #[ignore = "requires a running NiFi instance (use tests/run.sh)"]
 async fn endpoint_flow_clear_bulletins_1_unsupported() {
-    use nifi_rust_client::dynamic::traits::FlowApi;
+    use nifi_rust_client::dynamic::traits::{FlowApi, FlowBulletinsApi};
 
     let client = helpers::dynamic_logged_in_client().await;
     let result = client
         .flow_api()
-        .clear_bulletins_1("root", Default::default())
+        .bulletins("root")
+        .clear_bulletins_1(&Default::default())
         .await;
     let err = result.unwrap_err();
     assert!(
@@ -221,12 +232,13 @@ async fn endpoint_flow_clear_bulletins_1_unsupported() {
 #[tokio::test]
 #[ignore = "requires a running NiFi instance (use tests/run.sh)"]
 async fn endpoint_inputports_clear_bulletins_2_unsupported() {
-    use nifi_rust_client::dynamic::traits::InputPortsApi;
+    use nifi_rust_client::dynamic::traits::{InputPortsApi, InputPortsBulletinsApi};
 
     let client = helpers::dynamic_logged_in_client().await;
     let result = client
         .inputports_api()
-        .clear_bulletins_2("root", Default::default())
+        .bulletins("root")
+        .clear_bulletins_2(&Default::default())
         .await;
     let err = result.unwrap_err();
     assert!(
@@ -239,12 +251,13 @@ async fn endpoint_inputports_clear_bulletins_2_unsupported() {
 #[tokio::test]
 #[ignore = "requires a running NiFi instance (use tests/run.sh)"]
 async fn endpoint_outputports_clear_bulletins_3_unsupported() {
-    use nifi_rust_client::dynamic::traits::OutputPortsApi;
+    use nifi_rust_client::dynamic::traits::{OutputPortsApi, OutputPortsBulletinsApi};
 
     let client = helpers::dynamic_logged_in_client().await;
     let result = client
         .outputports_api()
-        .clear_bulletins_3("root", Default::default())
+        .bulletins("root")
+        .clear_bulletins_3(&Default::default())
         .await;
     let err = result.unwrap_err();
     assert!(
@@ -257,12 +270,15 @@ async fn endpoint_outputports_clear_bulletins_3_unsupported() {
 #[tokio::test]
 #[ignore = "requires a running NiFi instance (use tests/run.sh)"]
 async fn endpoint_parameterproviders_clear_bulletins_4_unsupported() {
-    use nifi_rust_client::dynamic::traits::ParameterProvidersApi;
+    use nifi_rust_client::dynamic::traits::{
+        ParameterProvidersApi, ParameterProvidersBulletinsApi,
+    };
 
     let client = helpers::dynamic_logged_in_client().await;
     let result = client
         .parameterproviders_api()
-        .clear_bulletins_4("root", Default::default())
+        .bulletins("root")
+        .clear_bulletins_4(&Default::default())
         .await;
     let err = result.unwrap_err();
     assert!(
@@ -275,12 +291,13 @@ async fn endpoint_parameterproviders_clear_bulletins_4_unsupported() {
 #[tokio::test]
 #[ignore = "requires a running NiFi instance (use tests/run.sh)"]
 async fn endpoint_processors_clear_bulletins_5_unsupported() {
-    use nifi_rust_client::dynamic::traits::ProcessorsApi;
+    use nifi_rust_client::dynamic::traits::{ProcessorsApi, ProcessorsBulletinsApi};
 
     let client = helpers::dynamic_logged_in_client().await;
     let result = client
         .processors_api()
-        .clear_bulletins_5("root", Default::default())
+        .bulletins("root")
+        .clear_bulletins_5(&Default::default())
         .await;
     let err = result.unwrap_err();
     assert!(
@@ -293,12 +310,15 @@ async fn endpoint_processors_clear_bulletins_5_unsupported() {
 #[tokio::test]
 #[ignore = "requires a running NiFi instance (use tests/run.sh)"]
 async fn endpoint_remoteprocessgroups_clear_bulletins_6_unsupported() {
-    use nifi_rust_client::dynamic::traits::RemoteProcessGroupsApi;
+    use nifi_rust_client::dynamic::traits::{
+        RemoteProcessGroupsApi, RemoteProcessGroupsBulletinsApi,
+    };
 
     let client = helpers::dynamic_logged_in_client().await;
     let result = client
         .remoteprocessgroups_api()
-        .clear_bulletins_6("root", Default::default())
+        .bulletins("root")
+        .clear_bulletins_6(&Default::default())
         .await;
     let err = result.unwrap_err();
     assert!(
@@ -311,12 +331,13 @@ async fn endpoint_remoteprocessgroups_clear_bulletins_6_unsupported() {
 #[tokio::test]
 #[ignore = "requires a running NiFi instance (use tests/run.sh)"]
 async fn endpoint_reportingtasks_clear_bulletins_7_unsupported() {
-    use nifi_rust_client::dynamic::traits::ReportingTasksApi;
+    use nifi_rust_client::dynamic::traits::{ReportingTasksApi, ReportingTasksBulletinsApi};
 
     let client = helpers::dynamic_logged_in_client().await;
     let result = client
         .reportingtasks_api()
-        .clear_bulletins_7("root", Default::default())
+        .bulletins("root")
+        .clear_bulletins_7(&Default::default())
         .await;
     let err = result.unwrap_err();
     assert!(

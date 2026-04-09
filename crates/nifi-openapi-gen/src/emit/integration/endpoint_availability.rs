@@ -62,7 +62,7 @@ pub fn emit_endpoint_availability_tests(
             };
 
             let base_name = test_base_name(&tag_group.accessor_fn, &endpoint.fn_name);
-            let use_trait = trait_use_stmt(&tag_group.struct_name);
+            let use_trait = trait_use_stmt(&tag_group.struct_name, sub_group);
             let accessor = build_accessor(&tag_group.accessor_fn, sub_group);
             let call_args = build_call_args(endpoint, sub_group);
 
@@ -153,19 +153,23 @@ fn is_safe_endpoint(summary: &EndpointSummary, endpoint: &Endpoint) -> bool {
 }
 
 /// Build the argument list for the function call.
-/// In dynamic mode, sub-group primary params become regular path params.
-fn build_call_args(endpoint: &Endpoint, _sub_group: Option<&SubGroup>) -> String {
+/// For sub-group endpoints, the primary path param is excluded (it's on the accessor).
+fn build_call_args(endpoint: &Endpoint, sub_group: Option<&SubGroup>) -> String {
     let mut args: Vec<String> = Vec::new();
+    let primary_param = sub_group.map(|sg| sg.primary_param.as_str());
 
-    // All path params (dynamic traits flatten sub-groups).
+    // Path params (excluding primary for sub-group endpoints).
     for pp in &endpoint.path_params {
+        if primary_param == Some(pp.name.as_str()) {
+            continue;
+        }
         let val = default_path_param_value(&pp.name);
         args.push(format!("\"{val}\""));
     }
 
-    // Add request body (if any).
+    // Add request body (if any) — borrowed.
     if endpoint.request_type.is_some() {
-        args.push("Default::default()".to_string());
+        args.push("&Default::default()".to_string());
     }
 
     // Add query params — all None (optional) or a default for required ones.

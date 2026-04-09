@@ -128,9 +128,7 @@ fn emit_tag_impl_file(
             "        crate::dynamic::dispatch::{sub_dispatch_name} {{\n"
         ));
         out.push_str("            client: self.client,\n");
-        out.push_str(&format!(
-            "            {primary}: {primary}.to_string(),\n"
-        ));
+        out.push_str(&format!("            {primary}: {primary}.to_string(),\n"));
         out.push_str(&format!(
             "            version: crate::dynamic::DetectedVersion::{variant},\n"
         ));
