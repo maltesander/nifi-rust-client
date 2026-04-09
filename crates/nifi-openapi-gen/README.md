@@ -148,4 +148,3 @@ cargo run -p nifi-openapi-gen --features cli --bin openapi-diff -- \
 ```
 
 Add `--format json` to either subcommand for machine-readable JSON output.
-
