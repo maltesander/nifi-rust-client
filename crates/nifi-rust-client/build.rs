@@ -1,3 +1,5 @@
+#![allow(clippy::panic)]
+
 use std::path::Path;
 
 fn main() {
