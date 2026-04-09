@@ -22,8 +22,22 @@ use nifi_openapi_gen::util::{
 use nifi_openapi_gen::{
     collect_merged_field_names, collect_universal_fields, emit_api_with_prefix, emit_dynamic,
     emit_dynamic_conversions, emit_dynamic_dispatch, emit_dynamic_impls, emit_dynamic_tests,
-    emit_dynamic_traits, emit_dynamic_types, emit_tests, emit_types, load,
+    emit_dynamic_traits, emit_dynamic_types, emit_endpoint_availability_tests,
+    emit_enum_coverage_tests, emit_field_presence_tests, emit_query_param_coverage_tests,
+    emit_tests, emit_types, load,
 };
+
+fn write_if_changed(path: &std::path::Path, content: &str, written: &mut usize) {
+    let on_disk = std::fs::read_to_string(path).unwrap_or_default();
+    if on_disk != content {
+        if let Some(parent) = path.parent() {
+            std::fs::create_dir_all(parent).expect("create parent dirs");
+        }
+        std::fs::write(path, content).expect("write generated file");
+        println!("  wrote {}", path.display());
+        *written += 1;
+    }
+}
 
 fn main() {
     let codegen_dir = Path::new(env!("CARGO_MANIFEST_DIR"));
@@ -299,6 +313,40 @@ fn main() {
 
             let content = generate_api_changes_content(&all_parsed);
             update_file_between_markers(&path, START, END, &content);
+        }
+
+        // Consecutive diffs (shared by integration tests and coverage section)
+        let diffs: Vec<nifi_openapi_gen::VersionDiff> = (1..all_parsed.len())
+            .map(|i| {
+                let (from_ver, from_spec) = &all_parsed[i - 1];
+                let (to_ver, to_spec) = &all_parsed[i];
+                nifi_openapi_gen::compute_diff(from_spec, to_spec, from_ver, to_ver)
+            })
+            .collect();
+
+        // Integration coverage tests (written to tests/tests/)
+        {
+            let tests_dir = workspace_root.join("tests/tests");
+
+            let enum_tests = emit_enum_coverage_tests(&all_parsed, &diffs);
+            if !enum_tests.is_empty() {
+                write_if_changed(&tests_dir.join("dynamic_enum_coverage.rs"), &enum_tests, &mut written);
+            }
+
+            let endpoint_tests = emit_endpoint_availability_tests(&all_parsed, &diffs);
+            if !endpoint_tests.is_empty() {
+                write_if_changed(&tests_dir.join("dynamic_endpoint_availability.rs"), &endpoint_tests, &mut written);
+            }
+
+            let field_tests = emit_field_presence_tests(&all_parsed, &diffs);
+            if !field_tests.is_empty() {
+                write_if_changed(&tests_dir.join("dynamic_field_presence.rs"), &field_tests, &mut written);
+            }
+
+            let param_tests = emit_query_param_coverage_tests(&all_parsed, &diffs);
+            if !param_tests.is_empty() {
+                write_if_changed(&tests_dir.join("dynamic_query_param_coverage.rs"), &param_tests, &mut written);
+            }
         }
     }
 
