@@ -8,6 +8,122 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-04-09
+
+### Breaking Changes
+
+- Trait-based dynamic client with enum dispatch ([8bfcd9b](https://github.com/maltesander/nifi-rust-client/commit/8bfcd9b))
+- Improve dynamic client UX with typed enums, reduced Options, and typed bodies ([f672c82](https://github.com/maltesander/nifi-rust-client/commit/f672c82))
+- Add interior mutability for token + auto-retry on 401 ([cb8ca6a](https://github.com/maltesander/nifi-rust-client/commit/cb8ca6a))
+- Add typed error variants for 401/403/404/409 ([5b4a47a](https://github.com/maltesander/nifi-rust-client/commit/5b4a47a))
+
+### Added
+
+- Add version_strategy() to NifiClientBuilder ([a022f50](https://github.com/maltesander/nifi-rust-client/commit/a022f50))
+- Update generator to emit strategy-aware DynamicClient ([babd318](https://github.com/maltesander/nifi-rust-client/commit/babd318))
+- Add VersionResolutionStrategy enum and resolve logic ([7c70cb1](https://github.com/maltesander/nifi-rust-client/commit/7c70cb1))
+- Integrate resource accessors table into generator pipeline ([a2870ad](https://github.com/maltesander/nifi-rust-client/commit/a2870ad))
+- Add resource_accessors doc emitter with tests ([1aba368](https://github.com/maltesander/nifi-rust-client/commit/1aba368))
+- Unified trait hierarchy for static and dynamic clients ([ca36539](https://github.com/maltesander/nifi-rust-client/commit/ca36539))
+- Emit hierarchical dispatch structs for sub-resource traits ([3034761](https://github.com/maltesander/nifi-rust-client/commit/3034761))
+- Wire static traits into generate.rs ([60a64b8](https://github.com/maltesander/nifi-rust-client/commit/60a64b8))
+- Emit static trait impls in api.rs ([7bb41ab](https://github.com/maltesander/nifi-rust-client/commit/7bb41ab))
+- Add static trait emitter (emit/traits.rs) ([2854b0c](https://github.com/maltesander/nifi-rust-client/commit/2854b0c))
+- Add collect_tag_sub_groups utility for hierarchical endpoint grouping ([23d364d](https://github.com/maltesander/nifi-rust-client/commit/23d364d))
+- Lazy version detection in DynamicClient ([720bc6a](https://github.com/maltesander/nifi-rust-client/commit/720bc6a))
+- Generate dynamic integration tests and README coverage section ([5c0a355](https://github.com/maltesander/nifi-rust-client/commit/5c0a355))
+- Add integration coverage section to README ([38d41e9](https://github.com/maltesander/nifi-rust-client/commit/38d41e9))
+- Implement query param coverage integration test emitter ([600d6c3](https://github.com/maltesander/nifi-rust-client/commit/600d6c3))
+- Implement endpoint availability integration test emitter ([b536e28](https://github.com/maltesander/nifi-rust-client/commit/b536e28))
+- Implement field presence integration test emitter (empty mapping) ([2d35fd5](https://github.com/maltesander/nifi-rust-client/commit/2d35fd5))
+- Implement enum coverage integration test emitter ([85f9086](https://github.com/maltesander/nifi-rust-client/commit/85f9086))
+- Wire integration test generation into generate.rs ([a676cf8](https://github.com/maltesander/nifi-rust-client/commit/a676cf8))
+- Add run-matrix.sh for multi-version integration testing ([02243df](https://github.com/maltesander/nifi-rust-client/commit/02243df))
+- Scaffold emit/integration module with stubs ([0be46c5](https://github.com/maltesander/nifi-rust-client/commit/0be46c5))
+- Add openapi-diff CLI tool for spec comparison ([737e55a](https://github.com/maltesander/nifi-rust-client/commit/737e55a))
+- Generate NIFI_API_CHANGES.md changelog with per-version diffs ([5bdee6d](https://github.com/maltesander/nifi-rust-client/commit/5bdee6d))
+- Add generate_api_changes_content() and format_diff_body() ([c49bc93](https://github.com/maltesander/nifi-rust-client/commit/c49bc93))
+- Use VersionDiff::summary() in README versions table ([8dbdb0c](https://github.com/maltesander/nifi-rust-client/commit/8dbdb0c))
+- Export diff module from nifi-openapi-gen lib ([66e9177](https://github.com/maltesander/nifi-rust-client/commit/66e9177))
+- Add VersionDiff::summary() for table column ([104b7a3](https://github.com/maltesander/nifi-rust-client/commit/104b7a3))
+- Add VersionDiff structs and compute_diff() with unit tests ([eb8c7d2](https://github.com/maltesander/nifi-rust-client/commit/eb8c7d2))
+- Add Redacted<T> type to mask passwords in debug output ([d91fcd8](https://github.com/maltesander/nifi-rust-client/commit/d91fcd8))
+- Wire up emit_dynamic_traits/dispatch/impls in generate.rs ([610ec56](https://github.com/maltesander/nifi-rust-client/commit/610ec56))
+- Add trait emitter for dynamic per-tag API traits ([f15f7f7](https://github.com/maltesander/nifi-rust-client/commit/f15f7f7))
+- Add non_exhaustive, doc comments, and skip_serializing_if to dynamic types ([f6787d3](https://github.com/maltesander/nifi-rust-client/commit/f6787d3))
+- Add version docs, enum helper, body-by-value, and narrowing tests ([d605eaf](https://github.com/maltesander/nifi-rust-client/commit/d605eaf))
+- Add opt-in RetryPolicy for transient error retry with exponential backoff ([1d6ad84](https://github.com/maltesander/nifi-rust-client/commit/1d6ad84))
+- Add CredentialProvider trait with Static and Env implementations ([ac70cb2](https://github.com/maltesander/nifi-rust-client/commit/ac70cb2))
+
+### Changed
+
+- Replace GATs with RPITIT in trait hierarchy ([0ae5554](https://github.com/maltesander/nifi-rust-client/commit/0ae5554))
+- Update dynamic impls for hierarchical sub-resource traits ([17d51a3](https://github.com/maltesander/nifi-rust-client/commit/17d51a3))
+- Emit hierarchical dynamic traits with sub-resource grouping ([d6c7390](https://github.com/maltesander/nifi-rust-client/commit/d6c7390))
+- Move integration coverage section to nifi-rust-client README ([9a22717](https://github.com/maltesander/nifi-rust-client/commit/9a22717))
+- Disable per-version wiremock stub test generation ([d3249a8](https://github.com/maltesander/nifi-rust-client/commit/d3249a8))
+- Extract shared helpers in emit/integration/common ([f6d191f](https://github.com/maltesander/nifi-rust-client/commit/f6d191f))
+- Extract dynamic_logged_in_client to shared helpers ([0fab92e](https://github.com/maltesander/nifi-rust-client/commit/0fab92e))
+- Remove Default column from versions table, link to API changes ([ea7aed8](https://github.com/maltesander/nifi-rust-client/commit/ea7aed8))
+- Namespaced re-exports in lib.rs ([2c00e8e](https://github.com/maltesander/nifi-rust-client/commit/2c00e8e))
+- Slim generate.rs to thin orchestrator ([8f938bf](https://github.com/maltesander/nifi-rust-client/commit/8f938bf))
+- Extract repo/ module from generate.rs ([0383b7a](https://github.com/maltesander/nifi-rust-client/commit/0383b7a))
+- Extract docs/ module from generate.rs ([d1f6007](https://github.com/maltesander/nifi-rust-client/commit/d1f6007))
+- Move dynamic emitters into emit/dynamic/ ([29dd9a1](https://github.com/maltesander/nifi-rust-client/commit/29dd9a1))
+- Move static emitters into emit/ module ([d178500](https://github.com/maltesander/nifi-rust-client/commit/d178500))
+- Add emit/common.rs with shared helpers ([1dfadbd](https://github.com/maltesander/nifi-rust-client/commit/1dfadbd))
+- Expand util.rs with shared helpers ([603500f](https://github.com/maltesander/nifi-rust-client/commit/603500f))
+- Extract shared utilities into util.rs ([98185e1](https://github.com/maltesander/nifi-rust-client/commit/98185e1))
+
+### Fixed
+
+- Disable MD033 lint in generated CHANGELOG ([34decee](https://github.com/maltesander/nifi-rust-client/commit/34decee))
+- Add @generated label to dynamic test emitters ([ee576f2](https://github.com/maltesander/nifi-rust-client/commit/ee576f2))
+- Revert tests crate dynamic feature enabling all versions ([941ae67](https://github.com/maltesander/nifi-rust-client/commit/941ae67))
+- Update integration test emitters for builder pattern ([d132c55](https://github.com/maltesander/nifi-rust-client/commit/d132c55))
+- Update dynamic dispatch tests for builder pattern ([0286f9c](https://github.com/maltesander/nifi-rust-client/commit/0286f9c))
+- Add type conversions to sub-resource dispatch methods ([6a50b82](https://github.com/maltesander/nifi-rust-client/commit/6a50b82))
+- Only emit positive tests for GET endpoints ([2adeb44](https://github.com/maltesander/nifi-rust-client/commit/2adeb44))
+- Use cumulative feature gates for negative integration tests ([5c622b8](https://github.com/maltesander/nifi-rust-client/commit/5c622b8))
+- Use by-value Default::default() for dynamic trait body params ([7540482](https://github.com/maltesander/nifi-rust-client/commit/7540482))
+- Generate dynamic-mode calls in integration tests ([26f5862](https://github.com/maltesander/nifi-rust-client/commit/26f5862))
+- Gate static integration tests with cfg(not(feature = "dynamic")) ([f6e1600](https://github.com/maltesander/nifi-rust-client/commit/f6e1600))
+- Wait for DISABLED state before clearing controller service ([f8ccf34](https://github.com/maltesander/nifi-rust-client/commit/f8ccf34))
+- Run static and dynamic integration tests separately ([00ab083](https://github.com/maltesander/nifi-rust-client/commit/00ab083))
+- Resolve all pre-commit hook failures ([c442f94](https://github.com/maltesander/nifi-rust-client/commit/c442f94))
+- Include dynamic feature in integration test runs ([4110a2b](https://github.com/maltesander/nifi-rust-client/commit/4110a2b))
+- Add markdownlint-disable for generated NIFI_API_CHANGES.md ([ca75340](https://github.com/maltesander/nifi-rust-client/commit/ca75340))
+- Count removed enum values in summary(); update AGENTS.md bump procedure ([fafa0a3](https://github.com/maltesander/nifi-rust-client/commit/fafa0a3))
+- Clarify code and documentation generation ([6032c8a](https://github.com/maltesander/nifi-rust-client/commit/6032c8a))
+- Add trait imports and fix non_exhaustive struct construction in dynamic tests ([7d54d59](https://github.com/maltesander/nifi-rust-client/commit/7d54d59))
+- Remove redundant explicit link target in doc comment ([6fe034a](https://github.com/maltesander/nifi-rust-client/commit/6fe034a))
+- Use nifi_rust_client::retry::RetryPolicy import path consistently ([fe3fdaf](https://github.com/maltesander/nifi-rust-client/commit/fe3fdaf))
+- Classify 3xx responses as success in generated docs ([14e33f1](https://github.com/maltesander/nifi-rust-client/commit/14e33f1))
+
+### Documentation
+
+- Add IDE autocompletion note for dynamic mode ([816e8fa](https://github.com/maltesander/nifi-rust-client/commit/816e8fa))
+- Update README wording for static version feature ([5e4b2cb](https://github.com/maltesander/nifi-rust-client/commit/5e4b2cb))
+- Note rust-analyzer.toml needs manual update on version bump ([cec81c1](https://github.com/maltesander/nifi-rust-client/commit/cec81c1))
+- Document VersionResolutionStrategy in READMEs and AGENTS.md ([efc8118](https://github.com/maltesander/nifi-rust-client/commit/efc8118))
+- Minor README tweaks ([5e2f4c3](https://github.com/maltesander/nifi-rust-client/commit/5e2f4c3))
+- Update generator intro and AGENTS.md for current structure ([a63492e](https://github.com/maltesander/nifi-rust-client/commit/a63492e))
+- Document resource_accessors emitter in AGENTS.md and gen README ([d5ed4e1](https://github.com/maltesander/nifi-rust-client/commit/d5ed4e1))
+- Add RESOURCE_ACCESSORS markers to client README ([16230c5](https://github.com/maltesander/nifi-rust-client/commit/16230c5))
+- Add implementation plan for resource accessors table ([9d84cc4](https://github.com/maltesander/nifi-rust-client/commit/9d84cc4))
+- Add design spec for auto-generated resource accessors table ([0245f58](https://github.com/maltesander/nifi-rust-client/commit/0245f58))
+- Update READMEs and AGENTS.md for unified trait hierarchy ([21bc8c6](https://github.com/maltesander/nifi-rust-client/commit/21bc8c6))
+- Add unified trait hierarchy implementation plan ([7f154b3](https://github.com/maltesander/nifi-rust-client/commit/7f154b3))
+- Add unified trait hierarchy design spec ([e81bd2d](https://github.com/maltesander/nifi-rust-client/commit/e81bd2d))
+- Update dynamic client examples for lazy version detection ([324ed2b](https://github.com/maltesander/nifi-rust-client/commit/324ed2b))
+- Document run-matrix.sh and integration test emitters ([c4f14fa](https://github.com/maltesander/nifi-rust-client/commit/c4f14fa))
+- Update README for new module structure ([bec06fc](https://github.com/maltesander/nifi-rust-client/commit/bec06fc))
+- Update READMEs for credential providers, retry policy, and typed errors ([4175e23](https://github.com/maltesander/nifi-rust-client/commit/4175e23))
+
+### Tests
+
+- Add wiremock tests for version resolution strategies ([6eb9f54](https://github.com/maltesander/nifi-rust-client/commit/6eb9f54))
+
 ## [0.3.1] - 2026-04-08
 
 ### Added
@@ -148,7 +264,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Structured error handling** — `NifiError` via `snafu` with distinct variants for HTTP, auth, serialization, and network errors.
 - **Tracing** — all HTTP requests emit a `tracing::debug!` event with method and path before sending.
 
-[Unreleased]: https://github.com/maltesander/nifi-rust-client/compare/v0.3.1...HEAD
+[Unreleased]: https://github.com/maltesander/nifi-rust-client/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/maltesander/nifi-rust-client/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/maltesander/nifi-rust-client/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/maltesander/nifi-rust-client/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/maltesander/nifi-rust-client/compare/v0.2.0...v0.2.1
