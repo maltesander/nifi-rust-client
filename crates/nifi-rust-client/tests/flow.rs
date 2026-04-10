@@ -280,3 +280,31 @@ async fn search_flow_returns_processor_results() {
         Some("GenerateFlowFile")
     );
 }
+
+// ── clear_bulletins (process-group) ──────────────────────────────────────────
+
+#[tokio::test]
+async fn clear_process_group_bulletins_returns_cleared_count() {
+    let mock_server = MockServer::start().await;
+    Mock::given(method("POST"))
+        .and(path("/nifi-api/flow/process-groups/some-id/bulletins/clear-requests"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+            "bulletinsCleared": 7
+        })))
+        .expect(1)
+        .mount(&mock_server)
+        .await;
+
+    let client = NifiClientBuilder::new(&mock_server.uri())
+        .unwrap()
+        .build()
+        .unwrap();
+    let body = nifi_rust_client::types::ClearBulletinsForGroupRequestEntity::default();
+    let result = client
+        .flow_api()
+        .bulletins("some-id")
+        .clear_bulletins_1(&body)
+        .await;
+
+    assert!(result.is_ok(), "clear_process_group_bulletins failed: {:?}", result.err());
+}

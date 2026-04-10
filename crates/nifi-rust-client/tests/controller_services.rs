@@ -70,3 +70,32 @@ async fn update_run_status_sends_request_to_correct_path() {
 
     assert!(result.is_ok(), "{:?}", result);
 }
+
+// ── clear_bulletins ───────────────────────────────────────────────────────────
+
+#[tokio::test]
+async fn clear_controller_service_bulletins_returns_cleared_count() {
+    let mock_server = MockServer::start().await;
+    Mock::given(method("POST"))
+        .and(path("/nifi-api/controller-services/some-id/bulletins/clear-requests"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+            "bulletinsCleared": 2,
+            "componentId": "some-id"
+        })))
+        .expect(1)
+        .mount(&mock_server)
+        .await;
+
+    let client = NifiClientBuilder::new(&mock_server.uri())
+        .unwrap()
+        .build()
+        .unwrap();
+    let body = nifi_rust_client::types::ClearBulletinsRequestEntity::default();
+    let result = client
+        .controller_services_api()
+        .bulletins("some-id")
+        .clear_bulletins(&body)
+        .await;
+
+    assert!(result.is_ok(), "clear_controller_service_bulletins failed: {:?}", result.err());
+}

@@ -97,3 +97,32 @@ async fn delete_running_processor_returns_409() {
 
     assert!(matches!(err, NifiError::Conflict { .. }));
 }
+
+// ── clear_bulletins ───────────────────────────────────────────────────────────
+
+#[tokio::test]
+async fn clear_processor_bulletins_returns_cleared_count() {
+    let mock_server = MockServer::start().await;
+    Mock::given(method("POST"))
+        .and(path("/nifi-api/processors/some-id/bulletins/clear-requests"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+            "bulletinsCleared": 3,
+            "componentId": "some-id"
+        })))
+        .expect(1)
+        .mount(&mock_server)
+        .await;
+
+    let client = NifiClientBuilder::new(&mock_server.uri())
+        .unwrap()
+        .build()
+        .unwrap();
+    let body = nifi_rust_client::types::ClearBulletinsRequestEntity::default();
+    let result = client
+        .processors_api()
+        .bulletins("some-id")
+        .clear_bulletins_5(&body)
+        .await;
+
+    assert!(result.is_ok(), "clear_processor_bulletins failed: {:?}", result.err());
+}

@@ -40,3 +40,32 @@ async fn get_remote_process_group_returns_target_uri() {
         Some("Remote NiFi")
     );
 }
+
+// ── clear_bulletins ───────────────────────────────────────────────────────────
+
+#[tokio::test]
+async fn clear_remote_process_group_bulletins_returns_cleared_count() {
+    let mock_server = MockServer::start().await;
+    Mock::given(method("POST"))
+        .and(path("/nifi-api/remote-process-groups/some-id/bulletins/clear-requests"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+            "bulletinsCleared": 5,
+            "componentId": "some-id"
+        })))
+        .expect(1)
+        .mount(&mock_server)
+        .await;
+
+    let client = NifiClientBuilder::new(&mock_server.uri())
+        .unwrap()
+        .build()
+        .unwrap();
+    let body = nifi_rust_client::types::ClearBulletinsRequestEntity::default();
+    let result = client
+        .remoteprocessgroups_api()
+        .bulletins("some-id")
+        .clear_bulletins_6(&body)
+        .await;
+
+    assert!(result.is_ok(), "clear_remote_process_group_bulletins failed: {:?}", result.err());
+}
