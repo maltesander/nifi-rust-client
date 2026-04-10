@@ -311,13 +311,13 @@ fn emit_doc_comments(
     }
 
     // Permissions / security
-    if let Some(security) = &ep.security
-        && !security.is_empty()
-    {
-        out.push_str("    ///\n");
-        out.push_str("    /// # Permissions\n");
-        for perm in security {
-            out.push_str(&format!("    /// Requires `{perm}`.\n"));
+    if let Some(security) = &ep.security {
+        if !security.is_empty() {
+            out.push_str("    ///\n");
+            out.push_str("    /// # Permissions\n");
+            for perm in security {
+                out.push_str(&format!("    /// Requires `{perm}`.\n"));
+            }
         }
     }
 
