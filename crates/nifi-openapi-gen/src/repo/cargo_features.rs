@@ -20,10 +20,15 @@ pub fn patch_client_cargo_features(toml_str: &str, versions: &[&str]) -> String 
 
     for version in versions {
         let key = version_to_feature(version);
-        if !features.contains_key(&key) {
-            features.insert(&key, toml_edit::value(toml_edit::Array::new()));
-        }
+        let mut arr = toml_edit::Array::new();
+        arr.push("__any_version");
+        features.insert(&key, toml_edit::value(arr));
     }
+
+    // Internal marker — every `nifi-x-y-z` feature depends on this so
+    // `crates/nifi-rust-client/src/lib.rs` can `compile_error!` when no
+    // version feature is enabled, without enumerating the versions.
+    features.insert("__any_version", toml_edit::value(toml_edit::Array::new()));
 
     if let Some(latest) = versions.last() {
         let mut arr = toml_edit::Array::new();
@@ -116,14 +121,19 @@ mod tests {
         let result = patch_client_cargo_features(toml, &["2.8.0"]);
         assert!(result.contains("[features]"));
         assert!(result.contains("default = [\"nifi-2-8-0\"]"));
-        assert!(result.contains("nifi-2-8-0 = []"));
+        assert!(result.contains(r#"nifi-2-8-0 = ["__any_version"]"#));
+        assert!(result.contains("__any_version = []"));
     }
 
     #[test]
     fn test_patch_client_cargo_features_idempotent() {
-        let toml = "[package]\nname = \"nifi-rust-client\"\n\n[features]\ndefault = [\"nifi-2-8-0\"]\nnifi-2-8-0 = []\n";
+        let toml = "[package]\nname = \"nifi-rust-client\"\n\n[features]\ndefault = [\"nifi-2-8-0\"]\nnifi-2-8-0 = [\"__any_version\"]\n__any_version = []\n";
         let result = patch_client_cargo_features(toml, &["2.8.0"]);
-        assert_eq!(result.matches("nifi-2-8-0 = []").count(), 1);
+        assert_eq!(
+            result.matches(r#"nifi-2-8-0 = ["__any_version"]"#).count(),
+            1
+        );
+        assert_eq!(result.matches("__any_version = []").count(), 1);
     }
 
     #[test]
@@ -131,8 +141,9 @@ mod tests {
         let toml = "[package]\nname = \"nifi-rust-client\"\n\n[features]\ndefault = [\"nifi-2-8-0\"]\nnifi-2-8-0 = []\n";
         let result = patch_client_cargo_features(toml, &["2.8.0", "2.9.0"]);
         assert!(result.contains("default = [\"nifi-2-9-0\"]"));
-        assert!(result.contains("nifi-2-8-0 = []"));
-        assert!(result.contains("nifi-2-9-0 = []"));
+        assert!(result.contains(r#"nifi-2-8-0 = ["__any_version"]"#));
+        assert!(result.contains(r#"nifi-2-9-0 = ["__any_version"]"#));
+        assert!(result.contains("__any_version = []"));
     }
 
     #[test]
@@ -140,6 +151,7 @@ mod tests {
         let toml = "[package]\nname = \"nifi-rust-client\"\n";
         let result = patch_client_cargo_features(toml, &["2.7.2", "2.8.0"]);
         assert!(result.contains("dynamic = [\"nifi-2-7-2\", \"nifi-2-8-0\"]"));
+        assert!(result.contains("__any_version = []"));
     }
 
     #[test]
@@ -147,11 +159,12 @@ mod tests {
         let toml = "[package]\nname = \"nifi-rust-client\"\n\n[features]\ndefault = [\"nifi-2-8-0\"]\nnifi-2-7-2 = []\nnifi-2-8-0 = []\ndynamic = [\"nifi-2-7-2\", \"nifi-2-8-0\"]\n";
         let result = patch_client_cargo_features(toml, &["2.7.2", "2.8.0", "2.9.0"]);
         assert!(result.contains("default = [\"nifi-2-9-0\"]"));
-        assert!(result.contains("nifi-2-9-0 = []"));
+        assert!(result.contains(r#"nifi-2-9-0 = ["__any_version"]"#));
         // dynamic should include all three versions
         assert!(result.contains("nifi-2-7-2"));
         assert!(result.contains("nifi-2-8-0"));
         assert!(result.contains("nifi-2-9-0"));
+        assert!(result.contains("__any_version = []"));
     }
 
     #[test]

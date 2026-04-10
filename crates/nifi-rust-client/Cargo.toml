@@ -38,6 +38,10 @@ workspace = true
 [features]
 default = ["nifi-2-8-0"]
 dynamic = ["nifi-2-6-0", "nifi-2-7-2", "nifi-2-8-0"]
-nifi-2-6-0 = []
-nifi-2-7-2 = []
-nifi-2-8-0 = []
+nifi-2-6-0 = ["__any_version"]
+nifi-2-7-2 = ["__any_version"]
+nifi-2-8-0 = ["__any_version"]
+# Internal marker — every `nifi-x-y-z` feature depends on this so lib.rs
+# can compile_error! when no version feature is enabled without having
+# to enumerate them. Do not enable `__any_version` directly.
+__any_version = []
