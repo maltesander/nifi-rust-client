@@ -72,7 +72,10 @@ async fn latest_picks_highest() {
     mock_about(&mock, "2.5.0").await;
     let client = build_dynamic(&mock.uri(), VersionResolutionStrategy::Latest);
     let version = client.detect_version().await.unwrap();
-    assert_eq!(version.to_string(), "2.9.0");
+    assert_eq!(
+        version.to_string(),
+        nifi_rust_client::dynamic::LATEST_NIFI_VERSION
+    );
 }
 
 #[tokio::test]

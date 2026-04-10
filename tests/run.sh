@@ -7,7 +7,9 @@ CERTS_DIR="$SCRIPT_DIR/scripts/certs"
 NIFI_URL="${NIFI_URL:-https://localhost:8443}"
 NIFI_USERNAME="${NIFI_USERNAME:-admin}"
 NIFI_PASSWORD="${NIFI_PASSWORD:-adminpassword123}"
-NIFI_VERSION="2.8.0"
+# Default version is read from the docker-compose.yml default tag, which is kept
+# in sync by `cargo run -p nifi-openapi-gen`. Override with --nifi-version=x.y.z.
+NIFI_VERSION="${NIFI_VERSION:-$(grep -oP '(?<=NIFI_IMAGE_TAG:-)[0-9.]+(?=\})' "$COMPOSE_FILE")}"
 SKIP_CLEANUP=false
 
 for arg in "$@"; do
