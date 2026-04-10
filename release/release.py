@@ -570,8 +570,12 @@ def run_checks(dry_run, skip_integration):
         ("cargo test -p nifi-integration-tests", "Tests (integration compile)"),
         ("cargo clippy --workspace --all-targets --all-features --exclude nifi-integration-tests -- -D warnings", "Clippy (all features)"),
         ("pre-commit run --all-files", "Pre-commit"),
+        # nifi-openapi-gen has no chicken-and-egg problem — check it here.
+        # nifi-rust-client is NOT re-checked post-lockfile: after the version bump its
+        # build-dep requires nifi-openapi-gen = "^<new>" which isn't on crates.io yet,
+        # so cargo package would always fail. Its pre-update check (step 2) covers it,
+        # and cargo build/test above catch any runtime-dep regressions from the new lockfile.
         ("cargo package -p nifi-openapi-gen --allow-dirty", "Package validation (nifi-openapi-gen, post-lockfile)"),
-        ("cargo package -p nifi-rust-client --allow-dirty", "Package validation (nifi-rust-client, post-lockfile)"),
     ]
 
     if skip_integration:
