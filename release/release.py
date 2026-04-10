@@ -1,37 +1,39 @@
 #!/usr/bin/env python3
-"""Release automation script for nifi-rust-client.
+"""Release automation for nifi-openapi-gen and nifi-rust-client.
 
-Automates version bumping, changelog generation, preflight checks,
-tagging, and pushing for the nifi-rust-client crate.
+Each crate is released independently with prefixed git tags:
+  - gen-vX.Y.Z    for nifi-openapi-gen
+  - client-vX.Y.Z for nifi-rust-client
 
 Usage:
-    release.py <bump> [--dry-run] [--skip-integration] [--tag-message MSG]
+    release.py gen <bump>     [--dry-run] [--tag-message MSG]
+    release.py client <bump>  [--dry-run] [--skip-integration] [--tag-message MSG]
 
     bump: major | minor | patch
+
+See AGENTS.md → "Releases" for the full workflow.
 """
 
 import argparse
+import json
 import os
 import re
+import shutil
 import subprocess
 import sys
-import shutil
+import urllib.error
+import urllib.request
+from dataclasses import dataclass, field
 from datetime import date
+from typing import List, Optional
 
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-CARGO_TOML = os.path.join(ROOT, "Cargo.toml")
-CLIENT_CARGO_TOML = os.path.join(ROOT, "crates", "nifi-rust-client", "Cargo.toml")
-README = os.path.join(ROOT, "README.md")
-NIFI_RUST_CLIENT_README = os.path.join(ROOT, "crates", "nifi-rust-client", "README.md")
-CHANGELOG = os.path.join(ROOT, "CHANGELOG.md")
-
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
+REPO_URL = "https://github.com/maltesander/nifi-rust-client"
+CLIENT_BUILD_DEP_CARGO_TOML = os.path.join(ROOT, "crates", "nifi-rust-client", "Cargo.toml")
 
 BINARY_EXTENSIONS = {
     ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".ico", ".svg",
@@ -40,20 +42,91 @@ BINARY_EXTENSIONS = {
     ".woff", ".woff2", ".ttf", ".eot",
 }
 
-EXCLUDE_DIRS = {
-    "target", ".git", ".worktrees",
-    os.path.join("docs", "superpowers", "specs"),
-    os.path.join("docs", "superpowers", "plans"),
+# Scopes that are purely internal — never shown to users.
+_EXCLUDED_SCOPES = {"ci", "release", "rustfmt", "rust-analyzer"}
+
+# Message substrings/patterns that indicate formatting or tooling noise.
+_NOISE_PATTERNS = [
+    re.compile(r'\bfmt\b', re.IGNORECASE),
+    re.compile(r'\bformat(ting)?\b', re.IGNORECASE),
+    re.compile(r'\bclippy\b', re.IGNORECASE),
+    re.compile(r'\brustfmt\b', re.IGNORECASE),
+    re.compile(r'\bregenerate\b', re.IGNORECASE),
+]
+
+COMMIT_TYPE_MAP = {
+    "feat": "Added",
+    "fix": "Fixed",
+    "docs": "Documentation",
+    "refactor": "Changed",
+    "test": "Tests",
+    # "chore" intentionally omitted — housekeeping is not user-facing
 }
 
-EXCLUDE_FILES = {
-    "Cargo.lock",
-    "CHANGELOG.md",
-    os.path.join("release", "release.py"),
-    "Cargo.toml",
-    "README.md",
-    os.path.join("crates", "nifi-rust-client", "README.md"),
+CATEGORY_ORDER = ["Breaking Changes", "Added", "Changed", "Fixed", "Documentation", "Tests"]
+
+# ---------------------------------------------------------------------------
+# Crate configuration
+# ---------------------------------------------------------------------------
+
+
+@dataclass
+class CrateConfig:
+    """Per-crate release configuration."""
+
+    id: str                             # "gen" or "client"
+    name: str                           # crate name, e.g. "nifi-openapi-gen"
+    cargo_toml: str                     # absolute path to Cargo.toml
+    changelog: str                      # absolute path to CHANGELOG.md
+    tag_prefix: str                     # "gen" or "client"
+    commit_paths: List[str]             # paths passed to `git log -- ...` for changelog scoping
+    stage_files: List[str]              # repo-relative files staged in the release commit
+    readme_shorthand_paths: List[str]   # READMEs with version shorthands to bump on minor/major
+    validate_build_dep: bool            # client only: ensure nifi-openapi-gen build-dep is published
+
+
+CRATES = {
+    "gen": CrateConfig(
+        id="gen",
+        name="nifi-openapi-gen",
+        cargo_toml=os.path.join(ROOT, "crates", "nifi-openapi-gen", "Cargo.toml"),
+        changelog=os.path.join(ROOT, "crates", "nifi-openapi-gen", "CHANGELOG.md"),
+        tag_prefix="gen",
+        commit_paths=["crates/nifi-openapi-gen/"],
+        stage_files=[
+            "crates/nifi-openapi-gen/Cargo.toml",
+            "crates/nifi-openapi-gen/CHANGELOG.md",
+            "Cargo.lock",
+        ],
+        readme_shorthand_paths=[],
+        validate_build_dep=False,
+    ),
+    "client": CrateConfig(
+        id="client",
+        name="nifi-rust-client",
+        cargo_toml=os.path.join(ROOT, "crates", "nifi-rust-client", "Cargo.toml"),
+        changelog=os.path.join(ROOT, "crates", "nifi-rust-client", "CHANGELOG.md"),
+        tag_prefix="client",
+        commit_paths=["crates/nifi-rust-client/", "tests/"],
+        stage_files=[
+            "crates/nifi-rust-client/Cargo.toml",
+            "crates/nifi-rust-client/CHANGELOG.md",
+            "crates/nifi-rust-client/README.md",
+            "README.md",
+            "Cargo.lock",
+        ],
+        readme_shorthand_paths=[
+            os.path.join(ROOT, "README.md"),
+            os.path.join(ROOT, "crates", "nifi-rust-client", "README.md"),
+        ],
+        validate_build_dep=True,
+    ),
 }
+
+
+# ---------------------------------------------------------------------------
+# Shell helpers
+# ---------------------------------------------------------------------------
 
 
 def run(cmd, capture=True, check=True):
@@ -67,15 +140,25 @@ def run(cmd, capture=True, check=True):
     return result.stdout.strip() if result.stdout else ""
 
 
+def _rollback_hint(crate: CrateConfig) -> str:
+    staged = " ".join(crate.stage_files)
+    return f"To rollback file changes: git checkout -- {staged}"
+
+
 # ---------------------------------------------------------------------------
-# Task 1: CLI parsing and preflight checks
+# CLI parsing
 # ---------------------------------------------------------------------------
 
+
 def parse_args():
-    """Parse command-line arguments."""
     parser = argparse.ArgumentParser(
-        description="Release automation for nifi-rust-client.",
+        description="Release automation for nifi-openapi-gen and nifi-rust-client.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    parser.add_argument(
+        "crate",
+        choices=sorted(CRATES.keys()),
+        help="Which crate to release",
     )
     parser.add_argument(
         "bump",
@@ -90,7 +173,7 @@ def parse_args():
     parser.add_argument(
         "--skip-integration",
         action="store_true",
-        help="Skip integration tests",
+        help="Skip integration tests (client release only)",
     )
     parser.add_argument(
         "--tag-message",
@@ -103,30 +186,31 @@ def parse_args():
     return args
 
 
+# ---------------------------------------------------------------------------
+# Preflight
+# ---------------------------------------------------------------------------
+
+
 def preflight_checks(new_tag):
-    """Run preflight checks: clean tree, main branch, tag absent, tools present."""
-    # Clean working tree
+    """Clean tree, on main branch, tag absent, tools present."""
     status = run("git status --porcelain")
     if status:
         print("  ABORT: Working tree is not clean. Commit or stash changes first.")
         sys.exit(1)
     print("      Working tree: clean")
 
-    # On main branch
     branch = run("git branch --show-current")
     if branch != "main":
         print(f"  ABORT: Must be on 'main' branch, currently on '{branch}'.")
         sys.exit(1)
     print("      Branch: main")
 
-    # Tag does not already exist
     existing_tags = run("git tag -l").splitlines()
     if new_tag in existing_tags:
         print(f"  ABORT: Tag '{new_tag}' already exists.")
         sys.exit(1)
     print(f"      Tag {new_tag}: does not exist")
 
-    # Required tools
     for tool in ("cargo", "git", "pre-commit"):
         if shutil.which(tool) is None:
             print(f"  ABORT: Required tool '{tool}' not found in PATH.")
@@ -134,24 +218,25 @@ def preflight_checks(new_tag):
 
 
 # ---------------------------------------------------------------------------
-# Task 2: Version reading, bumping, and file updates
+# Version read / bump / Cargo.toml update
 # ---------------------------------------------------------------------------
 
-def read_current_version():
-    """Read the current workspace version from Cargo.toml."""
-    with open(CARGO_TOML, "r") as f:
+
+_VERSION_RE = re.compile(r'^version\s*=\s*"(\d+\.\d+\.\d+)"', re.MULTILINE)
+
+
+def read_current_version(cargo_toml):
+    with open(cargo_toml, "r") as f:
         content = f.read()
-    match = re.search(r'^version\s*=\s*"(\d+\.\d+\.\d+)"', content, re.MULTILINE)
+    match = _VERSION_RE.search(content)
     if not match:
-        print("ERROR: Could not find version in Cargo.toml", file=sys.stderr)
+        print(f"ERROR: Could not find version in {cargo_toml}", file=sys.stderr)
         sys.exit(1)
     return match.group(1)
 
 
 def bump_version(version_str, bump_type):
-    """Bump a version string according to bump_type (major/minor/patch)."""
-    parts = version_str.split(".")
-    major, minor, patch = int(parts[0]), int(parts[1]), int(parts[2])
+    major, minor, patch = (int(p) for p in version_str.split("."))
     if bump_type == "major":
         major += 1
         minor = 0
@@ -164,55 +249,29 @@ def bump_version(version_str, bump_type):
     return f"{major}.{minor}.{patch}"
 
 
-def update_cargo_toml(old_version, new_version, dry_run):
-    """Replace first occurrence of version = "old" with version = "new" in Cargo.toml."""
-    with open(CARGO_TOML, "r") as f:
+def update_crate_cargo_toml(cargo_toml, old_version, new_version, dry_run):
+    with open(cargo_toml, "r") as f:
         content = f.read()
 
     old_str = f'version = "{old_version}"'
     new_str = f'version = "{new_version}"'
     if old_str not in content:
-        print(f"  WARNING: '{old_str}' not found in Cargo.toml", file=sys.stderr)
+        print(f"  WARNING: '{old_str}' not found in {cargo_toml}", file=sys.stderr)
         return
 
     updated = content.replace(old_str, new_str, 1)
-    print(f"      Cargo.toml: {old_str!r} → {new_str!r}")
+    rel = os.path.relpath(cargo_toml, ROOT)
+    print(f"      {rel}: {old_str!r} → {new_str!r}")
     if not dry_run:
-        with open(CARGO_TOML, "w") as f:
+        with open(cargo_toml, "w") as f:
             f.write(updated)
     else:
         print("      (skipped write — dry-run)")
 
 
-def update_build_dep_version(new_version, bump_type, dry_run):
-    """Update the nifi-openapi-gen version in build-dependencies.
-
-    Kept in lockstep with the workspace version since both crates are released
-    together. The chicken-and-egg problem (new version not on crates.io yet)
-    is avoided by running `cargo package` BEFORE this function — at that point
-    the build-dep still points to the previously-published version.
-    """
-    del bump_type  # Unused — kept for signature stability
-    with open(CLIENT_CARGO_TOML, "r") as f:
-        content = f.read()
-
-    pattern = r'(nifi-openapi-gen\s*=\s*\{[^}]*version\s*=\s*")[^"]*(")'
-    new_content, count = re.subn(pattern, rf'\g<1>{new_version}\2', content)
-    if count:
-        print(f"      crates/nifi-rust-client/Cargo.toml: build-dep version → \"{new_version}\"")
-        if not dry_run:
-            with open(CLIENT_CARGO_TOML, "w") as f:
-                f.write(new_content)
-        else:
-            print("      (skipped write — dry-run)")
-    else:
-        print("      WARNING: nifi-openapi-gen version not found in build-dependencies")
-
-
-def _version_shorthand(version_str):
-    """Return the major.minor shorthand for a version string."""
-    parts = version_str.split(".")
-    return f"{parts[0]}.{parts[1]}"
+# ---------------------------------------------------------------------------
+# README version shorthand update (client only)
+# ---------------------------------------------------------------------------
 
 
 FEATURE_EXAMPLE_TAGS = [
@@ -221,8 +280,12 @@ FEATURE_EXAMPLE_TAGS = [
 ]
 
 
+def _version_shorthand(version_str):
+    parts = version_str.split(".")
+    return f"{parts[0]}.{parts[1]}"
+
+
 def _update_readme_tagged_blocks(path, old_short, new_short):
-    """Replace version shorthand inside tagged blocks in a README file. Returns change count."""
     with open(path, "r") as f:
         content = f.read()
 
@@ -232,17 +295,16 @@ def _update_readme_tagged_blocks(path, old_short, new_short):
             r'(' + re.escape(start_tag) + r'.*?' + re.escape(end_tag) + r')',
             re.DOTALL,
         )
+
         def replace_in_block(m):
             nonlocal changes
             block = m.group(1)
-            # bare string form: nifi-rust-client = "0.3"
             new_block, n = re.subn(
                 r'(nifi-rust-client\s*=\s*")' + re.escape(old_short) + r'"',
                 r'\g<1>' + new_short + '"',
                 block,
             )
             changes += n
-            # inline-table form: version = "0.3"
             new_block, n = re.subn(
                 r'(version\s*=\s*")' + re.escape(old_short) + r'"',
                 r'\g<1>' + new_short + '"',
@@ -250,6 +312,7 @@ def _update_readme_tagged_blocks(path, old_short, new_short):
             )
             changes += n
             return new_block
+
         content = pattern.sub(replace_in_block, content)
 
     if changes:
@@ -258,69 +321,89 @@ def _update_readme_tagged_blocks(path, old_short, new_short):
     return changes
 
 
-def update_readmes(old_version, new_version, bump_type, dry_run):
-    """Update version shorthands inside tagged blocks in both README files."""
+def update_readmes(crate: CrateConfig, old_version, new_version, bump_type, dry_run):
+    if not crate.readme_shorthand_paths:
+        return
     if bump_type == "patch":
-        print("      README files: skipped (patch bump)")
+        print("      README shorthands: skipped (patch bump)")
         return
 
     old_short = _version_shorthand(old_version)
     new_short = _version_shorthand(new_version)
 
-    for label, path in [("README.md", README), ("crates/nifi-rust-client/README.md", NIFI_RUST_CLIENT_README)]:
+    for path in crate.readme_shorthand_paths:
+        rel = os.path.relpath(path, ROOT)
         if dry_run:
-            print(f"      {label}: would replace '{old_short}' → '{new_short}' (skipped — dry-run)")
+            print(f"      {rel}: would replace '{old_short}' → '{new_short}' (dry-run)")
             continue
         changes = _update_readme_tagged_blocks(path, old_short, new_short)
         if changes:
-            print(f"      {label}: replaced {changes} occurrence(s) of '{old_short}' → '{new_short}'")
+            print(f"      {rel}: replaced {changes} occurrence(s) of '{old_short}' → '{new_short}'")
         else:
-            print(f"      {label}: no occurrences of '{old_short}' found in tagged blocks")
+            print(f"      {rel}: no occurrences of '{old_short}' found in tagged blocks")
 
 
 # ---------------------------------------------------------------------------
-# Task 3: Post-update stale version scan
+# Stale version scan — scoped to the crate's owned files
 # ---------------------------------------------------------------------------
 
-def scan_stale_version(old_version, dry_run):
-    """Walk the repo and warn/abort if old_version still appears in source files."""
+
+def scan_stale_version(crate: CrateConfig, old_version, dry_run):
+    """Walk the crate's owned files and warn/abort if old_version still appears.
+
+    Skips the files that were just updated (Cargo.toml, CHANGELOG.md, stage_files).
+    Bounded to the crate's commit_paths plus staged READMEs so a gen release
+    does not complain about a stale 0.5.0 in nifi-rust-client/Cargo.toml's
+    build-dep (which is supposed to stay pinned).
+    """
+    updated = set(crate.stage_files) | {
+        os.path.relpath(crate.cargo_toml, ROOT),
+        os.path.relpath(crate.changelog, ROOT),
+    }
+    for p in crate.readme_shorthand_paths:
+        updated.add(os.path.relpath(p, ROOT))
+
+    scan_roots = []
+    for p in crate.commit_paths:
+        abs_p = os.path.join(ROOT, p)
+        if os.path.isdir(abs_p):
+            scan_roots.append(abs_p)
+    # Also scan the READMEs (root README for client, etc.) even if they aren't
+    # inside the crate dir.
+    extras = [os.path.join(ROOT, s) for s in crate.stage_files]
+
     found_any = False
-    for dirpath, dirnames, filenames in os.walk(ROOT):
-        # Prune excluded directories (modify in-place for os.walk efficiency)
-        rel_dir = os.path.relpath(dirpath, ROOT)
-        dirnames[:] = [
-            d for d in dirnames
-            if os.path.join(rel_dir, d) not in EXCLUDE_DIRS
-            and d not in {".git", "target"}
-        ]
 
-        for filename in filenames:
-            filepath = os.path.join(dirpath, filename)
-            rel_path = os.path.relpath(filepath, ROOT)
+    def scan_file(filepath):
+        nonlocal found_any
+        rel_path = os.path.relpath(filepath, ROOT)
+        if rel_path in updated:
+            return
+        _, ext = os.path.splitext(filepath)
+        if ext.lower() in BINARY_EXTENSIONS:
+            return
+        try:
+            with open(filepath, "r", encoding="utf-8", errors="ignore") as f:
+                for lineno, line in enumerate(f, start=1):
+                    if old_version in line:
+                        found_any = True
+                        print(f"      {rel_path}:{lineno}: {line.rstrip()}")
+        except OSError:
+            pass
 
-            # Skip excluded files
-            if rel_path in EXCLUDE_FILES or filename in EXCLUDE_FILES:
-                continue
+    for scan_root in scan_roots:
+        for dirpath, dirnames, filenames in os.walk(scan_root):
+            dirnames[:] = [d for d in dirnames if d not in {".git", "target"}]
+            for filename in filenames:
+                scan_file(os.path.join(dirpath, filename))
 
-            # Skip binary extensions
-            _, ext = os.path.splitext(filename)
-            if ext.lower() in BINARY_EXTENSIONS:
-                continue
-
-            # Scan line by line
-            try:
-                with open(filepath, "r", encoding="utf-8", errors="ignore") as f:
-                    for lineno, line in enumerate(f, start=1):
-                        if old_version in line:
-                            if not found_any:
-                                found_any = True
-                            print(f"      {rel_path}:{lineno}: {line.rstrip()}")
-            except OSError:
-                pass
+    for extra in extras:
+        if os.path.isfile(extra):
+            scan_file(extra)
 
     if found_any:
         if dry_run:
-            print(f"      WARNING: stale version references found (dry-run, continuing)")
+            print("      WARNING: stale version references found (dry-run, continuing)")
         else:
             print(
                 f"ERROR: Stale version '{old_version}' found in source files above. "
@@ -329,15 +412,15 @@ def scan_stale_version(old_version, dry_run):
             )
             sys.exit(1)
     else:
-        print(f"      No stale references found.")
+        print("      No stale references found.")
 
 
 # ---------------------------------------------------------------------------
-# Task 4: Cargo.lock update
+# Cargo.lock update
 # ---------------------------------------------------------------------------
+
 
 def update_lockfile(dry_run):
-    """Regenerate Cargo.lock after version bump."""
     if dry_run:
         print("      Skipped (dry-run)")
         return
@@ -345,51 +428,41 @@ def update_lockfile(dry_run):
 
 
 # ---------------------------------------------------------------------------
-# Task 5: Changelog generation with $EDITOR
+# Changelog generation (per crate, path-scoped)
 # ---------------------------------------------------------------------------
 
-COMMIT_TYPE_MAP = {
-    "feat": "Added",
-    "fix": "Fixed",
-    "docs": "Documentation",
-    "refactor": "Changed",
-    "test": "Tests",
-    # "chore" intentionally omitted — housekeeping is not user-facing
-}
 
-CATEGORY_ORDER = ["Breaking Changes", "Added", "Changed", "Fixed", "Documentation", "Tests"]
+def _resolve_git_range(crate: CrateConfig, old_version) -> str:
+    """Pick the best git range for changelog generation.
 
-REPO_URL = "https://github.com/maltesander/nifi-rust-client"
-
-# Scopes that are purely internal — never shown to users.
-_EXCLUDED_SCOPES = {"ci", "release", "rustfmt", "rust-analyzer"}
-
-# Message substrings/patterns that indicate formatting or tooling noise.
-_NOISE_PATTERNS = [
-    re.compile(r'\bfmt\b', re.IGNORECASE),
-    re.compile(r'\bformat(ting)?\b', re.IGNORECASE),
-    re.compile(r'\bclippy\b', re.IGNORECASE),
-    re.compile(r'\brustfmt\b', re.IGNORECASE),
-    re.compile(r'\bregenerate\b', re.IGNORECASE),
-]
+    Prefer the prefixed tag ({crate}-v{old}). Fall back to the legacy v{old}
+    tag for the first release under the new scheme.
+    """
+    prefixed = f"{crate.tag_prefix}-v{old_version}"
+    legacy = f"v{old_version}"
+    existing = set(run("git tag -l").splitlines())
+    if prefixed in existing:
+        return f"{prefixed}..HEAD"
+    if legacy in existing:
+        return f"{legacy}..HEAD"
+    # First release ever: log everything.
+    return "HEAD"
 
 
 def _is_noise(message):
     return any(p.search(message) for p in _NOISE_PATTERNS)
 
 
-def parse_conventional_commits(old_version):
-    """Parse git log since old_version tag and group commits by category.
+def parse_conventional_commits(crate: CrateConfig, old_version):
+    """Parse git log for commits that touched the crate's files, grouped by category.
 
-    Filters out:
-    - Commits with excluded scopes (ci, release, rustfmt, rust-analyzer)
-    - chore commits (internal housekeeping)
-    - Messages matching noise patterns (fmt, formatting, clippy, rustfmt, regenerate)
-    - Release commits themselves (chore: release ...)
-
-    Breaking changes (type! or type(scope)!) go into a dedicated top section.
+    Path-scoped via `git log ... -- <commit_paths>`. Commits touching multiple
+    crates naturally appear in both crates' changelogs.
     """
-    log = run(f"git log v{old_version}..HEAD --format='%h %s'")
+    git_range = _resolve_git_range(crate, old_version)
+    paths_arg = " ".join(f'"{p}"' for p in crate.commit_paths)
+    log = run(f"git log {git_range} --format='%h %s' -- {paths_arg}")
+
     categories = {}
     for line in log.splitlines():
         line = line.strip()
@@ -401,7 +474,6 @@ def parse_conventional_commits(old_version):
         short_hash = parts[0]
         subject = parts[1]
 
-        # Parse: type[(scope)][!]: message
         match = re.match(r'^(\w+)(?:\(([^)]*)\))?(!)?\s*:\s*(.+)$', subject)
         if match:
             commit_type = match.group(1)
@@ -414,15 +486,10 @@ def parse_conventional_commits(old_version):
             is_breaking = False
             message = subject
 
-        # Drop excluded scopes
         if scope in _EXCLUDED_SCOPES:
             continue
-
-        # Drop chore commits (housekeeping, release bookkeeping)
         if commit_type == "chore":
             continue
-
-        # Drop noise by message content
         if _is_noise(message):
             continue
 
@@ -435,15 +502,29 @@ def parse_conventional_commits(old_version):
         else:
             category = COMMIT_TYPE_MAP.get(commit_type, None)
             if category is None:
-                continue  # unknown types are dropped rather than shown as noise
+                continue
             categories.setdefault(category, []).append(entry)
 
     return categories
 
 
-def update_changelog(old_version, new_version, dry_run):
-    """Generate and insert a changelog section for new_version."""
-    categories = parse_conventional_commits(old_version)
+def _compare_link_old_ref(crate: CrateConfig, old_version) -> str:
+    """Pick the ref name for the previous version's comparison link.
+
+    Fall back to the legacy 'v{old}' tag when the prefixed one doesn't exist yet.
+    """
+    prefixed = f"{crate.tag_prefix}-v{old_version}"
+    legacy = f"v{old_version}"
+    existing = set(run("git tag -l").splitlines())
+    if prefixed in existing:
+        return prefixed
+    if legacy in existing:
+        return legacy
+    return prefixed  # will exist after the very first release
+
+
+def update_changelog(crate: CrateConfig, old_version, new_version, dry_run):
+    categories = parse_conventional_commits(crate, old_version)
 
     today = date.today().isoformat()
     lines = [f"## [{new_version}] - {today}"]
@@ -462,61 +543,125 @@ def update_changelog(old_version, new_version, dry_run):
             print(f"      {line}")
         return
 
-    with open(CHANGELOG, "r") as f:
+    with open(crate.changelog, "r") as f:
         content = f.read()
 
-    # Insert new section after ## [Unreleased] marker
     unreleased_marker = "## [Unreleased]\n"
     if unreleased_marker in content:
         insert_pos = content.index(unreleased_marker) + len(unreleased_marker)
-        # Strip any blank lines between [Unreleased] and the next section
         rest = content[insert_pos:].lstrip("\n")
         content = content[:insert_pos] + "\n" + section + "\n\n" + rest
     else:
-        print("      WARNING: '## [Unreleased]' marker not found in CHANGELOG.md; prepending section")
+        print("      WARNING: '## [Unreleased]' marker not found; prepending section")
         content = section + "\n\n" + content
 
-    # Update [Unreleased] comparison link
+    # Update [Unreleased] comparison link to point at the new prefixed tag.
+    # The old link may use either `v{old}...HEAD` (pre-split) or
+    # `{prefix}-v{old}...HEAD` (post-split). Match both.
+    new_tag = f"{crate.tag_prefix}-v{new_version}"
     content = re.sub(
-        r'\[Unreleased\]:\s*' + re.escape(REPO_URL) + r'/compare/v[^.]+\.[^.]+\.[^.]+\.\.\.HEAD',
-        f'[Unreleased]: {REPO_URL}/compare/v{new_version}...HEAD',
+        r'\[Unreleased\]:\s*' + re.escape(REPO_URL) + r'/compare/[^\s]+\.\.\.HEAD',
+        f'[Unreleased]: {REPO_URL}/compare/{new_tag}...HEAD',
         content,
     )
 
-    # Add new version comparison link before the old version link
-    old_version_link = f'[{old_version}]: {REPO_URL}/compare/'
-    new_version_link = f'[{new_version}]: {REPO_URL}/compare/v{old_version}...v{new_version}\n'
-    if old_version_link in content:
-        insert_idx = content.index(old_version_link)
+    # Insert new comparison link for this version.
+    old_ref = _compare_link_old_ref(crate, old_version)
+    old_version_link_marker = f'[{old_version}]: {REPO_URL}/compare/'
+    new_version_link = f'[{new_version}]: {REPO_URL}/compare/{old_ref}...{new_tag}\n'
+    if old_version_link_marker in content:
+        insert_idx = content.index(old_version_link_marker)
         content = content[:insert_idx] + new_version_link + content[insert_idx:]
     else:
         content += f"\n{new_version_link}"
 
-    with open(CHANGELOG, "w") as f:
+    with open(crate.changelog, "w") as f:
         f.write(content)
 
-    # Open editor for review
     editor = os.environ.get("EDITOR") or shutil.which("vi") or shutil.which("nano")
     if editor:
         print(f"      Opening {editor} for review...")
-        subprocess.run([editor, CHANGELOG])
-        # Verify the section is still present after editing
-        with open(CHANGELOG, "r") as f:
+        subprocess.run([editor, crate.changelog])
+        with open(crate.changelog, "r") as f:
             updated = f.read()
         if f"## [{new_version}]" not in updated:
-            print(f"  ABORT: Version section [{new_version}] was removed from CHANGELOG.md")
+            print(f"  ABORT: Version section [{new_version}] was removed from {os.path.relpath(crate.changelog, ROOT)}")
             sys.exit(1)
     else:
-        print("      WARNING: No editor found ($EDITOR, vi, nano). Review CHANGELOG.md manually.")
+        print(f"      WARNING: No editor found ($EDITOR, vi, nano). Review {os.path.relpath(crate.changelog, ROOT)} manually.")
     print("      Changelog updated.")
 
 
 # ---------------------------------------------------------------------------
-# Task 6: Run checks
+# Build-dep validation (client only)
 # ---------------------------------------------------------------------------
 
-def _run_cmd_list(checks):
-    """Run a list of (cmd, label) checks. Aborts on first failure."""
+
+_BUILD_DEP_RE = re.compile(
+    r'nifi-openapi-gen\s*=\s*\{[^}]*version\s*=\s*"(\d+\.\d+\.\d+)"'
+)
+
+
+def read_client_build_dep_version() -> str:
+    with open(CLIENT_BUILD_DEP_CARGO_TOML, "r") as f:
+        content = f.read()
+    match = _BUILD_DEP_RE.search(content)
+    if not match:
+        print(
+            "ERROR: could not find nifi-openapi-gen build-dep version in "
+            f"{CLIENT_BUILD_DEP_CARGO_TOML}",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    return match.group(1)
+
+
+def _is_version_on_crates_io(crate_name: str, version: str) -> bool:
+    """Return True if crate@version exists on crates.io."""
+    url = f"https://crates.io/api/v1/crates/{crate_name}/{version}"
+    req = urllib.request.Request(url, headers={"User-Agent": "nifi-rust-client-release-py"})
+    try:
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+            return bool(data.get("version"))
+    except urllib.error.HTTPError as e:
+        if e.code == 404:
+            return False
+        raise
+    except urllib.error.URLError as e:
+        print(
+            f"      WARNING: could not reach crates.io ({e}). Skipping build-dep check.",
+            file=sys.stderr,
+        )
+        return True  # fail open — don't block a release because crates.io is down
+
+
+def validate_client_build_dep(dry_run):
+    """Ensure the nifi-openapi-gen version pinned in client's build-deps is published."""
+    version = read_client_build_dep_version()
+    print(f"      nifi-openapi-gen build-dep version: {version}")
+    if dry_run:
+        print("      Skipped crates.io lookup (dry-run)")
+        return
+    if _is_version_on_crates_io("nifi-openapi-gen", version):
+        print(f"      crates.io: nifi-openapi-gen@{version} is published ✓")
+        return
+    print(
+        f"ERROR: nifi-rust-client declares nifi-openapi-gen = \"{version}\" in its "
+        f"build-dependencies, but that version is not published on crates.io.\n"
+        f"       Run `release.py gen <bump>` first to release nifi-openapi-gen, or "
+        f"edit crates/nifi-rust-client/Cargo.toml to pin a published version.",
+        file=sys.stderr,
+    )
+    sys.exit(1)
+
+
+# ---------------------------------------------------------------------------
+# Pre-update and release checks
+# ---------------------------------------------------------------------------
+
+
+def _run_cmd_list(checks, rollback_hint):
     for cmd, label in checks:
         print(f"      {label}...", end=" ", flush=True)
         result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
@@ -526,32 +671,29 @@ def _run_cmd_list(checks):
             print("FAILED")
             if result.stderr:
                 print(result.stderr, file=sys.stderr)
-            print(
-                f"ERROR: '{label}' check failed. "
-                "To rollback file changes: git checkout -- Cargo.toml crates/nifi-rust-client/Cargo.toml README.md CHANGELOG.md",
-                file=sys.stderr,
-            )
+            print(f"ERROR: '{label}' check failed. {rollback_hint}", file=sys.stderr)
             sys.exit(1)
 
 
-def run_pre_update_checks(dry_run):
+def run_pre_update_checks(crate: CrateConfig, dry_run):
     """Validate packaging BEFORE version bump.
 
-    At this point HEAD matches the last released version, so the build-dep
-    constraint resolves against the currently-published nifi-openapi-gen on
-    crates.io. This catches packaging issues (missing files, bad metadata,
-    broken exclude rules) that only surface during `cargo package`.
+    For the client release, this also requires the declared build-dep version
+    to be published (see validate_client_build_dep called from main before
+    reaching this point).
 
-    On the very first release, nothing is on crates.io yet and this will fail.
-    Skip via environment variable: SKIP_PACKAGE_CHECK=1
+    On the very first release, nothing is on crates.io yet: skip via
+    SKIP_PACKAGE_CHECK=1.
     """
     if os.environ.get("SKIP_PACKAGE_CHECK"):
         print("      Skipped (SKIP_PACKAGE_CHECK set)")
         return
 
     checks = [
-        ("cargo package -p nifi-openapi-gen --allow-dirty", "Package validation (nifi-openapi-gen)"),
-        ("cargo package -p nifi-rust-client --allow-dirty", "Package validation (nifi-rust-client)"),
+        (
+            f"cargo package -p {crate.name} --allow-dirty",
+            f"Package validation ({crate.name})",
+        ),
     ]
 
     if dry_run:
@@ -559,64 +701,85 @@ def run_pre_update_checks(dry_run):
             print(f"      [dry-run] Would run: {cmd}")
         return
 
-    _run_cmd_list(checks)
+    _run_cmd_list(checks, _rollback_hint(crate))
 
 
-def run_checks(dry_run, skip_integration):
-    """Run build, test, clippy, and pre-commit checks."""
-    checks = [
-        ("cargo build --workspace", "Build"),
-        ("cargo test --workspace --all-features --exclude nifi-integration-tests", "Tests (all features)"),
-        ("cargo test -p nifi-integration-tests", "Tests (integration compile)"),
-        ("cargo clippy --workspace --all-targets --all-features --exclude nifi-integration-tests -- -D warnings", "Clippy (all features)"),
-        ("pre-commit run --all-files", "Pre-commit"),
-        # nifi-openapi-gen has no chicken-and-egg problem — check it here.
-        # nifi-rust-client is NOT re-checked post-lockfile: after the version bump its
-        # build-dep requires nifi-openapi-gen = "^<new>" which isn't on crates.io yet,
-        # so cargo package would always fail. Its pre-update check (step 2) covers it,
-        # and cargo build/test above catch any runtime-dep regressions from the new lockfile.
-        ("cargo package -p nifi-openapi-gen --allow-dirty", "Package validation (nifi-openapi-gen, post-lockfile)"),
-    ]
-
-    if skip_integration:
-        print("      Integration tests: skipped (--skip-integration)")
-    else:
-        checks.append(("./tests/run.sh", "Integration tests"))
+def run_checks(crate: CrateConfig, dry_run, skip_integration):
+    """Run build, test, clippy, and pre-commit checks after version bump."""
+    if crate.id == "gen":
+        checks = [
+            ("cargo build -p nifi-openapi-gen", "Build (nifi-openapi-gen)"),
+            ("cargo test -p nifi-openapi-gen", "Tests (nifi-openapi-gen)"),
+            (
+                "cargo clippy -p nifi-openapi-gen --all-targets --all-features -- -D warnings",
+                "Clippy (nifi-openapi-gen)",
+            ),
+            ("pre-commit run --all-files", "Pre-commit"),
+            (
+                f"cargo package -p {crate.name} --allow-dirty",
+                f"Package validation ({crate.name}, post-lockfile)",
+            ),
+        ]
+    else:  # client
+        checks = [
+            ("cargo build --workspace", "Build"),
+            (
+                "cargo test --workspace --all-features --exclude nifi-integration-tests",
+                "Tests (all features)",
+            ),
+            ("cargo test -p nifi-integration-tests", "Tests (integration compile)"),
+            (
+                "cargo clippy --workspace --all-targets --all-features --exclude nifi-integration-tests -- -D warnings",
+                "Clippy (all features)",
+            ),
+            ("pre-commit run --all-files", "Pre-commit"),
+            (
+                f"cargo package -p {crate.name} --allow-dirty",
+                f"Package validation ({crate.name}, post-lockfile)",
+            ),
+        ]
+        if not skip_integration:
+            checks.insert(-1, ("./tests/run.sh", "Integration tests"))
+        else:
+            print("      Integration tests: skipped (--skip-integration)")
 
     if dry_run:
         for cmd, _ in checks:
             print(f"      [dry-run] Would run: {cmd}")
         return
 
-    _run_cmd_list(checks)
+    _run_cmd_list(checks, _rollback_hint(crate))
 
 
 # ---------------------------------------------------------------------------
-# Task 7: Commit, tag, and push
+# Commit, tag, push
 # ---------------------------------------------------------------------------
 
-def commit_release(new_version, dry_run):
-    """Stage release files and create a release commit."""
+
+def commit_release(crate: CrateConfig, new_version, dry_run):
     if dry_run:
         print("      Skipped (dry-run)")
         return
-    run("git add Cargo.toml Cargo.lock crates/nifi-rust-client/Cargo.toml README.md crates/nifi-rust-client/README.md CHANGELOG.md")
-    run(f'git commit -m "chore: release v{new_version}"')
-    print(f"      chore: release v{new_version}")
+    stage_args = " ".join(crate.stage_files)
+    run(f"git add {stage_args}")
+    run(f'git commit -m "chore(release): {crate.name} v{new_version}"')
+    print(f"      chore(release): {crate.name} v{new_version}")
 
 
-def tag_and_push(new_version, tag_message, dry_run):
-    """Create an annotated tag and push commit + tag to origin."""
+def tag_and_push(crate: CrateConfig, new_version, tag_message, dry_run):
+    new_tag = f"{crate.tag_prefix}-v{new_version}"
     if dry_run:
-        print("      Skipped (dry-run)")
+        print(f"      Skipped (dry-run); would create tag {new_tag}")
         return
 
-    run(f'git tag -a "v{new_version}" -m "{tag_message}"')
-    print(f"      Tagged v{new_version}")
+    run(f'git tag -a "{new_tag}" -m "{tag_message}"')
+    print(f"      Tagged {new_tag}")
 
     commit_hash = run("git rev-parse --short HEAD")
 
-    push_result = subprocess.run("git push origin main", shell=True, capture_output=True, text=True)
+    push_result = subprocess.run(
+        "git push origin main", shell=True, capture_output=True, text=True
+    )
     if push_result.returncode != 0:
         print(push_result.stderr, file=sys.stderr)
         print(
@@ -627,71 +790,75 @@ def tag_and_push(new_version, tag_message, dry_run):
         sys.exit(1)
     print("      Pushed to origin/main")
 
-    tag_result = subprocess.run(f"git push origin v{new_version}", shell=True, capture_output=True, text=True)
+    tag_result = subprocess.run(
+        f"git push origin {new_tag}", shell=True, capture_output=True, text=True
+    )
     if tag_result.returncode != 0:
         print(tag_result.stderr, file=sys.stderr)
         print(
             f"ERROR: Commit was pushed but tag was not. "
-            f"To push tag manually: git push origin v{new_version}",
+            f"To push tag manually: git push origin {new_tag}",
             file=sys.stderr,
         )
         sys.exit(1)
-    print(f"      Pushed tag v{new_version}")
+    print(f"      Pushed tag {new_tag}")
 
-    print(f"\nRelease v{new_version} complete. CI will publish to crates.io.")
+    print(f"\nRelease {new_tag} complete. CI will publish to crates.io.")
 
 
 # ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
+
 def main():
     args = parse_args()
+    crate = CRATES[args.crate]
 
-    # Read current version and compute new version before preflight
-    old_version = read_current_version()
+    old_version = read_current_version(crate.cargo_toml)
     new_version = bump_version(old_version, args.bump)
-    new_tag = f"v{new_version}"
+    new_tag = f"{crate.tag_prefix}-v{new_version}"
 
     dry_label = " (dry-run)" if args.dry_run else ""
-    print(f"Release{dry_label}: {old_version} → {new_version}  [{args.bump} bump]")
+    print(f"Release {crate.name}{dry_label}: {old_version} → {new_version}  [{args.bump} bump]")
     print()
 
     print("[1/10] Pre-flight checks...")
     preflight_checks(new_tag)
 
-    # Pre-update: build-dep constraint still matches crates.io at this point.
-    print("[2/10] Pre-update packaging validation...")
-    run_pre_update_checks(args.dry_run)
+    if crate.validate_build_dep:
+        print("[2/10] Validating nifi-openapi-gen build-dep is published...")
+        validate_client_build_dep(args.dry_run)
+    else:
+        print("[2/10] Build-dep validation: skipped (not applicable to this crate)")
 
-    print(f"[3/10] Version: {old_version} → {new_version}")
+    print("[3/10] Pre-update packaging validation...")
+    run_pre_update_checks(crate, args.dry_run)
 
-    print("[4/10] Updating version in files...")
-    update_cargo_toml(old_version, new_version, args.dry_run)
-    update_build_dep_version(new_version, args.bump, args.dry_run)
-    update_readmes(old_version, new_version, args.bump, args.dry_run)
+    print(f"[4/10] Version: {old_version} → {new_version}")
+    update_crate_cargo_toml(crate.cargo_toml, old_version, new_version, args.dry_run)
+    update_readmes(crate, old_version, new_version, args.bump, args.dry_run)
 
     print(f"[5/10] Scanning for stale version '{old_version}'...")
-    scan_stale_version(old_version, args.dry_run)
+    scan_stale_version(crate, old_version, args.dry_run)
 
     print("[6/10] Updating Cargo.lock...")
     update_lockfile(args.dry_run)
 
     print("[7/10] Generating changelog...")
-    update_changelog(old_version, new_version, args.dry_run)
+    update_changelog(crate, old_version, new_version, args.dry_run)
 
     print("[8/10] Running checks...")
-    run_checks(args.dry_run, args.skip_integration)
+    run_checks(crate, args.dry_run, args.skip_integration)
 
     print("[9/10] Committing...")
-    commit_release(new_version, args.dry_run)
+    commit_release(crate, new_version, args.dry_run)
 
     print("[10/10] Tagging and pushing...")
-    tag_and_push(new_version, args.tag_message, args.dry_run)
+    tag_and_push(crate, new_version, args.tag_message, args.dry_run)
 
     if args.dry_run:
-        print(f"\nDry run complete. To release for real:")
-        print(f"  ./release/release.py {args.bump} --tag-message \"<your message>\"")
+        print(f"\nDry-run complete. No changes were made.")
 
 
 if __name__ == "__main__":
