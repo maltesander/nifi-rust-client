@@ -1,8 +1,26 @@
-//! Public API for `build.rs` callers.
+//! Stable public API for `build.rs` callers.
 //!
-//! This module provides [`GenerateConfig`] and [`generate_client`] /
-//! [`generate_integration_tests`] so that downstream `build.rs` scripts can
-//! generate the NiFi client code at build time without invoking the binary.
+//! This module is the **only** part of `nifi-openapi-gen` covered by a
+//! stability guarantee. Downstream `build.rs` scripts should depend on:
+//!
+//! - [`GenerateConfig`] and its constructors ([`GenerateConfig::from_cargo_env`],
+//!   [`GenerateConfig::from_specs_dir`])
+//! - [`generate_client`]
+//! - [`generate_integration_tests`]
+//! - The top-level [`crate::specs_dir`] helper
+//! - The generated file layout written under the caller-supplied `out_dir`:
+//!   - `generated_lib.rs` — the entry point to `include!()` from `lib.rs`
+//!   - `vX_Y_Z/{api,types,traits}/*.rs` — per-version generated modules
+//!   - `dynamic/*` — dispatch layer, present when `config.dynamic` is true
+//!
+//! All other modules in `nifi-openapi-gen` (`parser`, `emit`, `diff`,
+//! `docs`, `repo`, `util`) are implementation details. They remain `pub`
+//! so the generator's own integration tests can reach them, but they are
+//! marked `#[doc(hidden)]` and are **not** covered by semver. Breaking
+//! changes to those modules will not trigger a major version bump.
+//!
+//! The contract above is guaranteed stable within a `0.x` minor-version
+//! range and will be reconsidered for `1.0`.
 
 use std::path::Path;
 
