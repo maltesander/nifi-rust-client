@@ -615,7 +615,11 @@ def update_changelog(crate: CrateConfig, old_version, new_version, dry_run):
         insert_idx = content.index(old_version_link_marker)
         content = content[:insert_idx] + new_version_link + content[insert_idx:]
     else:
-        content += f"\n{new_version_link}"
+        # The section insert above already ends `content` with `\n\n`, so
+        # appending the link without a leading newline leaves exactly one
+        # blank line between the last bullet and the link. markdownlint
+        # MD012 fires on two consecutive blank lines.
+        content += new_version_link
 
     with open(crate.changelog, "w") as f:
         f.write(content)
