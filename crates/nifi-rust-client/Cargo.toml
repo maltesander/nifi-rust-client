@@ -42,3 +42,7 @@ dynamic = ["nifi-2-6-0", "nifi-2-7-2", "nifi-2-8-0"]
 nifi-2-6-0 = []
 nifi-2-7-2 = []
 nifi-2-8-0 = []
+
+[[example]]
+name = "dynamic_autodetect"
+required-features = ["dynamic"]
