@@ -1,4 +1,7 @@
 #![cfg(not(feature = "dynamic"))]
+// ParameterProviders API was added in NiFi 2.7.2 — this entire file is gated
+// so builds against nifi-2-6-0 stay green.
+#![cfg(any(feature = "nifi-2-7-2", feature = "nifi-2-8-0"))]
 use nifi_rust_client::NifiClientBuilder;
 use nifi_rust_client::NifiError;
 use wiremock::matchers::{method, path, query_param};

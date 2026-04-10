@@ -37,7 +37,9 @@ async fn get_reporting_task_returns_name_and_type() {
 }
 
 // ── clear_bulletins ───────────────────────────────────────────────────────────
+// Added in NiFi 2.7.2 — gate so nifi-2-6-0 builds stay green.
 
+#[cfg(any(feature = "nifi-2-7-2", feature = "nifi-2-8-0"))]
 #[tokio::test]
 async fn clear_reporting_task_bulletins_returns_cleared_count() {
     let mock_server = MockServer::start().await;

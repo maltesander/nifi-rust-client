@@ -282,7 +282,9 @@ async fn search_flow_returns_processor_results() {
 }
 
 // ── clear_bulletins (process-group) ──────────────────────────────────────────
+// Added in NiFi 2.7.2 — gate so nifi-2-6-0 builds stay green.
 
+#[cfg(any(feature = "nifi-2-7-2", feature = "nifi-2-8-0"))]
 #[tokio::test]
 async fn clear_process_group_bulletins_returns_cleared_count() {
     let mock_server = MockServer::start().await;
@@ -311,6 +313,12 @@ async fn clear_process_group_bulletins_returns_cleared_count() {
 
 // ── listen-ports ──────────────────────────────────────────────────────────────
 
+// Version-feature-gated test pattern — these tests exercise endpoints that
+// only exist in NiFi 2.7.2+. The `#[cfg]` guard ensures they are compiled
+// out when built against nifi-2-6-0 features, keeping cross-version builds
+// green. Use this pattern for any test that touches endpoints or fields
+// added in a specific version.
+#[cfg(any(feature = "nifi-2-7-2", feature = "nifi-2-8-0"))]
 #[tokio::test]
 async fn get_listen_ports_returns_port_list() {
     let mock_server = MockServer::start().await;
@@ -349,6 +357,7 @@ async fn get_listen_ports_returns_port_list() {
 
 // ── flow-registry-client-definition ──────────────────────────────────────────
 
+#[cfg(any(feature = "nifi-2-7-2", feature = "nifi-2-8-0"))]
 #[tokio::test]
 async fn get_flow_registry_client_definition_returns_artifact_info() {
     let mock_server = MockServer::start().await;
