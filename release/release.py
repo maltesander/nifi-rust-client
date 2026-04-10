@@ -284,8 +284,6 @@ def update_readmes(old_version, new_version, bump_type, dry_run):
 
 def scan_stale_version(old_version, dry_run):
     """Walk the repo and warn/abort if old_version still appears in source files."""
-    print(f"[5/10] Scanning for stale version '{old_version}'...")
-
     found_any = False
     for dirpath, dirnames, filenames in os.walk(ROOT):
         # Prune excluded directories (modify in-place for os.walk efficiency)
@@ -340,7 +338,6 @@ def scan_stale_version(old_version, dry_run):
 
 def update_lockfile(dry_run):
     """Regenerate Cargo.lock after version bump."""
-    print("[6/10] Updating Cargo.lock...")
     if dry_run:
         print("      Skipped (dry-run)")
         return
@@ -446,7 +443,6 @@ def parse_conventional_commits(old_version):
 
 def update_changelog(old_version, new_version, dry_run):
     """Generate and insert a changelog section for new_version."""
-    print("[7/10] Generating changelog...")
     categories = parse_conventional_commits(old_version)
 
     today = date.today().isoformat()
@@ -549,8 +545,6 @@ def run_pre_update_checks(dry_run):
     On the very first release, nothing is on crates.io yet and this will fail.
     Skip via environment variable: SKIP_PACKAGE_CHECK=1
     """
-    print("[7/9] Pre-update packaging validation...")
-
     if os.environ.get("SKIP_PACKAGE_CHECK"):
         print("      Skipped (SKIP_PACKAGE_CHECK set)")
         return
@@ -570,8 +564,6 @@ def run_pre_update_checks(dry_run):
 
 def run_checks(dry_run, skip_integration):
     """Run build, test, clippy, and pre-commit checks."""
-    print("[8/9] Running checks...")
-
     checks = [
         ("cargo build --workspace", "Build"),
         ("cargo test --workspace --all-features --exclude nifi-integration-tests", "Tests (all features)"),
@@ -601,7 +593,6 @@ def run_checks(dry_run, skip_integration):
 
 def commit_release(new_version, dry_run):
     """Stage release files and create a release commit."""
-    print("[8/9] Committing...")
     if dry_run:
         print("      Skipped (dry-run)")
         return
@@ -612,7 +603,6 @@ def commit_release(new_version, dry_run):
 
 def tag_and_push(new_version, tag_message, dry_run):
     """Create an annotated tag and push commit + tag to origin."""
-    print("[9/9] Tagging and pushing...")
     if dry_run:
         print("      Skipped (dry-run)")
         return
@@ -663,39 +653,36 @@ def main():
     print(f"Release{dry_label}: {old_version} → {new_version}  [{args.bump} bump]")
     print()
 
-    # [1/10] Preflight checks
     print("[1/10] Pre-flight checks...")
     preflight_checks(new_tag)
 
-    # [2/10] Pre-update packaging validation (before version bump, so build-dep
-    #        constraint still matches crates.io)
+    # Pre-update: build-dep constraint still matches crates.io at this point.
+    print("[2/10] Pre-update packaging validation...")
     run_pre_update_checks(args.dry_run)
 
-    # [3/10] Version bump summary
     print(f"[3/10] Version: {old_version} → {new_version}")
 
-    # [4/10] Update files
     print("[4/10] Updating version in files...")
     update_cargo_toml(old_version, new_version, args.dry_run)
     update_build_dep_version(new_version, args.bump, args.dry_run)
     update_readmes(old_version, new_version, args.bump, args.dry_run)
 
-    # [5/10] Stale version scan
+    print(f"[5/10] Scanning for stale version '{old_version}'...")
     scan_stale_version(old_version, args.dry_run)
 
-    # [6/10] Update lockfile
+    print("[6/10] Updating Cargo.lock...")
     update_lockfile(args.dry_run)
 
-    # [7/10] Changelog
+    print("[7/10] Generating changelog...")
     update_changelog(old_version, new_version, args.dry_run)
 
-    # [8/10] Run checks
+    print("[8/10] Running checks...")
     run_checks(args.dry_run, args.skip_integration)
 
-    # [9/10] Commit
+    print("[9/10] Committing...")
     commit_release(new_version, args.dry_run)
 
-    # [10/10] Tag and push
+    print("[10/10] Tagging and pushing...")
     tag_and_push(new_version, args.tag_message, args.dry_run)
 
     if args.dry_run:
