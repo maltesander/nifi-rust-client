@@ -22,10 +22,12 @@ use crate::error::{HttpSnafu, InvalidBaseUrlSnafu, InvalidCertificateSnafu};
 /// use url::Url;
 ///
 /// # async fn example() -> Result<(), nifi_rust_client::NifiError> {
+/// let proxy_url = Url::parse("http://proxy.internal:3128")
+///     .expect("hard-coded proxy URL is valid");
 /// let client = NifiClientBuilder::new("https://nifi.example.com:8443")?
 ///     .timeout(Duration::from_secs(60))
 ///     .connect_timeout(Duration::from_secs(10))
-///     .proxy(Url::parse("http://proxy.internal:3128").unwrap())
+///     .proxy(proxy_url)
 ///     .build()?;
 /// # Ok(())
 /// # }
