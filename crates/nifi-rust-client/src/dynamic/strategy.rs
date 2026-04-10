@@ -1,3 +1,4 @@
+#![deny(missing_docs)]
 // Hand-written — not generated. See dynamic/mod.rs for the generated counterpart.
 
 use semver::Version;

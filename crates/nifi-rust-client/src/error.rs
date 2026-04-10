@@ -1,3 +1,4 @@
+#![deny(missing_docs)]
 use snafu::Snafu;
 
 /// All errors that can be returned by the NiFi client.

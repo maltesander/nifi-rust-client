@@ -1,3 +1,4 @@
+#![deny(missing_docs)]
 //! Client configuration: credential providers and retry policy.
 
 pub mod credentials;

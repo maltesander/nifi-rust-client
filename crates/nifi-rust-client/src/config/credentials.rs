@@ -1,3 +1,4 @@
+#![deny(missing_docs)]
 //! Credential providers for NiFi authentication.
 //!
 //! The [`CredentialProvider`] trait abstracts how username/password pairs are

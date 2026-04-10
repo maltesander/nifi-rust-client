@@ -1,3 +1,4 @@
+#![deny(missing_docs)]
 use std::sync::Arc;
 
 use reqwest::Client;

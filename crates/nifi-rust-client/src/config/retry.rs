@@ -1,3 +1,4 @@
+#![deny(missing_docs)]
 //! Retry policy for transient HTTP errors with exponential backoff.
 
 use std::time::Duration;
