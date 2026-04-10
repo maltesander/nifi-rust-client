@@ -3,6 +3,7 @@ name = "nifi-integration-tests"
 version.workspace = true
 description = "Integration tests for nifi-rust-client against a real NiFi instance"
 edition.workspace = true
+rust-version.workspace = true
 license.workspace = true
 authors.workspace = true
 publish = false

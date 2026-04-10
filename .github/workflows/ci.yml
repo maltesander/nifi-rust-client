@@ -68,6 +68,27 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - run: RUSTDOCFLAGS="-D warnings" cargo doc --workspace --all-features --exclude nifi-integration-tests --no-deps
 
+  msrv:
+    name: MSRV check (Rust ${{ matrix.rust }})
+    runs-on: ubuntu-latest
+    env:
+      # Override rust-toolchain.toml (which pins 1.93 for development) so we
+      # actually compile against the declared MSRV.
+      RUSTUP_TOOLCHAIN: ${{ matrix.rust }}
+    strategy:
+      matrix:
+        rust: ["1.85"]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: ${{ matrix.rust }}
+      - uses: Swatinem/rust-cache@v2
+      - name: cargo check (default features)
+        run: cargo check --workspace --exclude nifi-integration-tests
+      - name: cargo check (all features)
+        run: cargo check --workspace --all-features --exclude nifi-integration-tests
+
   deny:
     name: Dependency audit
     runs-on: ubuntu-latest

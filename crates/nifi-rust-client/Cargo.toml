@@ -3,6 +3,7 @@ name = "nifi-rust-client"
 version.workspace = true
 description = "Apache NiFi REST API client library"
 edition.workspace = true
+rust-version.workspace = true
 license.workspace = true
 authors.workspace = true
 repository.workspace = true

@@ -7,6 +7,7 @@ version = "0.4.2"
 authors = ["Malte Sander <contact@maltesander.com>"]
 license = "Apache-2.0"
 edition = "2024"
+rust-version = "1.85"
 repository = "https://github.com/maltesander/nifi-rust-client"
 homepage = "https://github.com/maltesander/nifi-rust-client"
 documentation = "https://docs.rs/nifi-rust-client"
