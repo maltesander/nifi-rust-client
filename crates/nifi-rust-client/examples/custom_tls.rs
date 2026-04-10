@@ -18,6 +18,13 @@ use nifi_rust_client::NifiClientBuilder;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    tracing_subscriber::fmt()
+        .with_env_filter(
+            tracing_subscriber::EnvFilter::try_from_default_env()
+                .unwrap_or_else(|_| "nifi_rust_client=info".into()),
+        )
+        .init();
+
     let url = std::env::var("NIFI_URL").unwrap_or_else(|_| "https://localhost:8443".into());
     let user = std::env::var("NIFI_USERNAME").unwrap_or_else(|_| "admin".into());
     let pass = std::env::var("NIFI_PASSWORD").unwrap_or_else(|_| "adminpassword123".into());
