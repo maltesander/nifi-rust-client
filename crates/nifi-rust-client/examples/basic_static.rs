@@ -13,8 +13,19 @@
 //! cargo run --example basic_static
 //! ```
 
+// This example uses the static-mode API and cannot be run with `--features dynamic`.
+// Compile with: cargo run --example basic_static  (default features)
+#[cfg(feature = "dynamic")]
+fn main() {
+    eprintln!(
+        "basic_static requires a single-version feature, not `dynamic`. Use dynamic_autodetect instead."
+    );
+}
+
+#[cfg(not(feature = "dynamic"))]
 use nifi_rust_client::NifiClientBuilder;
 
+#[cfg(not(feature = "dynamic"))]
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     tracing_subscriber::fmt()

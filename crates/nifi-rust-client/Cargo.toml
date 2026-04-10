@@ -44,5 +44,17 @@ nifi-2-7-2 = []
 nifi-2-8-0 = []
 
 [[example]]
+name = "basic_static"
+required-features = ["nifi-2-8-0"]
+
+[[example]]
+name = "credentials_and_retry"
+required-features = ["nifi-2-8-0"]
+
+[[example]]
+name = "custom_tls"
+required-features = ["nifi-2-8-0"]
+
+[[example]]
 name = "dynamic_autodetect"
 required-features = ["dynamic"]

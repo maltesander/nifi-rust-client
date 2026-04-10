@@ -10,12 +10,25 @@
 //! cargo run --example credentials_and_retry
 //! ```
 
+// This example uses the static-mode API and cannot be run with `--features dynamic`.
+// Compile with: cargo run --example credentials_and_retry  (default features)
+#[cfg(feature = "dynamic")]
+fn main() {
+    eprintln!(
+        "credentials_and_retry requires a single-version feature, not `dynamic`. Use dynamic_autodetect instead."
+    );
+}
+
+#[cfg(not(feature = "dynamic"))]
+use nifi_rust_client::NifiClientBuilder;
+#[cfg(not(feature = "dynamic"))]
+use nifi_rust_client::config::credentials::StaticCredentials;
+#[cfg(not(feature = "dynamic"))]
+use nifi_rust_client::config::retry::RetryPolicy;
+#[cfg(not(feature = "dynamic"))]
 use std::time::Duration;
 
-use nifi_rust_client::NifiClientBuilder;
-use nifi_rust_client::config::credentials::StaticCredentials;
-use nifi_rust_client::config::retry::RetryPolicy;
-
+#[cfg(not(feature = "dynamic"))]
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     tracing_subscriber::fmt()
@@ -54,7 +67,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     client.login(&user, &pass).await?;
 
     let about = client.flow_api().get_about_info().await?;
-    println!("Connected with auto-refresh + retry; server: {:?}", about.title);
+    println!(
+        "Connected with auto-refresh + retry; server: {:?}",
+        about.title
+    );
 
     Ok(())
 }

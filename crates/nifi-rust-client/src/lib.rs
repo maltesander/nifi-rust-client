@@ -17,7 +17,9 @@
 //! let client = NifiClientBuilder::new("https://nifi.example.com:8443")?.build()?;
 //! client.login("admin", "adminpassword123").await?;
 //!
+//! # #[cfg(not(feature = "dynamic"))]
 //! let about = client.flow_api().get_about_info().await?;
+//! # #[cfg(not(feature = "dynamic"))]
 //! println!("Connected to NiFi {:?}", about.version);
 //! # Ok(())
 //! # }

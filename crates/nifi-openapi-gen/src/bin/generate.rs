@@ -19,7 +19,9 @@ use nifi_openapi_gen::docs::{
 use nifi_openapi_gen::repo::{
     update_cargo_features_client, update_cargo_features_tests, update_docker_compose_default,
 };
-use nifi_openapi_gen::util::{discover_spec_versions, update_file_between_markers, version_to_feature};
+use nifi_openapi_gen::util::{
+    discover_spec_versions, update_file_between_markers, version_to_feature,
+};
 use nifi_openapi_gen::{
     emit_endpoint_availability_tests, emit_enum_coverage_tests, emit_field_presence_tests,
     emit_query_param_coverage_tests, load,
