@@ -96,6 +96,10 @@ CRATES = {
         stage_files=[
             "crates/nifi-openapi-gen/Cargo.toml",
             "crates/nifi-openapi-gen/CHANGELOG.md",
+            # Gen release must also bump nifi-rust-client's build-dep reference
+            # so the workspace path dep (with its version constraint) still
+            # resolves. This is a workspace-coherence edit, not a client release.
+            "crates/nifi-rust-client/Cargo.toml",
             "Cargo.lock",
         ],
         readme_shorthand_paths=[],
@@ -274,6 +278,37 @@ def update_crate_cargo_toml(cargo_toml, old_version, new_version, dry_run):
         print("      (skipped write — dry-run)")
 
 
+def update_client_build_dep(new_gen_version, dry_run):
+    """Rewrite nifi-rust-client's build-dep on nifi-openapi-gen.
+
+    The workspace has a path dep with a version constraint. When gen's
+    Cargo.toml version is bumped, the client's build-dep constraint must
+    be bumped in lockstep or `cargo generate-lockfile` fails to resolve.
+    This is a workspace-coherence edit — it does NOT bump the client's
+    own version or trigger a client release.
+    """
+    with open(CLIENT_BUILD_DEP_CARGO_TOML, "r") as f:
+        content = f.read()
+
+    pattern = re.compile(
+        r'(nifi-openapi-gen\s*=\s*\{[^}]*version\s*=\s*")\d+\.\d+\.\d+(")'
+    )
+    new_content, count = pattern.subn(
+        rf'\g<1>{new_gen_version}\g<2>',
+        content,
+    )
+    rel = os.path.relpath(CLIENT_BUILD_DEP_CARGO_TOML, ROOT)
+    if count == 0:
+        print(f"  WARNING: nifi-openapi-gen build-dep not found in {rel}", file=sys.stderr)
+        return
+    print(f"      {rel}: nifi-openapi-gen build-dep → \"{new_gen_version}\"")
+    if not dry_run:
+        with open(CLIENT_BUILD_DEP_CARGO_TOML, "w") as f:
+            f.write(new_content)
+    else:
+        print("      (skipped write — dry-run)")
+
+
 # ---------------------------------------------------------------------------
 # README version shorthand update (client only)
 # ---------------------------------------------------------------------------
@@ -357,9 +392,11 @@ def scan_stale_version(crate: CrateConfig, old_version, dry_run):
     """Walk the crate's owned files and warn/abort if old_version still appears.
 
     Skips the files that were just updated (Cargo.toml, CHANGELOG.md, stage_files).
-    Bounded to the crate's commit_paths plus staged READMEs so a gen release
-    does not complain about a stale 0.5.0 in nifi-rust-client/Cargo.toml's
-    build-dep (which is supposed to stay pinned).
+    Bounded to the crate's commit_paths so a gen release does not complain
+    about a stale 0.5.0 left inside nifi-rust-client — its own version is
+    supposed to stay put during a gen release. The client's Cargo.toml
+    build-dep is already in stage_files (touched by update_client_build_dep)
+    so it's automatically excluded from the scan.
     """
     updated = set(crate.stage_files) | {
         os.path.relpath(crate.cargo_toml, ROOT),
@@ -854,6 +891,8 @@ def main():
 
     print(f"[4/10] Version: {old_version} → {new_version}")
     update_crate_cargo_toml(crate.cargo_toml, old_version, new_version, args.dry_run)
+    if crate.id == "gen":
+        update_client_build_dep(new_version, args.dry_run)
     update_readmes(crate, old_version, new_version, args.bump, args.dry_run)
 
     print(f"[5/10] Scanning for stale version '{old_version}'...")
