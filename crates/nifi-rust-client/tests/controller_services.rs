@@ -79,7 +79,9 @@ async fn update_run_status_sends_request_to_correct_path() {
 async fn clear_controller_service_bulletins_returns_cleared_count() {
     let mock_server = MockServer::start().await;
     Mock::given(method("POST"))
-        .and(path("/nifi-api/controller-services/some-id/bulletins/clear-requests"))
+        .and(path(
+            "/nifi-api/controller-services/some-id/bulletins/clear-requests",
+        ))
         .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
             "bulletinsCleared": 2,
             "componentId": "some-id"
@@ -99,5 +101,9 @@ async fn clear_controller_service_bulletins_returns_cleared_count() {
         .clear_bulletins(&body)
         .await;
 
-    assert!(result.is_ok(), "clear_controller_service_bulletins failed: {:?}", result.err());
+    assert!(
+        result.is_ok(),
+        "clear_controller_service_bulletins failed: {:?}",
+        result.err()
+    );
 }

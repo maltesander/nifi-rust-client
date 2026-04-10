@@ -207,7 +207,9 @@ async fn get_state_returns_component_state() {
 async fn clear_state_returns_component_state() {
     let mock_server = MockServer::start().await;
     Mock::given(method("POST"))
-        .and(path("/nifi-api/parameter-providers/pp-1/state/clear-requests"))
+        .and(path(
+            "/nifi-api/parameter-providers/pp-1/state/clear-requests",
+        ))
         .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
             "componentState": {
                 "componentId": "pp-1",
@@ -469,8 +471,7 @@ async fn submit_apply_parameters_returns_dto() {
         .unwrap()
         .build()
         .unwrap();
-    let body =
-        nifi_rust_client::types::ParameterProviderParameterApplicationEntity::default();
+    let body = nifi_rust_client::types::ParameterProviderParameterApplicationEntity::default();
     let req = client
         .parameterproviders_api()
         .apply_parameters_requests("pp-1")
@@ -680,11 +681,7 @@ async fn flow_get_parameter_providers_returns_list() {
         .unwrap()
         .build()
         .unwrap();
-    let result = client
-        .flow_api()
-        .get_parameter_providers()
-        .await
-        .unwrap();
+    let result = client.flow_api().get_parameter_providers().await.unwrap();
 
     let providers = result.parameter_providers.unwrap_or_default();
     assert_eq!(providers.len(), 1);

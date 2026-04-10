@@ -49,7 +49,9 @@ async fn get_remote_process_group_returns_target_uri() {
 async fn clear_remote_process_group_bulletins_returns_cleared_count() {
     let mock_server = MockServer::start().await;
     Mock::given(method("POST"))
-        .and(path("/nifi-api/remote-process-groups/some-id/bulletins/clear-requests"))
+        .and(path(
+            "/nifi-api/remote-process-groups/some-id/bulletins/clear-requests",
+        ))
         .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
             "bulletinsCleared": 5,
             "componentId": "some-id"
@@ -69,5 +71,9 @@ async fn clear_remote_process_group_bulletins_returns_cleared_count() {
         .clear_bulletins_6(&body)
         .await;
 
-    assert!(result.is_ok(), "clear_remote_process_group_bulletins failed: {:?}", result.err());
+    assert!(
+        result.is_ok(),
+        "clear_remote_process_group_bulletins failed: {:?}",
+        result.err()
+    );
 }

@@ -106,7 +106,9 @@ async fn delete_running_processor_returns_409() {
 async fn clear_processor_bulletins_returns_cleared_count() {
     let mock_server = MockServer::start().await;
     Mock::given(method("POST"))
-        .and(path("/nifi-api/processors/some-id/bulletins/clear-requests"))
+        .and(path(
+            "/nifi-api/processors/some-id/bulletins/clear-requests",
+        ))
         .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
             "bulletinsCleared": 3,
             "componentId": "some-id"
@@ -126,5 +128,9 @@ async fn clear_processor_bulletins_returns_cleared_count() {
         .clear_bulletins_5(&body)
         .await;
 
-    assert!(result.is_ok(), "clear_processor_bulletins failed: {:?}", result.err());
+    assert!(
+        result.is_ok(),
+        "clear_processor_bulletins failed: {:?}",
+        result.err()
+    );
 }

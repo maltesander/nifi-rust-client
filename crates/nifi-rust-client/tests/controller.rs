@@ -113,7 +113,9 @@ async fn upload_nar_without_filename_still_sends_data() {
 async fn clear_flow_analysis_rule_bulletins_returns_cleared_count() {
     let mock_server = MockServer::start().await;
     Mock::given(method("POST"))
-        .and(path("/nifi-api/controller/flow-analysis-rules/some-id/bulletins/clear-requests"))
+        .and(path(
+            "/nifi-api/controller/flow-analysis-rules/some-id/bulletins/clear-requests",
+        ))
         .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
             "bulletinsCleared": 2,
             "componentId": "some-id"
@@ -133,7 +135,11 @@ async fn clear_flow_analysis_rule_bulletins_returns_cleared_count() {
         .clear_flow_analysis_rule_bulletins(&body)
         .await;
 
-    assert!(result.is_ok(), "clear_flow_analysis_rule_bulletins failed: {:?}", result.err());
+    assert!(
+        result.is_ok(),
+        "clear_flow_analysis_rule_bulletins failed: {:?}",
+        result.err()
+    );
 }
 
 #[cfg(any(feature = "nifi-2-7-2", feature = "nifi-2-8-0"))]
@@ -141,7 +147,9 @@ async fn clear_flow_analysis_rule_bulletins_returns_cleared_count() {
 async fn clear_parameter_provider_bulletins_returns_cleared_count() {
     let mock_server = MockServer::start().await;
     Mock::given(method("POST"))
-        .and(path("/nifi-api/controller/parameter-providers/some-id/bulletins/clear-requests"))
+        .and(path(
+            "/nifi-api/controller/parameter-providers/some-id/bulletins/clear-requests",
+        ))
         .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
             "bulletinsCleared": 1,
             "componentId": "some-id"
@@ -161,7 +169,11 @@ async fn clear_parameter_provider_bulletins_returns_cleared_count() {
         .clear_parameter_provider_bulletins(&body)
         .await;
 
-    assert!(result.is_ok(), "clear_parameter_provider_bulletins failed: {:?}", result.err());
+    assert!(
+        result.is_ok(),
+        "clear_parameter_provider_bulletins failed: {:?}",
+        result.err()
+    );
 }
 
 #[cfg(any(feature = "nifi-2-7-2", feature = "nifi-2-8-0"))]
@@ -169,7 +181,9 @@ async fn clear_parameter_provider_bulletins_returns_cleared_count() {
 async fn clear_registry_client_bulletins_returns_cleared_count() {
     let mock_server = MockServer::start().await;
     Mock::given(method("POST"))
-        .and(path("/nifi-api/controller/registry-clients/some-id/bulletins/clear-requests"))
+        .and(path(
+            "/nifi-api/controller/registry-clients/some-id/bulletins/clear-requests",
+        ))
         .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
             "bulletinsCleared": 3,
             "componentId": "some-id"
@@ -189,5 +203,9 @@ async fn clear_registry_client_bulletins_returns_cleared_count() {
         .clear_registry_client_bulletins(&body)
         .await;
 
-    assert!(result.is_ok(), "clear_registry_client_bulletins failed: {:?}", result.err());
+    assert!(
+        result.is_ok(),
+        "clear_registry_client_bulletins failed: {:?}",
+        result.err()
+    );
 }

@@ -289,7 +289,9 @@ async fn search_flow_returns_processor_results() {
 async fn clear_process_group_bulletins_returns_cleared_count() {
     let mock_server = MockServer::start().await;
     Mock::given(method("POST"))
-        .and(path("/nifi-api/flow/process-groups/some-id/bulletins/clear-requests"))
+        .and(path(
+            "/nifi-api/flow/process-groups/some-id/bulletins/clear-requests",
+        ))
         .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
             "bulletinsCleared": 7
         })))
@@ -308,7 +310,11 @@ async fn clear_process_group_bulletins_returns_cleared_count() {
         .clear_bulletins_1(&body)
         .await;
 
-    assert!(result.is_ok(), "clear_process_group_bulletins failed: {:?}", result.err());
+    assert!(
+        result.is_ok(),
+        "clear_process_group_bulletins failed: {:?}",
+        result.err()
+    );
 }
 
 // ── listen-ports ──────────────────────────────────────────────────────────────
@@ -393,7 +399,10 @@ async fn get_flow_registry_client_definition_returns_artifact_info() {
         .await
         .unwrap();
 
-    assert_eq!(result.artifact.as_deref(), Some("nifi-flow-registry-client-nar"));
+    assert_eq!(
+        result.artifact.as_deref(),
+        Some("nifi-flow-registry-client-nar")
+    );
     assert_eq!(result.group.as_deref(), Some("org.apache.nifi"));
     assert!(!result.deprecated.unwrap_or(true));
 }

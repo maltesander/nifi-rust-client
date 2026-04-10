@@ -44,7 +44,9 @@ async fn get_reporting_task_returns_name_and_type() {
 async fn clear_reporting_task_bulletins_returns_cleared_count() {
     let mock_server = MockServer::start().await;
     Mock::given(method("POST"))
-        .and(path("/nifi-api/reporting-tasks/some-id/bulletins/clear-requests"))
+        .and(path(
+            "/nifi-api/reporting-tasks/some-id/bulletins/clear-requests",
+        ))
         .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
             "bulletinsCleared": 4,
             "componentId": "some-id"
@@ -64,5 +66,9 @@ async fn clear_reporting_task_bulletins_returns_cleared_count() {
         .clear_bulletins_7(&body)
         .await;
 
-    assert!(result.is_ok(), "clear_reporting_task_bulletins failed: {:?}", result.err());
+    assert!(
+        result.is_ok(),
+        "clear_reporting_task_bulletins failed: {:?}",
+        result.err()
+    );
 }

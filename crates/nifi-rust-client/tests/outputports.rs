@@ -67,7 +67,9 @@ async fn create_output_port_returns_id() {
 async fn clear_output_port_bulletins_returns_cleared_count() {
     let mock_server = MockServer::start().await;
     Mock::given(method("POST"))
-        .and(path("/nifi-api/output-ports/some-id/bulletins/clear-requests"))
+        .and(path(
+            "/nifi-api/output-ports/some-id/bulletins/clear-requests",
+        ))
         .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
             "bulletinsCleared": 1,
             "componentId": "some-id"
@@ -87,5 +89,9 @@ async fn clear_output_port_bulletins_returns_cleared_count() {
         .clear_bulletins_3(&body)
         .await;
 
-    assert!(result.is_ok(), "clear_output_port_bulletins failed: {:?}", result.err());
+    assert!(
+        result.is_ok(),
+        "clear_output_port_bulletins failed: {:?}",
+        result.err()
+    );
 }
