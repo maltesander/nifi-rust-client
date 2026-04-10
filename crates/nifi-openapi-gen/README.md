@@ -4,6 +4,28 @@
 > build-dependency. Not intended for general use — API may change without notice.
 > Versioned in lockstep with `nifi-rust-client`.
 
+## Stability
+
+Only the following surfaces are covered by a stability guarantee and are safe
+to depend on from a downstream `build.rs`:
+
+- `nifi_openapi_gen::build_api::GenerateConfig` and its constructors
+  (`from_cargo_env`, `from_specs_dir`)
+- `nifi_openapi_gen::build_api::generate_client`
+- `nifi_openapi_gen::build_api::generate_integration_tests`
+- `nifi_openapi_gen::specs_dir()`
+- The generated file layout written into the caller-supplied `out_dir`:
+  `generated_lib.rs`, `vX_Y_Z/{api,types,traits}/*.rs`, `dynamic/*`
+
+Everything else in this crate — `parser`, `emit`, `diff`, `docs`, `repo`,
+`util`, and the flat re-exports in `lib.rs` — is an implementation detail.
+It remains `pub` only so the generator's own integration tests can import
+it, and it is marked `#[doc(hidden)]` on `docs.rs`. **These internals are
+not covered by semver; they may change in any minor release.**
+
+This contract is guaranteed stable within the `0.x` minor range and will
+be reconsidered for `1.0`.
+
 Internal code generator for `nifi-rust-client`. Reads an OpenAPI 3.0.1 spec and writes:
 
 - `src/v{version}/types/<tag>.rs` + `common.rs` + `mod.rs` — per-tag DTO/entity structs
