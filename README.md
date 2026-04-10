@@ -20,7 +20,7 @@ Full changelog: [NIFI_API_CHANGES.md](NIFI_API_CHANGES.md)
 | Crate | Description |
 |-------|-------------|
 | [`nifi-rust-client`](crates/nifi-rust-client/) | Published library — API types, resource methods, auth |
-| [`nifi-openapi-gen`](crates/nifi-openapi-gen/) | Internal code and documentation generator — not published |
+| [`nifi-openapi-gen`](crates/nifi-openapi-gen/) | Internal code, test and documentation generator |
 
 ## Quick Start
 
