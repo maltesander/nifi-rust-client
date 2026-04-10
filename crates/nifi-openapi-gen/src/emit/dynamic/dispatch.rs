@@ -218,10 +218,10 @@ fn emit_dispatch_method(
 
     // --- Path param args (must match trait signature) ---
     let mut path_param_names: Vec<String> = Vec::new();
-    if let Some(primary) = representative.primary_param
-        && (skip_primary.is_none() || skip_primary != Some(primary))
-    {
-        path_param_names.push(primary.to_string());
+    if let Some(primary) = representative.primary_param {
+        if skip_primary.is_none() || skip_primary != Some(primary) {
+            path_param_names.push(primary.to_string());
+        }
     }
     for p in &ep.path_params {
         if skip_primary == Some(p.name.as_str()) {

@@ -155,10 +155,10 @@ fn emit_trait_method(
 
     // --- Build path param args (skipping primary if in sub-resource) ---
     let mut path_param_names: Vec<String> = Vec::new();
-    if let Some(primary) = representative.primary_param
-        && (skip_primary.is_none() || skip_primary != Some(primary))
-    {
-        path_param_names.push(primary.to_string());
+    if let Some(primary) = representative.primary_param {
+        if skip_primary.is_none() || skip_primary != Some(primary) {
+            path_param_names.push(primary.to_string());
+        }
     }
     for p in &ep.path_params {
         if skip_primary == Some(p.name.as_str()) {
@@ -265,18 +265,18 @@ fn emit_doc_comments(
     if has_path_params || has_query_params {
         out.push_str("    ///\n");
         out.push_str("    /// # Parameters\n");
-        if let Some(primary) = representative.primary_param
-            && skip_primary != Some(primary)
-        {
-            let doc = ep
-                .path_params
-                .iter()
-                .find(|p| p.name == primary)
-                .and_then(|p| p.doc.as_deref());
-            if let Some(doc) = doc {
-                out.push_str(&format!("    /// - `{primary}`: {doc}\n"));
-            } else {
-                out.push_str(&format!("    /// - `{primary}`\n"));
+        if let Some(primary) = representative.primary_param {
+            if skip_primary != Some(primary) {
+                let doc = ep
+                    .path_params
+                    .iter()
+                    .find(|p| p.name == primary)
+                    .and_then(|p| p.doc.as_deref());
+                if let Some(doc) = doc {
+                    out.push_str(&format!("    /// - `{primary}`: {doc}\n"));
+                } else {
+                    out.push_str(&format!("    /// - `{primary}`\n"));
+                }
             }
         }
         for p in &ep.path_params {
