@@ -8,6 +8,54 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-04-10
+
+### Breaking Changes
+
+- Mark VersionResolutionStrategy as non_exhaustive ([ae272f0](https://github.com/maltesander/nifi-rust-client/commit/ae272f0))
+- Mark NifiError as non_exhaustive ([98af77b](https://github.com/maltesander/nifi-rust-client/commit/98af77b))
+
+### Added
+
+- Update feature flags table in crate doc on version bump ([90f069b](https://github.com/maltesander/nifi-rust-client/commit/90f069b))
+- Add instrument spans on retry wrappers ([210566e](https://github.com/maltesander/nifi-rust-client/commit/210566e))
+- Add compile_error guard for zero-version-feature builds ([69354c5](https://github.com/maltesander/nifi-rust-client/commit/69354c5))
+
+### Changed
+
+- Return Result from integration-test build.rs ([c58c3f6](https://github.com/maltesander/nifi-rust-client/commit/c58c3f6))
+- Return Result from build.rs, guard zero-features config ([9844213](https://github.com/maltesander/nifi-rust-client/commit/9844213))
+
+### Fixed
+
+- Remove #![deny(missing_docs)] from strategy.rs and document variants ([e138746](https://github.com/maltesander/nifi-rust-client/commit/e138746))
+- Move #![deny(missing_docs)] to per-file to fix cargo package verification ([0f541cd](https://github.com/maltesander/nifi-rust-client/commit/0f541cd))
+- Rewrite let chains to support MSRV 1.85 ([2338f7b](https://github.com/maltesander/nifi-rust-client/commit/2338f7b))
+- Rewrite let chain to support MSRV 1.85 ([9d79689](https://github.com/maltesander/nifi-rust-client/commit/9d79689))
+- Guard static examples from dynamic feature compilation ([cd79f0f](https://github.com/maltesander/nifi-rust-client/commit/cd79f0f))
+- Source version list from specs dir, not stale src/v*/ layout ([f516060](https://github.com/maltesander/nifi-rust-client/commit/f516060))
+
+### Documentation
+
+- Enforce #![deny(missing_docs)] and backfill public items ([5328866](https://github.com/maltesander/nifi-rust-client/commit/5328866))
+- Add dynamic_autodetect example ([b853563](https://github.com/maltesander/nifi-rust-client/commit/b853563))
+- Add basic_static quickstart example ([5059a57](https://github.com/maltesander/nifi-rust-client/commit/5059a57))
+- Add custom_tls example ([3682cd8](https://github.com/maltesander/nifi-rust-client/commit/3682cd8))
+- Add credentials_and_retry example ([babe0a9](https://github.com/maltesander/nifi-rust-client/commit/babe0a9))
+- Add crate-level //! doc with overview and entry points ([b2a6b50](https://github.com/maltesander/nifi-rust-client/commit/b2a6b50))
+- Document the build-dep stability contract ([0e5ca0f](https://github.com/maltesander/nifi-rust-client/commit/0e5ca0f))
+- Hide nifi-openapi-gen internals from docs.rs via doc(hidden) ([9a37548](https://github.com/maltesander/nifi-rust-client/commit/9a37548))
+- Document the stability contract ([b93497c](https://github.com/maltesander/nifi-rust-client/commit/b93497c))
+- Avoid unwrap() in NifiClientBuilder example ([6b69995](https://github.com/maltesander/nifi-rust-client/commit/6b69995))
+
+### Tests
+
+- Add version-feature-gated test pattern ([164475d](https://github.com/maltesander/nifi-rust-client/commit/164475d))
+- Cover listen-ports and flow-registry-client-definition ([ec8617e](https://github.com/maltesander/nifi-rust-client/commit/ec8617e))
+- Fix create_port_transaction mock status to 201 ([9817799](https://github.com/maltesander/nifi-rust-client/commit/9817799))
+- Add wiremock coverage for DataTransfer API ([54d3714](https://github.com/maltesander/nifi-rust-client/commit/54d3714))
+- Add wiremock coverage for ParameterProviders API ([156196f](https://github.com/maltesander/nifi-rust-client/commit/156196f))
+
 ## [0.4.2] - 2026-04-10
 
 ### Fixed
@@ -294,7 +342,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Structured error handling** — `NifiError` via `snafu` with distinct variants for HTTP, auth, serialization, and network errors.
 - **Tracing** — all HTTP requests emit a `tracing::debug!` event with method and path before sending.
 
-[Unreleased]: https://github.com/maltesander/nifi-rust-client/compare/v0.4.2...HEAD
+[Unreleased]: https://github.com/maltesander/nifi-rust-client/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/maltesander/nifi-rust-client/compare/v0.4.2...v0.5.0
 [0.4.2]: https://github.com/maltesander/nifi-rust-client/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/maltesander/nifi-rust-client/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/maltesander/nifi-rust-client/compare/v0.3.1...v0.4.0
