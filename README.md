@@ -31,7 +31,7 @@ Target a specific NiFi version with full type safety and API completeness:
 <!-- STATIC_FEATURE_EXAMPLE_START -->
 ```toml
 [dependencies]
-nifi-rust-client = "0.5"  # defaults to the latest supported NiFi version
+nifi-rust-client = "0.6"  # defaults to the latest supported NiFi version
 ```
 <!-- STATIC_FEATURE_EXAMPLE_END -->
 
@@ -54,7 +54,7 @@ Talk to any supported NiFi version — auto-detected at connect time:
 <!-- DYNAMIC_FEATURE_EXAMPLE_START -->
 ```toml
 [dependencies]
-nifi-rust-client = { version = "0.5", features = ["dynamic"] }
+nifi-rust-client = { version = "0.6", features = ["dynamic"] }
 ```
 <!-- DYNAMIC_FEATURE_EXAMPLE_END -->
 
