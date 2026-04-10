@@ -184,12 +184,18 @@ def update_cargo_toml(old_version, new_version, dry_run):
         print("      (skipped write — dry-run)")
 
 
-def update_build_dep_version(new_version, dry_run):
-    """Update the nifi-openapi-gen version in nifi-rust-client's build-dependencies."""
+def update_build_dep_version(new_version, bump_type, dry_run):
+    """Update the nifi-openapi-gen version in build-dependencies.
+
+    Kept in lockstep with the workspace version since both crates are released
+    together. The chicken-and-egg problem (new version not on crates.io yet)
+    is avoided by running `cargo package` BEFORE this function — at that point
+    the build-dep still points to the previously-published version.
+    """
+    del bump_type  # Unused — kept for signature stability
     with open(CLIENT_CARGO_TOML, "r") as f:
         content = f.read()
 
-    # Match: nifi-openapi-gen = { path = "...", version = "X.Y.Z" }
     pattern = r'(nifi-openapi-gen\s*=\s*\{[^}]*version\s*=\s*")[^"]*(")'
     new_content, count = re.subn(pattern, rf'\g<1>{new_version}\2', content)
     if count:
@@ -278,7 +284,7 @@ def update_readmes(old_version, new_version, bump_type, dry_run):
 
 def scan_stale_version(old_version, dry_run):
     """Walk the repo and warn/abort if old_version still appears in source files."""
-    print(f"[4/9] Scanning for stale version '{old_version}'...")
+    print(f"[5/10] Scanning for stale version '{old_version}'...")
 
     found_any = False
     for dirpath, dirnames, filenames in os.walk(ROOT):
@@ -334,7 +340,7 @@ def scan_stale_version(old_version, dry_run):
 
 def update_lockfile(dry_run):
     """Regenerate Cargo.lock after version bump."""
-    print("[5/9] Updating Cargo.lock...")
+    print("[6/10] Updating Cargo.lock...")
     if dry_run:
         print("      Skipped (dry-run)")
         return
@@ -440,7 +446,7 @@ def parse_conventional_commits(old_version):
 
 def update_changelog(old_version, new_version, dry_run):
     """Generate and insert a changelog section for new_version."""
-    print("[6/9] Generating changelog...")
+    print("[7/10] Generating changelog...")
     categories = parse_conventional_commits(old_version)
 
     today = date.today().isoformat()
@@ -513,9 +519,58 @@ def update_changelog(old_version, new_version, dry_run):
 # Task 6: Run checks
 # ---------------------------------------------------------------------------
 
+def _run_cmd_list(checks):
+    """Run a list of (cmd, label) checks. Aborts on first failure."""
+    for cmd, label in checks:
+        print(f"      {label}...", end=" ", flush=True)
+        result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
+        if result.returncode == 0:
+            print("OK")
+        else:
+            print("FAILED")
+            if result.stderr:
+                print(result.stderr, file=sys.stderr)
+            print(
+                f"ERROR: '{label}' check failed. "
+                "To rollback file changes: git checkout -- Cargo.toml crates/nifi-rust-client/Cargo.toml README.md CHANGELOG.md",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+
+
+def run_pre_update_checks(dry_run):
+    """Validate packaging BEFORE version bump.
+
+    At this point HEAD matches the last released version, so the build-dep
+    constraint resolves against the currently-published nifi-openapi-gen on
+    crates.io. This catches packaging issues (missing files, bad metadata,
+    broken exclude rules) that only surface during `cargo package`.
+
+    On the very first release, nothing is on crates.io yet and this will fail.
+    Skip via environment variable: SKIP_PACKAGE_CHECK=1
+    """
+    print("[7/9] Pre-update packaging validation...")
+
+    if os.environ.get("SKIP_PACKAGE_CHECK"):
+        print("      Skipped (SKIP_PACKAGE_CHECK set)")
+        return
+
+    checks = [
+        ("cargo package -p nifi-openapi-gen --allow-dirty", "Package validation (nifi-openapi-gen)"),
+        ("cargo package -p nifi-rust-client --allow-dirty", "Package validation (nifi-rust-client)"),
+    ]
+
+    if dry_run:
+        for cmd, _ in checks:
+            print(f"      [dry-run] Would run: {cmd}")
+        return
+
+    _run_cmd_list(checks)
+
+
 def run_checks(dry_run, skip_integration):
-    """Run build, test, clippy, pre-commit, and package validation checks."""
-    print("[7/9] Running checks...")
+    """Run build, test, clippy, and pre-commit checks."""
+    print("[8/9] Running checks...")
 
     checks = [
         ("cargo build --workspace", "Build"),
@@ -523,9 +578,6 @@ def run_checks(dry_run, skip_integration):
         ("cargo test -p nifi-integration-tests", "Tests (integration compile)"),
         ("cargo clippy --workspace --all-targets --all-features --exclude nifi-integration-tests -- -D warnings", "Clippy (all features)"),
         ("pre-commit run --all-files", "Pre-commit"),
-        ("cargo package -p nifi-openapi-gen --allow-dirty", "Package validation (nifi-openapi-gen)"),
-        # nifi-rust-client packaging requires nifi-openapi-gen on crates.io;
-        # validated in CI after nifi-openapi-gen is published first.
     ]
 
     if skip_integration:
@@ -533,24 +585,12 @@ def run_checks(dry_run, skip_integration):
     else:
         checks.append(("./tests/run.sh", "Integration tests"))
 
-    for cmd, label in checks:
-        if dry_run:
+    if dry_run:
+        for cmd, _ in checks:
             print(f"      [dry-run] Would run: {cmd}")
-        else:
-            print(f"      {label}...", end=" ", flush=True)
-            result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
-            if result.returncode == 0:
-                print("OK")
-            else:
-                print("FAILED")
-                if result.stderr:
-                    print(result.stderr, file=sys.stderr)
-                print(
-                    f"ERROR: '{label}' check failed. "
-                    "To rollback file changes: git checkout -- Cargo.toml crates/nifi-rust-client/Cargo.toml README.md CHANGELOG.md",
-                    file=sys.stderr,
-                )
-                sys.exit(1)
+        return
+
+    _run_cmd_list(checks)
 
 
 # ---------------------------------------------------------------------------
@@ -621,35 +661,39 @@ def main():
     print(f"Release{dry_label}: {old_version} → {new_version}  [{args.bump} bump]")
     print()
 
-    # [1/9] Preflight checks
-    print("[1/9] Pre-flight checks...")
+    # [1/10] Preflight checks
+    print("[1/10] Pre-flight checks...")
     preflight_checks(new_tag)
 
-    # [2/9] Version bump summary
-    print(f"[2/9] Version: {old_version} → {new_version}")
+    # [2/10] Pre-update packaging validation (before version bump, so build-dep
+    #        constraint still matches crates.io)
+    run_pre_update_checks(args.dry_run)
 
-    # [3/9] Update files
-    print("[3/9] Updating version in files...")
+    # [3/10] Version bump summary
+    print(f"[3/10] Version: {old_version} → {new_version}")
+
+    # [4/10] Update files
+    print("[4/10] Updating version in files...")
     update_cargo_toml(old_version, new_version, args.dry_run)
-    update_build_dep_version(new_version, args.dry_run)
+    update_build_dep_version(new_version, args.bump, args.dry_run)
     update_readmes(old_version, new_version, args.bump, args.dry_run)
 
-    # [4/9] Stale version scan
+    # [5/10] Stale version scan
     scan_stale_version(old_version, args.dry_run)
 
-    # [5/9] Update lockfile
+    # [6/10] Update lockfile
     update_lockfile(args.dry_run)
 
-    # [6/9] Changelog
+    # [7/10] Changelog
     update_changelog(old_version, new_version, args.dry_run)
 
-    # [7/9] Run checks
+    # [8/10] Run checks
     run_checks(args.dry_run, args.skip_integration)
 
-    # [8/9] Commit
+    # [9/10] Commit
     commit_release(new_version, args.dry_run)
 
-    # [9/9] Tag and push
+    # [10/10] Tag and push
     tag_and_push(new_version, args.tag_message, args.dry_run)
 
     if args.dry_run:
