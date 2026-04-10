@@ -1,6 +1,12 @@
 # nifi-rust-client
 
-Apache NiFi 2.x REST API client library written in Rust.
+> Apache NiFi 2.x REST API client library written in Rust.
+
+[![CI](https://github.com/maltesander/nifi-rust-client/actions/workflows/ci.yml/badge.svg)](https://github.com/maltesander/nifi-rust-client/actions/workflows/ci.yml)
+[![Crates.io](https://img.shields.io/crates/v/nifi-rust-client.svg)](https://crates.io/crates/nifi-rust-client)
+[![Docs.rs](https://docs.rs/nifi-rust-client/badge.svg)](https://docs.rs/nifi-rust-client)
+[![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](https://github.com/maltesander/nifi-rust-client/blob/main/LICENSE)
+![MSRV: 1.85](https://img.shields.io/badge/MSRV-1.85-blue.svg)
 
 ## Supported NiFi Versions
 
@@ -81,54 +87,6 @@ When the detected NiFi version doesn't exactly match a supported version, the co
 
 See [`crates/nifi-rust-client/README.md`](crates/nifi-rust-client/README.md) for the full API reference, builder options, token management, and error handling.
 
-## Why nifi-rust-client?
+## License
 
-**Full API coverage, generated directly from NiFi's own OpenAPI spec.**
-Every endpoint NiFi exposes is available as a typed Rust method — nothing hand-written, nothing missing. When a new NiFi version ships, a single `cargo run -p nifi-openapi-gen` regenerates the entire client from the live spec in minutes.
-
-**Two modes for different needs.**
-Use **static mode** for full type safety and IDE autocompletion when you target a known NiFi version. Use **dynamic mode** when your tool needs to talk to multiple NiFi clusters running different versions — the client auto-detects the API version at connect time and dispatches to the right generated code. Both modes share the same sub-resource builder pattern and trait hierarchy.
-
-**Tested against real NiFi instances.**
-Every generated endpoint gets an auto-generated wiremock stub. Integration tests run against a Docker-hosted NiFi and cover the full request/response cycle — not just serialization. Both static and dynamic modes have dedicated test suites.
-
-**Low-level by design: you stay in control.**
-The client does not hide HTTP details behind opinionated abstractions. Token refresh, retry on transient errors, and connection tuning are opt-in — configure what you need, and the defaults stay out of your way.
-
-## Build
-
-```bash
-cargo build
-cargo clippy
-```
-
-## Test
-
-Unit tests (no Docker):
-
-```bash
-cargo test --workspace
-```
-
-Integration tests (requires Docker):
-
-```bash
-./tests/run.sh                          # start NiFi, run tests, tear down
-./tests/run.sh --skip-cleanup           # leave NiFi running between runs
-./tests/run.sh --nifi-version=2.7.2     # test against a specific NiFi version
-```
-
-Default credentials used by the test container: `admin` / `adminpassword123`.
-Override with `NIFI_URL`, `NIFI_USERNAME`, `NIFI_PASSWORD` env vars.
-
-## Prerequisites
-
-- Rust (version pinned in `rust-toolchain.toml`)
-- Docker (for integration tests)
-- `pre-commit` (for commit hooks)
-
-## Before committing
-
-```bash
-pre-commit run --all-files
-```
+Apache-2.0. See [`LICENSE`](LICENSE).
