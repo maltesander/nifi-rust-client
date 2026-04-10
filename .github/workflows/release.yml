@@ -3,15 +3,20 @@ name: Release
 on:
   push:
     tags:
-      - 'v[0-9]+.[0-9]+.[0-9]+'
+      - 'gen-v[0-9]+.[0-9]+.[0-9]+'
+      - 'client-v[0-9]+.[0-9]+.[0-9]+'
 
 env:
   CARGO_TERM_COLOR: always
   RUST_BACKTRACE: 1
 
 jobs:
-  test:
-    name: Test before release
+  # ---------------------------------------------------------------------------
+  # gen-v* — release nifi-openapi-gen
+  # ---------------------------------------------------------------------------
+  gen-test:
+    name: Test (nifi-openapi-gen)
+    if: startsWith(github.ref_name, 'gen-v')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -24,11 +29,95 @@ jobs:
 
       - name: Verify tag matches Cargo.toml version
         run: |
-          tag_version="${GITHUB_REF_NAME#v}"
+          tag_version="${GITHUB_REF_NAME#gen-v}"
+          cargo_version=$(cargo metadata --format-version 1 --no-deps | \
+            jq -r '.packages[] | select(.name == "nifi-openapi-gen") | .version')
+          if [ "$tag_version" != "$cargo_version" ]; then
+            echo "::error::Tag version ($tag_version) does not match nifi-openapi-gen Cargo.toml version ($cargo_version)"
+            exit 1
+          fi
+
+      - run: cargo fmt --all -- --check
+      - run: cargo clippy -p nifi-openapi-gen --all-targets --all-features -- -D warnings
+      - run: cargo test -p nifi-openapi-gen --all-features
+      - run: RUSTDOCFLAGS="-D warnings" cargo doc -p nifi-openapi-gen --all-features --no-deps
+
+      - name: Install cargo-deny
+        run: cargo install cargo-deny --locked
+      - run: cargo deny check
+
+      - name: Verify packaging
+        run: cargo package -p nifi-openapi-gen
+
+  gen-publish:
+    name: Publish nifi-openapi-gen
+    if: startsWith(github.ref_name, 'gen-v')
+    runs-on: ubuntu-latest
+    needs: gen-test
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Publish
+        run: cargo publish -p nifi-openapi-gen
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  gen-release:
+    name: GitHub Release (nifi-openapi-gen)
+    if: startsWith(github.ref_name, 'gen-v')
+    runs-on: ubuntu-latest
+    needs: gen-publish
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Extract version from tag
+        id: version
+        run: echo "version=${GITHUB_REF_NAME#gen-v}" >> "$GITHUB_OUTPUT"
+
+      - name: Extract changelog entry
+        id: changelog
+        run: |
+          awk '/^## \[${{ steps.version.outputs.version }}\]/{flag=1; next} /^## \[/{flag=0} flag' \
+            crates/nifi-openapi-gen/CHANGELOG.md > release_notes.md
+          echo "notes_file=release_notes.md" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: nifi-openapi-gen ${{ steps.version.outputs.version }}
+          body_path: ${{ steps.changelog.outputs.notes_file }}
+          tag_name: ${{ github.ref_name }}
+
+  # ---------------------------------------------------------------------------
+  # client-v* — release nifi-rust-client
+  # ---------------------------------------------------------------------------
+  # This workflow assumes the nifi-openapi-gen version pinned in
+  # crates/nifi-rust-client/Cargo.toml's build-dependencies is already
+  # published on crates.io. `release.py client` validates this pre-flight.
+  client-test:
+    name: Test (nifi-rust-client)
+    if: startsWith(github.ref_name, 'client-v')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          components: clippy, rustfmt
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Verify tag matches Cargo.toml version
+        run: |
+          tag_version="${GITHUB_REF_NAME#client-v}"
           cargo_version=$(cargo metadata --format-version 1 --no-deps | \
             jq -r '.packages[] | select(.name == "nifi-rust-client") | .version')
           if [ "$tag_version" != "$cargo_version" ]; then
-            echo "::error::Tag version ($tag_version) does not match Cargo.toml version ($cargo_version)"
+            echo "::error::Tag version ($tag_version) does not match nifi-rust-client Cargo.toml version ($cargo_version)"
             exit 1
           fi
 
@@ -41,48 +130,29 @@ jobs:
         run: cargo install cargo-deny --locked
       - run: cargo deny check
 
-      - name: Verify packaging (nifi-openapi-gen)
-        run: cargo package -p nifi-openapi-gen
+      - name: Verify packaging (nifi-rust-client)
+        run: cargo package -p nifi-rust-client
 
-  publish:
-    name: Publish to crates.io
+  client-publish:
+    name: Publish nifi-rust-client
+    if: startsWith(github.ref_name, 'client-v')
     runs-on: ubuntu-latest
-    needs: test
+    needs: client-test
     steps:
       - uses: actions/checkout@v5
       - uses: actions-rust-lang/setup-rust-toolchain@v1
       - uses: Swatinem/rust-cache@v2
 
-      - name: Publish nifi-openapi-gen
-        run: cargo publish -p nifi-openapi-gen || echo "::warning::nifi-openapi-gen publish skipped (version may already exist)"
-        env:
-          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
-
-      - name: Wait for crates.io index
-        run: |
-          version=$(cargo metadata --format-version 1 --no-deps | \
-            jq -r '.packages[] | select(.name == "nifi-openapi-gen") | .version')
-          echo "Waiting for nifi-openapi-gen $version to appear in index..."
-          for i in $(seq 1 30); do
-            if cargo search nifi-openapi-gen --limit 1 2>/dev/null | grep -q "$version"; then
-              echo "Found in index after ${i}0 seconds"
-              break
-            fi
-            sleep 10
-          done
-
-      - name: Verify packaging (nifi-rust-client)
-        run: cargo package -p nifi-rust-client
-
-      - name: Publish nifi-rust-client
+      - name: Publish
         run: cargo publish -p nifi-rust-client
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
 
-  github-release:
-    name: Create GitHub Release
+  client-release:
+    name: GitHub Release (nifi-rust-client)
+    if: startsWith(github.ref_name, 'client-v')
     runs-on: ubuntu-latest
-    needs: publish
+    needs: client-publish
     permissions:
       contents: write
     steps:
@@ -90,17 +160,18 @@ jobs:
 
       - name: Extract version from tag
         id: version
-        run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+        run: echo "version=${GITHUB_REF_NAME#client-v}" >> "$GITHUB_OUTPUT"
 
       - name: Extract changelog entry
         id: changelog
         run: |
-          awk '/^## \[${{ steps.version.outputs.version }}\]/{flag=1; next} /^## \[/{flag=0} flag' CHANGELOG.md \
-            > release_notes.md
+          awk '/^## \[${{ steps.version.outputs.version }}\]/{flag=1; next} /^## \[/{flag=0} flag' \
+            crates/nifi-rust-client/CHANGELOG.md > release_notes.md
           echo "notes_file=release_notes.md" >> "$GITHUB_OUTPUT"
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          name: nifi-rust-client ${{ steps.version.outputs.version }}
           body_path: ${{ steps.changelog.outputs.notes_file }}
           tag_name: ${{ github.ref_name }}
