@@ -1,6 +1,6 @@
 [package]
 name = "nifi-integration-tests"
-version.workspace = true
+version = "0.0.0" # not published; version is meaningless
 description = "Integration tests for nifi-rust-client against a real NiFi instance"
 edition.workspace = true
 rust-version.workspace = true

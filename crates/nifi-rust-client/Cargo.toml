@@ -1,6 +1,6 @@
 [package]
 name = "nifi-rust-client"
-version.workspace = true
+version = "0.5.0"
 description = "Apache NiFi REST API client library"
 edition.workspace = true
 rust-version.workspace = true
