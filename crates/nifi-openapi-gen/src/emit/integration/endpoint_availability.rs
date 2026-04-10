@@ -189,9 +189,16 @@ fn build_call_args(endpoint: &Endpoint, sub_group: Option<&SubGroup>) -> String 
         args.push(format!("\"{val}\""));
     }
 
-    // Add request body (if any) — borrowed.
-    if endpoint.request_type.is_some() {
-        args.push("&Default::default()".to_string());
+    // Add request body (if any).
+    match &endpoint.body_kind {
+        Some(crate::parser::RequestBodyKind::Json) => {
+            args.push("&Default::default()".to_string());
+        }
+        Some(crate::parser::RequestBodyKind::OctetStream) => {
+            args.push("None".to_string()); // filename
+            args.push("vec![]".to_string()); // data
+        }
+        _ => {}
     }
 
     // Add query params — all None (optional) or a default for required ones.

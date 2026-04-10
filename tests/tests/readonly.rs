@@ -239,6 +239,13 @@ async fn content_viewers_returns_ok() {
 #[ignore = "requires a running NiFi instance (use tests/run.sh)"]
 async fn get_root_flow_returns_ok() {
     let client = helpers::logged_in_client().await;
+    #[cfg(feature = "nifi-2-9-0")]
+    let entity = client
+        .flow_api()
+        .get_flow_1("root", None)
+        .await
+        .expect("failed to get root flow");
+    #[cfg(not(feature = "nifi-2-9-0"))]
     let entity = client
         .flow_api()
         .get_flow("root", None)

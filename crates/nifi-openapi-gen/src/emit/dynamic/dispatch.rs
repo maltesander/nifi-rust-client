@@ -482,6 +482,10 @@ fn emit_sub_dispatch_method(
         }
 
         let args_str = call_args.join(", ");
+        // Use the version-specific operation name (ver_ep.fn_name) for the
+        // delegation call, not the canonical name (fn_name), because the static
+        // sub-struct only exposes the name from its own spec.
+        let ver_fn_name = &ver_ep.fn_name;
 
         out.push_str(&format!(
             "            crate::dynamic::DetectedVersion::{variant} => {{\n"
@@ -496,11 +500,11 @@ fn emit_sub_dispatch_method(
         out.push_str("                };\n");
         if is_void {
             out.push_str(&format!(
-                "                api.{fn_name}({args_str}).await\n"
+                "                api.{ver_fn_name}({args_str}).await\n"
             ));
         } else {
             out.push_str(&format!(
-                "                Ok(api.{fn_name}({args_str}).await?.into())\n"
+                "                Ok(api.{ver_fn_name}({args_str}).await?.into())\n"
             ));
         }
         out.push_str("            }\n");

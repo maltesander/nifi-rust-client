@@ -131,7 +131,9 @@ fn emit_supported_versions(out: &mut String, versions: &[(&str, &str, &str, &Api
         out.push_str("/// The semver-latest NiFi version supported by this build.\n");
         out.push_str("///\n");
         out.push_str("/// Updated automatically when a new spec is added via the generator.\n");
-        out.push_str(&format!("pub const LATEST_NIFI_VERSION: &str = \"{latest}\";\n\n"));
+        out.push_str(&format!(
+            "pub const LATEST_NIFI_VERSION: &str = \"{latest}\";\n\n"
+        ));
     }
 }
 

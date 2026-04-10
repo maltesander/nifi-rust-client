@@ -10,7 +10,7 @@ for arg in "$@"; do
         --versions=*) FILTER_VERSIONS="${arg#--versions=}" ;;
         --versions) echo "Error: --versions requires a value (e.g. --versions=2.8.0,2.9.0)"; exit 1 ;;
         --help|-h)
-            AVAILABLE="$(ls "$SPECS_DIR" | sort -t. -k1,1n -k2,2n -k3,3n | tr '\n' ',' | sed 's/,$//')"
+            AVAILABLE="$(find "$SPECS_DIR" -mindepth 1 -maxdepth 1 -type d -printf '%f\n' | sort -t. -k1,1n -k2,2n -k3,3n | tr '\n' ',' | sed 's/,$//')"
             echo "Usage: $0 [--versions=${AVAILABLE}]"
             echo ""
             echo "Runs integration tests against each supported NiFi version."

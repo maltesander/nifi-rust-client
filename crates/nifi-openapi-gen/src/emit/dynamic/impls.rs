@@ -328,12 +328,16 @@ fn emit_impl_method(
     }
 
     let args_str = call_args.join(", ");
+    // Use the version-specific method name (ep.fn_name) for the delegation call,
+    // not the canonical name (fn_name), since the per-version static struct uses
+    // the original operation ID (e.g. update_run_status_5 for 2.9.0).
+    let ep_fn_name = &ep.fn_name;
 
     if is_void {
-        out.push_str(&format!("        api.{fn_name}({args_str}).await\n"));
+        out.push_str(&format!("        api.{ep_fn_name}({args_str}).await\n"));
     } else {
         out.push_str(&format!(
-            "        Ok(api.{fn_name}({args_str}).await?.into())\n"
+            "        Ok(api.{ep_fn_name}({args_str}).await?.into())\n"
         ));
     }
 

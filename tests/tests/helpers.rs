@@ -125,7 +125,27 @@ pub fn revision(version: i64) -> RevisionDto {
 }
 
 /// Start a processor and return the new revision version.
-#[cfg(not(feature = "dynamic"))]
+#[cfg(all(not(feature = "dynamic"), feature = "nifi-2-9-0"))]
+pub async fn start_processor(client: &NifiClient, proc_id: &str, version: i64) -> i64 {
+    let result = client
+        .processors_api()
+        .run_status(proc_id)
+        .update_run_status_5(&ProcessorRunStatusEntity {
+            state: Some(ProcessorRunStatusEntityState::Running),
+            revision: Some(revision(version)),
+            ..Default::default()
+        })
+        .await
+        .expect("failed to start processor");
+    result
+        .revision
+        .as_ref()
+        .and_then(|r| r.version)
+        .expect("started entity has no revision version")
+}
+
+/// Start a processor and return the new revision version.
+#[cfg(all(not(feature = "dynamic"), not(feature = "nifi-2-9-0")))]
 pub async fn start_processor(client: &NifiClient, proc_id: &str, version: i64) -> i64 {
     let result = client
         .processors_api()
@@ -145,7 +165,27 @@ pub async fn start_processor(client: &NifiClient, proc_id: &str, version: i64) -
 }
 
 /// Stop a processor and return the new revision version.
-#[cfg(not(feature = "dynamic"))]
+#[cfg(all(not(feature = "dynamic"), feature = "nifi-2-9-0"))]
+pub async fn stop_processor(client: &NifiClient, proc_id: &str, version: i64) -> i64 {
+    let result = client
+        .processors_api()
+        .run_status(proc_id)
+        .update_run_status_5(&ProcessorRunStatusEntity {
+            state: Some(ProcessorRunStatusEntityState::Stopped),
+            revision: Some(revision(version)),
+            ..Default::default()
+        })
+        .await
+        .expect("failed to stop processor");
+    result
+        .revision
+        .as_ref()
+        .and_then(|r| r.version)
+        .expect("stopped entity has no revision version")
+}
+
+/// Stop a processor and return the new revision version.
+#[cfg(all(not(feature = "dynamic"), not(feature = "nifi-2-9-0")))]
 pub async fn stop_processor(client: &NifiClient, proc_id: &str, version: i64) -> i64 {
     let result = client
         .processors_api()

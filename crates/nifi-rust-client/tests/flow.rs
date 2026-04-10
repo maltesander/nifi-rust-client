@@ -226,6 +226,9 @@ async fn get_flow_returns_process_group_id() {
         .unwrap()
         .build()
         .unwrap();
+    #[cfg(feature = "nifi-2-9-0")]
+    let entity = client.flow_api().get_flow_1("root", None).await.unwrap();
+    #[cfg(not(feature = "nifi-2-9-0"))]
     let entity = client.flow_api().get_flow("root", None).await.unwrap();
 
     assert_eq!(

@@ -62,6 +62,13 @@ async fn update_run_status_sends_request_to_correct_path() {
         .build()
         .unwrap();
     let body = nifi_rust_client::types::ControllerServiceRunStatusEntity::default();
+    #[cfg(feature = "nifi-2-9-0")]
+    let result = client
+        .controller_services_api()
+        .run_status("svc-id")
+        .update_run_status_2(&body)
+        .await;
+    #[cfg(not(feature = "nifi-2-9-0"))]
     let result = client
         .controller_services_api()
         .run_status("svc-id")

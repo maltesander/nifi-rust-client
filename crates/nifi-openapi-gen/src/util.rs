@@ -282,23 +282,35 @@ pub(crate) fn collect_tag_sub_groups<'a>(
     let mut root_endpoints: BTreeMap<String, BTreeMap<&'a str, EndpointInfo<'a>>> = BTreeMap::new();
     let mut sub_map: BTreeMap<String, CollectedSubGroup<'a>> = BTreeMap::new();
 
+    // Maps (path, method) → canonical fn_name, established by the first (oldest)
+    // version that exposes the endpoint.  When NiFi shifts operation-ID numbers
+    // across versions (e.g. `updateRunStatus_4` → `updateRunStatus_5` for the
+    // same path), this ensures all versions share one stable method name in the
+    // dynamic dispatch layer, while the per-version impl still delegates to the
+    // version-specific operation.
+    let mut root_path_canonical: BTreeMap<String, String> = BTreeMap::new();
+    // Keyed by (accessor_fn, path, method) for sub-group endpoints.
+    let mut sub_path_canonical: BTreeMap<String, String> = BTreeMap::new();
+
     for (ver, _mod_name, _feature, spec) in versions {
         for tg in &spec.tags {
             if tg.tag != tag {
                 continue;
             }
             for ep in &tg.root_endpoints {
-                root_endpoints
-                    .entry(ep.fn_name.clone())
-                    .or_default()
-                    .insert(
-                        ver,
-                        EndpointInfo {
-                            endpoint: ep,
-                            sub_struct_name: None,
-                            primary_param: None,
-                        },
-                    );
+                let path_key = format!("{} {:?}", ep.path, ep.method);
+                let canonical = root_path_canonical
+                    .entry(path_key)
+                    .or_insert_with(|| ep.fn_name.clone())
+                    .clone();
+                root_endpoints.entry(canonical).or_default().insert(
+                    ver,
+                    EndpointInfo {
+                        endpoint: ep,
+                        sub_struct_name: None,
+                        primary_param: None,
+                    },
+                );
             }
             for sg in &tg.sub_groups {
                 let collected =
@@ -312,18 +324,19 @@ pub(crate) fn collect_tag_sub_groups<'a>(
                             endpoints: BTreeMap::new(),
                         });
                 for ep in &sg.endpoints {
-                    collected
-                        .endpoints
-                        .entry(ep.fn_name.clone())
-                        .or_default()
-                        .insert(
-                            ver,
-                            EndpointInfo {
-                                endpoint: ep,
-                                sub_struct_name: Some(&sg.struct_name),
-                                primary_param: Some(&sg.primary_param),
-                            },
-                        );
+                    let path_key = format!("{} {} {:?}", sg.accessor_fn, ep.path, ep.method);
+                    let canonical = sub_path_canonical
+                        .entry(path_key)
+                        .or_insert_with(|| ep.fn_name.clone())
+                        .clone();
+                    collected.endpoints.entry(canonical).or_default().insert(
+                        ver,
+                        EndpointInfo {
+                            endpoint: ep,
+                            sub_struct_name: Some(&sg.struct_name),
+                            primary_param: Some(&sg.primary_param),
+                        },
+                    );
                 }
             }
         }

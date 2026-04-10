@@ -334,6 +334,18 @@ async fn processor_run_status_lifecycle() {
         .expect("failed to clear processor state");
 
     // ── start / stop ──────────────────────────────────────────────────────────
+    #[cfg(feature = "nifi-2-9-0")]
+    let started = client
+        .processors_api()
+        .run_status(&proc_id)
+        .update_run_status_5(&ProcessorRunStatusEntity {
+            state: Some(ProcessorRunStatusEntityState::Running),
+            revision: Some(helpers::revision(proc_version)),
+            ..Default::default()
+        })
+        .await
+        .expect("failed to start processor");
+    #[cfg(not(feature = "nifi-2-9-0"))]
     let started = client
         .processors_api()
         .run_status(&proc_id)
@@ -365,6 +377,18 @@ async fn processor_run_status_lifecycle() {
         .await
         .expect("failed to get processor diagnostics");
 
+    #[cfg(feature = "nifi-2-9-0")]
+    let stopped = client
+        .processors_api()
+        .run_status(&proc_id)
+        .update_run_status_5(&ProcessorRunStatusEntity {
+            state: Some(ProcessorRunStatusEntityState::Stopped),
+            revision: Some(helpers::revision(running_version)),
+            ..Default::default()
+        })
+        .await
+        .expect("failed to stop processor");
+    #[cfg(not(feature = "nifi-2-9-0"))]
     let stopped = client
         .processors_api()
         .run_status(&proc_id)
