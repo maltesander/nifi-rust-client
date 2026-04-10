@@ -30,6 +30,14 @@ fn main() -> Result<(), Box<dyn Error>> {
         );
     }
 
+    // Tell rustc that at least one version feature is active. lib.rs uses
+    // `#[cfg(not(has_any_version))]` as a defence-in-depth static guard
+    // for code paths that somehow bypass this build script. This flag is
+    // not a Cargo feature, so it is invisible to users — there is no way
+    // to set it from the outside.
+    println!("cargo::rustc-cfg=has_any_version");
+    println!("cargo::rustc-check-cfg=cfg(has_any_version)");
+
     nifi_openapi_gen::build_api::generate_client(&specs_dir, Path::new(&out_dir), &config);
 
     // Copy hand-written strategy.rs into $OUT_DIR/dynamic/ so the generated

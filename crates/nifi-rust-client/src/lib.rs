@@ -1,11 +1,12 @@
-// Internal `__any_version` marker — enabled transitively by every
-// `nifi-x-y-z` feature via Cargo.toml. When `--no-default-features` is
-// used without an explicit version (or `dynamic`) feature, none of the
-// `nifi-x-y-z` features are active, so `__any_version` is also off, and
-// this compile_error! fires. The generator's cargo_features patcher
-// maintains the dependency so adding a new NiFi version requires no
-// manual update here.
-#[cfg(not(feature = "__any_version"))]
+// `has_any_version` is a rustc-cfg emitted by build.rs whenever it runs
+// successfully with at least one NiFi version feature enabled (or the
+// `dynamic` feature, which pulls in all versions). The flag is invisible
+// to users — it isn't a Cargo feature and can't be set externally. If
+// build.rs is ever bypassed entirely (some `cargo doc` / rust-analyzer
+// configurations), the flag is unset and this compile_error! fires with
+// an actionable message. The primary zero-features guard is the runtime
+// check in build.rs itself; this is defence in depth.
+#[cfg(not(has_any_version))]
 compile_error!(
     "nifi-rust-client requires at least one version feature to be enabled. \
      Enable one of `nifi-2-6-0`, `nifi-2-7-2`, `nifi-2-8-0`, or the `dynamic` \
