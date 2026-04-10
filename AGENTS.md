@@ -336,6 +336,39 @@ Gate tests for endpoints that only exist in a specific NiFi version with `#[cfg(
 async fn test_endpoint_only_in_x_y_z() { ... }
 ```
 
+### Integration test override registry
+
+Auto-generated endpoint-availability and field-presence tests assume uniform
+behavior: `id` path params resolve to the `"root"` sentinel, and every newly
+added field is populated on the stock test flow. Some NiFi resources break
+those assumptions (e.g. `/connectors/{id}` has no `"root"` sentinel,
+`ProvenanceEventDTO.connectorId` is conditional-by-design). These exceptions
+live in `crates/nifi-openapi-gen/src/emit/integration/overrides.rs`.
+
+**Two override types:**
+
+- `ENDPOINT_OVERRIDES` — keyed by `EndpointScope::{Exact, Tag, PathPrefix}`.
+  Lookup order is `Exact → PathPrefix → Tag`, first match wins, so an `Exact`
+  entry can carve out a single endpoint from a tag-wide skip without deleting
+  the tag entry. Only `SkipPositiveTest { reason }` exists today; add
+  `CustomSetup { helper_fn, reason }` variant when a helper can create the
+  required fixture and return real path param values.
+- `FIELD_PRESENCE_OVERRIDES` — keyed by `(type_name, field_name)` in Rust
+  PascalCase/snake_case. Marks a field as conditional-by-design so the
+  positive presence test is skipped (negative test on older versions still
+  emitted).
+
+Both emitters replace the skipped positive test with a `// skipped by
+overrides` comment block containing the reason, so the generated files stay
+self-documenting.
+
+**Conditional-wording scan.** On every build, `scan_new_conditional_fields`
+walks newly added fields across all spec diffs and fails if any field's
+description contains phrases like "will not be set", "may not be populated",
+etc. and isn't in `FIELD_PRESENCE_OVERRIDES`. On a version bump, if this test
+fails, read the flagged field's description and either add an override entry
+(documenting why) or verify the stock test flow actually populates it.
+
 ## References
 
 | Resource | URL |

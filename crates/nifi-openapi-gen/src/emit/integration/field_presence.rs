@@ -1,3 +1,4 @@
+use super::overrides::lookup_field_presence_override;
 use crate::diff::VersionDiff;
 use crate::parser::ApiSpec;
 use crate::util::version_to_feature;
@@ -81,9 +82,21 @@ pub fn emit_field_presence_tests(all_specs: &[(String, ApiSpec)], diffs: &[Versi
                 let snake_field = camel_to_snake(field);
                 let test_base = format!("field_{}_{}", tc.name.to_lowercase(), snake_field);
 
-                // Positive: field is Some on the version that added it
-                tests.push(format!(
-                    r#"#[cfg(feature = "{to_feature}")]
+                // Check whether this field is overridden as conditional-by-design.
+                let override_entry = lookup_field_presence_override(&tc.name, &snake_field);
+
+                // Positive: field is Some on the version that added it — unless overridden.
+                if let Some(ov) = override_entry {
+                    tests.push(format!(
+                        "// positive test for `{type_name}.{field_name}` skipped by overrides\n\
+                         // reason: {reason}\n",
+                        type_name = tc.name,
+                        field_name = snake_field,
+                        reason = ov.reason,
+                    ));
+                } else {
+                    tests.push(format!(
+                        r#"#[cfg(feature = "{to_feature}")]
 #[tokio::test]
 #[ignore = "requires a running NiFi instance (use tests/run.sh)"]
 async fn {test_base}_present() {{
@@ -95,8 +108,9 @@ async fn {test_base}_present() {{
     );
 }}
 "#,
-                    to_ver = diff.to,
-                ));
+                        to_ver = diff.to,
+                    ));
+                }
 
                 // Negative: field is None on older versions
                 tests.push(format!(
@@ -258,6 +272,46 @@ mod tests {
         let names = tested_type_names();
         assert!(names.contains(&"ProcessorEntity"));
         assert!(names.contains(&"ProvenanceEventDto"));
+    }
+
+    #[test]
+    fn overridden_field_omits_positive_test_but_keeps_negative() {
+        let specs = vec![
+            ("2.8.0".to_string(), empty_spec()),
+            ("2.9.0".to_string(), empty_spec()),
+        ];
+        let diffs = vec![VersionDiff {
+            from: "2.8.0".to_string(),
+            to: "2.9.0".to_string(),
+            endpoints: EndpointDiff {
+                added: vec![],
+                removed: vec![],
+                changed: vec![],
+            },
+            types: TypesDiff {
+                added: vec![],
+                removed: vec![],
+                changed: vec![TypeChanges {
+                    name: "ProvenanceEventDto".to_string(),
+                    added_fields: vec!["connector_id".to_string()],
+                    removed_fields: vec![],
+                    changed_fields: vec![],
+                }],
+            },
+        }];
+        let result = emit_field_presence_tests(&specs, &diffs);
+        assert!(
+            !result.contains("field_provenanceeventdto_connector_id_present"),
+            "positive test must be skipped for overridden field, got:\n{result}"
+        );
+        assert!(
+            result.contains("field_provenanceeventdto_connector_id_absent"),
+            "negative test must still be emitted, got:\n{result}"
+        );
+        assert!(
+            result.contains("skipped by overrides"),
+            "generated file should explain why, got:\n{result}"
+        );
     }
 
     #[test]

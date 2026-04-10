@@ -4,6 +4,7 @@ use super::common::{
     build_accessor, default_path_param_value, default_required_query_param_value, find_endpoint,
     trait_use_stmt,
 };
+use super::overrides::{EndpointBehavior, lookup_endpoint_override};
 use crate::diff::{EndpointSummary, VersionDiff};
 use crate::parser::{ApiSpec, Endpoint, HttpMethod, SubGroup};
 use crate::util::version_to_feature;
@@ -76,10 +77,29 @@ pub fn emit_endpoint_availability_tests(
             // is always generated below, so every endpoint that reaches here is tested).
             tested.insert(endpoint_key(&added.method, &added.path));
 
-            // Positive test — only for safe endpoints (no risky required params).
-            if is_safe_endpoint(added, endpoint) {
-                let positive_test = format!(
-                    r#"#[cfg(feature = "{to_feature}")]
+            // Consult the override registry. Overrides take precedence over
+            // the is_safe_endpoint heuristic — a tag-wide skip suppresses the
+            // positive test even for GET-with-id endpoints that would
+            // otherwise be emitted.
+            let override_entry =
+                lookup_endpoint_override(&added.method, &added.path, &tag_group.tag);
+
+            // Positive test — only for safe endpoints that aren't overridden.
+            match override_entry {
+                Some(ov) => match &ov.behavior {
+                    EndpointBehavior::SkipPositiveTest { reason } => {
+                        tests.push(format!(
+                            "// positive test for `{method:?} {path}` skipped by overrides\n\
+                             // reason: {reason}",
+                            method = added.method,
+                            path = added.path,
+                            reason = reason,
+                        ));
+                    }
+                },
+                None if is_safe_endpoint(added, endpoint) => {
+                    let positive_test = format!(
+                        r#"#[cfg(feature = "{to_feature}")]
 #[tokio::test]
 #[ignore = "requires a running NiFi instance (use tests/run.sh)"]
 async fn {base_name}_available() {{
@@ -89,14 +109,16 @@ async fn {base_name}_available() {{
     let result = client.{accessor}.{fn_name}({call_args}).await;
     assert!(result.is_ok(), "expected endpoint to be available, got: {{:?}}", result.unwrap_err());
 }}"#,
-                    to_feature = to_feature,
-                    use_trait = use_trait,
-                    base_name = base_name,
-                    accessor = accessor,
-                    fn_name = endpoint.fn_name,
-                    call_args = call_args,
-                );
-                tests.push(positive_test);
+                        to_feature = to_feature,
+                        use_trait = use_trait,
+                        base_name = base_name,
+                        accessor = accessor,
+                        fn_name = endpoint.fn_name,
+                        call_args = call_args,
+                    );
+                    tests.push(positive_test);
+                }
+                None => {}
             }
 
             // Negative test — only on versions that lack this endpoint.
@@ -223,13 +245,80 @@ fn test_base_name(accessor_fn: &str, fn_name: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::diff::{EndpointDiff, TypesDiff, VersionDiff};
-    use crate::parser::ApiSpec;
+    use crate::diff::{EndpointDiff, EndpointSummary, TypesDiff, VersionDiff};
+    use crate::parser::{ApiSpec, Endpoint, HttpMethod, PathParam, TagGroup};
 
     fn empty_spec() -> ApiSpec {
         ApiSpec {
             tags: vec![],
             all_types: vec![],
+        }
+    }
+
+    fn single_get_endpoint(path: &str, fn_name: &str) -> Endpoint {
+        Endpoint {
+            method: HttpMethod::Get,
+            path: path.to_string(),
+            fn_name: fn_name.to_string(),
+            doc: None,
+            description: None,
+            path_params: vec![PathParam {
+                name: "id".to_string(),
+                doc: None,
+            }],
+            request_type: None,
+            body_kind: None,
+            body_doc: None,
+            response_type: None,
+            response_inner: None,
+            response_field: None,
+            query_params: vec![],
+            success_responses: vec![],
+            error_responses: vec![],
+            security: None,
+        }
+    }
+
+    fn spec_with_tag(tag: &str, endpoint: Endpoint) -> ApiSpec {
+        ApiSpec {
+            tags: vec![TagGroup {
+                tag: tag.to_string(),
+                struct_name: format!("{tag}Api"),
+                module_name: tag.to_lowercase(),
+                accessor_fn: format!("{}_api", tag.to_lowercase()),
+                types: vec![],
+                root_endpoints: vec![endpoint],
+                sub_groups: vec![],
+            }],
+            all_types: vec![],
+        }
+    }
+
+    fn diff_with_added_endpoint(
+        from: &str,
+        to: &str,
+        method: HttpMethod,
+        path: &str,
+        tag: &str,
+    ) -> VersionDiff {
+        VersionDiff {
+            from: from.to_string(),
+            to: to.to_string(),
+            endpoints: EndpointDiff {
+                added: vec![EndpointSummary {
+                    method,
+                    path: path.to_string(),
+                    tag: tag.to_string(),
+                    doc: None,
+                }],
+                removed: vec![],
+                changed: vec![],
+            },
+            types: TypesDiff {
+                added: vec![],
+                removed: vec![],
+                changed: vec![],
+            },
         }
     }
 
@@ -263,6 +352,63 @@ mod tests {
         let (result, tested) = emit_endpoint_availability_tests(&specs, &diffs);
         assert_eq!(result, "");
         assert!(tested.is_empty());
+    }
+
+    #[test]
+    fn connectors_tag_endpoint_omits_positive_test_but_keeps_negative() {
+        let ep = single_get_endpoint("/connectors/{id}", "get_connector");
+        let to_spec = spec_with_tag("Connectors", ep);
+        let specs = vec![
+            ("2.8.0".to_string(), empty_spec()),
+            ("2.9.0".to_string(), to_spec),
+        ];
+        let diffs = vec![diff_with_added_endpoint(
+            "2.8.0",
+            "2.9.0",
+            HttpMethod::Get,
+            "/connectors/{id}",
+            "Connectors",
+        )];
+
+        let (result, _) = emit_endpoint_availability_tests(&specs, &diffs);
+
+        assert!(
+            !result.contains("endpoint_connectors_get_connector_available"),
+            "positive test must be skipped for Connectors tag, got:\n{result}"
+        );
+        assert!(
+            result.contains("endpoint_connectors_get_connector_unsupported"),
+            "negative test must still be emitted, got:\n{result}"
+        );
+        assert!(
+            result.contains("skipped by overrides"),
+            "generated file should explain why the positive test was skipped, got:\n{result}"
+        );
+    }
+
+    #[test]
+    fn non_overridden_tag_still_gets_positive_test() {
+        let mut ep = single_get_endpoint("/flow/about", "get_about_info");
+        ep.path_params.clear();
+        let to_spec = spec_with_tag("Flow", ep);
+        let specs = vec![
+            ("2.8.0".to_string(), empty_spec()),
+            ("2.9.0".to_string(), to_spec),
+        ];
+        let diffs = vec![diff_with_added_endpoint(
+            "2.8.0",
+            "2.9.0",
+            HttpMethod::Get,
+            "/flow/about",
+            "Flow",
+        )];
+
+        let (result, _) = emit_endpoint_availability_tests(&specs, &diffs);
+
+        assert!(
+            result.contains("endpoint_flow_get_about_info_available"),
+            "positive test should be emitted for non-overridden Flow tag, got:\n{result}"
+        );
     }
 
     #[test]

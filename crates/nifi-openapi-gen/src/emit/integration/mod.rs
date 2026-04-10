@@ -2,6 +2,7 @@ pub(super) mod common;
 mod endpoint_availability;
 mod enum_coverage;
 mod field_presence;
+pub(super) mod overrides;
 mod query_param_coverage;
 
 pub use endpoint_availability::emit_endpoint_availability_tests;
