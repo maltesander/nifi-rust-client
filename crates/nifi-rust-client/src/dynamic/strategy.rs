@@ -5,6 +5,7 @@ use semver::Version;
 /// Controls how the dynamic client resolves a detected NiFi server version
 /// to a supported client version.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[non_exhaustive]
 pub enum VersionResolutionStrategy {
     #[default]
     Strict,
