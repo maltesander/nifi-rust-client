@@ -1,4 +1,3 @@
-#![deny(missing_docs)]
 // Hand-written — not generated. See dynamic/mod.rs for the generated counterpart.
 
 use semver::Version;
@@ -8,9 +7,12 @@ use semver::Version;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 #[non_exhaustive]
 pub enum VersionResolutionStrategy {
+    /// Require an exact major.minor match; return [`NifiError::UnsupportedVersion`](crate::NifiError) otherwise.
     #[default]
     Strict,
+    /// Use the supported version with the nearest minor version within the same major. Ties go to the lower version.
     Closest,
+    /// Use the highest supported minor version within the same major.
     Latest,
 }
 
