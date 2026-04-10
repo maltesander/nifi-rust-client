@@ -30,6 +30,8 @@ tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 url = "2"
 wiremock = "0.6"
+# icu 2.x requires Rust > 1.85 (our MSRV); pin to last known-good version.
+icu = "=1.5.1"
 
 [workspace.lints.clippy]
 unwrap_in_result = "deny"

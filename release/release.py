@@ -578,6 +578,8 @@ def run_checks(dry_run, skip_integration):
         ("cargo test -p nifi-integration-tests", "Tests (integration compile)"),
         ("cargo clippy --workspace --all-targets --all-features --exclude nifi-integration-tests -- -D warnings", "Clippy (all features)"),
         ("pre-commit run --all-files", "Pre-commit"),
+        ("cargo package -p nifi-openapi-gen --allow-dirty", "Package validation (nifi-openapi-gen, post-lockfile)"),
+        ("cargo package -p nifi-rust-client --allow-dirty", "Package validation (nifi-rust-client, post-lockfile)"),
     ]
 
     if skip_integration:
