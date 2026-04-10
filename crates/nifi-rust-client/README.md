@@ -9,6 +9,7 @@ All NiFi REST API endpoints are generated from the official OpenAPI spec and exp
 <!-- SUPPORTED_VERSIONS_START -->
 | NiFi Version | Feature flag | Endpoints | Types | Changes |
 |---|---|---|---|---|
+| 2.9.0 | `nifi-2-9-0` | 352 | 437 | +35 endpoints, +32 types, +10 fields vs 2.8.0 |
 | 2.8.0 | `nifi-2-8-0` | 317 | 405 | +2 fields, +1 enum values vs 2.7.2 |
 | 2.7.2 | `nifi-2-7-2` | 317 | 405 | +17 endpoints, +10 types, +8 fields vs 2.6.0 |
 | 2.6.0 | `nifi-2-6-0` | 300 | 395 | — |
@@ -27,7 +28,7 @@ Use this when you're building a deployment pipeline, custom processor manager, o
 <!-- STATIC_FEATURE_EXAMPLE_START -->
 ```toml
 [dependencies]
-nifi-rust-client = { version = "0.5", features = ["nifi-2-8-0"] }
+nifi-rust-client = { version = "0.5", features = ["nifi-2-9-0"] }
 ```
 <!-- STATIC_FEATURE_EXAMPLE_END -->
 
@@ -36,7 +37,7 @@ nifi-rust-client = { version = "0.5", features = ["nifi-2-8-0"] }
 let client = NifiClientBuilder::new("https://nifi:8443")?.build()?;
 client.login("admin", "password").await?;
 
-// Full type safety — ProcessorEntity is v2_8_0::types::ProcessorEntity
+// Full type safety — ProcessorEntity is v2_9_0::types::ProcessorEntity
 let proc = client.processors_api().get_processor("id").await?;
 ```
 <!-- STATIC_RUST_EXAMPLE_END -->
@@ -293,36 +294,37 @@ client.processgroups_api().get_process_group("root").await?;
 ```
 
 <!-- RESOURCE_ACCESSORS_START -->
-| Accessor | Resource | 2.6.0 | 2.7.2 | 2.8.0 |
-|----------|----------|-------|-------|-------|
-| `client.access_api()` | Access | 3 | 3 | 3 |
-| `client.authentication_api()` | Authentication | 1 | 1 | 1 |
-| `client.connections_api()` | Connections | 3 | 3 | 3 |
-| `client.controller_api()` | Controller | 39 | 46 | 46 |
-| `client.controller_services_api()` | Controller services | 13 | 14 | 14 |
-| `client.counters_api()` | Counters | 3 | 3 | 3 |
-| `client.datatransfer_api()` | Data transfer | 7 | 7 | 7 |
-| `client.flow_api()` | Flow | 60 | 63 | 63 |
-| `client.flowfilequeues_api()` | Flow file queues | 8 | 8 | 8 |
-| `client.funnels_api()` | Funnels | 3 | 3 | 3 |
-| `client.inputports_api()` | Input ports | 4 | 5 | 5 |
-| `client.labels_api()` | Labels | 3 | 3 | 3 |
-| `client.outputports_api()` | Output ports | 4 | 5 | 5 |
-| `client.parametercontexts_api()` | Parameter contexts | 14 | 14 | 14 |
-| `client.parameterproviders_api()` | Parameter providers | 15 | 16 | 16 |
-| `client.policies_api()` | Policies | 5 | 5 | 5 |
-| `client.processgroups_api()` | Process groups | 34 | 34 | 34 |
-| `client.processors_api()` | Processors | 14 | 15 | 15 |
-| `client.provenance_api()` | Provenance | 7 | 7 | 7 |
-| `client.provenanceevents_api()` | Provenance events | 6 | 6 | 6 |
-| `client.remoteprocessgroups_api()` | Remote process groups | 10 | 11 | 11 |
-| `client.reportingtasks_api()` | Reporting tasks | 11 | 12 | 12 |
-| `client.resources_api()` | Resources | 1 | 1 | 1 |
-| `client.sitetosite_api()` | Site to site | 2 | 2 | 2 |
-| `client.snippets_api()` | Snippets | 3 | 3 | 3 |
-| `client.systemdiagnostics_api()` | System diagnostics | 2 | 2 | 2 |
-| `client.tenants_api()` | Tenants | 11 | 11 | 11 |
-| `client.versions_api()` | Versions | 14 | 14 | 14 |
+| Accessor | Resource | 2.6.0 | 2.7.2 | 2.8.0 | 2.9.0 |
+|----------|----------|-------|-------|-------|-------|
+| `client.access_api()` | Access | 3 | 3 | 3 | 3 |
+| `client.authentication_api()` | Authentication | 1 | 1 | 1 | 1 |
+| `client.connections_api()` | Connections | 3 | 3 | 3 | 3 |
+| `client.connectors_api()` | Connectors | — | — | — | 31 |
+| `client.controller_api()` | Controller | 39 | 46 | 46 | 46 |
+| `client.controller_services_api()` | Controller services | 13 | 14 | 14 | 14 |
+| `client.counters_api()` | Counters | 3 | 3 | 3 | 3 |
+| `client.datatransfer_api()` | Data transfer | 7 | 7 | 7 | 7 |
+| `client.flow_api()` | Flow | 60 | 63 | 63 | 67 |
+| `client.flowfilequeues_api()` | Flow file queues | 8 | 8 | 8 | 8 |
+| `client.funnels_api()` | Funnels | 3 | 3 | 3 | 3 |
+| `client.inputports_api()` | Input ports | 4 | 5 | 5 | 5 |
+| `client.labels_api()` | Labels | 3 | 3 | 3 | 3 |
+| `client.outputports_api()` | Output ports | 4 | 5 | 5 | 5 |
+| `client.parametercontexts_api()` | Parameter contexts | 14 | 14 | 14 | 14 |
+| `client.parameterproviders_api()` | Parameter providers | 15 | 16 | 16 | 16 |
+| `client.policies_api()` | Policies | 5 | 5 | 5 | 5 |
+| `client.processgroups_api()` | Process groups | 34 | 34 | 34 | 34 |
+| `client.processors_api()` | Processors | 14 | 15 | 15 | 15 |
+| `client.provenance_api()` | Provenance | 7 | 7 | 7 | 7 |
+| `client.provenanceevents_api()` | Provenance events | 6 | 6 | 6 | 6 |
+| `client.remoteprocessgroups_api()` | Remote process groups | 10 | 11 | 11 | 11 |
+| `client.reportingtasks_api()` | Reporting tasks | 11 | 12 | 12 | 12 |
+| `client.resources_api()` | Resources | 1 | 1 | 1 | 1 |
+| `client.sitetosite_api()` | Site to site | 2 | 2 | 2 | 2 |
+| `client.snippets_api()` | Snippets | 3 | 3 | 3 | 3 |
+| `client.systemdiagnostics_api()` | System diagnostics | 2 | 2 | 2 | 2 |
+| `client.tenants_api()` | Tenants | 11 | 11 | 11 | 11 |
+| `client.versions_api()` | Versions | 14 | 14 | 14 | 14 |
 
 > Numbers indicate the endpoint count available for each accessor in that NiFi version. — means the accessor is not available in that version.
 <!-- RESOURCE_ACCESSORS_END -->
@@ -357,7 +359,7 @@ Helper methods:
 Auto-generated by `cargo run -p nifi-openapi-gen`. Do not edit manually.
 
 <!-- INTEGRATION_COVERAGE_START -->
-**3** NiFi versions tested · **17** added-endpoint checks (17 tested) · **1** enum param checks (1 tested) · **10** field presence checks (2 tested) · **1** query param checks (1 tested)
+**4** NiFi versions tested · **52** added-endpoint checks (52 tested) · **1** enum param checks (1 tested) · **20** field presence checks (3 tested) · **1** query param checks (1 tested)
 
 <details><summary>2.7.2 (vs 2.6.0)</summary>
 
@@ -399,6 +401,58 @@ Auto-generated by `cargo run -p nifi-openapi-gen`. Do not edit manually.
 | Enum value | `IncludedRegistries::VersionInfo` accepted ✓ |
 | Field presence | `ProvenanceEventDto.event_timestamp` ✓ |
 | Field presence | `ProvenanceNodeDto.component_type` |
+
+</details>
+
+<details><summary>2.9.0 (vs 2.8.0)</summary>
+
+| Category | What |
+|----------|------|
+| Added endpoint | `POST /connectors` ✓ |
+| Added endpoint | `GET /connectors/{connectorId}/flow/process-groups/{processGroupId}` ✓ |
+| Added endpoint | `GET /connectors/{connectorId}/flow/process-groups/{processGroupId}/controller-services` ✓ |
+| Added endpoint | `DELETE /connectors/{id}` ✓ |
+| Added endpoint | `GET /connectors/{id}` ✓ |
+| Added endpoint | `PUT /connectors/{id}` ✓ |
+| Added endpoint | `POST /connectors/{id}/apply-update` ✓ |
+| Added endpoint | `GET /connectors/{id}/assets` ✓ |
+| Added endpoint | `POST /connectors/{id}/assets` ✓ |
+| Added endpoint | `GET /connectors/{id}/assets/{assetId}` ✓ |
+| Added endpoint | `GET /connectors/{id}/configuration-steps` ✓ |
+| Added endpoint | `GET /connectors/{id}/configuration-steps/{configurationStepName}` ✓ |
+| Added endpoint | `PUT /connectors/{id}/configuration-steps/{configurationStepName}` ✓ |
+| Added endpoint | `GET /connectors/{id}/configuration-steps/{configurationStepName}/property-groups/{propertyGroupName}/properties/{propertyName}/allowable-values` ✓ |
+| Added endpoint | `POST /connectors/{id}/configuration-steps/{configurationStepName}/verify-config` ✓ |
+| Added endpoint | `DELETE /connectors/{id}/configuration-steps/{configurationStepName}/verify-config/{requestId}` ✓ |
+| Added endpoint | `GET /connectors/{id}/configuration-steps/{configurationStepName}/verify-config/{requestId}` ✓ |
+| Added endpoint | `GET /connectors/{id}/controller-services/{controllerServiceId}/state` ✓ |
+| Added endpoint | `POST /connectors/{id}/controller-services/{controllerServiceId}/state/clear-requests` ✓ |
+| Added endpoint | `DELETE /connectors/{id}/drain` ✓ |
+| Added endpoint | `POST /connectors/{id}/drain` ✓ |
+| Added endpoint | `GET /connectors/{id}/processors/{processorId}/state` ✓ |
+| Added endpoint | `POST /connectors/{id}/processors/{processorId}/state/clear-requests` ✓ |
+| Added endpoint | `POST /connectors/{id}/purge-requests` ✓ |
+| Added endpoint | `DELETE /connectors/{id}/purge-requests/{purge-request-id}` ✓ |
+| Added endpoint | `GET /connectors/{id}/purge-requests/{purge-request-id}` ✓ |
+| Added endpoint | `PUT /connectors/{id}/run-status` ✓ |
+| Added endpoint | `GET /connectors/{id}/search-results` ✓ |
+| Added endpoint | `GET /connectors/{id}/secrets` ✓ |
+| Added endpoint | `GET /connectors/{id}/status` ✓ |
+| Added endpoint | `DELETE /connectors/{id}/working-configuration` ✓ |
+| Added endpoint | `GET /flow/connector-definition/{group}/{artifact}/{version}/{type}` ✓ |
+| Added endpoint | `GET /flow/connector-types` ✓ |
+| Added endpoint | `GET /flow/connectors` ✓ |
+| Added endpoint | `GET /flow/steps/{group}/{artifact}/{version}/{connectorType}/{stepName}` ✓ |
+| Field presence | `AssetReferenceDto.missing_content` |
+| Field presence | `ComponentManifest.connectors` |
+| Field presence | `ConfigVerificationResultDto.subject` |
+| Field presence | `CurrentUserEntity.connectors_permissions` |
+| Field presence | `DifferenceDto.environmental` |
+| Field presence | `NarDetailsEntity.connector_types` |
+| Field presence | `ProvenanceEventDto.connector_id` ✓ |
+| Field presence | `VersionedControllerService.component_state` |
+| Field presence | `VersionedProcessor.component_state` |
+| Field presence | `VersionedReportingTask.component_state` |
 
 </details>
 

@@ -1,6 +1,6 @@
 services:
   nifi:
-    image: apache/nifi:${NIFI_IMAGE_TAG:-2.8.0}  # default kept in sync by `cargo run -p nifi-openapi-gen`
+    image: apache/nifi:${NIFI_IMAGE_TAG:-2.9.0}  # default kept in sync by `cargo run -p nifi-openapi-gen`
     entrypoint: ["/bin/sh", "/opt/nifi/scripts/nifi-entrypoint.sh"]
     ports:
       - "8443:8443"

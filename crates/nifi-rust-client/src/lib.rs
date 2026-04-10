@@ -93,7 +93,7 @@
 //! | Feature | Purpose |
 //! |---|---|
 //! <!-- NIFI_FEATURE_FLAGS_START -->
-//! | `nifi-2-6-0`, `nifi-2-7-2`, `nifi-2-8-0` | Compile against a specific NiFi version. The semver-latest is the default. |
+//! | `nifi-2-6-0`, `nifi-2-7-2`, `nifi-2-8-0`, `nifi-2-9-0` | Compile against a specific NiFi version. The semver-latest is the default. |
 //! <!-- NIFI_FEATURE_FLAGS_END -->
 //! | `dynamic` | Compile all versions and enable runtime version detection. Pulls in every version feature. |
 //!

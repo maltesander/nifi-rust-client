@@ -226,11 +226,15 @@ pub(crate) fn replace_between_markers(
         .unwrap_or_else(|| {
             panic!("end marker '{end_marker}' not found");
         });
+    // Preserve any line prefix (e.g. `//! `) that precedes the end marker on its line.
+    let end_line_start = content[..end_pos].rfind('\n').map(|p| p + 1).unwrap_or(0);
+    let end_prefix = &content[end_line_start..end_pos];
     format!(
-        "{}{}\n{}\n{}{}",
+        "{}{}\n{}\n{}{}{}",
         &content[..start_pos],
         start_marker,
         new_content,
+        end_prefix,
         end_marker,
         &content[end_pos + end_marker.len()..],
     )
@@ -506,6 +510,18 @@ mod tests {
         assert_eq!(
             result,
             "header\n<!-- BEGIN -->\nreplaced\n<!-- END -->\nfooter\n"
+        );
+    }
+
+    #[test]
+    fn replace_between_markers_preserves_end_marker_prefix() {
+        // End marker has a `//! ` doc-comment prefix that must be preserved across runs.
+        let content = "//! <!-- START -->\n//! | old |\n//! <!-- END -->\n//! rest\n";
+        let result =
+            replace_between_markers(content, "<!-- START -->", "<!-- END -->", "//! | new |");
+        assert_eq!(
+            result,
+            "//! <!-- START -->\n//! | new |\n//! <!-- END -->\n//! rest\n"
         );
     }
 
