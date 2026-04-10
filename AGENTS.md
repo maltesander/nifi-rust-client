@@ -369,6 +369,89 @@ etc. and isn't in `FIELD_PRESENCE_OVERRIDES`. On a version bump, if this test
 fails, read the flagged field's description and either add an override entry
 (documenting why) or verify the stock test flow actually populates it.
 
+## Releases
+
+`nifi-openapi-gen` and `nifi-rust-client` are released **independently**.
+Each crate owns its own version (no `version.workspace = true`), its own
+changelog, its own tag prefix, and its own CI pipeline. This ended a
+long-running pain point where a spec addition to `nifi-openapi-gen` would
+force an unrelated `nifi-rust-client` release, and where the pre-update
+packaging check silently broke whenever the two crates drifted between
+releases.
+
+### Crate release cadence
+
+| Crate | Typical trigger for a release |
+|---|---|
+| `nifi-openapi-gen` | New NiFi spec bundled, emitter bug fix, API extension for new kinds of codegen overrides |
+| `nifi-rust-client` | Picks up a newer `nifi-openapi-gen`, or ships a hand-written client change (builder, retry, tracing, etc.) |
+
+### Tag scheme
+
+| Crate | Tag format |
+|---|---|
+| `nifi-openapi-gen` | `gen-vX.Y.Z` |
+| `nifi-rust-client` | `client-vX.Y.Z` |
+
+`.github/workflows/release.yml` listens for both prefixes and dispatches
+three jobs per crate: `{prefix}-test → {prefix}-publish → {prefix}-release`.
+The `test` job asserts the Git tag matches the corresponding crate's
+`Cargo.toml` version so mismatches fail fast.
+
+### release.py usage
+
+```bash
+# Release nifi-openapi-gen (always runs first when gen has new commits)
+python3 release/release.py gen patch --tag-message "release message"
+
+# Then — only once nifi-openapi-gen is on crates.io — pick it up on the
+# client side and release the client:
+#   1. Manually edit crates/nifi-rust-client/Cargo.toml to bump the
+#      nifi-openapi-gen build-dep version to the freshly published one.
+#   2. Commit: chore(client): bump nifi-openapi-gen build-dep to X.Y.Z
+#   3. Run:
+python3 release/release.py client patch --tag-message "release message"
+```
+
+`release.py client` runs a crates.io lookup as its first gate: it parses
+the `nifi-openapi-gen` version from `crates/nifi-rust-client/Cargo.toml`'s
+`[build-dependencies]` and hits
+`https://crates.io/api/v1/crates/nifi-openapi-gen/<version>`. If the
+version isn't published, the script aborts with an actionable error. This
+is the only guard against accidentally releasing a client that depends on
+an unpublished generator.
+
+### Changelogs
+
+- `crates/nifi-openapi-gen/CHANGELOG.md`
+- `crates/nifi-rust-client/CHANGELOG.md`
+
+Both are generated from conventional commits via `git log {old-tag}..HEAD
+-- <crate-paths>`, so each changelog only lists commits that touched its
+crate's files. A commit that touches both crates (e.g. "add NiFi 2.9.0
+support" which lands a new spec AND a new feature flag in the client)
+appears in both changelogs, which is almost always what you want.
+
+Commit scopes that are purely internal (`ci`, `release`, `rustfmt`,
+`rust-analyzer`) and the `chore` type are filtered out in both
+changelogs.
+
+### First-release-under-new-scheme fallback
+
+When `release.py` runs for the first time after the prefixed-tag split,
+there is no `gen-v<old>` or `client-v<old>` tag yet. The script falls back
+to the legacy `v<old>` tag for both the git-log range and the
+"Unreleased" compare link. After that, every subsequent release uses the
+prefixed form.
+
+### Skipping packaging checks
+
+`release.py` calls `cargo package -p <crate> --allow-dirty` twice: once
+before the version bump (as a sanity check on the previous state) and
+once after the lockfile is regenerated. Both are gated on
+`SKIP_PACKAGE_CHECK=1` for bootstrapping situations where nothing is on
+crates.io yet.
+
 ## References
 
 | Resource | URL |
