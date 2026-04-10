@@ -49,6 +49,14 @@ repos:
         pass_filenames: false
         files: Cargo\.(toml|lock)|deny\.toml
 
+      - id: cargo-msrv-check
+        name: cargo-msrv-check
+        language: system
+        entry: cargo +1.85.0 check --workspace --exclude nifi-integration-tests
+        stages: [pre-commit, pre-merge-commit]
+        pass_filenames: false
+        files: \.rs$|Cargo\.(toml|lock)
+
       - id: cargo-test
         name: cargo-test
         language: system
