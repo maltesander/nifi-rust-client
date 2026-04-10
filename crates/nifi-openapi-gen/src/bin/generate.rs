@@ -19,7 +19,7 @@ use nifi_openapi_gen::docs::{
 use nifi_openapi_gen::repo::{
     update_cargo_features_client, update_cargo_features_tests, update_docker_compose_default,
 };
-use nifi_openapi_gen::util::{discover_spec_versions, update_file_between_markers};
+use nifi_openapi_gen::util::{discover_spec_versions, update_file_between_markers, version_to_feature};
 use nifi_openapi_gen::{
     emit_endpoint_availability_tests, emit_enum_coverage_tests, emit_field_presence_tests,
     emit_query_param_coverage_tests, load,
@@ -130,6 +130,21 @@ fn main() {
 
         let content = generate_api_changes_content(&all_parsed);
         update_file_between_markers(&path, START, END, &content);
+    }
+
+    // Feature flags table in crate-level doc
+    {
+        const START: &str = "<!-- NIFI_FEATURE_FLAGS_START -->";
+        const END: &str = "<!-- NIFI_FEATURE_FLAGS_END -->";
+        let features: Vec<String> = all_spec_versions
+            .iter()
+            .map(|v| format!("`{}`", version_to_feature(v)))
+            .collect();
+        let features_list = features.join(", ");
+        let content = format!(
+            "//! | {features_list} | Compile against a specific NiFi version. The semver-latest is the default. |\n"
+        );
+        update_file_between_markers(&client.join("src/lib.rs"), START, END, &content);
     }
 
     // 3. Integration coverage section in client README.
