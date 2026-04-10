@@ -2,8 +2,6 @@ use std::path::Path;
 
 use crate::util::version_to_feature;
 
-use super::lib_rs::discover_versions;
-
 /// Patch the client crate's `Cargo.toml` `[features]` section to include all version features,
 /// a `default` pointing to the latest, and a `dynamic` that depends on all versions.
 pub fn patch_client_cargo_features(toml_str: &str, versions: &[&str]) -> String {
@@ -85,9 +83,10 @@ pub fn patch_tests_cargo_features(toml_str: &str, versions: &[&str]) -> String {
     doc.to_string()
 }
 
-/// Discover versions from `client_crate/src` and patch the client crate's `Cargo.toml` features.
+/// Discover versions from the bundled OpenAPI specs directory and patch the
+/// client crate's `Cargo.toml` features.
 pub fn update_cargo_features_client(client_crate: &Path) {
-    let versions = discover_versions(&client_crate.join("src"));
+    let versions = crate::util::discover_spec_versions(&crate::specs_dir());
     let version_strs: Vec<&str> = versions.iter().map(String::as_str).collect();
     let cargo_path = client_crate.join("Cargo.toml");
     let on_disk = std::fs::read_to_string(&cargo_path).expect("read client Cargo.toml");
@@ -98,9 +97,10 @@ pub fn update_cargo_features_client(client_crate: &Path) {
     }
 }
 
-/// Discover versions from `client_src` and patch the tests crate's `Cargo.toml` features.
-pub fn update_cargo_features_tests(client_src: &Path, tests_crate: &Path) {
-    let versions = discover_versions(client_src);
+/// Discover versions from the bundled OpenAPI specs directory and patch the
+/// tests crate's `Cargo.toml` features.
+pub fn update_cargo_features_tests(tests_crate: &Path) {
+    let versions = crate::util::discover_spec_versions(&crate::specs_dir());
     let version_strs: Vec<&str> = versions.iter().map(String::as_str).collect();
     let cargo_path = tests_crate.join("Cargo.toml");
     let on_disk = std::fs::read_to_string(&cargo_path).expect("read tests Cargo.toml");

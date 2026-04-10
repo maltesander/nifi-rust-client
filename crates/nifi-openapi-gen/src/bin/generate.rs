@@ -65,7 +65,7 @@ fn main() {
     // 1. Update Cargo.toml [features] sections for both crates.
     let tests_crate = workspace_root.join("tests");
     update_cargo_features_client(&client);
-    update_cargo_features_tests(&client.join("src"), &tests_crate);
+    update_cargo_features_tests(&tests_crate);
 
     // 2. Repo maintenance: README tables, docker-compose, API changes.
     let latest_version = all_spec_versions.last().cloned().unwrap_or_default();
