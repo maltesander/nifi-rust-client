@@ -6,7 +6,11 @@ fn main() {
     let out_dir = std::env::var("OUT_DIR").expect("OUT_DIR not set");
     let manifest_dir = std::env::var("CARGO_MANIFEST_DIR").expect("CARGO_MANIFEST_DIR not set");
 
-    let specs_dir = Path::new(&manifest_dir).join("../nifi-openapi-gen/specs");
+    // The specs ship inside the nifi-openapi-gen crate. The helper resolves
+    // them relative to nifi-openapi-gen's own manifest dir, which works whether
+    // that crate is consumed via path dep (workspace dev build) or pulled from
+    // the registry (downstream consumers, `cargo package` verify build).
+    let specs_dir = nifi_openapi_gen::specs_dir();
     let specs_dir = specs_dir
         .canonicalize()
         .unwrap_or_else(|e| panic!("Cannot find specs dir {}: {e}", specs_dir.display()));
@@ -30,8 +34,7 @@ fn main() {
         }
     }
 
-    println!("cargo::rerun-if-changed=../nifi-openapi-gen/specs");
-    println!("cargo::rerun-if-changed=../nifi-openapi-gen/src");
+    println!("cargo::rerun-if-changed={}", specs_dir.display());
     println!("cargo::rerun-if-changed=build.rs");
     println!("cargo::rerun-if-changed=src/dynamic/strategy.rs");
 }

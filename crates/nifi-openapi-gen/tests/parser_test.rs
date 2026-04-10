@@ -340,10 +340,8 @@ fn parse_query_params() {
 #[test]
 fn query_param_enum_produces_typedef_and_type_name() {
     // The real spec has parameterContextHandlingStrategy on POST /process-groups/{id}/process-groups
-    let spec = load(&format!(
-        "{}/specs/2.8.0/nifi-api.json",
-        nifi_openapi_gen::SPECS_DIR
-    ));
+    let spec_path = nifi_openapi_gen::specs_dir().join("2.8.0").join("nifi-api.json");
+    let spec = load(spec_path.to_str().expect("UTF-8 spec path"));
 
     // Find the ProcessGroups tag
     let pg = spec

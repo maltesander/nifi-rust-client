@@ -30,5 +30,11 @@ pub use parser::{
     TagGroup, TypeDef, TypeKind, load,
 };
 
-/// Absolute path to the nifi-openapi-gen crate directory.
-pub const SPECS_DIR: &str = env!("CARGO_MANIFEST_DIR");
+/// Absolute path to the bundled OpenAPI specs directory inside this crate.
+///
+/// `env!("CARGO_MANIFEST_DIR")` is resolved at the time `nifi-openapi-gen` itself
+/// is compiled, so this points to the workspace source tree during dev builds and
+/// to the registry-cache copy when consumed as a build-dependency from crates.io.
+pub fn specs_dir() -> std::path::PathBuf {
+    std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("specs")
+}
