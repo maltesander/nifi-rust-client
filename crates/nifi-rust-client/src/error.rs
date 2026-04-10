@@ -2,6 +2,7 @@ use snafu::Snafu;
 
 #[derive(Debug, Snafu)]
 #[snafu(visibility(pub(crate)))]
+#[non_exhaustive]
 pub enum NifiError {
     #[snafu(display("HTTP request failed: {source}"))]
     Http { source: reqwest::Error },
