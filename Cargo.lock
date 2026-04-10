@@ -835,7 +835,7 @@ dependencies = [
 
 [[package]]
 name = "nifi-integration-tests"
-version = "0.5.0"
+version = "0.0.0"
 dependencies = [
  "nifi-openapi-gen",
  "nifi-rust-client",

@@ -1,10 +1,15 @@
 <!-- markdownlint-disable MD033 -->
 # Changelog
 
-All notable changes to this project will be documented in this file.
+All notable changes to `nifi-rust-client` will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+> Prior to v0.5.0, this file also tracked `nifi-openapi-gen` entries.
+> Starting with the next release, `nifi-openapi-gen` has its own changelog at
+> [`crates/nifi-openapi-gen/CHANGELOG.md`](../nifi-openapi-gen/CHANGELOG.md)
+> and an independent release cadence.
 
 ## [Unreleased]
 
