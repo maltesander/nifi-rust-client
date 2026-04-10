@@ -172,6 +172,7 @@ impl NifiClient {
 
     /// Execute `f`, and if it returns `NifiError::Unauthorized` and a credential
     /// provider is configured, refresh the token and retry once.
+    #[tracing::instrument(skip_all)]
     async fn with_auth_retry<T, F, Fut>(&self, f: F) -> Result<T, NifiError>
     where
         F: Fn() -> Fut,
@@ -194,6 +195,7 @@ impl NifiClient {
     /// When a [`RetryPolicy`](crate::config::retry::RetryPolicy) is configured, retries
     /// [retryable](NifiError::is_retryable) errors up to `max_retries` times.
     /// Each attempt goes through [`with_auth_retry`] so 401 handling still works.
+    #[tracing::instrument(skip_all)]
     async fn with_retry<T, F, Fut>(&self, f: F) -> Result<T, NifiError>
     where
         F: Fn() -> Fut,
