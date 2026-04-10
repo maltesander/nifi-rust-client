@@ -827,7 +827,7 @@ dependencies = [
 
 [[package]]
 name = "nifi-integration-tests"
-version = "0.4.1"
+version = "0.4.2"
 dependencies = [
  "nifi-openapi-gen",
  "nifi-rust-client",
@@ -836,7 +836,7 @@ dependencies = [
 
 [[package]]
 name = "nifi-openapi-gen"
-version = "0.4.1"
+version = "0.4.2"
 dependencies = [
  "clap",
  "prettyplease",
@@ -849,7 +849,7 @@ dependencies = [
 
 [[package]]
 name = "nifi-rust-client"
-version = "0.4.1"
+version = "0.4.2"
 dependencies = [
  "async-trait",
  "nifi-openapi-gen",

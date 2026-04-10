@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.2] - 2026-04-10
+
+### Fixed
+
+- Bundle OpenAPI specs in nifi-openapi-gen so downstream builds work ([9dba3ec](https://github.com/maltesander/nifi-rust-client/commit/9dba3ec))
+
 ## [0.4.1] - 2026-04-10
 
 ### Added
@@ -288,7 +294,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Structured error handling** — `NifiError` via `snafu` with distinct variants for HTTP, auth, serialization, and network errors.
 - **Tracing** — all HTTP requests emit a `tracing::debug!` event with method and path before sending.
 
-[Unreleased]: https://github.com/maltesander/nifi-rust-client/compare/v0.4.1...HEAD
+[Unreleased]: https://github.com/maltesander/nifi-rust-client/compare/v0.4.2...HEAD
+[0.4.2]: https://github.com/maltesander/nifi-rust-client/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/maltesander/nifi-rust-client/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/maltesander/nifi-rust-client/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/maltesander/nifi-rust-client/compare/v0.3.0...v0.3.1
