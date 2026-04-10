@@ -1,3 +1,5 @@
+//! Retry policy for transient HTTP errors with exponential backoff.
+
 use std::time::Duration;
 
 /// Configuration for retrying transient errors with exponential backoff.

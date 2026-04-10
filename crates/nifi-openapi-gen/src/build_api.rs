@@ -351,6 +351,7 @@ fn generate_lib_rs_fragment(versions: &[String], out_dir: &Path, dynamic: bool) 
         out.push_str(&format!(
             "#[cfg(feature = \"{feature}\")]\n\
              #[path = \"{out_dir_str}/{mod_name}/mod.rs\"]\n\
+             #[allow(missing_docs)]\n\
              pub mod {mod_name};\n\n",
         ));
     }
@@ -386,6 +387,7 @@ fn generate_lib_rs_fragment(versions: &[String], out_dir: &Path, dynamic: bool) 
         out.push_str(&format!(
             "#[cfg(feature = \"dynamic\")]\n\
              #[path = \"{out_dir_str}/dynamic/mod.rs\"]\n\
+             #[allow(missing_docs)]\n\
              pub mod dynamic;\n",
         ));
     }

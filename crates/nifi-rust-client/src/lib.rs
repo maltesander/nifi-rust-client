@@ -98,6 +98,8 @@
 //! At least one version feature (or `dynamic`) must be enabled — builds with
 //! none fail at both build-script time and compile time.
 
+#![deny(missing_docs)]
+
 // `has_any_version` is a rustc-cfg emitted by build.rs whenever it runs
 // successfully with at least one NiFi version feature enabled (or the
 // `dynamic` feature, which pulls in all versions). The flag is invisible
@@ -113,9 +115,13 @@ compile_error!(
      feature in your Cargo.toml."
 );
 
+/// Client builder: configure timeouts, TLS, credentials, and retry before connecting.
 pub mod builder;
+/// The connected client handle and resource accessor methods.
 pub mod client;
+/// Configuration types: credential providers and retry policy.
 pub mod config;
+/// Error type returned by all client operations.
 pub mod error;
 pub use builder::NifiClientBuilder;
 pub use client::NifiClient;
