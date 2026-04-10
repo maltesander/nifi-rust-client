@@ -12,7 +12,7 @@ async fn create_port_transaction_returns_response_code() {
         .and(path(
             "/nifi-api/data-transfer/input-ports/port-id/transactions",
         ))
-        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+        .respond_with(ResponseTemplate::new(201).set_body_json(serde_json::json!({
             "responseCode": 3,
             "message": "handshake"
         })))
