@@ -308,3 +308,83 @@ async fn clear_process_group_bulletins_returns_cleared_count() {
 
     assert!(result.is_ok(), "clear_process_group_bulletins failed: {:?}", result.err());
 }
+
+// ── listen-ports ──────────────────────────────────────────────────────────────
+
+#[tokio::test]
+async fn get_listen_ports_returns_port_list() {
+    let mock_server = MockServer::start().await;
+
+    Mock::given(method("GET"))
+        .and(path("/nifi-api/flow/listen-ports"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+            "listenPorts": [
+                {
+                    "portNumber": 8080,
+                    "portName": "HTTP",
+                    "transportProtocol": "TCP",
+                    "componentId": "abc-123",
+                    "componentName": "ListenHTTP",
+                    "componentType": "Processor",
+                    "componentClass": "org.apache.nifi.processors.standard.ListenHTTP",
+                    "parentGroupId": "root"
+                }
+            ]
+        })))
+        .expect(1)
+        .mount(&mock_server)
+        .await;
+
+    let client = NifiClientBuilder::new(&mock_server.uri())
+        .unwrap()
+        .build()
+        .unwrap();
+    let result = client.flow_api().get_listen_ports().await.unwrap();
+
+    let ports = result.listen_ports.unwrap_or_default();
+    assert_eq!(ports.len(), 1);
+    assert_eq!(ports[0].port_number, Some(8080));
+    assert_eq!(ports[0].transport_protocol.as_deref(), Some("TCP"));
+}
+
+// ── flow-registry-client-definition ──────────────────────────────────────────
+
+#[tokio::test]
+async fn get_flow_registry_client_definition_returns_artifact_info() {
+    let mock_server = MockServer::start().await;
+
+    Mock::given(method("GET"))
+        .and(path(
+            "/nifi-api/flow/flow-registry-client-definition/org.apache.nifi/nifi-flow-registry-client-nar/2.8.0/StandardNiFiRegistryFlowRegistryClient",
+        ))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+            "group": "org.apache.nifi",
+            "artifact": "nifi-flow-registry-client-nar",
+            "version": "2.8.0",
+            "type": "StandardNiFiRegistryFlowRegistryClient",
+            "deprecated": false,
+            "additionalDetails": false
+        })))
+        .expect(1)
+        .mount(&mock_server)
+        .await;
+
+    let client = NifiClientBuilder::new(&mock_server.uri())
+        .unwrap()
+        .build()
+        .unwrap();
+    let result = client
+        .flow_api()
+        .get_flow_registry_client_definition(
+            "org.apache.nifi",
+            "nifi-flow-registry-client-nar",
+            "2.8.0",
+            "StandardNiFiRegistryFlowRegistryClient",
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(result.artifact.as_deref(), Some("nifi-flow-registry-client-nar"));
+    assert_eq!(result.group.as_deref(), Some("org.apache.nifi"));
+    assert!(!result.deprecated.unwrap_or(true));
+}
