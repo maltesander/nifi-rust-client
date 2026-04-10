@@ -180,6 +180,11 @@ def parse_args():
         type=str,
         help="Git tag annotation message (required unless --dry-run)",
     )
+    parser.add_argument(
+        "--no-push",
+        action="store_true",
+        help="Stop after creating the local commit and tag; do not push to origin",
+    )
     args = parser.parse_args()
     if not args.dry_run and not args.tag_message:
         parser.error("--tag-message is required unless --dry-run is set")
@@ -766,7 +771,7 @@ def commit_release(crate: CrateConfig, new_version, dry_run):
     print(f"      chore(release): {crate.name} v{new_version}")
 
 
-def tag_and_push(crate: CrateConfig, new_version, tag_message, dry_run):
+def tag_and_push(crate: CrateConfig, new_version, tag_message, dry_run, no_push):
     new_tag = f"{crate.tag_prefix}-v{new_version}"
     if dry_run:
         print(f"      Skipped (dry-run); would create tag {new_tag}")
@@ -774,6 +779,18 @@ def tag_and_push(crate: CrateConfig, new_version, tag_message, dry_run):
 
     run(f'git tag -a "{new_tag}" -m "{tag_message}"')
     print(f"      Tagged {new_tag}")
+
+    if no_push:
+        print(
+            f"\nLocal release {new_tag} staged. --no-push set; nothing pushed to origin.\n"
+            f"To publish:\n"
+            f"  git push origin main\n"
+            f"  git push origin {new_tag}\n"
+            f"To abort:\n"
+            f"  git tag -d {new_tag}\n"
+            f"  git reset --hard HEAD~1"
+        )
+        return
 
     commit_hash = run("git rev-parse --short HEAD")
 
@@ -855,7 +872,7 @@ def main():
     commit_release(crate, new_version, args.dry_run)
 
     print("[10/10] Tagging and pushing...")
-    tag_and_push(crate, new_version, args.tag_message, args.dry_run)
+    tag_and_push(crate, new_version, args.tag_message, args.dry_run, args.no_push)
 
     if args.dry_run:
         print(f"\nDry-run complete. No changes were made.")
