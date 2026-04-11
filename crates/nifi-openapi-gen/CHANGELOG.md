@@ -14,6 +14,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-04-12
+
+### Added
+
+- Diff detects deprecation changes and enum narrowing ([b3024c3](https://github.com/maltesander/nifi-rust-client/commit/b3024c3))
+- Emit text/bytes returns for non-JSON response endpoints ([d98f8f7](https://github.com/maltesander/nifi-rust-client/commit/d98f8f7))
+- Capture non-JSON response body kinds ([27bf17a](https://github.com/maltesander/nifi-rust-client/commit/27bf17a))
+- Recognize multipart/form-data and */* request bodies ([39ee9cd](https://github.com/maltesander/nifi-rust-client/commit/39ee9cd))
+- Add content_type allow-list module ([9f85474](https://github.com/maltesander/nifi-rust-client/commit/9f85474))
+- Panic on unknown query parameter type ([a440fb7](https://github.com/maltesander/nifi-rust-client/commit/a440fb7))
+- Panic on unknown field type in OpenAPI spec ([4bf0215](https://github.com/maltesander/nifi-rust-client/commit/4bf0215))
+- Add strict-parsing panic helper ([122236d](https://github.com/maltesander/nifi-rust-client/commit/122236d))
+- Compact enum-variant diffs in NIFI_API_CHANGES ([3604ce0](https://github.com/maltesander/nifi-rust-client/commit/3604ce0))
+- Surface breaking-change marker and tested column in README ([3105c97](https://github.com/maltesander/nifi-rust-client/commit/3105c97))
+- Add SemverBump, is_breaking(), semver_bump() to VersionDiff ([4c4a554](https://github.com/maltesander/nifi-rust-client/commit/4c4a554))
+- Detect field base type changes in diff_type_fields ([7dbf1f5](https://github.com/maltesander/nifi-rust-client/commit/7dbf1f5))
+- Carry required flag on AddedParam; detect query param type transitions (Str↔Enum) ([88b965d](https://github.com/maltesander/nifi-rust-client/commit/88b965d))
+- Detect request_type, response_type, body_kind changes on endpoints ([7606905](https://github.com/maltesander/nifi-rust-client/commit/7606905))
+- Detect path parameter add/remove in endpoint diff ([e2ac18e](https://github.com/maltesander/nifi-rust-client/commit/e2ac18e))
+- Add tag field to EndpointChanges for grouping changed endpoints ([d50e140](https://github.com/maltesander/nifi-rust-client/commit/d50e140))
+
+### Changed
+
+- Lazy version detection on dynamic dispatch ([422ff49](https://github.com/maltesander/nifi-rust-client/commit/422ff49))
+- Replace FieldChange.description string with FieldChangeKind enum ([e7113a6](https://github.com/maltesander/nifi-rust-client/commit/e7113a6))
+- Consolidate HttpMethod::as_str(), remove duplicated method_key/method_str ([47b7788](https://github.com/maltesander/nifi-rust-client/commit/47b7788))
+
+### Fixed
+
+- Escape Vec<u8> in content_type doc comments ([5783d0c](https://github.com/maltesander/nifi-rust-client/commit/5783d0c))
+- Classify added path params as breaking; add Serialize to SemverBump ([3ccba75](https://github.com/maltesander/nifi-rust-client/commit/3ccba75))
+- Detect StringEnum variant changes in diff_types (was silently dropped) ([a4cd56d](https://github.com/maltesander/nifi-rust-client/commit/a4cd56d))
+
 ## [0.6.0] - 2026-04-11
 
 ### Added
@@ -29,4 +62,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Stable method names across NiFi versions via path-based grouping ([a058972](https://github.com/maltesander/nifi-rust-client/commit/a058972))
 
+[0.7.0]: https://github.com/maltesander/nifi-rust-client/compare/gen-v0.6.0...gen-v0.7.0
 [0.6.0]: https://github.com/maltesander/nifi-rust-client/compare/v0.5.0...gen-v0.6.0
