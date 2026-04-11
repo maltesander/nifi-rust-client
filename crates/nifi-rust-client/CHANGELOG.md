@@ -13,6 +13,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-04-12
+
+### Added
+
+- Emit text/bytes returns for non-JSON response endpoints ([d98f8f7](https://github.com/maltesander/nifi-rust-client/commit/d98f8f7))
+- Add post_multipart helper and wiremock test ([fc6871f](https://github.com/maltesander/nifi-rust-client/commit/fc6871f))
+- Recognize multipart/form-data and */* request bodies ([39ee9cd](https://github.com/maltesander/nifi-rust-client/commit/39ee9cd))
+- Compact enum-variant diffs in NIFI_API_CHANGES ([3604ce0](https://github.com/maltesander/nifi-rust-client/commit/3604ce0))
+- Surface breaking-change marker and tested column in README ([3105c97](https://github.com/maltesander/nifi-rust-client/commit/3105c97))
+
+### Changed
+
+- Lazy version detection on dynamic dispatch ([422ff49](https://github.com/maltesander/nifi-rust-client/commit/422ff49))
+
+### Fixed
+
+- Unwrap detected_version Option in integration test ([248ac94](https://github.com/maltesander/nifi-rust-client/commit/248ac94))
+
 ## [0.6.0] - 2026-04-11
 
 ### Added
@@ -361,7 +379,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Structured error handling** — `NifiError` via `snafu` with distinct variants for HTTP, auth, serialization, and network errors.
 - **Tracing** — all HTTP requests emit a `tracing::debug!` event with method and path before sending.
 
-[Unreleased]: https://github.com/maltesander/nifi-rust-client/compare/client-v0.6.0...HEAD
+[Unreleased]: https://github.com/maltesander/nifi-rust-client/compare/client-v0.7.0...HEAD
+[0.7.0]: https://github.com/maltesander/nifi-rust-client/compare/client-v0.6.0...client-v0.7.0
 [0.6.0]: https://github.com/maltesander/nifi-rust-client/compare/v0.5.0...client-v0.6.0
 [0.5.0]: https://github.com/maltesander/nifi-rust-client/compare/v0.4.2...v0.5.0
 [0.4.2]: https://github.com/maltesander/nifi-rust-client/compare/v0.4.1...v0.4.2
