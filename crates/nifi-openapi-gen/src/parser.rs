@@ -76,6 +76,17 @@ pub enum HttpMethod {
     Delete,
 }
 
+impl HttpMethod {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            HttpMethod::Get => "GET",
+            HttpMethod::Post => "POST",
+            HttpMethod::Put => "PUT",
+            HttpMethod::Delete => "DELETE",
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum QueryParamType {
     Str,
@@ -734,4 +745,17 @@ fn operation_id_to_fn_name(id: &str) -> String {
 
 fn tag_to_accessor(tag: &str) -> String {
     format!("{}_api", tag.to_lowercase().replace(' ', "_"))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_http_method_as_str() {
+        assert_eq!(HttpMethod::Get.as_str(), "GET");
+        assert_eq!(HttpMethod::Post.as_str(), "POST");
+        assert_eq!(HttpMethod::Put.as_str(), "PUT");
+        assert_eq!(HttpMethod::Delete.as_str(), "DELETE");
+    }
 }

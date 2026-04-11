@@ -1,14 +1,5 @@
 use crate::diff::VersionDiff;
-use crate::parser::{ApiSpec, HttpMethod};
-
-fn method_str(m: &HttpMethod) -> &'static str {
-    match m {
-        HttpMethod::Get => "GET",
-        HttpMethod::Post => "POST",
-        HttpMethod::Put => "PUT",
-        HttpMethod::Delete => "DELETE",
-    }
-}
+use crate::parser::ApiSpec;
 
 pub fn format_diff_body(diff: &VersionDiff) -> String {
     let mut out = String::new();
@@ -23,7 +14,7 @@ pub fn format_diff_body(diff: &VersionDiff) -> String {
                 .unwrap_or_default();
             out.push_str(&format!(
                 "- `{} {}`{} ({})\n",
-                method_str(&ep.method),
+                ep.method.as_str(),
                 ep.path,
                 doc,
                 ep.tag,
@@ -37,7 +28,7 @@ pub fn format_diff_body(diff: &VersionDiff) -> String {
         for ep in &diff.endpoints.removed {
             out.push_str(&format!(
                 "- `{} {}` ({})\n",
-                method_str(&ep.method),
+                ep.method.as_str(),
                 ep.path,
                 ep.tag,
             ));
@@ -87,7 +78,7 @@ pub fn format_diff_body(diff: &VersionDiff) -> String {
             }
             out.push_str(&format!(
                 "- `{} {}` \u{2014} {}\n",
-                method_str(&ec.method),
+                ec.method.as_str(),
                 ec.path,
                 parts.join("; ")
             ));

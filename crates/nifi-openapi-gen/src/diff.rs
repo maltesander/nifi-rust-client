@@ -153,31 +153,22 @@ impl VersionDiff {
 
 // ─── Private helpers ──────────────────────────────────────────────────────────
 
-fn method_key(m: &HttpMethod) -> &'static str {
-    match m {
-        HttpMethod::Get => "GET",
-        HttpMethod::Post => "POST",
-        HttpMethod::Put => "PUT",
-        HttpMethod::Delete => "DELETE",
-    }
-}
-
 fn is_optional(ft: &FieldType) -> bool {
     matches!(ft, FieldType::Opt(_))
 }
 
-/// Collects all endpoints from a spec as (method_key, path) → (Endpoint ref, tag name).
+/// Collects all endpoints from a spec as (method, path) → (Endpoint ref, tag name).
 fn endpoint_map(spec: &ApiSpec) -> HashMap<(String, String), (&Endpoint, String)> {
     let mut map = HashMap::new();
     for tag in &spec.tags {
         let tag_name = tag.tag.clone();
         for ep in &tag.root_endpoints {
-            let key = (method_key(&ep.method).to_string(), ep.path.clone());
+            let key = (ep.method.as_str().to_string(), ep.path.clone());
             map.insert(key, (ep, tag_name.clone()));
         }
         for sg in &tag.sub_groups {
             for ep in &sg.endpoints {
-                let key = (method_key(&ep.method).to_string(), ep.path.clone());
+                let key = (ep.method.as_str().to_string(), ep.path.clone());
                 map.insert(key, (ep, tag_name.clone()));
             }
         }
@@ -240,9 +231,9 @@ fn diff_endpoints(from: &ApiSpec, to: &ApiSpec) -> EndpointDiff {
     }
 
     // Sort for deterministic output
-    added.sort_by(|a, b| (&a.path, method_key(&a.method)).cmp(&(&b.path, method_key(&b.method))));
-    removed.sort_by(|a, b| (&a.path, method_key(&a.method)).cmp(&(&b.path, method_key(&b.method))));
-    changed.sort_by(|a, b| (&a.path, method_key(&a.method)).cmp(&(&b.path, method_key(&b.method))));
+    added.sort_by(|a, b| (&a.path, a.method.as_str()).cmp(&(&b.path, b.method.as_str())));
+    removed.sort_by(|a, b| (&a.path, a.method.as_str()).cmp(&(&b.path, b.method.as_str())));
+    changed.sort_by(|a, b| (&a.path, a.method.as_str()).cmp(&(&b.path, b.method.as_str())));
 
     EndpointDiff {
         added,
