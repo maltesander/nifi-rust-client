@@ -3,7 +3,7 @@ use std::path::Path;
 use crate::util::{update_file_between_markers, version_to_feature, version_to_mod_name};
 
 fn read_crate_version_shorthand(workspace_root: &Path) -> String {
-    let cargo_toml = workspace_root.join("Cargo.toml");
+    let cargo_toml = workspace_root.join("crates/nifi-rust-client/Cargo.toml");
     let content = std::fs::read_to_string(&cargo_toml)
         .unwrap_or_else(|_| panic!("read {}", cargo_toml.display()));
     for line in content.lines() {

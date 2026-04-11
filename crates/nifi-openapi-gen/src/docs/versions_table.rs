@@ -1,3 +1,4 @@
+use crate::diff::SemverBump;
 use crate::parser::ApiSpec;
 use crate::util::version_to_feature;
 
@@ -35,7 +36,13 @@ pub fn generate_versions_table_content(all_specs: &[(String, ApiSpec)]) -> Strin
             "\u{2014}".to_string()
         } else {
             let (prev_version, prev_spec) = &all_specs[i - 1];
-            crate::compute_diff(prev_spec, spec, prev_version, version).summary()
+            let diff = crate::compute_diff(prev_spec, spec, prev_version, version);
+            let summary = diff.summary();
+            if diff.semver_bump() == SemverBump::Major {
+                format!("⚠️ breaking · {summary}")
+            } else {
+                summary
+            }
         };
 
         rows.push(format!(
@@ -163,5 +170,65 @@ mod tests {
         assert!(content.contains("| \u{2014} |"));
         // Non-baseline row has "vs" in changes column
         assert!(content.contains(" vs ") || content.contains("no API changes"));
+    }
+
+    #[test]
+    fn test_generate_versions_table_breaking_marker() {
+        use crate::parser::{Endpoint, HttpMethod, TagGroup};
+
+        fn make_spec_with_endpoints(paths: &[&str]) -> ApiSpec {
+            ApiSpec {
+                tags: vec![TagGroup {
+                    tag: "flow".to_string(),
+                    struct_name: "FlowApi".to_string(),
+                    module_name: "flow".to_string(),
+                    accessor_fn: "flow_api".to_string(),
+                    types: vec![],
+                    root_endpoints: paths
+                        .iter()
+                        .map(|p| Endpoint {
+                            method: HttpMethod::Get,
+                            path: p.to_string(),
+                            fn_name: "get_ep".to_string(),
+                            doc: None,
+                            description: None,
+                            path_params: vec![],
+                            request_type: None,
+                            body_kind: None,
+                            body_doc: None,
+                            response_type: None,
+                            response_inner: None,
+                            response_field: None,
+                            query_params: vec![],
+                            success_responses: vec![],
+                            error_responses: vec![],
+                            security: None,
+                        })
+                        .collect(),
+                    sub_groups: vec![],
+                }],
+                all_types: vec![],
+            }
+        }
+
+        // old has an endpoint that new removes → breaking
+        let old = make_spec_with_endpoints(&["/nifi-api/flow/a", "/nifi-api/flow/b"]);
+        let new = make_spec_with_endpoints(&["/nifi-api/flow/a"]);
+        let specs = vec![("2.7.2".to_string(), old), ("2.8.0".to_string(), new)];
+        let table = generate_versions_table_content(&specs);
+        assert!(
+            table.contains("⚠️ breaking"),
+            "removed endpoint should produce breaking marker; got:\n{table}"
+        );
+
+        // additive only → no breaking marker
+        let old2 = make_spec_with_endpoints(&["/nifi-api/flow/a"]);
+        let new2 = make_spec_with_endpoints(&["/nifi-api/flow/a", "/nifi-api/flow/b"]);
+        let specs2 = vec![("2.7.2".to_string(), old2), ("2.8.0".to_string(), new2)];
+        let table2 = generate_versions_table_content(&specs2);
+        assert!(
+            !table2.contains("⚠️ breaking"),
+            "additive-only diff should not have breaking marker; got:\n{table2}"
+        );
     }
 }

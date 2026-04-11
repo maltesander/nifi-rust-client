@@ -611,7 +611,11 @@ fn field_type_display(ty: &FieldType) -> String {
         FieldType::List(inner) => format!("Vec<{}>", field_type_display(inner)),
         FieldType::Ref(name) => name.clone(),
         FieldType::Map(inner) => format!("HashMap<String, {}>", field_type_display(inner)),
-        FieldType::Enum(_) => "StringEnum".to_string(),
+        FieldType::Enum(variants) => {
+            let mut sorted = variants.clone();
+            sorted.sort();
+            format!("Enum({})", sorted.join(" | "))
+        }
     }
 }
 
@@ -675,7 +679,18 @@ fn diff_type_fields(name: &str, from_type: &TypeDef, to_type: &TypeDef) -> TypeC
                     },
                 });
             }
-            if from_base != to_base {
+            // For inline enum fields, compare variant sets (order-insensitive).
+            let types_differ = match (from_base, to_base) {
+                (FieldType::Enum(fv), FieldType::Enum(tv)) => {
+                    let mut a = fv.clone();
+                    let mut b = tv.clone();
+                    a.sort();
+                    b.sort();
+                    a != b
+                }
+                _ => from_base != to_base,
+            };
+            if types_differ {
                 changed_fields.push(FieldChange {
                     name: fname.to_string(),
                     kind: FieldChangeKind::TypeChanged {

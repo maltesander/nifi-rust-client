@@ -112,36 +112,30 @@ pub fn generate_integration_coverage_content(
             diff.to, diff.from
         ));
 
-        let mut rows: Vec<(String, String)> = Vec::new();
+        // rows: (category, what, tested)
+        let mut rows: Vec<(String, String, bool)> = Vec::new();
 
         // Added endpoints
         for ep in &diff.endpoints.added {
             let key = format!("{} {}", method_str(&ep.method), ep.path);
-            let marker = if tested_endpoints.contains(&key) {
-                " ✓"
-            } else {
-                ""
-            };
-            rows.push(("Added endpoint".to_string(), format!("`{key}`{marker}")));
+            let tested = tested_endpoints.contains(&key);
+            rows.push(("Added endpoint".to_string(), format!("`{key}`"), tested));
         }
 
         // Added query params on changed endpoints
         for ec in &diff.endpoints.changed {
             for param in &ec.added_params {
                 let key = format!("{} {} {}", method_str(&ec.method), ec.path, param.name);
-                let marker = if tested_query_params.contains(&key) {
-                    " ✓"
-                } else {
-                    ""
-                };
+                let tested = tested_query_params.contains(&key);
                 rows.push((
                     "Query param".to_string(),
                     format!(
-                        "`{} {}` +`{}`{marker}",
+                        "`{} {}` +`{}`",
                         method_str(&ec.method),
                         ec.path,
                         param.name,
                     ),
+                    tested,
                 ));
             }
         }
@@ -153,14 +147,11 @@ pub fn generate_integration_coverage_content(
                     let variant = wire_to_pascal(wire_value);
                     let type_name = capitalize_first(&pc.name);
                     let key = format!("{type_name}::{variant}");
-                    let marker = if tested_enum_values.contains(&key) {
-                        " ✓"
-                    } else {
-                        ""
-                    };
+                    let tested = tested_enum_values.contains(&key);
                     rows.push((
                         "Enum value".to_string(),
-                        format!("`{key}` accepted{marker}"),
+                        format!("`{key}` accepted"),
+                        tested,
                     ));
                 }
             }
@@ -170,10 +161,10 @@ pub fn generate_integration_coverage_content(
         for tc in &diff.types.changed {
             let tested = tested_types.contains(&tc.name.as_str());
             for field in &tc.added_fields {
-                let marker = if tested { " ✓" } else { "" };
                 rows.push((
                     "Field presence".to_string(),
-                    format!("`{}.{field}`{marker}", tc.name),
+                    format!("`{}.{field}`", tc.name),
+                    tested,
                 ));
             }
         }
@@ -181,10 +172,11 @@ pub fn generate_integration_coverage_content(
         if rows.is_empty() {
             out.push_str("_No tracked integration checks for this version bump._\n");
         } else {
-            out.push_str("| Category | What |\n");
-            out.push_str("|----------|------|\n");
-            for (category, what) in &rows {
-                out.push_str(&format!("| {category} | {what} |\n"));
+            out.push_str("| Category | What | Tested |\n");
+            out.push_str("|----------|------|--------|\n");
+            for (category, what, tested) in &rows {
+                let check = if *tested { "✓" } else { "" };
+                out.push_str(&format!("| {category} | {what} | {check} |\n"));
             }
         }
 
