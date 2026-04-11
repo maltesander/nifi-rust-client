@@ -33,6 +33,7 @@ pub struct EndpointSummary {
 pub struct EndpointChanges {
     pub method: HttpMethod,
     pub path: String,
+    pub tag: String,
     pub added_params: Vec<String>,
     pub removed_params: Vec<String>,
     pub changed_params: Vec<ParamChange>,
@@ -232,6 +233,7 @@ fn diff_endpoints(from: &ApiSpec, to: &ApiSpec) -> EndpointDiff {
             changed.push(EndpointChanges {
                 method: ep.method.clone(),
                 path: ep.path.clone(),
+                tag: tag.clone(),
                 added_params: ec.added_params,
                 removed_params: ec.removed_params,
                 changed_params: ec.changed_params,
@@ -907,5 +909,29 @@ mod tests {
         let diff = compute_diff(&from, &to, "2.7.2", "2.8.0");
         let summary = diff.summary();
         assert!(summary.contains("-1 endpoints"), "got: {summary}");
+    }
+
+    #[test]
+    fn test_endpoint_changes_includes_tag() {
+        let from = make_spec(
+            vec![make_tag(
+                "Flow",
+                vec![make_endpoint(HttpMethod::Get, "/flow/about")],
+            )],
+            vec![],
+        );
+        let to = make_spec(
+            vec![make_tag(
+                "Flow",
+                vec![make_endpoint_with_param(
+                    HttpMethod::Get,
+                    "/flow/about",
+                    make_str_param("verbose"),
+                )],
+            )],
+            vec![],
+        );
+        let diff = compute_diff(&from, &to, "2.7.2", "2.8.0");
+        assert_eq!(diff.endpoints.changed[0].tag, "Flow");
     }
 }
