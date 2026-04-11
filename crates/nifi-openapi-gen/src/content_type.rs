@@ -124,7 +124,8 @@ mod tests {
 
     #[test]
     fn resolves_json_request_body() {
-        let content = json!({ "application/json": { "schema": { "$ref": "#/components/schemas/Foo" } } });
+        let content =
+            json!({ "application/json": { "schema": { "$ref": "#/components/schemas/Foo" } } });
         let kind = resolve_request_body(&content, "/paths/~1x/post").unwrap();
         assert!(matches!(kind, RequestBodyKind::Json));
     }
@@ -164,7 +165,9 @@ mod tests {
     fn resolves_json_response_with_ref() {
         let content = json!({ "application/json": { "schema": { "$ref": "#/components/schemas/AboutEntity" } } });
         let kind = resolve_response_body(&content, "/paths/~1x/get/responses/200");
-        assert!(matches!(&kind, ResponseBodyKind::Json { schema_ref } if schema_ref == "AboutEntity"));
+        assert!(
+            matches!(&kind, ResponseBodyKind::Json { schema_ref } if schema_ref == "AboutEntity")
+        );
     }
 
     #[test]

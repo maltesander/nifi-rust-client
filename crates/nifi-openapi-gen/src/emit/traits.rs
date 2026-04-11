@@ -101,13 +101,7 @@ fn emit_endpoint_method(
     }
 
     // Determine return type
-    let return_ty = match &ep.response_inner {
-        Some(inner) => format!("{types_prefix}::types::{inner}"),
-        None => match &ep.response_type {
-            Some(ty) => format!("{types_prefix}::types::{ty}"),
-            None => "()".into(),
-        },
-    };
+    let return_ty = crate::emit::common::response_return_type(ep, types_prefix);
 
     // Build path param args (excluding the primary param for sub-resource traits)
     let path_param_args: String = ep

@@ -560,23 +560,36 @@ fn parse_tags(
                 });
 
             let responses = op.get("responses");
-            let response_schema_ref = responses
-                .and_then(|r| {
-                    r.get("200")
-                        .or_else(|| r.get("201"))
-                        .or_else(|| r.get("202"))
-                        .or_else(|| r.get("default"))
-                })
+            // Pick the 2xx/default response to drive codegen. Prefer one that
+            // actually declares a content schema — some endpoints expose a
+            // body-less 200 (e.g. "no flow file to return") alongside a 202
+            // carrying the real payload.
+            let pick_response = |r: &serde_json::Value| -> Option<serde_json::Value> {
+                let try_codes = ["200", "201", "202", "default"];
+                // First pass: first code that has content.
+                for code in try_codes {
+                    if let Some(v) = r.get(code) {
+                        if v.get("content").is_some() {
+                            return Some(v.clone());
+                        }
+                    }
+                }
+                // Fallback: first code that exists, even without content.
+                for code in try_codes {
+                    if let Some(v) = r.get(code) {
+                        return Some(v.clone());
+                    }
+                }
+                None
+            };
+            let chosen_response = responses.and_then(pick_response);
+            let response_schema_ref = chosen_response
+                .as_ref()
                 .and_then(|r| r["content"]["application/json"]["schema"]["$ref"].as_str())
                 .map(|r| r.trim_start_matches("#/components/schemas/").to_string());
 
-            let response_kind = responses
-                .and_then(|r| {
-                    r.get("200")
-                        .or_else(|| r.get("201"))
-                        .or_else(|| r.get("202"))
-                        .or_else(|| r.get("default"))
-                })
+            let response_kind = chosen_response
+                .as_ref()
                 .and_then(|r| r.get("content"))
                 .map(|content| {
                     let pointer = format!("{raw_path}.{http_method}.responses.2xx");
@@ -821,8 +834,8 @@ mod tests {
 
     #[test]
     fn multipart_upload_endpoint_is_captured_in_29() {
-        let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-            .join("specs/2.9.0/nifi-api.json");
+        let path =
+            std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("specs/2.9.0/nifi-api.json");
         let content = std::fs::read_to_string(&path).unwrap();
         let v: serde_json::Value = serde_json::from_str(&content).unwrap();
         let schemas = v["components"]["schemas"].as_object().unwrap().clone();
@@ -847,8 +860,8 @@ mod tests {
 
     #[test]
     fn wildcard_body_endpoint_is_captured_in_29() {
-        let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-            .join("specs/2.9.0/nifi-api.json");
+        let path =
+            std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("specs/2.9.0/nifi-api.json");
         let content = std::fs::read_to_string(&path).unwrap();
         let v: serde_json::Value = serde_json::from_str(&content).unwrap();
         let schemas = v["components"]["schemas"].as_object().unwrap().clone();
@@ -873,8 +886,8 @@ mod tests {
 
     #[test]
     fn text_plain_response_is_captured_in_29() {
-        let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-            .join("specs/2.9.0/nifi-api.json");
+        let path =
+            std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("specs/2.9.0/nifi-api.json");
         let content = std::fs::read_to_string(&path).unwrap();
         let v: serde_json::Value = serde_json::from_str(&content).unwrap();
         let schemas = v["components"]["schemas"].as_object().unwrap().clone();
@@ -896,8 +909,8 @@ mod tests {
 
     #[test]
     fn octet_stream_response_is_captured_in_29() {
-        let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-            .join("specs/2.9.0/nifi-api.json");
+        let path =
+            std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("specs/2.9.0/nifi-api.json");
         let content = std::fs::read_to_string(&path).unwrap();
         let v: serde_json::Value = serde_json::from_str(&content).unwrap();
         let schemas = v["components"]["schemas"].as_object().unwrap().clone();
@@ -910,8 +923,7 @@ mod tests {
                     .chain(t.sub_groups.iter().flat_map(|sg| sg.endpoints.iter()))
             })
             .find(|e| {
-                e.path == "/connectors/{id}/assets/{assetId}"
-                    && matches!(e.method, HttpMethod::Get)
+                e.path == "/connectors/{id}/assets/{assetId}" && matches!(e.method, HttpMethod::Get)
             })
             .expect("/connectors/{id}/assets/{assetId} missing");
         assert!(matches!(
@@ -926,9 +938,41 @@ mod tests {
     // design. XML endpoint verification is deferred to Task 3.3.
 
     #[test]
+    fn response_code_precedence_picks_first_2xx_with_content() {
+        // /data-transfer/output-ports/{portId}/transactions/{transactionId}/flow-files
+        // declares 200 (no content) and 202 (application/octet-stream).
+        // The parser must prefer the 202 body so the endpoint emits Vec<u8>
+        // instead of `()`. A naive 200 → 201 → 202 walker would silently
+        // pick the empty 200 and strand the octet-stream body.
+        let path =
+            std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("specs/2.9.0/nifi-api.json");
+        let content = std::fs::read_to_string(&path).unwrap();
+        let v: serde_json::Value = serde_json::from_str(&content).unwrap();
+        let schemas = v["components"]["schemas"].as_object().unwrap().clone();
+        let tags = parse_tags(&v, &schemas, &[]);
+        let ep = tags
+            .iter()
+            .flat_map(|t| {
+                t.root_endpoints
+                    .iter()
+                    .chain(t.sub_groups.iter().flat_map(|sg| sg.endpoints.iter()))
+            })
+            .find(|e| {
+                e.path
+                    == "/data-transfer/output-ports/{portId}/transactions/{transactionId}/flow-files"
+                    && matches!(e.method, HttpMethod::Get)
+            })
+            .expect("data-transfer output-ports flow-files GET missing");
+        assert!(matches!(
+            ep.response_kind,
+            crate::content_type::ResponseBodyKind::OctetStream
+        ));
+    }
+
+    #[test]
     fn json_response_still_captures_ref() {
-        let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-            .join("specs/2.9.0/nifi-api.json");
+        let path =
+            std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("specs/2.9.0/nifi-api.json");
         let content = std::fs::read_to_string(&path).unwrap();
         let v: serde_json::Value = serde_json::from_str(&content).unwrap();
         let schemas = v["components"]["schemas"].as_object().unwrap().clone();

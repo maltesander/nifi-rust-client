@@ -13,6 +13,8 @@
 pub mod build_api;
 
 #[doc(hidden)]
+pub mod content_type;
+#[doc(hidden)]
 pub mod diff;
 #[doc(hidden)]
 pub mod docs;
@@ -22,8 +24,6 @@ pub mod emit;
 pub mod parser;
 #[doc(hidden)]
 pub mod parser_strict;
-#[doc(hidden)]
-pub mod content_type;
 #[doc(hidden)]
 pub mod repo;
 #[doc(hidden)]

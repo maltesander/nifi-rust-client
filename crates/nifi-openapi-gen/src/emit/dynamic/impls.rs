@@ -144,15 +144,13 @@ fn emit_impl_method(
     }
 
     // --- Return type (must match trait) ---
-    let return_ty = match &ep.response_inner {
-        Some(inner) => format!("types::{inner}"),
-        None => match &ep.response_type {
-            Some(ty) => format!("types::{ty}"),
-            None => "()".into(),
-        },
-    };
+    let return_ty = crate::emit::common::response_return_type(ep, "");
     let return_result = format!("Result<{return_ty}, NifiError>");
-    let is_void = ep.response_type.is_none() && ep.response_inner.is_none();
+    // Anything that isn't a schema-backed JSON type is returned verbatim from
+    // the per-version static impl — no `.into()` conversion is needed.
+    // Covers non-JSON (String/Vec<u8>), schemaless JSON (serde_json::Value),
+    // and empty bodies.
+    let is_void = ep.response_type.is_none();
 
     // Use the first version's endpoint as the representative (same as trait emitter)
     let representative = ep_by_version.values().next().unwrap();
@@ -287,15 +285,12 @@ fn emit_impl_method(
                 ));
             }
             Some(RequestBodyKind::OctetStream) | Some(RequestBodyKind::Multipart) => {
-                for name in
-                    crate::emit::common::body_kind_forward_arg_names(ep.body_kind.as_ref())
+                for name in crate::emit::common::body_kind_forward_arg_names(ep.body_kind.as_ref())
                 {
                     call_args.push((*name).to_string());
                 }
             }
-            Some(RequestBodyKind::Wildcard)
-            | Some(RequestBodyKind::FormEncoded)
-            | None => {}
+            Some(RequestBodyKind::Wildcard) | Some(RequestBodyKind::FormEncoded) | None => {}
         }
     }
 

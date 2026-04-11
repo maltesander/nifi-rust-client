@@ -1,5 +1,48 @@
-use crate::parser::{FieldType, RequestBodyKind};
+use crate::content_type::ResponseBodyKind;
+use crate::parser::{Endpoint, FieldType, RequestBodyKind};
 use crate::util::pascal_case;
+
+/// Rust return type for an endpoint, based on its `response_kind`.
+///
+/// The `types_prefix` controls where referenced JSON types live:
+///
+/// - For per-version inherent impls, pass `"crate"` so references resolve to
+///   `crate::types::{Name}`.
+/// - For trait/dispatch signatures that refer to types under a different crate
+///   path (e.g. `crate::v2_8_0`), pass that prefix so references expand to
+///   `crate::v2_8_0::types::{Name}`.
+/// - For dynamic trait/dispatch/impl sigs that already live in a module whose
+///   `use super::types;` brings the local types into scope, pass `""` so
+///   references expand to `types::{Name}`.
+///
+/// Non-JSON responses map to primitive Rust types with no prefix:
+/// `Text`/`Xml` → `String`, `OctetStream`/`Wildcard` → `Vec<u8>`, `Empty` → `()`.
+pub(crate) fn response_return_type(ep: &Endpoint, types_prefix: &str) -> String {
+    // Helper: build the prefix for a JSON type reference. We keep the legacy
+    // behavior (response_inner/response_type) so Entity-unwrapping downstream
+    // continues to work unchanged.
+    let json_ref = |name: &str| -> String {
+        if types_prefix.is_empty() {
+            format!("types::{name}")
+        } else {
+            format!("{types_prefix}::types::{name}")
+        }
+    };
+    match &ep.response_kind {
+        ResponseBodyKind::Json { .. } => {
+            if let Some(inner) = &ep.response_inner {
+                json_ref(inner)
+            } else if let Some(ty) = &ep.response_type {
+                json_ref(ty)
+            } else {
+                "serde_json::Value".into()
+            }
+        }
+        ResponseBodyKind::Text | ResponseBodyKind::Xml => "String".into(),
+        ResponseBodyKind::OctetStream | ResponseBodyKind::Wildcard => "Vec<u8>".into(),
+        ResponseBodyKind::Empty => "()".into(),
+    }
+}
 
 /// Body parameter signature fragment for non-JSON request bodies.
 ///
@@ -35,9 +78,7 @@ pub(crate) fn body_kind_signature(body_kind: Option<&RequestBodyKind>) -> &'stat
 pub(crate) fn body_kind_forward_args(body_kind: Option<&RequestBodyKind>) -> &'static str {
     match body_kind {
         Some(RequestBodyKind::Json) => ", body",
-        Some(RequestBodyKind::OctetStream) | Some(RequestBodyKind::Multipart) => {
-            ", filename, data"
-        }
+        Some(RequestBodyKind::OctetStream) | Some(RequestBodyKind::Multipart) => ", filename, data",
         Some(RequestBodyKind::Wildcard) | Some(RequestBodyKind::FormEncoded) | None => "",
     }
 }
@@ -312,10 +353,7 @@ mod tests {
     #[test]
     fn body_kind_forward_args_no_contribution() {
         assert_eq!(body_kind_forward_args(None), "");
-        assert_eq!(
-            body_kind_forward_args(Some(&RequestBodyKind::Wildcard)),
-            ""
-        );
+        assert_eq!(body_kind_forward_args(Some(&RequestBodyKind::Wildcard)), "");
         assert_eq!(
             body_kind_forward_args(Some(&RequestBodyKind::FormEncoded)),
             ""

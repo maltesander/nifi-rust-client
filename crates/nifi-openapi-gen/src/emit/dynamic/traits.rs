@@ -144,13 +144,7 @@ fn emit_trait_method(
     emit_doc_comments(out, versions, ep_by_version, total_versions, skip_primary);
 
     // --- Determine return type ---
-    let return_ty = match &ep.response_inner {
-        Some(inner) => format!("types::{inner}"),
-        None => match &ep.response_type {
-            Some(ty) => format!("types::{ty}"),
-            None => "()".into(),
-        },
-    };
+    let return_ty = crate::emit::common::response_return_type(ep, "");
     let return_result = format!("Result<{return_ty}, NifiError>");
 
     // --- Build path param args (skipping primary if in sub-resource) ---

@@ -163,13 +163,7 @@ fn emit_dispatch_method(
     }
 
     // --- Return type (must match trait) ---
-    let return_ty = match &ep.response_inner {
-        Some(inner) => format!("types::{inner}"),
-        None => match &ep.response_type {
-            Some(ty) => format!("types::{ty}"),
-            None => "()".into(),
-        },
-    };
+    let return_ty = crate::emit::common::response_return_type(ep, "");
     let return_result = format!("Result<{return_ty}, NifiError>");
 
     // --- Path param args (must match trait signature) ---
@@ -284,13 +278,7 @@ fn emit_sub_dispatch_method(
     let primary = &sg.primary_param;
 
     // --- Return type ---
-    let return_ty = match &ep.response_inner {
-        Some(inner) => format!("types::{inner}"),
-        None => match &ep.response_type {
-            Some(ty) => format!("types::{ty}"),
-            None => "()".into(),
-        },
-    };
+    let return_ty = crate::emit::common::response_return_type(ep, "");
     let return_result = format!("Result<{return_ty}, NifiError>");
 
     // --- Path param args (skip primary — it's on self) ---
@@ -334,7 +322,12 @@ fn emit_sub_dispatch_method(
         crate::emit::common::body_kind_signature(ep.body_kind.as_ref()).to_string()
     };
 
-    let is_void = ep.response_type.is_none() && ep.response_inner.is_none();
+    // `is_void` controls whether the dispatch body forwards the version-
+    // specific return value with `.into()` (JSON type conversion) or passes
+    // it through verbatim. Anything that isn't a schema-backed JSON type is
+    // returned as-is — non-JSON (String/Vec<u8>), schemaless JSON
+    // (serde_json::Value), and empty bodies all need direct passthrough.
+    let is_void = ep.response_type.is_none();
 
     // --- Method signature ---
     out.push_str(&format!(
@@ -426,17 +419,14 @@ fn emit_sub_dispatch_method(
                         "&crate::{mod_name}::types::{req_type}::try_from(body.clone())?",
                     ));
                 }
-                Some(RequestBodyKind::OctetStream)
-                | Some(RequestBodyKind::Multipart) => {
+                Some(RequestBodyKind::OctetStream) | Some(RequestBodyKind::Multipart) => {
                     for name in
                         crate::emit::common::body_kind_forward_arg_names(ver_ep.body_kind.as_ref())
                     {
                         call_args.push((*name).to_string());
                     }
                 }
-                Some(RequestBodyKind::Wildcard)
-                | Some(RequestBodyKind::FormEncoded)
-                | None => {}
+                Some(RequestBodyKind::Wildcard) | Some(RequestBodyKind::FormEncoded) | None => {}
             }
         }
 
