@@ -255,17 +255,11 @@ fn emit_trait_impl_method(
     // Body param
     let body_arg = if ep.method == HttpMethod::Delete {
         String::new()
+    } else if let Some(RequestBodyKind::Json) = &ep.body_kind {
+        let req_type = ep.request_type.as_deref().unwrap_or("serde_json::Value");
+        format!(", body: &{types_prefix}::types::{req_type}")
     } else {
-        match &ep.body_kind {
-            Some(RequestBodyKind::Json) => {
-                let req_type = ep.request_type.as_deref().unwrap_or("serde_json::Value");
-                format!(", body: &{types_prefix}::types::{req_type}")
-            }
-            Some(RequestBodyKind::OctetStream) => {
-                ", filename: Option<&str>, data: Vec<u8>".to_string()
-            }
-            Some(RequestBodyKind::FormEncoded) | None => String::new(),
-        }
+        crate::emit::common::body_kind_signature(ep.body_kind.as_ref()).to_string()
     };
 
     // Build the delegation call args (just the param names, no types)
@@ -285,11 +279,7 @@ fn emit_trait_impl_method(
     let call_body_args = if ep.method == HttpMethod::Delete {
         String::new()
     } else {
-        match &ep.body_kind {
-            Some(RequestBodyKind::Json) => ", body".to_string(),
-            Some(RequestBodyKind::OctetStream) => ", filename, data".to_string(),
-            Some(RequestBodyKind::FormEncoded) | None => String::new(),
-        }
+        crate::emit::common::body_kind_forward_args(ep.body_kind.as_ref()).to_string()
     };
 
     out.push_str(&format!(
@@ -385,17 +375,11 @@ fn emit_method_for_sub_group(ep: &Endpoint, primary_param: &str) -> String {
     // DELETE endpoints never send a body — ignore body_kind for signature generation.
     let body_arg = if ep.method == HttpMethod::Delete {
         String::new()
+    } else if let Some(RequestBodyKind::Json) = &ep.body_kind {
+        let ty = ep.request_type.as_deref().unwrap_or("serde_json::Value");
+        format!(", body: &crate::types::{ty}")
     } else {
-        match &ep.body_kind {
-            Some(RequestBodyKind::Json) => {
-                let ty = ep.request_type.as_deref().unwrap_or("serde_json::Value");
-                format!(", body: &crate::types::{ty}")
-            }
-            Some(RequestBodyKind::OctetStream) => {
-                ", filename: Option<&str>, data: Vec<u8>".to_string()
-            }
-            Some(RequestBodyKind::FormEncoded) | None => String::new(),
-        }
+        crate::emit::common::body_kind_signature(ep.body_kind.as_ref()).to_string()
     };
 
     let query_param_args: String = ep
@@ -468,17 +452,11 @@ fn emit_method(ep: &Endpoint) -> String {
     // DELETE endpoints never send a body — ignore body_kind for signature generation.
     let body_arg = if ep.method == HttpMethod::Delete {
         String::new()
+    } else if let Some(RequestBodyKind::Json) = &ep.body_kind {
+        let ty = ep.request_type.as_deref().unwrap_or("serde_json::Value");
+        format!(", body: &crate::types::{ty}")
     } else {
-        match &ep.body_kind {
-            Some(RequestBodyKind::Json) => {
-                let ty = ep.request_type.as_deref().unwrap_or("serde_json::Value");
-                format!(", body: &crate::types::{ty}")
-            }
-            Some(RequestBodyKind::OctetStream) => {
-                ", filename: Option<&str>, data: Vec<u8>".to_string()
-            }
-            Some(RequestBodyKind::FormEncoded) | None => String::new(),
-        }
+        crate::emit::common::body_kind_signature(ep.body_kind.as_ref()).to_string()
     };
 
     let query_param_args: String = ep
@@ -631,7 +609,13 @@ fn emit_method_body(ep: &Endpoint) -> String {
             use crate::parser::RequestBodyKind;
             let body_expr = match &ep.body_kind {
                 Some(RequestBodyKind::Json) => "body",
-                _ => "&serde_json::json!({})", // no-body w/ query — post_with_query still works with empty JSON
+                Some(
+                    RequestBodyKind::OctetStream
+                    | RequestBodyKind::Multipart
+                    | RequestBodyKind::Wildcard
+                    | RequestBodyKind::FormEncoded,
+                )
+                | None => "&serde_json::json!({})",
             };
             if has_inner {
                 format!(
@@ -715,7 +699,24 @@ fn emit_simple_method_body(
                         )
                     }
                 }
-                Some(RequestBodyKind::FormEncoded) | None => {
+                Some(RequestBodyKind::Multipart) => {
+                    if has_inner {
+                        format!(
+                            "        let e: crate::types::{entity_ty} = self.client.post_multipart({path_expr}, filename, data).await?;\n        Ok(e.{inner_field}.unwrap_or_default())\n"
+                        )
+                    } else if ep.response_type.is_some() {
+                        format!(
+                            "        self.client.post_multipart({path_expr}, filename, data).await\n"
+                        )
+                    } else {
+                        format!(
+                            "        self.client.post_void_multipart({path_expr}, filename, data).await\n"
+                        )
+                    }
+                }
+                Some(RequestBodyKind::Wildcard)
+                | Some(RequestBodyKind::FormEncoded)
+                | None => {
                     if has_inner {
                         format!(
                             "        let e: crate::types::{entity_ty} = self.client.post_no_body({path_expr}).await?;\n        Ok(e.{inner_field}.unwrap_or_default())\n"
@@ -742,7 +743,11 @@ fn emit_simple_method_body(
                         format!("        self.client.put_void({path_expr}, body).await\n")
                     }
                 }
-                Some(RequestBodyKind::OctetStream) | Some(RequestBodyKind::FormEncoded) | None => {
+                Some(RequestBodyKind::OctetStream)
+                | Some(RequestBodyKind::Multipart)
+                | Some(RequestBodyKind::Wildcard)
+                | Some(RequestBodyKind::FormEncoded)
+                | None => {
                     if has_inner {
                         format!(
                             "        let e: crate::types::{entity_ty} = self.client.put_no_body({path_expr}).await?;\n        Ok(e.{inner_field}.unwrap_or_default())\n"

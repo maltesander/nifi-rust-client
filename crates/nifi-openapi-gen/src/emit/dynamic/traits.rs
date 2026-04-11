@@ -192,17 +192,11 @@ fn emit_trait_method(
     // --- Body param (borrowed for dynamic traits) ---
     let body_arg = if ep.method == HttpMethod::Delete {
         String::new()
+    } else if let Some(RequestBodyKind::Json) = &ep.body_kind {
+        let req_type = ep.request_type.as_deref().unwrap_or("serde_json::Value");
+        format!(", body: &types::{req_type}")
     } else {
-        match &ep.body_kind {
-            Some(RequestBodyKind::Json) => {
-                let req_type = ep.request_type.as_deref().unwrap_or("serde_json::Value");
-                format!(", body: &types::{req_type}")
-            }
-            Some(RequestBodyKind::OctetStream) => {
-                ", filename: Option<&str>, data: Vec<u8>".to_string()
-            }
-            Some(RequestBodyKind::FormEncoded) | None => String::new(),
-        }
+        crate::emit::common::body_kind_signature(ep.body_kind.as_ref()).to_string()
     };
 
     // --- Method signature with default impl ---

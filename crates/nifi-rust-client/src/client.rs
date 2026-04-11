@@ -467,6 +467,43 @@ impl NifiClient {
         .await
     }
 
+    /// POST with `multipart/form-data` body — TEMPORARY STUB.
+    ///
+    /// Placeholder so that generated code referring to multipart endpoints
+    /// (e.g. `POST /process-groups/{id}/process-groups/upload`) compiles.
+    /// Task 2.3 will replace this with a real multipart implementation and
+    /// add a wiremock test. Do NOT rely on this method in user code.
+    #[allow(dead_code, unused_variables)]
+    pub(crate) async fn post_multipart<T: DeserializeOwned>(
+        &self,
+        path: &str,
+        filename: &str,
+        data: Vec<u8>,
+    ) -> Result<T, NifiError> {
+        tracing::debug!(method = "POST", path, "NiFi API request");
+        Err(NifiError::Api {
+            status: 501,
+            message: "post_multipart not yet implemented (Task 2.3)".to_string(),
+        })
+    }
+
+    /// POST with `multipart/form-data` body; ignores the response body — TEMPORARY STUB.
+    ///
+    /// See [`Self::post_multipart`] — Task 2.3 will provide the real impl.
+    #[allow(dead_code, unused_variables)]
+    pub(crate) async fn post_void_multipart(
+        &self,
+        path: &str,
+        filename: &str,
+        data: Vec<u8>,
+    ) -> Result<(), NifiError> {
+        tracing::debug!(method = "POST", path, "NiFi API request");
+        Err(NifiError::Api {
+            status: 501,
+            message: "post_void_multipart not yet implemented (Task 2.3)".to_string(),
+        })
+    }
+
     /// POST with query parameters; ignores the response body.
     ///
     /// Used for endpoints that accept query parameters and have no JSON response body.

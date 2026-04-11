@@ -191,17 +191,11 @@ fn emit_impl_method(
     // --- Body param (must match trait signature — borrowed for dynamic) ---
     let body_arg = if ep.method == HttpMethod::Delete {
         String::new()
+    } else if let Some(RequestBodyKind::Json) = &ep.body_kind {
+        let req_type = ep.request_type.as_deref().unwrap_or("serde_json::Value");
+        format!(", body: &types::{req_type}")
     } else {
-        match &ep.body_kind {
-            Some(RequestBodyKind::Json) => {
-                let req_type = ep.request_type.as_deref().unwrap_or("serde_json::Value");
-                format!(", body: &types::{req_type}")
-            }
-            Some(RequestBodyKind::OctetStream) => {
-                ", filename: Option<&str>, data: Vec<u8>".to_string()
-            }
-            Some(RequestBodyKind::FormEncoded) | None => String::new(),
-        }
+        crate::emit::common::body_kind_signature(ep.body_kind.as_ref()).to_string()
     };
 
     // --- Method signature (pub(crate) so dispatch.rs can call it) ---
@@ -292,11 +286,16 @@ fn emit_impl_method(
                     "&crate::{mod_name}::types::{req_type}::try_from(body.clone())?",
                 ));
             }
-            Some(RequestBodyKind::OctetStream) => {
-                call_args.push("filename".to_string());
-                call_args.push("data".to_string());
+            Some(RequestBodyKind::OctetStream) | Some(RequestBodyKind::Multipart) => {
+                for name in
+                    crate::emit::common::body_kind_forward_arg_names(ep.body_kind.as_ref())
+                {
+                    call_args.push((*name).to_string());
+                }
             }
-            Some(RequestBodyKind::FormEncoded) | None => {}
+            Some(RequestBodyKind::Wildcard)
+            | Some(RequestBodyKind::FormEncoded)
+            | None => {}
         }
     }
 

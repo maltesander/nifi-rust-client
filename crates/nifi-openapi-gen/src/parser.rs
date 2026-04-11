@@ -1,6 +1,8 @@
 use serde_json::Value;
 use std::collections::HashMap;
 
+pub use crate::content_type::RequestBodyKind;
+
 pub struct ApiSpec {
     pub tags: Vec<TagGroup>,
     /// Flat map of ALL schema definitions by name (for $ref resolution).
@@ -117,27 +119,6 @@ pub struct PathParam {
     pub name: String,
     /// Human-readable description from the spec, if any.
     pub doc: Option<String>,
-}
-
-/// Describes what kind of request body an endpoint expects.
-#[derive(Debug, Clone, PartialEq)]
-pub enum RequestBodyKind {
-    /// `application/json` with a `$ref` schema — body type is in `request_type`.
-    Json,
-    /// `application/octet-stream` — raw bytes, no schema reference.
-    OctetStream,
-    /// `application/x-www-form-urlencoded` — not auto-generated; use manual implementations.
-    FormEncoded,
-}
-
-impl RequestBodyKind {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            RequestBodyKind::Json => "Json",
-            RequestBodyKind::OctetStream => "OctetStream",
-            RequestBodyKind::FormEncoded => "FormEncoded",
-        }
-    }
 }
 
 #[derive(Debug, Clone)]
@@ -566,18 +547,12 @@ fn parse_tags(
                 .and_then(|rb| rb.get("description"))
                 .and_then(|d| d.as_str())
                 .map(String::from);
-            let body_kind = request_body.and_then(|rb| {
-                let content = rb.get("content")?;
-                if content.get("application/json").is_some() {
-                    Some(RequestBodyKind::Json)
-                } else if content.get("application/octet-stream").is_some() {
-                    Some(RequestBodyKind::OctetStream)
-                } else if content.get("application/x-www-form-urlencoded").is_some() {
-                    Some(RequestBodyKind::FormEncoded)
-                } else {
-                    None
-                }
-            });
+            let body_kind = request_body
+                .and_then(|rb| rb.get("content"))
+                .and_then(|content| {
+                    let pointer = format!("{raw_path}.{http_method}.requestBody");
+                    crate::content_type::resolve_request_body(content, &pointer)
+                });
 
             let responses = op.get("responses");
             let response_schema_ref = responses
@@ -822,5 +797,57 @@ mod tests {
         });
         let schemas = spec["components"]["schemas"].as_object().unwrap().clone();
         let _ = parse_tags(&spec, &schemas, &[]);
+    }
+
+    #[test]
+    fn multipart_upload_endpoint_is_captured_in_29() {
+        let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("specs/2.9.0/nifi-api.json");
+        let content = std::fs::read_to_string(&path).unwrap();
+        let v: serde_json::Value = serde_json::from_str(&content).unwrap();
+        let schemas = v["components"]["schemas"].as_object().unwrap().clone();
+        let tags = parse_tags(&v, &schemas, &[]);
+        let all_eps: Vec<&Endpoint> = tags
+            .iter()
+            .flat_map(|t| {
+                t.root_endpoints
+                    .iter()
+                    .chain(t.sub_groups.iter().flat_map(|sg| sg.endpoints.iter()))
+            })
+            .collect();
+        let ep = all_eps
+            .iter()
+            .find(|e| {
+                e.path == "/process-groups/{id}/process-groups/upload"
+                    && matches!(e.method, HttpMethod::Post)
+            })
+            .expect("upload endpoint missing from parsed 2.9.0 spec");
+        assert_eq!(ep.body_kind, Some(RequestBodyKind::Multipart));
+    }
+
+    #[test]
+    fn wildcard_body_endpoint_is_captured_in_29() {
+        let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("specs/2.9.0/nifi-api.json");
+        let content = std::fs::read_to_string(&path).unwrap();
+        let v: serde_json::Value = serde_json::from_str(&content).unwrap();
+        let schemas = v["components"]["schemas"].as_object().unwrap().clone();
+        let tags = parse_tags(&v, &schemas, &[]);
+        let all_eps: Vec<&Endpoint> = tags
+            .iter()
+            .flat_map(|t| {
+                t.root_endpoints
+                    .iter()
+                    .chain(t.sub_groups.iter().flat_map(|sg| sg.endpoints.iter()))
+            })
+            .collect();
+        let ep = all_eps
+            .iter()
+            .find(|e| {
+                e.path == "/data-transfer/{portType}/{portId}/transactions"
+                    && matches!(e.method, HttpMethod::Post)
+            })
+            .expect("data-transfer transactions endpoint missing");
+        assert_eq!(ep.body_kind, Some(RequestBodyKind::Wildcard));
     }
 }

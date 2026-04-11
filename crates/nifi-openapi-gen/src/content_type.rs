@@ -21,6 +21,18 @@ pub enum RequestBodyKind {
     Wildcard,
 }
 
+impl RequestBodyKind {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            RequestBodyKind::Json => "Json",
+            RequestBodyKind::OctetStream => "OctetStream",
+            RequestBodyKind::FormEncoded => "FormEncoded",
+            RequestBodyKind::Multipart => "Multipart",
+            RequestBodyKind::Wildcard => "Wildcard",
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ResponseBodyKind {
     /// application/json, schema via $ref.

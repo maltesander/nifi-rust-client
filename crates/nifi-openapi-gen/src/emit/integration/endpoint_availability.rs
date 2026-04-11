@@ -220,7 +220,13 @@ fn build_call_args(endpoint: &Endpoint, sub_group: Option<&SubGroup>) -> String 
             args.push("None".to_string()); // filename
             args.push("vec![]".to_string()); // data
         }
-        _ => {}
+        Some(crate::parser::RequestBodyKind::Multipart) => {
+            args.push("\"test.xml\"".to_string()); // filename
+            args.push("vec![]".to_string()); // data
+        }
+        Some(crate::parser::RequestBodyKind::Wildcard)
+        | Some(crate::parser::RequestBodyKind::FormEncoded)
+        | None => {}
     }
 
     // Add query params — all None (optional) or a default for required ones.

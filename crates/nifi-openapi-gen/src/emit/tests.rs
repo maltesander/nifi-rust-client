@@ -67,7 +67,13 @@ fn emit_endpoint_test(ep: &Endpoint, accessor: &str, sub_group: Option<&SubGroup
                 String::new(),
                 Some("Some(\"test.nar\"), vec![1u8, 2, 3]".to_string()),
             ),
-            Some(RequestBodyKind::FormEncoded) | None => (String::new(), None),
+            Some(RequestBodyKind::Multipart) => (
+                String::new(),
+                Some("\"test.xml\", vec![1u8, 2, 3]".to_string()),
+            ),
+            Some(RequestBodyKind::Wildcard)
+            | Some(RequestBodyKind::FormEncoded)
+            | None => (String::new(), None),
         }
     };
 
