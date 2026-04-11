@@ -533,7 +533,12 @@ fn parse_tags(
                                 }
                             }
                             Some("number") => QueryParamType::F64,
-                            _ => QueryParamType::Str,
+                            Some("string") | None => QueryParamType::Str,
+                            Some(other) => crate::parser_strict::panic_unknown(
+                                "query_param_type",
+                                &format!("{raw_path}.{http_method}.parameters[{name}]"),
+                                &format!("type={other:?}"),
+                            ),
                         };
                         (scalar, None)
                     };
@@ -791,5 +796,31 @@ mod tests {
         let prop = json!({ "type": "string" });
         let ft = parse_field_type(&prop, "/x");
         assert!(matches!(ft, FieldType::Str));
+    }
+
+    #[test]
+    #[should_panic(expected = "nifi-openapi-gen: unknown query_param_type")]
+    fn unknown_query_param_type_panics() {
+        let spec = json!({
+            "openapi": "3.0.1",
+            "info": {"title": "t", "version": "1"},
+            "paths": {
+                "/foo": {
+                    "get": {
+                        "tags": ["Flow"],
+                        "operationId": "getFoo",
+                        "parameters": [{
+                            "name": "weird",
+                            "in": "query",
+                            "schema": { "type": "frobnitz" }
+                        }],
+                        "responses": {"200": {"description": "ok"}}
+                    }
+                }
+            },
+            "components": {"schemas": {}}
+        });
+        let schemas = spec["components"]["schemas"].as_object().unwrap().clone();
+        let _ = parse_tags(&spec, &schemas, &[]);
     }
 }
