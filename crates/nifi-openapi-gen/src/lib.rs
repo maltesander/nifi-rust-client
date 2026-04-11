@@ -23,6 +23,8 @@ pub mod parser;
 #[doc(hidden)]
 pub mod parser_strict;
 #[doc(hidden)]
+pub mod content_type;
+#[doc(hidden)]
 pub mod repo;
 #[doc(hidden)]
 pub mod util;
