@@ -40,6 +40,7 @@ fn emit_simple_dto() {
                 ty: FieldType::Opt(Box::new(FieldType::Str)),
                 doc: Some("The title".into()),
                 read_only: false,
+                deprecated: false,
             },
             Field {
                 rust_name: "count".into(),
@@ -47,6 +48,7 @@ fn emit_simple_dto() {
                 ty: FieldType::I32,
                 doc: None,
                 read_only: false,
+                deprecated: false,
             },
         ],
         doc: Some("About NiFi".into()),
@@ -104,6 +106,7 @@ fn emit_field_types() {
                 ty: FieldType::I64,
                 doc: None,
                 read_only: false,
+                deprecated: false,
             },
             Field {
                 rust_name: "b".into(),
@@ -111,6 +114,7 @@ fn emit_field_types() {
                 ty: FieldType::F64,
                 doc: None,
                 read_only: false,
+                deprecated: false,
             },
             Field {
                 rust_name: "c".into(),
@@ -118,6 +122,7 @@ fn emit_field_types() {
                 ty: FieldType::Bool,
                 doc: None,
                 read_only: false,
+                deprecated: false,
             },
             Field {
                 rust_name: "items".into(),
@@ -127,6 +132,7 @@ fn emit_field_types() {
                 ))))),
                 doc: None,
                 read_only: false,
+                deprecated: false,
             },
         ],
         doc: None,
@@ -384,6 +390,7 @@ fn emit_multiline_field_doc() {
                 "The title of this NiFi instance.\nThis is configurable in nifi.properties.".into(),
             ),
             read_only: false,
+            deprecated: false,
         }],
         doc: Some(
             "Information about this NiFi instance.\nProvides version and build details.".into(),
@@ -420,6 +427,7 @@ fn emit_read_only_field_has_doc_annotation() {
                 ty: FieldType::Opt(Box::new(FieldType::Str)),
                 doc: Some("The build tag.".into()),
                 read_only: true,
+                deprecated: false,
             },
             Field {
                 rust_name: "version".into(),
@@ -427,6 +435,7 @@ fn emit_read_only_field_has_doc_annotation() {
                 ty: FieldType::Opt(Box::new(FieldType::Str)),
                 doc: None,
                 read_only: false,
+                deprecated: false,
             },
         ],
         doc: None,

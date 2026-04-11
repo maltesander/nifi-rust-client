@@ -236,6 +236,7 @@ mod tests {
             ty: FieldType::Opt(Box::new(FieldType::Str)),
             doc: doc.map(String::from),
             read_only: false,
+            deprecated: false,
         }
     }
 

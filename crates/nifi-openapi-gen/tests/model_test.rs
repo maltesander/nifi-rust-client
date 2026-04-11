@@ -19,6 +19,7 @@ fn can_construct_internal_model() {
                     ty: FieldType::Opt(Box::new(FieldType::Str)),
                     doc: Some("The title".into()),
                     read_only: false,
+                    deprecated: false,
                 }],
                 doc: None,
             }],

@@ -98,6 +98,12 @@ pub struct TypeChanges {
     pub removed_variants: Vec<String>, // for StringEnum types
 }
 
+// NOTE: `CompositionChanged` (oneOf/anyOf/allOf appearing on a field) is
+// intentionally NOT detected here. The parser's strict `None =>` arm in
+// `parse_field_type` panics on any schema without `type` or `$ref`, which
+// includes composition schemas. A future NiFi spec that introduces
+// composition will surface as a parse-time panic pointing at the exact
+// JSON location, not as a diff entry — that's the desired Phase 1 behavior.
 #[derive(Serialize, Debug, PartialEq)]
 pub enum FieldChangeKind {
     BecameOptional,
@@ -109,6 +115,15 @@ pub enum FieldChangeKind {
     InlineEnumChanged {
         added: Vec<String>,
         removed: Vec<String>,
+    },
+    /// Field was newly marked deprecated, or had its deprecation removed.
+    DeprecationChanged {
+        now_deprecated: bool,
+    },
+    /// A `string`-typed field narrowed to an inline enum with these variants.
+    /// Detected as a specific case of `TypeChanged` at parse time.
+    NarrowedToEnum {
+        variants: Vec<String>,
     },
 }
 
@@ -256,7 +271,9 @@ impl VersionDiff {
             }
             // Fields that became required, changed type, or lost enum variants
             if tc.changed_fields.iter().any(|fc| match &fc.kind {
-                FieldChangeKind::BecameRequired | FieldChangeKind::TypeChanged { .. } => true,
+                FieldChangeKind::BecameRequired
+                | FieldChangeKind::TypeChanged { .. }
+                | FieldChangeKind::NarrowedToEnum { .. } => true,
                 FieldChangeKind::InlineEnumChanged { removed, .. } => !removed.is_empty(),
                 _ => false,
             }) {
@@ -685,6 +702,14 @@ fn diff_type_fields(name: &str, from_type: &TypeDef, to_type: &TypeDef) -> TypeC
                     },
                 });
             }
+            if from_f.deprecated != to_f.deprecated {
+                changed_fields.push(FieldChange {
+                    name: fname.to_string(),
+                    kind: FieldChangeKind::DeprecationChanged {
+                        now_deprecated: to_f.deprecated,
+                    },
+                });
+            }
             // For inline enum fields, compare variant sets (order-insensitive).
             let types_differ = match (from_base, to_base) {
                 (FieldType::Enum(fv), FieldType::Enum(tv)) => {
@@ -708,6 +733,11 @@ fn diff_type_fields(name: &str, from_type: &TypeDef, to_type: &TypeDef) -> TypeC
                         added.sort();
                         removed.sort();
                         FieldChangeKind::InlineEnumChanged { added, removed }
+                    }
+                    (FieldType::Str, FieldType::Enum(tv)) => {
+                        let mut variants = tv.clone();
+                        variants.sort();
+                        FieldChangeKind::NarrowedToEnum { variants }
                     }
                     _ => FieldChangeKind::TypeChanged {
                         from: field_type_display(from_base),
@@ -843,6 +873,18 @@ mod tests {
             ty,
             doc: None,
             read_only: false,
+            deprecated: false,
+        }
+    }
+
+    fn make_field_deprecated(name: &str, ty: FieldType, deprecated: bool) -> Field {
+        Field {
+            rust_name: name.to_string(),
+            serde_name: name.to_string(),
+            ty,
+            doc: None,
+            read_only: false,
+            deprecated,
         }
     }
 
@@ -1125,6 +1167,128 @@ mod tests {
         assert_eq!(tc.changed_fields.len(), 1);
         assert_eq!(tc.changed_fields[0].name, "version");
         assert_eq!(tc.changed_fields[0].kind, FieldChangeKind::BecameOptional);
+    }
+
+    #[test]
+    fn test_field_newly_deprecated() {
+        let from = make_spec(
+            vec![],
+            vec![make_dto(
+                "FooDto",
+                vec![make_field_deprecated("foo", FieldType::Str, false)],
+            )],
+        );
+        let to = make_spec(
+            vec![],
+            vec![make_dto(
+                "FooDto",
+                vec![make_field_deprecated("foo", FieldType::Str, true)],
+            )],
+        );
+        let diff = compute_diff(&from, &to, "1.0.0", "2.0.0");
+        assert_eq!(diff.types.changed.len(), 1);
+        let tc = &diff.types.changed[0];
+        assert_eq!(tc.name, "FooDto");
+        assert!(tc.changed_fields.iter().any(|fc| matches!(
+            fc.kind,
+            FieldChangeKind::DeprecationChanged {
+                now_deprecated: true
+            }
+        )));
+        // Deprecation alone must not be treated as a breaking change.
+        assert!(!diff.is_breaking());
+    }
+
+    #[test]
+    fn test_field_deprecation_removed() {
+        let from = make_spec(
+            vec![],
+            vec![make_dto(
+                "FooDto",
+                vec![make_field_deprecated("foo", FieldType::Str, true)],
+            )],
+        );
+        let to = make_spec(
+            vec![],
+            vec![make_dto(
+                "FooDto",
+                vec![make_field_deprecated("foo", FieldType::Str, false)],
+            )],
+        );
+        let diff = compute_diff(&from, &to, "1.0.0", "2.0.0");
+        let tc = &diff.types.changed[0];
+        assert!(tc.changed_fields.iter().any(|fc| matches!(
+            fc.kind,
+            FieldChangeKind::DeprecationChanged {
+                now_deprecated: false
+            }
+        )));
+    }
+
+    #[test]
+    fn test_string_narrowed_to_enum() {
+        let from = make_spec(
+            vec![],
+            vec![make_dto(
+                "FooDto",
+                vec![make_field("color", FieldType::Str)],
+            )],
+        );
+        let to = make_spec(
+            vec![],
+            vec![make_dto(
+                "FooDto",
+                vec![make_field(
+                    "color",
+                    FieldType::Enum(vec!["red".into(), "green".into(), "blue".into()]),
+                )],
+            )],
+        );
+        let diff = compute_diff(&from, &to, "1.0.0", "2.0.0");
+        assert_eq!(diff.types.changed.len(), 1);
+        let tc = &diff.types.changed[0];
+        assert_eq!(tc.changed_fields.len(), 1);
+        assert_eq!(tc.changed_fields[0].name, "color");
+        match &tc.changed_fields[0].kind {
+            FieldChangeKind::NarrowedToEnum { variants } => {
+                assert_eq!(
+                    variants,
+                    &vec!["blue".to_string(), "green".to_string(), "red".to_string()]
+                );
+            }
+            other => panic!("expected NarrowedToEnum, got {other:?}"),
+        }
+        // Narrowing the accepted value set removes previously-valid inputs.
+        assert!(diff.is_breaking());
+    }
+
+    #[test]
+    fn test_enum_widened_to_string_is_plain_type_change() {
+        // The reverse direction (enum → string) is a widening and should
+        // report as a generic TypeChanged, not NarrowedToEnum.
+        let from = make_spec(
+            vec![],
+            vec![make_dto(
+                "FooDto",
+                vec![make_field(
+                    "color",
+                    FieldType::Enum(vec!["red".into(), "blue".into()]),
+                )],
+            )],
+        );
+        let to = make_spec(
+            vec![],
+            vec![make_dto(
+                "FooDto",
+                vec![make_field("color", FieldType::Str)],
+            )],
+        );
+        let diff = compute_diff(&from, &to, "1.0.0", "2.0.0");
+        let tc = &diff.types.changed[0];
+        assert!(matches!(
+            tc.changed_fields[0].kind,
+            FieldChangeKind::TypeChanged { .. }
+        ));
     }
 
     #[test]

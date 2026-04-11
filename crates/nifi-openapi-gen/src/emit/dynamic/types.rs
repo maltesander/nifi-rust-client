@@ -432,6 +432,7 @@ mod tests {
             ty,
             doc: None,
             read_only: false,
+            deprecated: false,
         }
     }
 
@@ -563,6 +564,7 @@ mod tests {
             ty,
             doc: Some(doc.to_string()),
             read_only: false,
+            deprecated: false,
         }
     }
 

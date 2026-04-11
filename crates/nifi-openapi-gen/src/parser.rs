@@ -51,6 +51,8 @@ pub struct Field {
     pub ty: FieldType,
     pub doc: Option<String>,
     pub read_only: bool,
+    /// Whether the OpenAPI schema marks this field as deprecated.
+    pub deprecated: bool,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -280,6 +282,10 @@ fn parse_type_def(name: &str, schema: &Value) -> Option<TypeDef> {
                     .map(String::from),
                 read_only: prop_val
                     .get("readOnly")
+                    .and_then(|v| v.as_bool())
+                    .unwrap_or(false),
+                deprecated: prop_val
+                    .get("deprecated")
                     .and_then(|v| v.as_bool())
                     .unwrap_or(false),
             }
