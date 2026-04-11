@@ -707,7 +707,7 @@ fn diff_type_fields(name: &str, from_type: &TypeDef, to_type: &TypeDef) -> TypeC
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::parser::{TagGroup, TypeKind};
+    use crate::parser::{PathParam, TagGroup, TypeKind};
 
     // ─── Helpers ─────────────────────────────────────────────────────────────
 
