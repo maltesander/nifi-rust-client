@@ -129,12 +129,7 @@ pub fn generate_integration_coverage_content(
                 let tested = tested_query_params.contains(&key);
                 rows.push((
                     "Query param".to_string(),
-                    format!(
-                        "`{} {}` +`{}`",
-                        method_str(&ec.method),
-                        ec.path,
-                        param.name,
-                    ),
+                    format!("`{} {}` +`{}`", method_str(&ec.method), ec.path, param.name,),
                     tested,
                 ));
             }

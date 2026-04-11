@@ -1,6 +1,5 @@
 use crate::parser::{
-    ApiSpec, Endpoint, Field, FieldType, HttpMethod, QueryParam, QueryParamType,
-    TypeDef,
+    ApiSpec, Endpoint, Field, FieldType, HttpMethod, QueryParam, QueryParamType, TypeDef,
 };
 use serde::Serialize;
 use std::collections::HashMap;
@@ -233,9 +232,11 @@ impl VersionDiff {
                 return true;
             }
             // Query param enum values removed or type changed
-            if ec.changed_params.iter().any(|pc| {
-                !pc.removed_enum_values.is_empty() || pc.type_changed.is_some()
-            }) {
+            if ec
+                .changed_params
+                .iter()
+                .any(|pc| !pc.removed_enum_values.is_empty() || pc.type_changed.is_some())
+            {
                 return true;
             }
         }
@@ -268,12 +269,16 @@ impl VersionDiff {
         // Additive changes → Minor
         let is_additive = !self.endpoints.added.is_empty()
             || !self.types.added.is_empty()
-            || self.types.changed.iter().any(|tc| {
-                !tc.added_fields.is_empty() || !tc.added_variants.is_empty()
-            })
-            || self.endpoints.changed.iter().any(|ec| {
-                ec.added_params.iter().any(|p| !p.required)
-            });
+            || self
+                .types
+                .changed
+                .iter()
+                .any(|tc| !tc.added_fields.is_empty() || !tc.added_variants.is_empty())
+            || self
+                .endpoints
+                .changed
+                .iter()
+                .any(|ec| ec.added_params.iter().any(|p| !p.required));
         if is_additive {
             SemverBump::Minor
         } else {
@@ -471,15 +476,14 @@ fn diff_param_enums(name: &str, from_p: &QueryParam, to_p: &QueryParam) -> Optio
     removed.sort();
 
     // Detect type changes (e.g. Str → Enum) by comparing discriminants
-    let type_changed =
-        if std::mem::discriminant(&from_p.ty) != std::mem::discriminant(&to_p.ty) {
-            Some((
-                query_param_type_name(&from_p.ty).to_string(),
-                query_param_type_name(&to_p.ty).to_string(),
-            ))
-        } else {
-            None
-        };
+    let type_changed = if std::mem::discriminant(&from_p.ty) != std::mem::discriminant(&to_p.ty) {
+        Some((
+            query_param_type_name(&from_p.ty).to_string(),
+            query_param_type_name(&to_p.ty).to_string(),
+        ))
+    } else {
+        None
+    };
 
     if added.is_empty() && removed.is_empty() && type_changed.is_none() {
         return None;
@@ -500,11 +504,7 @@ fn diff_path_params(to_ep: &Endpoint, from_ep: &Endpoint) -> (Vec<String>, Vec<S
         .iter()
         .map(|p| p.name.as_str())
         .collect();
-    let to_names: HashSet<&str> = to_ep
-        .path_params
-        .iter()
-        .map(|p| p.name.as_str())
-        .collect();
+    let to_names: HashSet<&str> = to_ep.path_params.iter().map(|p| p.name.as_str()).collect();
     let mut added: Vec<String> = to_names
         .difference(&from_names)
         .map(|s| s.to_string())
@@ -833,7 +833,11 @@ mod tests {
         ep
     }
 
-    fn make_endpoint_with_response_type(method: HttpMethod, path: &str, resp_type: &str) -> Endpoint {
+    fn make_endpoint_with_response_type(
+        method: HttpMethod,
+        path: &str,
+        resp_type: &str,
+    ) -> Endpoint {
         let mut ep = make_endpoint(method, path);
         ep.response_type = Some(resp_type.to_string());
         ep
@@ -923,7 +927,10 @@ mod tests {
     #[test]
     fn test_added_required_query_param() {
         let from = make_spec(
-            vec![make_tag("Flow", vec![make_endpoint(HttpMethod::Get, "/flow/about")])],
+            vec![make_tag(
+                "Flow",
+                vec![make_endpoint(HttpMethod::Get, "/flow/about")],
+            )],
             vec![],
         );
         let mut required_param = make_str_param("clusterId");
@@ -1102,7 +1109,10 @@ mod tests {
             vec![],
             vec![make_dto(
                 "AboutDTO",
-                vec![make_field("version", FieldType::Opt(Box::new(FieldType::Str)))],
+                vec![make_field(
+                    "version",
+                    FieldType::Opt(Box::new(FieldType::Str)),
+                )],
             )],
         );
         let to = make_spec(
@@ -1264,7 +1274,10 @@ mod tests {
     #[test]
     fn test_path_param_added() {
         let from = make_spec(
-            vec![make_tag("Flow", vec![make_endpoint(HttpMethod::Get, "/flow/about")])],
+            vec![make_tag(
+                "Flow",
+                vec![make_endpoint(HttpMethod::Get, "/flow/about")],
+            )],
             vec![],
         );
         let to = make_spec(
@@ -1280,7 +1293,10 @@ mod tests {
         );
         let diff = compute_diff(&from, &to, "2.7.2", "2.8.0");
         assert_eq!(diff.endpoints.changed.len(), 1);
-        assert_eq!(diff.endpoints.changed[0].added_path_params, vec!["cluster_id"]);
+        assert_eq!(
+            diff.endpoints.changed[0].added_path_params,
+            vec!["cluster_id"]
+        );
         assert!(diff.endpoints.changed[0].removed_path_params.is_empty());
     }
 
@@ -1298,12 +1314,18 @@ mod tests {
             vec![],
         );
         let to = make_spec(
-            vec![make_tag("Flow", vec![make_endpoint(HttpMethod::Get, "/flow/about")])],
+            vec![make_tag(
+                "Flow",
+                vec![make_endpoint(HttpMethod::Get, "/flow/about")],
+            )],
             vec![],
         );
         let diff = compute_diff(&from, &to, "2.7.2", "2.8.0");
         assert_eq!(diff.endpoints.changed.len(), 1);
-        assert_eq!(diff.endpoints.changed[0].removed_path_params, vec!["cluster_id"]);
+        assert_eq!(
+            diff.endpoints.changed[0].removed_path_params,
+            vec!["cluster_id"]
+        );
         assert!(diff.endpoints.changed[0].added_path_params.is_empty());
     }
 
@@ -1336,8 +1358,14 @@ mod tests {
         let ec = &diff.endpoints.changed[0];
         assert_eq!(ec.contract_changes.len(), 1);
         assert_eq!(ec.contract_changes[0].aspect, ContractAspect::RequestType);
-        assert_eq!(ec.contract_changes[0].from.as_deref(), Some("ProcessGroupDto"));
-        assert_eq!(ec.contract_changes[0].to.as_deref(), Some("ProcessGroupEntity"));
+        assert_eq!(
+            ec.contract_changes[0].from.as_deref(),
+            Some("ProcessGroupDto")
+        );
+        assert_eq!(
+            ec.contract_changes[0].to.as_deref(),
+            Some("ProcessGroupEntity")
+        );
     }
 
     #[test]
@@ -1424,8 +1452,16 @@ mod tests {
         let diff = compute_diff(&from, &to, "2.7.2", "2.8.0");
         let tc = &diff.types.changed[0];
         let kinds: Vec<_> = tc.changed_fields.iter().map(|f| &f.kind).collect();
-        assert!(kinds.iter().any(|k| matches!(k, FieldChangeKind::BecameOptional)));
-        assert!(kinds.iter().any(|k| matches!(k, FieldChangeKind::TypeChanged { .. })));
+        assert!(
+            kinds
+                .iter()
+                .any(|k| matches!(k, FieldChangeKind::BecameOptional))
+        );
+        assert!(
+            kinds
+                .iter()
+                .any(|k| matches!(k, FieldChangeKind::TypeChanged { .. }))
+        );
     }
 
     #[test]
@@ -1482,7 +1518,10 @@ mod tests {
             vec![],
             vec![make_dto(
                 "AboutDTO",
-                vec![make_field("version", FieldType::Opt(Box::new(FieldType::Str)))],
+                vec![make_field(
+                    "version",
+                    FieldType::Opt(Box::new(FieldType::Str)),
+                )],
             )],
         );
         let to = make_spec(
@@ -1510,7 +1549,10 @@ mod tests {
             vec![],
             vec![make_dto(
                 "AboutDTO",
-                vec![make_field("version", FieldType::Opt(Box::new(FieldType::Str)))],
+                vec![make_field(
+                    "version",
+                    FieldType::Opt(Box::new(FieldType::Str)),
+                )],
             )],
         );
         let diff = compute_diff(&from, &to, "2.7.2", "2.8.0");
@@ -1530,15 +1572,18 @@ mod tests {
     fn test_is_breaking_path_param_added() {
         use crate::parser::PathParam;
         let from = make_spec(
-            vec![make_tag("Flow", vec![make_endpoint(HttpMethod::Get, "/flow/about")])],
+            vec![make_tag(
+                "Flow",
+                vec![make_endpoint(HttpMethod::Get, "/flow/about")],
+            )],
             vec![],
         );
         let mut ep = make_endpoint(HttpMethod::Get, "/flow/about");
-        ep.path_params.push(PathParam { name: "cluster_id".to_string(), doc: None });
-        let to = make_spec(
-            vec![make_tag("Flow", vec![ep])],
-            vec![],
-        );
+        ep.path_params.push(PathParam {
+            name: "cluster_id".to_string(),
+            doc: None,
+        });
+        let to = make_spec(vec![make_tag("Flow", vec![ep])], vec![]);
         let diff = compute_diff(&from, &to, "2.7.2", "2.8.0");
         assert!(diff.is_breaking());
         assert_eq!(diff.semver_bump(), SemverBump::Major);
