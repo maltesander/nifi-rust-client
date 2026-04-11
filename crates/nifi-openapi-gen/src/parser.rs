@@ -528,7 +528,7 @@ fn parse_tags(
                             Some("string") | None => QueryParamType::Str,
                             Some(other) => crate::parser_strict::panic_unknown(
                                 "query_param_type",
-                                &format!("{raw_path}.{http_method}.parameters[{name}]"),
+                                &format!("/paths{raw_path}/{http_method}/parameters/{name}"),
                                 &format!("type={other:?}"),
                             ),
                         };
@@ -561,7 +561,7 @@ fn parse_tags(
             let body_kind = request_body
                 .and_then(|rb| rb.get("content"))
                 .and_then(|content| {
-                    let pointer = format!("{raw_path}.{http_method}.requestBody");
+                    let pointer = format!("/paths{raw_path}/{http_method}/requestBody");
                     crate::content_type::resolve_request_body(content, &pointer)
                 });
 
@@ -598,7 +598,7 @@ fn parse_tags(
                 .as_ref()
                 .and_then(|r| r.get("content"))
                 .map(|content| {
-                    let pointer = format!("{raw_path}.{http_method}.responses.2xx");
+                    let pointer = format!("/paths{raw_path}/{http_method}/responses/2xx");
                     crate::content_type::resolve_response_body(content, &pointer)
                 })
                 .unwrap_or(crate::content_type::ResponseBodyKind::Empty);
