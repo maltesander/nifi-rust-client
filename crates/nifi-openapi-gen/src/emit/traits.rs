@@ -101,13 +101,7 @@ fn emit_endpoint_method(
     }
 
     // Determine return type
-    let return_ty = match &ep.response_inner {
-        Some(inner) => format!("{types_prefix}::types::{inner}"),
-        None => match &ep.response_type {
-            Some(ty) => format!("{types_prefix}::types::{ty}"),
-            None => "()".into(),
-        },
-    };
+    let return_ty = crate::emit::common::response_return_type(ep, types_prefix);
 
     // Build path param args (excluding the primary param for sub-resource traits)
     let path_param_args: String = ep
@@ -134,17 +128,11 @@ fn emit_endpoint_method(
     // Body param
     let body_arg = if ep.method == HttpMethod::Delete {
         String::new()
+    } else if let Some(RequestBodyKind::Json) = &ep.body_kind {
+        let req_type = ep.request_type.as_deref().unwrap_or("serde_json::Value");
+        format!(", body: &{types_prefix}::types::{req_type}")
     } else {
-        match &ep.body_kind {
-            Some(RequestBodyKind::Json) => {
-                let req_type = ep.request_type.as_deref().unwrap_or("serde_json::Value");
-                format!(", body: &{types_prefix}::types::{req_type}")
-            }
-            Some(RequestBodyKind::OctetStream) => {
-                ", filename: Option<&str>, data: Vec<u8>".to_string()
-            }
-            Some(RequestBodyKind::FormEncoded) | None => String::new(),
-        }
+        crate::emit::common::body_kind_signature(ep.body_kind.as_ref()).to_string()
     };
 
     // Abstract method signature (no default impl)
@@ -195,6 +183,9 @@ mod tests {
             response_type: Some("ControllerServiceEntity".to_string()),
             response_inner: Some("ControllerServiceDto".to_string()),
             response_field: Some("component".to_string()),
+            response_kind: crate::content_type::ResponseBodyKind::Json {
+                schema_ref: "ControllerServiceEntity".to_string(),
+            },
             query_params: vec![],
             success_responses: vec![],
             error_responses: vec![],
@@ -217,6 +208,9 @@ mod tests {
             response_type: Some("ConfigurationAnalysisEntity".to_string()),
             response_inner: Some("ConfigurationAnalysisDto".to_string()),
             response_field: Some("configuration_analysis".to_string()),
+            response_kind: crate::content_type::ResponseBodyKind::Json {
+                schema_ref: "ConfigurationAnalysisEntity".to_string(),
+            },
             query_params: vec![],
             success_responses: vec![],
             error_responses: vec![],

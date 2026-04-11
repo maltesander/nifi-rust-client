@@ -1,6 +1,8 @@
 use serde_json::Value;
 use std::collections::HashMap;
 
+pub use crate::content_type::RequestBodyKind;
+
 pub struct ApiSpec {
     pub tags: Vec<TagGroup>,
     /// Flat map of ALL schema definitions by name (for $ref resolution).
@@ -49,6 +51,8 @@ pub struct Field {
     pub ty: FieldType,
     pub doc: Option<String>,
     pub read_only: bool,
+    /// Whether the OpenAPI schema marks this field as deprecated.
+    pub deprecated: bool,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -119,27 +123,6 @@ pub struct PathParam {
     pub doc: Option<String>,
 }
 
-/// Describes what kind of request body an endpoint expects.
-#[derive(Debug, Clone, PartialEq)]
-pub enum RequestBodyKind {
-    /// `application/json` with a `$ref` schema — body type is in `request_type`.
-    Json,
-    /// `application/octet-stream` — raw bytes, no schema reference.
-    OctetStream,
-    /// `application/x-www-form-urlencoded` — not auto-generated; use manual implementations.
-    FormEncoded,
-}
-
-impl RequestBodyKind {
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            RequestBodyKind::Json => "Json",
-            RequestBodyKind::OctetStream => "OctetStream",
-            RequestBodyKind::FormEncoded => "FormEncoded",
-        }
-    }
-}
-
 #[derive(Debug, Clone)]
 pub struct Endpoint {
     pub method: HttpMethod,
@@ -159,6 +142,11 @@ pub struct Endpoint {
     pub response_inner: Option<String>,
     /// If response_type is an Entity, the field name to unwrap.
     pub response_field: Option<String>,
+    /// Content-type classification of the success response body.
+    /// Currently informational only — emitters still consume
+    /// `response_type`/`response_inner`/`response_field` for code generation.
+    /// Task 3.2 will migrate emitters to consume `response_kind` directly.
+    pub response_kind: crate::content_type::ResponseBodyKind,
     pub query_params: Vec<QueryParam>,
     /// 2xx responses: (status_code, description), e.g. ("206", "Partial Content...").
     pub success_responses: Vec<(String, String)>,
@@ -214,15 +202,11 @@ pub fn load(path: &str) -> ApiSpec {
 fn parse_all_types(schemas: &serde_json::Map<String, Value>) -> Vec<TypeDef> {
     schemas
         .iter()
-        .filter_map(|(name, schema)| parse_type_def(name, schema, schemas))
+        .filter_map(|(name, schema)| parse_type_def(name, schema))
         .collect()
 }
 
-fn parse_type_def(
-    name: &str,
-    schema: &Value,
-    all_schemas: &serde_json::Map<String, Value>,
-) -> Option<TypeDef> {
+fn parse_type_def(name: &str, schema: &Value) -> Option<TypeDef> {
     let rust_name = spec_name_to_rust(name);
     let props = match schema.get("properties").and_then(|p| p.as_object()) {
         Some(p) => p,
@@ -279,7 +263,10 @@ fn parse_type_def(
         .iter()
         .map(|(prop_name, prop_val)| {
             let is_required = required.contains(prop_name);
-            let base_ty = parse_field_type(prop_val, all_schemas);
+            let base_ty = parse_field_type(
+                prop_val,
+                &format!("/components/schemas/{name}/properties/{prop_name}"),
+            );
             let ty = if is_required {
                 base_ty
             } else {
@@ -297,6 +284,10 @@ fn parse_type_def(
                     .get("readOnly")
                     .and_then(|v| v.as_bool())
                     .unwrap_or(false),
+                deprecated: prop_val
+                    .get("deprecated")
+                    .and_then(|v| v.as_bool())
+                    .unwrap_or(false),
             }
         })
         .collect();
@@ -312,7 +303,7 @@ fn parse_type_def(
     })
 }
 
-fn parse_field_type(prop: &Value, _all: &serde_json::Map<String, Value>) -> FieldType {
+fn parse_field_type(prop: &Value, json_pointer: &str) -> FieldType {
     if let Some(ref_name) = extract_ref(prop) {
         return FieldType::Ref(spec_name_to_rust(&ref_name));
     }
@@ -335,12 +326,13 @@ fn parse_field_type(prop: &Value, _all: &serde_json::Map<String, Value>) -> Fiel
         Some("number") => FieldType::F64,
         Some("array") => {
             let items = &prop["items"];
-            let inner = parse_field_type(items, _all);
+            let inner = parse_field_type(items, &format!("{json_pointer}/items"));
             FieldType::List(Box::new(inner))
         }
         Some("object") => {
             if let Some(additional) = prop.get("additionalProperties") {
-                let value_ty = parse_field_type(additional, _all);
+                let value_ty =
+                    parse_field_type(additional, &format!("{json_pointer}/additionalProperties"));
                 // Wrap in Option: map values can be null in real NiFi responses
                 // even when the spec says type: string (e.g. unset processor properties).
                 FieldType::Map(Box::new(FieldType::Opt(Box::new(value_ty))))
@@ -349,7 +341,16 @@ fn parse_field_type(prop: &Value, _all: &serde_json::Map<String, Value>) -> Fiel
                 FieldType::Ref("serde_json::Value".to_string())
             }
         }
-        _ => FieldType::Str, // fallback for unknown
+        Some(other) => crate::parser_strict::panic_unknown(
+            "field_type",
+            json_pointer,
+            &format!("type={other:?}"),
+        ),
+        None => crate::parser_strict::panic_unknown(
+            "field_type",
+            json_pointer,
+            "schema has no \"type\" and no \"$ref\"",
+        ),
     }
 }
 
@@ -524,7 +525,12 @@ fn parse_tags(
                                 }
                             }
                             Some("number") => QueryParamType::F64,
-                            _ => QueryParamType::Str,
+                            Some("string") | None => QueryParamType::Str,
+                            Some(other) => crate::parser_strict::panic_unknown(
+                                "query_param_type",
+                                &format!("/paths{raw_path}/{http_method}/parameters/{name}"),
+                                &format!("type={other:?}"),
+                            ),
                         };
                         (scalar, None)
                     };
@@ -552,29 +558,50 @@ fn parse_tags(
                 .and_then(|rb| rb.get("description"))
                 .and_then(|d| d.as_str())
                 .map(String::from);
-            let body_kind = request_body.and_then(|rb| {
-                let content = rb.get("content")?;
-                if content.get("application/json").is_some() {
-                    Some(RequestBodyKind::Json)
-                } else if content.get("application/octet-stream").is_some() {
-                    Some(RequestBodyKind::OctetStream)
-                } else if content.get("application/x-www-form-urlencoded").is_some() {
-                    Some(RequestBodyKind::FormEncoded)
-                } else {
-                    None
-                }
-            });
+            let body_kind = request_body
+                .and_then(|rb| rb.get("content"))
+                .and_then(|content| {
+                    let pointer = format!("/paths{raw_path}/{http_method}/requestBody");
+                    crate::content_type::resolve_request_body(content, &pointer)
+                });
 
             let responses = op.get("responses");
-            let response_schema_ref = responses
-                .and_then(|r| {
-                    r.get("200")
-                        .or_else(|| r.get("201"))
-                        .or_else(|| r.get("202"))
-                        .or_else(|| r.get("default"))
-                })
+            // Pick the 2xx/default response to drive codegen. Prefer one that
+            // actually declares a content schema — some endpoints expose a
+            // body-less 200 (e.g. "no flow file to return") alongside a 202
+            // carrying the real payload.
+            let pick_response = |r: &serde_json::Value| -> Option<serde_json::Value> {
+                let try_codes = ["200", "201", "202", "default"];
+                // First pass: first code that has content.
+                for code in try_codes {
+                    if let Some(v) = r.get(code) {
+                        if v.get("content").is_some() {
+                            return Some(v.clone());
+                        }
+                    }
+                }
+                // Fallback: first code that exists, even without content.
+                for code in try_codes {
+                    if let Some(v) = r.get(code) {
+                        return Some(v.clone());
+                    }
+                }
+                None
+            };
+            let chosen_response = responses.and_then(pick_response);
+            let response_schema_ref = chosen_response
+                .as_ref()
                 .and_then(|r| r["content"]["application/json"]["schema"]["$ref"].as_str())
                 .map(|r| r.trim_start_matches("#/components/schemas/").to_string());
+
+            let response_kind = chosen_response
+                .as_ref()
+                .and_then(|r| r.get("content"))
+                .map(|content| {
+                    let pointer = format!("/paths{raw_path}/{http_method}/responses/2xx");
+                    crate::content_type::resolve_response_body(content, &pointer)
+                })
+                .unwrap_or(crate::content_type::ResponseBodyKind::Empty);
 
             let (response_type, response_inner, response_field) = match response_schema_ref {
                 None => (None, None, None),
@@ -660,6 +687,7 @@ fn parse_tags(
                 response_type,
                 response_inner,
                 response_field,
+                response_kind,
                 query_params,
                 success_responses,
                 error_responses,
@@ -760,6 +788,7 @@ fn tag_to_accessor(tag: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use serde_json::json;
 
     #[test]
     fn test_http_method_as_str() {
@@ -767,5 +796,207 @@ mod tests {
         assert_eq!(HttpMethod::Post.as_str(), "POST");
         assert_eq!(HttpMethod::Put.as_str(), "PUT");
         assert_eq!(HttpMethod::Delete.as_str(), "DELETE");
+    }
+
+    #[test]
+    #[should_panic(expected = "nifi-openapi-gen: unknown field_type")]
+    fn unknown_field_type_panics() {
+        let prop = json!({ "type": "frobnitz" });
+        parse_field_type(&prop, "/components/schemas/Foo/properties/bar");
+    }
+
+    #[test]
+    fn known_field_types_still_work() {
+        let prop = json!({ "type": "string" });
+        let ft = parse_field_type(&prop, "/x");
+        assert!(matches!(ft, FieldType::Str));
+    }
+
+    #[test]
+    #[should_panic(expected = "nifi-openapi-gen: unknown query_param_type")]
+    fn unknown_query_param_type_panics() {
+        let spec = json!({
+            "openapi": "3.0.1",
+            "info": {"title": "t", "version": "1"},
+            "paths": {
+                "/foo": {
+                    "get": {
+                        "tags": ["Flow"],
+                        "operationId": "getFoo",
+                        "parameters": [{
+                            "name": "weird",
+                            "in": "query",
+                            "schema": { "type": "frobnitz" }
+                        }],
+                        "responses": {"200": {"description": "ok"}}
+                    }
+                }
+            },
+            "components": {"schemas": {}}
+        });
+        let schemas = spec["components"]["schemas"].as_object().unwrap().clone();
+        let _ = parse_tags(&spec, &schemas, &[]);
+    }
+
+    #[test]
+    fn multipart_upload_endpoint_is_captured_in_29() {
+        let path =
+            std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("specs/2.9.0/nifi-api.json");
+        let content = std::fs::read_to_string(&path).unwrap();
+        let v: serde_json::Value = serde_json::from_str(&content).unwrap();
+        let schemas = v["components"]["schemas"].as_object().unwrap().clone();
+        let tags = parse_tags(&v, &schemas, &[]);
+        let all_eps: Vec<&Endpoint> = tags
+            .iter()
+            .flat_map(|t| {
+                t.root_endpoints
+                    .iter()
+                    .chain(t.sub_groups.iter().flat_map(|sg| sg.endpoints.iter()))
+            })
+            .collect();
+        let ep = all_eps
+            .iter()
+            .find(|e| {
+                e.path == "/process-groups/{id}/process-groups/upload"
+                    && matches!(e.method, HttpMethod::Post)
+            })
+            .expect("upload endpoint missing from parsed 2.9.0 spec");
+        assert_eq!(ep.body_kind, Some(RequestBodyKind::Multipart));
+    }
+
+    #[test]
+    fn wildcard_body_endpoint_is_captured_in_29() {
+        let path =
+            std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("specs/2.9.0/nifi-api.json");
+        let content = std::fs::read_to_string(&path).unwrap();
+        let v: serde_json::Value = serde_json::from_str(&content).unwrap();
+        let schemas = v["components"]["schemas"].as_object().unwrap().clone();
+        let tags = parse_tags(&v, &schemas, &[]);
+        let all_eps: Vec<&Endpoint> = tags
+            .iter()
+            .flat_map(|t| {
+                t.root_endpoints
+                    .iter()
+                    .chain(t.sub_groups.iter().flat_map(|sg| sg.endpoints.iter()))
+            })
+            .collect();
+        let ep = all_eps
+            .iter()
+            .find(|e| {
+                e.path == "/data-transfer/{portType}/{portId}/transactions"
+                    && matches!(e.method, HttpMethod::Post)
+            })
+            .expect("data-transfer transactions endpoint missing");
+        assert_eq!(ep.body_kind, Some(RequestBodyKind::Wildcard));
+    }
+
+    #[test]
+    fn text_plain_response_is_captured_in_29() {
+        let path =
+            std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("specs/2.9.0/nifi-api.json");
+        let content = std::fs::read_to_string(&path).unwrap();
+        let v: serde_json::Value = serde_json::from_str(&content).unwrap();
+        let schemas = v["components"]["schemas"].as_object().unwrap().clone();
+        let tags = parse_tags(&v, &schemas, &[]);
+        let ep = tags
+            .iter()
+            .flat_map(|t| {
+                t.root_endpoints
+                    .iter()
+                    .chain(t.sub_groups.iter().flat_map(|sg| sg.endpoints.iter()))
+            })
+            .find(|e| e.path == "/flow/client-id" && matches!(e.method, HttpMethod::Get))
+            .expect("/flow/client-id missing from parsed 2.9.0 spec");
+        assert!(matches!(
+            ep.response_kind,
+            crate::content_type::ResponseBodyKind::Text
+        ));
+    }
+
+    #[test]
+    fn octet_stream_response_is_captured_in_29() {
+        let path =
+            std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("specs/2.9.0/nifi-api.json");
+        let content = std::fs::read_to_string(&path).unwrap();
+        let v: serde_json::Value = serde_json::from_str(&content).unwrap();
+        let schemas = v["components"]["schemas"].as_object().unwrap().clone();
+        let tags = parse_tags(&v, &schemas, &[]);
+        let ep = tags
+            .iter()
+            .flat_map(|t| {
+                t.root_endpoints
+                    .iter()
+                    .chain(t.sub_groups.iter().flat_map(|sg| sg.endpoints.iter()))
+            })
+            .find(|e| {
+                e.path == "/connectors/{id}/assets/{assetId}" && matches!(e.method, HttpMethod::Get)
+            })
+            .expect("/connectors/{id}/assets/{assetId} missing");
+        assert!(matches!(
+            ep.response_kind,
+            crate::content_type::ResponseBodyKind::OctetStream
+        ));
+    }
+
+    // NOTE: no XML-only response exists in any bundled NiFi 2.x spec. The
+    // only application/xml producer, /site-to-site/peers, also advertises
+    // application/json, and resolve_response_body picks JSON first by
+    // design. XML endpoint verification is deferred to Task 3.3.
+
+    #[test]
+    fn response_code_precedence_picks_first_2xx_with_content() {
+        // /data-transfer/output-ports/{portId}/transactions/{transactionId}/flow-files
+        // declares 200 (no content) and 202 (application/octet-stream).
+        // The parser must prefer the 202 body so the endpoint emits Vec<u8>
+        // instead of `()`. A naive 200 → 201 → 202 walker would silently
+        // pick the empty 200 and strand the octet-stream body.
+        let path =
+            std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("specs/2.9.0/nifi-api.json");
+        let content = std::fs::read_to_string(&path).unwrap();
+        let v: serde_json::Value = serde_json::from_str(&content).unwrap();
+        let schemas = v["components"]["schemas"].as_object().unwrap().clone();
+        let tags = parse_tags(&v, &schemas, &[]);
+        let ep = tags
+            .iter()
+            .flat_map(|t| {
+                t.root_endpoints
+                    .iter()
+                    .chain(t.sub_groups.iter().flat_map(|sg| sg.endpoints.iter()))
+            })
+            .find(|e| {
+                e.path
+                    == "/data-transfer/output-ports/{portId}/transactions/{transactionId}/flow-files"
+                    && matches!(e.method, HttpMethod::Get)
+            })
+            .expect("data-transfer output-ports flow-files GET missing");
+        assert!(matches!(
+            ep.response_kind,
+            crate::content_type::ResponseBodyKind::OctetStream
+        ));
+    }
+
+    #[test]
+    fn json_response_still_captures_ref() {
+        let path =
+            std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("specs/2.9.0/nifi-api.json");
+        let content = std::fs::read_to_string(&path).unwrap();
+        let v: serde_json::Value = serde_json::from_str(&content).unwrap();
+        let schemas = v["components"]["schemas"].as_object().unwrap().clone();
+        let tags = parse_tags(&v, &schemas, &[]);
+        let ep = tags
+            .iter()
+            .flat_map(|t| {
+                t.root_endpoints
+                    .iter()
+                    .chain(t.sub_groups.iter().flat_map(|sg| sg.endpoints.iter()))
+            })
+            .find(|e| e.path == "/flow/about")
+            .expect("/flow/about missing");
+        assert!(matches!(
+            &ep.response_kind,
+            crate::content_type::ResponseBodyKind::Json { .. }
+        ));
+        // response_type should still be populated the old way
+        assert!(ep.response_type.is_some());
     }
 }

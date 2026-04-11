@@ -611,6 +611,7 @@ mod tests {
             ty,
             doc: None,
             read_only: false,
+            deprecated: false,
         }
     }
 

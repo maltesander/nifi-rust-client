@@ -220,7 +220,13 @@ fn build_call_args(endpoint: &Endpoint, sub_group: Option<&SubGroup>) -> String 
             args.push("None".to_string()); // filename
             args.push("vec![]".to_string()); // data
         }
-        _ => {}
+        Some(crate::parser::RequestBodyKind::Multipart) => {
+            args.push("\"test.xml\"".to_string()); // filename
+            args.push("vec![]".to_string()); // data
+        }
+        Some(crate::parser::RequestBodyKind::Wildcard)
+        | Some(crate::parser::RequestBodyKind::FormEncoded)
+        | None => {}
     }
 
     // Add query params — all None (optional) or a default for required ones.
@@ -272,6 +278,7 @@ mod tests {
             response_type: None,
             response_inner: None,
             response_field: None,
+            response_kind: crate::content_type::ResponseBodyKind::Empty,
             query_params: vec![],
             success_responses: vec![],
             error_responses: vec![],

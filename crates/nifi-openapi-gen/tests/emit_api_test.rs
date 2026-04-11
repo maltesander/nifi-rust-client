@@ -28,6 +28,9 @@ fn flow_spec() -> ApiSpec {
                     response_type: Some("AboutEntity".into()),
                     response_inner: Some("AboutDto".into()),
                     response_field: Some("about".into()),
+                    response_kind: nifi_openapi_gen::content_type::ResponseBodyKind::Json {
+                        schema_ref: "AboutEntity".into(),
+                    },
                     query_params: vec![],
                     success_responses: vec![],
                     error_responses: vec![],
@@ -50,6 +53,9 @@ fn flow_spec() -> ApiSpec {
                     response_type: Some("ProcessorEntity".into()),
                     response_inner: Some("ProcessorDto".into()),
                     response_field: Some("component".into()),
+                    response_kind: nifi_openapi_gen::content_type::ResponseBodyKind::Json {
+                        schema_ref: "ProcessorEntity".into(),
+                    },
                     query_params: vec![],
                     success_responses: vec![],
                     error_responses: vec![],
@@ -68,6 +74,9 @@ fn flow_spec() -> ApiSpec {
                     response_type: Some("ProcessorEntity".into()),
                     response_inner: Some("ProcessorDto".into()),
                     response_field: Some("component".into()),
+                    response_kind: nifi_openapi_gen::content_type::ResponseBodyKind::Json {
+                        schema_ref: "ProcessorEntity".into(),
+                    },
                     query_params: vec![],
                     success_responses: vec![],
                     error_responses: vec![],
@@ -192,6 +201,9 @@ fn services_spec() -> ApiSpec {
                 response_type: Some("ServiceEntity".into()),
                 response_inner: Some("ServiceDto".into()),
                 response_field: Some("service".into()),
+                response_kind: nifi_openapi_gen::content_type::ResponseBodyKind::Json {
+                    schema_ref: "ServiceEntity".into(),
+                },
                 query_params: vec![],
                 success_responses: vec![],
                 error_responses: vec![],
@@ -226,6 +238,9 @@ fn services_spec() -> ApiSpec {
                     response_type: Some("ServiceEntity".into()),
                     response_inner: Some("ServiceDto".into()),
                     response_field: Some("service".into()),
+                    response_kind: nifi_openapi_gen::content_type::ResponseBodyKind::Json {
+                        schema_ref: "ServiceEntity".into(),
+                    },
                     query_params: vec![],
                     success_responses: vec![],
                     error_responses: vec![],
@@ -314,6 +329,9 @@ fn spec_with_enum_query_param() -> ApiSpec {
                 response_type: Some("ProcessGroupEntity".into()),
                 response_inner: None,
                 response_field: None,
+                response_kind: nifi_openapi_gen::content_type::ResponseBodyKind::Json {
+                    schema_ref: "ProcessGroupEntity".into(),
+                },
                 query_params: vec![QueryParam {
                     name: "parameterContextHandlingStrategy".into(),
                     rust_name: "parameter_context_handling_strategy".into(),
@@ -376,6 +394,9 @@ fn spec_with_query_params() -> ApiSpec {
                     response_type: Some("SearchResultsEntity".into()),
                     response_inner: Some("SearchResultsDto".into()),
                     response_field: Some("search_results_d_t_o".into()),
+                    response_kind: nifi_openapi_gen::content_type::ResponseBodyKind::Json {
+                        schema_ref: "SearchResultsEntity".into(),
+                    },
                     query_params: vec![QueryParam {
                         name: "q".into(),
                         rust_name: "q".into(),
@@ -403,6 +424,9 @@ fn spec_with_query_params() -> ApiSpec {
                     response_type: Some("HistoryEntity".into()),
                     response_inner: Some("HistoryDto".into()),
                     response_field: Some("history".into()),
+                    response_kind: nifi_openapi_gen::content_type::ResponseBodyKind::Json {
+                        schema_ref: "HistoryEntity".into(),
+                    },
                     query_params: vec![
                         QueryParam {
                             name: "offset".into(),
@@ -443,6 +467,9 @@ fn spec_with_query_params() -> ApiSpec {
                     response_type: Some("ConnectionEntity".into()),
                     response_inner: None,
                     response_field: None,
+                    response_kind: nifi_openapi_gen::content_type::ResponseBodyKind::Json {
+                        schema_ref: "ConnectionEntity".into(),
+                    },
                     query_params: vec![
                         QueryParam {
                             name: "version".into(),
@@ -557,6 +584,7 @@ fn spec_with_errors_and_security() -> ApiSpec {
                 response_type: None,
                 response_inner: None,
                 response_field: None,
+                response_kind: nifi_openapi_gen::content_type::ResponseBodyKind::Empty,
                 query_params: vec![],
                 success_responses: vec![],
                 error_responses: vec![
@@ -598,6 +626,7 @@ fn spec_with_multi_security() -> ApiSpec {
                 response_type: None,
                 response_inner: None,
                 response_field: None,
+                response_kind: nifi_openapi_gen::content_type::ResponseBodyKind::Empty,
                 query_params: vec![],
                 success_responses: vec![],
                 error_responses: vec![],
@@ -633,6 +662,7 @@ fn spec_with_no_auth() -> ApiSpec {
                 response_type: None,
                 response_inner: None,
                 response_field: None,
+                response_kind: nifi_openapi_gen::content_type::ResponseBodyKind::Empty,
                 query_params: vec![],
                 success_responses: vec![],
                 error_responses: vec![],
@@ -728,6 +758,7 @@ fn no_permissions_section_when_security_absent() {
                 response_type: None,
                 response_inner: None,
                 response_field: None,
+                response_kind: nifi_openapi_gen::content_type::ResponseBodyKind::Empty,
                 query_params: vec![],
                 success_responses: vec![],
                 error_responses: vec![],

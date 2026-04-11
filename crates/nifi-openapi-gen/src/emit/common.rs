@@ -1,5 +1,103 @@
-use crate::parser::FieldType;
+use crate::content_type::ResponseBodyKind;
+use crate::parser::{Endpoint, FieldType, RequestBodyKind};
 use crate::util::pascal_case;
+
+/// Rust return type for an endpoint, based on its `response_kind`.
+///
+/// The `types_prefix` controls where referenced JSON types live:
+///
+/// - For per-version inherent impls, pass `"crate"` so references resolve to
+///   `crate::types::{Name}`.
+/// - For trait/dispatch signatures that refer to types under a different crate
+///   path (e.g. `crate::v2_8_0`), pass that prefix so references expand to
+///   `crate::v2_8_0::types::{Name}`.
+/// - For dynamic trait/dispatch/impl sigs that already live in a module whose
+///   `use super::types;` brings the local types into scope, pass `""` so
+///   references expand to `types::{Name}`.
+///
+/// Non-JSON responses map to primitive Rust types with no prefix:
+/// `Text`/`Xml` → `String`, `OctetStream`/`Wildcard` → `Vec<u8>`, `Empty` → `()`.
+pub(crate) fn response_return_type(ep: &Endpoint, types_prefix: &str) -> String {
+    // Helper: build the prefix for a JSON type reference. We keep the legacy
+    // behavior (response_inner/response_type) so Entity-unwrapping downstream
+    // continues to work unchanged.
+    let json_ref = |name: &str| -> String {
+        if types_prefix.is_empty() {
+            format!("types::{name}")
+        } else {
+            format!("{types_prefix}::types::{name}")
+        }
+    };
+    match &ep.response_kind {
+        ResponseBodyKind::Json { .. } => {
+            if let Some(inner) = &ep.response_inner {
+                json_ref(inner)
+            } else if let Some(ty) = &ep.response_type {
+                json_ref(ty)
+            } else {
+                "serde_json::Value".into()
+            }
+        }
+        ResponseBodyKind::Text | ResponseBodyKind::Xml => "String".into(),
+        ResponseBodyKind::OctetStream | ResponseBodyKind::Wildcard => "Vec<u8>".into(),
+        ResponseBodyKind::Empty => "()".into(),
+    }
+}
+
+/// Body parameter signature fragment for non-JSON request bodies.
+///
+/// Returns the static `, name: type` fragment (including the leading `, `) that
+/// gets appended to a generated function signature, or an empty string for body
+/// kinds that don't contribute fixed parameters:
+///
+/// - `OctetStream` → `", filename: Option<&str>, data: Vec<u8>"`
+/// - `Multipart`   → `", filename: &str, data: Vec<u8>"`
+/// - `Json`        → `""` (the JSON type name is per-endpoint; callers build
+///   the `", body: &...::types::{req_type}"` fragment themselves)
+/// - `Wildcard | FormEncoded | None` → `""`
+pub(crate) fn body_kind_signature(body_kind: Option<&RequestBodyKind>) -> &'static str {
+    match body_kind {
+        Some(RequestBodyKind::OctetStream) => ", filename: Option<&str>, data: Vec<u8>",
+        Some(RequestBodyKind::Multipart) => ", filename: &str, data: Vec<u8>",
+        Some(RequestBodyKind::Json)
+        | Some(RequestBodyKind::Wildcard)
+        | Some(RequestBodyKind::FormEncoded)
+        | None => "",
+    }
+}
+
+/// Forward-args fragment for delegating a call from a wrapper to the underlying
+/// inherent method. Returns the `", a, b"` portion (including the leading `, `)
+/// or an empty string. For builders that need a `Vec<String>`, see
+/// [`body_kind_forward_arg_names`].
+///
+/// - `Json`        → `", body"`
+/// - `OctetStream` → `", filename, data"`
+/// - `Multipart`   → `", filename, data"`
+/// - `Wildcard | FormEncoded | None` → `""`
+pub(crate) fn body_kind_forward_args(body_kind: Option<&RequestBodyKind>) -> &'static str {
+    match body_kind {
+        Some(RequestBodyKind::Json) => ", body",
+        Some(RequestBodyKind::OctetStream) | Some(RequestBodyKind::Multipart) => ", filename, data",
+        Some(RequestBodyKind::Wildcard) | Some(RequestBodyKind::FormEncoded) | None => "",
+    }
+}
+
+/// Individual forward-arg names for a given `body_kind`. Used by call sites
+/// that build up a `Vec<String>` of arguments rather than a single fragment.
+/// Mirrors [`body_kind_forward_args`] but returns the names as a slice with
+/// no leading comma.
+pub(crate) fn body_kind_forward_arg_names(
+    body_kind: Option<&RequestBodyKind>,
+) -> &'static [&'static str] {
+    match body_kind {
+        Some(RequestBodyKind::Json) => &["body"],
+        Some(RequestBodyKind::OctetStream) | Some(RequestBodyKind::Multipart) => {
+            &["filename", "data"]
+        }
+        Some(RequestBodyKind::Wildcard) | Some(RequestBodyKind::FormEncoded) | None => &[],
+    }
+}
 
 /// Controls how `FieldType::Enum` is mapped to a Rust type name.
 pub(crate) enum InlineEnumMode<'a> {
@@ -197,5 +295,87 @@ mod tests {
         let mut out = String::new();
         emit_doc_comment(&mut out, "Before\n\nAfter", "");
         assert_eq!(out, "/// Before\n///\n/// After\n");
+    }
+
+    #[test]
+    fn body_kind_signature_octet_stream() {
+        assert_eq!(
+            body_kind_signature(Some(&RequestBodyKind::OctetStream)),
+            ", filename: Option<&str>, data: Vec<u8>"
+        );
+    }
+
+    #[test]
+    fn body_kind_signature_multipart() {
+        assert_eq!(
+            body_kind_signature(Some(&RequestBodyKind::Multipart)),
+            ", filename: &str, data: Vec<u8>"
+        );
+    }
+
+    #[test]
+    fn body_kind_signature_json_is_empty() {
+        // JSON body type names are per-endpoint and built by callers.
+        assert_eq!(body_kind_signature(Some(&RequestBodyKind::Json)), "");
+    }
+
+    #[test]
+    fn body_kind_signature_no_contribution() {
+        assert_eq!(body_kind_signature(None), "");
+        assert_eq!(body_kind_signature(Some(&RequestBodyKind::Wildcard)), "");
+        assert_eq!(body_kind_signature(Some(&RequestBodyKind::FormEncoded)), "");
+    }
+
+    #[test]
+    fn body_kind_forward_args_json() {
+        assert_eq!(
+            body_kind_forward_args(Some(&RequestBodyKind::Json)),
+            ", body"
+        );
+    }
+
+    #[test]
+    fn body_kind_forward_args_octet_stream() {
+        assert_eq!(
+            body_kind_forward_args(Some(&RequestBodyKind::OctetStream)),
+            ", filename, data"
+        );
+    }
+
+    #[test]
+    fn body_kind_forward_args_multipart() {
+        assert_eq!(
+            body_kind_forward_args(Some(&RequestBodyKind::Multipart)),
+            ", filename, data"
+        );
+    }
+
+    #[test]
+    fn body_kind_forward_args_no_contribution() {
+        assert_eq!(body_kind_forward_args(None), "");
+        assert_eq!(body_kind_forward_args(Some(&RequestBodyKind::Wildcard)), "");
+        assert_eq!(
+            body_kind_forward_args(Some(&RequestBodyKind::FormEncoded)),
+            ""
+        );
+    }
+
+    #[test]
+    fn body_kind_forward_arg_names_variants() {
+        assert_eq!(
+            body_kind_forward_arg_names(Some(&RequestBodyKind::Json)),
+            &["body"]
+        );
+        assert_eq!(
+            body_kind_forward_arg_names(Some(&RequestBodyKind::OctetStream)),
+            &["filename", "data"]
+        );
+        assert_eq!(
+            body_kind_forward_arg_names(Some(&RequestBodyKind::Multipart)),
+            &["filename", "data"]
+        );
+        assert!(body_kind_forward_arg_names(None).is_empty());
+        assert!(body_kind_forward_arg_names(Some(&RequestBodyKind::Wildcard)).is_empty());
+        assert!(body_kind_forward_arg_names(Some(&RequestBodyKind::FormEncoded)).is_empty());
     }
 }

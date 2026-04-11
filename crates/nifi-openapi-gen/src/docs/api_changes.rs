@@ -187,6 +187,15 @@ pub fn format_diff_body(diff: &VersionDiff) -> String {
                         }
                         format!("enum variants changed: {}", parts.join(" "))
                     }
+                    FieldChangeKind::DeprecationChanged {
+                        now_deprecated: true,
+                    } => "newly deprecated".to_string(),
+                    FieldChangeKind::DeprecationChanged {
+                        now_deprecated: false,
+                    } => "deprecation removed".to_string(),
+                    FieldChangeKind::NarrowedToEnum { variants } => {
+                        format!("narrowed to enum: [`{}`]", variants.join("`, `"))
+                    }
                 };
                 parts.push(format!("`{}` {}", fc.name, desc));
             }

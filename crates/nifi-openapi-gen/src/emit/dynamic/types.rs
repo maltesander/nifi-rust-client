@@ -406,6 +406,9 @@ mod tests {
                 response_type: Some(t.to_string()),
                 response_inner: None,
                 response_field: None,
+                response_kind: crate::content_type::ResponseBodyKind::Json {
+                    schema_ref: t.to_string(),
+                },
                 success_responses: vec![],
                 error_responses: vec![],
                 security: None,
@@ -429,6 +432,7 @@ mod tests {
             ty,
             doc: None,
             read_only: false,
+            deprecated: false,
         }
     }
 
@@ -560,6 +564,7 @@ mod tests {
             ty,
             doc: Some(doc.to_string()),
             read_only: false,
+            deprecated: false,
         }
     }
 

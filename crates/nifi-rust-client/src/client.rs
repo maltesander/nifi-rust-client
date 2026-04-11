@@ -293,6 +293,9 @@ impl NifiClient {
     }
 
     /// POST that ignores the response body (for endpoints with no JSON response).
+    // Currently unused: no NiFi 2.x endpoint has a JSON body POST with an empty
+    // response. Kept for forward compatibility with the emitter.
+    #[allow(dead_code)]
     pub(crate) async fn post_void<B: serde::Serialize>(
         &self,
         path: &str,
@@ -442,6 +445,9 @@ impl NifiClient {
     ///
     /// Used for binary upload endpoints that return no JSON response.
     /// `filename` is sent as the `Filename` request header when provided.
+    // Currently unused: no NiFi 2.x endpoint has an octet-stream request body
+    // with an empty response body. Kept for forward compatibility.
+    #[allow(dead_code)]
     pub(crate) async fn post_void_octet_stream(
         &self,
         path: &str,
@@ -462,6 +468,66 @@ impl NifiClient {
                 builder
             };
             let resp = builder.send().await.context(HttpSnafu)?;
+            Self::check_void("POST", path, resp).await
+        })
+        .await
+    }
+
+    /// POST with `multipart/form-data` body.
+    ///
+    /// Used for file-upload endpoints such as
+    /// `POST /process-groups/{id}/process-groups/upload`. Sends a single form
+    /// part named `"file"` carrying the given filename and raw bytes. The
+    /// `Content-Type` header (including the generated boundary) is set by
+    /// reqwest when `.multipart(form)` is called.
+    pub(crate) async fn post_multipart<T: DeserializeOwned>(
+        &self,
+        path: &str,
+        filename: &str,
+        data: Vec<u8>,
+    ) -> Result<T, NifiError> {
+        self.with_retry(|| async {
+            tracing::debug!(method = "POST", path, "NiFi API request");
+            let url = self.api_url(path);
+            let part =
+                reqwest::multipart::Part::bytes(data.clone()).file_name(filename.to_string());
+            let form = reqwest::multipart::Form::new().part("file", part);
+            let resp = self
+                .authenticated(self.http.post(url))
+                .await
+                .multipart(form)
+                .send()
+                .await
+                .context(HttpSnafu)?;
+            Self::deserialize("POST", path, resp).await
+        })
+        .await
+    }
+
+    /// POST with `multipart/form-data` body; ignores the response body.
+    ///
+    /// Variant of [`Self::post_multipart`] for upload endpoints that do not
+    /// return a JSON payload.
+    #[allow(dead_code)]
+    pub(crate) async fn post_void_multipart(
+        &self,
+        path: &str,
+        filename: &str,
+        data: Vec<u8>,
+    ) -> Result<(), NifiError> {
+        self.with_retry(|| async {
+            tracing::debug!(method = "POST", path, "NiFi API request");
+            let url = self.api_url(path);
+            let part =
+                reqwest::multipart::Part::bytes(data.clone()).file_name(filename.to_string());
+            let form = reqwest::multipart::Form::new().part("file", part);
+            let resp = self
+                .authenticated(self.http.post(url))
+                .await
+                .multipart(form)
+                .send()
+                .await
+                .context(HttpSnafu)?;
             Self::check_void("POST", path, resp).await
         })
         .await
@@ -530,6 +596,102 @@ impl NifiClient {
         .await
     }
 
+    /// GET returning raw text (`text/plain`).
+    pub(crate) async fn get_text(&self, path: &str) -> Result<String, NifiError> {
+        self.with_retry(|| async {
+            tracing::debug!(method = "GET", path, "NiFi API request");
+            let url = self.api_url(path);
+            let resp = self
+                .authenticated(self.http.get(url))
+                .await
+                .send()
+                .await
+                .context(HttpSnafu)?;
+            Self::text("GET", path, resp).await
+        })
+        .await
+    }
+
+    /// GET returning raw bytes (`application/octet-stream` or `*/*`).
+    pub(crate) async fn get_bytes(&self, path: &str) -> Result<Vec<u8>, NifiError> {
+        self.with_retry(|| async {
+            tracing::debug!(method = "GET", path, "NiFi API request");
+            let url = self.api_url(path);
+            let resp = self
+                .authenticated(self.http.get(url))
+                .await
+                .send()
+                .await
+                .context(HttpSnafu)?;
+            Self::bytes("GET", path, resp).await
+        })
+        .await
+    }
+
+    /// GET with query parameters returning raw bytes.
+    pub(crate) async fn get_bytes_with_query(
+        &self,
+        path: &str,
+        query: &[(&str, String)],
+    ) -> Result<Vec<u8>, NifiError> {
+        self.with_retry(|| async {
+            tracing::debug!(method = "GET", path, "NiFi API request");
+            let url = self.api_url(path);
+            let resp = self
+                .authenticated(self.http.get(url).query(query))
+                .await
+                .send()
+                .await
+                .context(HttpSnafu)?;
+            Self::bytes("GET", path, resp).await
+        })
+        .await
+    }
+
+    /// POST a JSON body and return the `text/plain` response body.
+    pub(crate) async fn post_returning_text<B: serde::Serialize>(
+        &self,
+        path: &str,
+        body: &B,
+    ) -> Result<String, NifiError> {
+        self.with_retry(|| async {
+            tracing::debug!(method = "POST", path, "NiFi API request");
+            let url = self.api_url(path);
+            let resp = self
+                .authenticated(self.http.post(url))
+                .await
+                .json(body)
+                .send()
+                .await
+                .context(HttpSnafu)?;
+            Self::text("POST", path, resp).await
+        })
+        .await
+    }
+
+    /// POST an `application/octet-stream` body and return the `text/plain` response body.
+    pub(crate) async fn post_octet_stream_returning_text(
+        &self,
+        path: &str,
+        data: Vec<u8>,
+    ) -> Result<String, NifiError> {
+        self.with_retry(|| async {
+            tracing::debug!(method = "POST", path, "NiFi API request");
+            let url = self.api_url(path);
+            let builder = self
+                .authenticated(self.http.post(url))
+                .await
+                .header("Content-Type", "application/octet-stream")
+                .body(data.clone());
+            let resp = builder.send().await.context(HttpSnafu)?;
+            Self::text("POST", path, resp).await
+        })
+        .await
+    }
+
+    // No longer referenced by generated code: every void GET with query params
+    // in the current NiFi specs resolves through a different helper.
+    #[allow(dead_code)]
     pub(crate) async fn get_void_with_query(
         &self,
         path: &str,
@@ -700,6 +862,39 @@ impl NifiClient {
         tracing::debug!(method, path, status = status.as_u16(), "NiFi API response");
         if status.is_success() {
             return Ok(());
+        }
+        let body = resp.text().await.unwrap_or_else(|_| status.to_string());
+        tracing::debug!(method, path, status = status.as_u16(), %body, "NiFi API raw error body");
+        let message = extract_error_message(&body);
+        tracing::warn!(method, path, status = status.as_u16(), %message, "NiFi API error");
+        Err(crate::error::api_error(status.as_u16(), message))
+    }
+
+    /// Read a raw `text/plain` (or equivalent) response body as a `String`.
+    async fn text(method: &str, path: &str, resp: reqwest::Response) -> Result<String, NifiError> {
+        let status = resp.status();
+        tracing::debug!(method, path, status = status.as_u16(), "NiFi API response");
+        if status.is_success() {
+            return resp.text().await.context(HttpSnafu);
+        }
+        let body = resp.text().await.unwrap_or_else(|_| status.to_string());
+        tracing::debug!(method, path, status = status.as_u16(), %body, "NiFi API raw error body");
+        let message = extract_error_message(&body);
+        tracing::warn!(method, path, status = status.as_u16(), %message, "NiFi API error");
+        Err(crate::error::api_error(status.as_u16(), message))
+    }
+
+    /// Read a raw `application/octet-stream` (or equivalent) response body as bytes.
+    async fn bytes(
+        method: &str,
+        path: &str,
+        resp: reqwest::Response,
+    ) -> Result<Vec<u8>, NifiError> {
+        let status = resp.status();
+        tracing::debug!(method, path, status = status.as_u16(), "NiFi API response");
+        if status.is_success() {
+            let b = resp.bytes().await.context(HttpSnafu)?;
+            return Ok(b.to_vec());
         }
         let body = resp.text().await.unwrap_or_else(|_| status.to_string());
         tracing::debug!(method, path, status = status.as_u16(), %body, "NiFi API raw error body");

@@ -144,15 +144,13 @@ fn emit_impl_method(
     }
 
     // --- Return type (must match trait) ---
-    let return_ty = match &ep.response_inner {
-        Some(inner) => format!("types::{inner}"),
-        None => match &ep.response_type {
-            Some(ty) => format!("types::{ty}"),
-            None => "()".into(),
-        },
-    };
+    let return_ty = crate::emit::common::response_return_type(ep, "");
     let return_result = format!("Result<{return_ty}, NifiError>");
-    let is_void = ep.response_type.is_none() && ep.response_inner.is_none();
+    // Anything that isn't a schema-backed JSON type is returned verbatim from
+    // the per-version static impl — no `.into()` conversion is needed.
+    // Covers non-JSON (String/Vec<u8>), schemaless JSON (serde_json::Value),
+    // and empty bodies.
+    let is_void = ep.response_type.is_none();
 
     // Use the first version's endpoint as the representative (same as trait emitter)
     let representative = ep_by_version.values().next().unwrap();
@@ -191,17 +189,11 @@ fn emit_impl_method(
     // --- Body param (must match trait signature — borrowed for dynamic) ---
     let body_arg = if ep.method == HttpMethod::Delete {
         String::new()
+    } else if let Some(RequestBodyKind::Json) = &ep.body_kind {
+        let req_type = ep.request_type.as_deref().unwrap_or("serde_json::Value");
+        format!(", body: &types::{req_type}")
     } else {
-        match &ep.body_kind {
-            Some(RequestBodyKind::Json) => {
-                let req_type = ep.request_type.as_deref().unwrap_or("serde_json::Value");
-                format!(", body: &types::{req_type}")
-            }
-            Some(RequestBodyKind::OctetStream) => {
-                ", filename: Option<&str>, data: Vec<u8>".to_string()
-            }
-            Some(RequestBodyKind::FormEncoded) | None => String::new(),
-        }
+        crate::emit::common::body_kind_signature(ep.body_kind.as_ref()).to_string()
     };
 
     // --- Method signature (pub(crate) so dispatch.rs can call it) ---
@@ -292,11 +284,13 @@ fn emit_impl_method(
                     "&crate::{mod_name}::types::{req_type}::try_from(body.clone())?",
                 ));
             }
-            Some(RequestBodyKind::OctetStream) => {
-                call_args.push("filename".to_string());
-                call_args.push("data".to_string());
+            Some(RequestBodyKind::OctetStream) | Some(RequestBodyKind::Multipart) => {
+                for name in crate::emit::common::body_kind_forward_arg_names(ep.body_kind.as_ref())
+                {
+                    call_args.push((*name).to_string());
+                }
             }
-            Some(RequestBodyKind::FormEncoded) | None => {}
+            Some(RequestBodyKind::Wildcard) | Some(RequestBodyKind::FormEncoded) | None => {}
         }
     }
 
@@ -350,6 +344,12 @@ mod tests {
     use super::*;
     use crate::parser::*;
 
+    fn json_resp(schema: &str) -> crate::content_type::ResponseBodyKind {
+        crate::content_type::ResponseBodyKind::Json {
+            schema_ref: schema.to_string(),
+        }
+    }
+
     fn make_spec() -> ApiSpec {
         let ep_root = Endpoint {
             method: HttpMethod::Get,
@@ -367,6 +367,7 @@ mod tests {
             response_type: Some("ControllerServiceEntity".to_string()),
             response_inner: Some("ControllerServiceDto".to_string()),
             response_field: Some("component".to_string()),
+            response_kind: json_resp("ControllerServiceEntity"),
             query_params: vec![],
             success_responses: vec![],
             error_responses: vec![],
@@ -388,6 +389,7 @@ mod tests {
             response_type: Some("ConfigurationAnalysisEntity".to_string()),
             response_inner: Some("ConfigurationAnalysisDto".to_string()),
             response_field: Some("configuration_analysis".to_string()),
+            response_kind: json_resp("ConfigurationAnalysisEntity"),
             query_params: vec![],
             success_responses: vec![],
             error_responses: vec![],
@@ -483,6 +485,7 @@ mod tests {
             response_type: Some("ControllerServiceEntity".to_string()),
             response_inner: Some("ControllerServiceDto".to_string()),
             response_field: Some("component".to_string()),
+            response_kind: json_resp("ControllerServiceEntity"),
             query_params: vec![],
             success_responses: vec![],
             error_responses: vec![],

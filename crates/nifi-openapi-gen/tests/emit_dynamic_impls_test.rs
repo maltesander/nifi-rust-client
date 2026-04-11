@@ -37,6 +37,9 @@ fn about_endpoint() -> Endpoint {
         response_type: Some("AboutEntity".into()),
         response_inner: Some("AboutDto".into()),
         response_field: Some("about".into()),
+        response_kind: nifi_openapi_gen::content_type::ResponseBodyKind::Json {
+            schema_ref: "AboutEntity".into(),
+        },
         query_params: vec![],
         success_responses: vec![],
         error_responses: vec![],
@@ -58,6 +61,7 @@ fn void_endpoint() -> Endpoint {
         response_type: None,
         response_inner: None,
         response_field: None,
+        response_kind: nifi_openapi_gen::content_type::ResponseBodyKind::Empty,
         query_params: vec![],
         success_responses: vec![],
         error_responses: vec![],
@@ -82,6 +86,9 @@ fn body_endpoint() -> Endpoint {
         response_type: Some("ProcessorEntity".into()),
         response_inner: None,
         response_field: None,
+        response_kind: nifi_openapi_gen::content_type::ResponseBodyKind::Json {
+            schema_ref: "ProcessorEntity".into(),
+        },
         query_params: vec![],
         success_responses: vec![],
         error_responses: vec![],
@@ -119,6 +126,9 @@ fn sub_group_tag() -> TagGroup {
                 response_type: Some("ConnectionsEntity".into()),
                 response_inner: None,
                 response_field: None,
+                response_kind: nifi_openapi_gen::content_type::ResponseBodyKind::Json {
+                    schema_ref: "ConnectionsEntity".into(),
+                },
                 query_params: vec![],
                 success_responses: vec![],
                 error_responses: vec![],
@@ -330,6 +340,9 @@ fn emits_enum_query_param_conversion() {
         response_type: Some("SystemDiagnosticsEntity".into()),
         response_inner: None,
         response_field: None,
+        response_kind: nifi_openapi_gen::content_type::ResponseBodyKind::Json {
+            schema_ref: "SystemDiagnosticsEntity".into(),
+        },
         query_params: vec![
             QueryParam {
                 name: "nodewise".into(),
