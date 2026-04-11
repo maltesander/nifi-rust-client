@@ -467,41 +467,64 @@ impl NifiClient {
         .await
     }
 
-    /// POST with `multipart/form-data` body — TEMPORARY STUB.
+    /// POST with `multipart/form-data` body.
     ///
-    /// Placeholder so that generated code referring to multipart endpoints
-    /// (e.g. `POST /process-groups/{id}/process-groups/upload`) compiles.
-    /// Task 2.3 will replace this with a real multipart implementation and
-    /// add a wiremock test. Do NOT rely on this method in user code.
-    #[allow(dead_code, unused_variables)]
+    /// Used for file-upload endpoints such as
+    /// `POST /process-groups/{id}/process-groups/upload`. Sends a single form
+    /// part named `"file"` carrying the given filename and raw bytes. The
+    /// `Content-Type` header (including the generated boundary) is set by
+    /// reqwest when `.multipart(form)` is called.
     pub(crate) async fn post_multipart<T: DeserializeOwned>(
         &self,
         path: &str,
         filename: &str,
         data: Vec<u8>,
     ) -> Result<T, NifiError> {
-        tracing::debug!(method = "POST", path, "NiFi API request");
-        Err(NifiError::Api {
-            status: 501,
-            message: "post_multipart not yet implemented (Task 2.3)".to_string(),
+        self.with_retry(|| async {
+            tracing::debug!(method = "POST", path, "NiFi API request");
+            let url = self.api_url(path);
+            let part =
+                reqwest::multipart::Part::bytes(data.clone()).file_name(filename.to_string());
+            let form = reqwest::multipart::Form::new().part("file", part);
+            let resp = self
+                .authenticated(self.http.post(url))
+                .await
+                .multipart(form)
+                .send()
+                .await
+                .context(HttpSnafu)?;
+            Self::deserialize("POST", path, resp).await
         })
+        .await
     }
 
-    /// POST with `multipart/form-data` body; ignores the response body — TEMPORARY STUB.
+    /// POST with `multipart/form-data` body; ignores the response body.
     ///
-    /// See [`Self::post_multipart`] — Task 2.3 will provide the real impl.
-    #[allow(dead_code, unused_variables)]
+    /// Variant of [`Self::post_multipart`] for upload endpoints that do not
+    /// return a JSON payload.
+    #[allow(dead_code)]
     pub(crate) async fn post_void_multipart(
         &self,
         path: &str,
         filename: &str,
         data: Vec<u8>,
     ) -> Result<(), NifiError> {
-        tracing::debug!(method = "POST", path, "NiFi API request");
-        Err(NifiError::Api {
-            status: 501,
-            message: "post_void_multipart not yet implemented (Task 2.3)".to_string(),
+        self.with_retry(|| async {
+            tracing::debug!(method = "POST", path, "NiFi API request");
+            let url = self.api_url(path);
+            let part =
+                reqwest::multipart::Part::bytes(data.clone()).file_name(filename.to_string());
+            let form = reqwest::multipart::Form::new().part("file", part);
+            let resp = self
+                .authenticated(self.http.post(url))
+                .await
+                .multipart(form)
+                .send()
+                .await
+                .context(HttpSnafu)?;
+            Self::check_void("POST", path, resp).await
         })
+        .await
     }
 
     /// POST with query parameters; ignores the response body.
