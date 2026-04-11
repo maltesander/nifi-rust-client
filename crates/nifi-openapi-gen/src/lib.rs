@@ -21,6 +21,8 @@ pub mod emit;
 #[doc(hidden)]
 pub mod parser;
 #[doc(hidden)]
+pub mod parser_strict;
+#[doc(hidden)]
 pub mod repo;
 #[doc(hidden)]
 pub mod util;
