@@ -174,6 +174,9 @@ pub fn format_diff_body(diff: &VersionDiff) -> String {
                 let desc = match &fc.kind {
                     FieldChangeKind::BecameOptional => "became optional".to_string(),
                     FieldChangeKind::BecameRequired => "became required".to_string(),
+                    FieldChangeKind::TypeChanged { from, to } => {
+                        format!("type changed: `{from}` → `{to}`")
+                    }
                 };
                 parts.push(format!("`{}` {}", fc.name, desc));
             }

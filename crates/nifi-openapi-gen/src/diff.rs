@@ -92,6 +92,7 @@ pub struct TypeChanges {
 pub enum FieldChangeKind {
     BecameOptional,
     BecameRequired,
+    TypeChanged { from: String, to: String },
 }
 
 #[derive(Serialize)]
@@ -508,6 +509,28 @@ fn diff_types(from: &ApiSpec, to: &ApiSpec) -> TypesDiff {
     }
 }
 
+fn unwrap_opt(ty: &FieldType) -> &FieldType {
+    match ty {
+        FieldType::Opt(inner) => inner.as_ref(),
+        other => other,
+    }
+}
+
+fn field_type_display(ty: &FieldType) -> String {
+    match ty {
+        FieldType::Str => "String".to_string(),
+        FieldType::Bool => "bool".to_string(),
+        FieldType::I32 => "i32".to_string(),
+        FieldType::I64 => "i64".to_string(),
+        FieldType::F64 => "f64".to_string(),
+        FieldType::Opt(inner) => format!("Option<{}>", field_type_display(inner)),
+        FieldType::List(inner) => format!("Vec<{}>", field_type_display(inner)),
+        FieldType::Ref(name) => name.clone(),
+        FieldType::Map(inner) => format!("HashMap<String, {}>", field_type_display(inner)),
+        FieldType::Enum(_) => "StringEnum".to_string(),
+    }
+}
+
 fn diff_type_fields(name: &str, from_type: &TypeDef, to_type: &TypeDef) -> TypeChanges {
     use crate::parser::TypeKind;
     use std::collections::HashSet;
@@ -555,6 +578,9 @@ fn diff_type_fields(name: &str, from_type: &TypeDef, to_type: &TypeDef) -> TypeC
             let from_f = from_fields[fname];
             let from_opt = is_optional(&from_f.ty);
             let to_opt = is_optional(&to_f.ty);
+            let from_base = unwrap_opt(&from_f.ty);
+            let to_base = unwrap_opt(&to_f.ty);
+
             if from_opt != to_opt {
                 changed_fields.push(FieldChange {
                     name: fname.to_string(),
@@ -562,6 +588,15 @@ fn diff_type_fields(name: &str, from_type: &TypeDef, to_type: &TypeDef) -> TypeC
                         FieldChangeKind::BecameOptional
                     } else {
                         FieldChangeKind::BecameRequired
+                    },
+                });
+            }
+            if from_base != to_base {
+                changed_fields.push(FieldChange {
+                    name: fname.to_string(),
+                    kind: FieldChangeKind::TypeChanged {
+                        from: field_type_display(from_base),
+                        to: field_type_display(to_base),
                     },
                 });
             }
@@ -1237,5 +1272,60 @@ mod tests {
         assert_eq!(ec.contract_changes[0].aspect, ContractAspect::ResponseType);
         assert_eq!(ec.contract_changes[0].from.as_deref(), Some("AboutDto"));
         assert_eq!(ec.contract_changes[0].to.as_deref(), Some("AboutEntity"));
+    }
+
+    #[test]
+    fn test_field_base_type_changed() {
+        let from = make_spec(
+            vec![],
+            vec![make_dto(
+                "AboutDTO",
+                vec![make_field("count", FieldType::I32)],
+            )],
+        );
+        let to = make_spec(
+            vec![],
+            vec![make_dto(
+                "AboutDTO",
+                vec![make_field("count", FieldType::I64)],
+            )],
+        );
+        let diff = compute_diff(&from, &to, "2.7.2", "2.8.0");
+        assert_eq!(diff.types.changed.len(), 1);
+        let tc = &diff.types.changed[0];
+        assert_eq!(tc.changed_fields.len(), 1);
+        assert_eq!(tc.changed_fields[0].name, "count");
+        assert!(matches!(
+            &tc.changed_fields[0].kind,
+            FieldChangeKind::TypeChanged { from, to }
+            if from == "i32" && to == "i64"
+        ));
+    }
+
+    #[test]
+    fn test_field_optionality_and_type_both_changed() {
+        // When both optionality and base type change, we get two FieldChanges for the same field
+        let from = make_spec(
+            vec![],
+            vec![make_dto(
+                "AboutDTO",
+                vec![make_field("count", FieldType::I32)],
+            )],
+        );
+        let to = make_spec(
+            vec![],
+            vec![make_dto(
+                "AboutDTO",
+                vec![make_field(
+                    "count",
+                    FieldType::Opt(Box::new(FieldType::I64)),
+                )],
+            )],
+        );
+        let diff = compute_diff(&from, &to, "2.7.2", "2.8.0");
+        let tc = &diff.types.changed[0];
+        let kinds: Vec<_> = tc.changed_fields.iter().map(|f| &f.kind).collect();
+        assert!(kinds.iter().any(|k| matches!(k, FieldChangeKind::BecameOptional)));
+        assert!(kinds.iter().any(|k| matches!(k, FieldChangeKind::TypeChanged { .. })));
     }
 }

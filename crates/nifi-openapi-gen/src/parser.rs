@@ -51,7 +51,7 @@ pub struct Field {
     pub read_only: bool,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum FieldType {
     Str,
     Bool,
