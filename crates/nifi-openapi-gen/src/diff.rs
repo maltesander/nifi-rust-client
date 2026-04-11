@@ -1,5 +1,5 @@
 use crate::parser::{
-    ApiSpec, Endpoint, Field, FieldType, HttpMethod, PathParam, QueryParam, QueryParamType,
+    ApiSpec, Endpoint, Field, FieldType, HttpMethod, QueryParam, QueryParamType,
     TypeDef,
 };
 use serde::Serialize;
