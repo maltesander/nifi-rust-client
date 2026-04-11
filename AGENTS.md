@@ -171,6 +171,65 @@ Errors use `snafu`. All variants are in `crate::error::NifiError`.
 Use `#[snafu(display(...))]` and `.context(SomeSnafu)` at call sites.
 Do not use `unwrap` or `expect` in non-test code — clippy denies it.
 
+### Strict parsing & content-type allow-list
+
+`nifi-openapi-gen` refuses to silently drop OpenAPI shapes it doesn't
+recognize. The parser panics at build time with an actionable message
+pointing at the JSON path and the offending keys whenever it encounters:
+
+- a schema `type` it hasn't seen (field types, query parameter types)
+- a request or response content type not in the allow-list
+
+The allow-list lives in `crates/nifi-openapi-gen/src/content_type.rs`
+and is consumed by both the parser (body-kind detection) and the
+emitters (return-type selection, client-helper dispatch).
+
+**Currently recognized request bodies:** `application/json`,
+`application/octet-stream`, `multipart/form-data`,
+`application/x-www-form-urlencoded` (skipped — manually handled),
+`*/*` (emitted as no-body).
+
+**Currently recognized response bodies:** `application/json`,
+`text/plain`, `application/octet-stream`, `application/xml`,
+`*/*`, and empty (no 2xx content).
+
+**Precedence when a response advertises multiple content types:**
+`application/json` wins. This is why `/site-to-site/peers` is emitted
+as JSON (`PeersEntity`) even though it also advertises
+`application/xml`.
+
+**When a future NiFi spec introduces a new content type:**
+
+1. The build panics at `build.rs` time with
+   `nifi-openapi-gen: unknown {request,response}_body_content_type at
+   <json-pointer> (content keys=[...])`.
+2. Add a new variant to `RequestBodyKind` or `ResponseBodyKind` in
+   `crates/nifi-openapi-gen/src/content_type.rs`.
+3. Add a match arm in `resolve_request_body` or
+   `resolve_response_body`.
+4. The Rust compiler will flag every emitter `match` site that now
+   has an unhandled variant — fix each one. Do **not** merge the new
+   variant into a `_ =>` catch-all; the whole point of the allow-list
+   is to surface new shapes at compile time.
+5. If the new variant needs a new HTTP helper in
+   `crates/nifi-rust-client/src/client.rs`, add it (see
+   `get_text`, `get_bytes`, `post_multipart` as references).
+6. Add a wiremock test that exercises the new shape end-to-end.
+
+**When a future NiFi spec introduces a new schema `type`:**
+
+The parser panics at `parse_field_type` or the query-param parser
+with `nifi-openapi-gen: unknown field_type` /
+`unknown query_param_type`. The fix belongs in `parser.rs` — add a
+match arm that returns the appropriate `FieldType` / `QueryParamType`.
+If the new type has no sensible Rust representation, ask yourself
+whether it's really something you want to support rather than
+papering over the panic.
+
+**Do not add unknown shapes to a catch-all.** The panic is the
+feature — it surfaces NiFi API evolution the moment a new shape
+lands, before it can silently corrupt generated code.
+
 ## Build & Test
 
 ### Commands
