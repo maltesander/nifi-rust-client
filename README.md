@@ -76,7 +76,9 @@ let client = NifiClientBuilder::new("https://nifi.example.com:8443")?
 
 // login() authenticates AND auto-detects the NiFi version.
 client.login("admin", "password").await?;
-println!("Connected to NiFi {}", client.detected_version());
+if let Some(version) = client.detected_version() {
+    println!("Connected to NiFi {version}");
+}
 
 let diag = client.systemdiagnostics_api()
     .get_system_diagnostics(Some(true), Some(DiagnosticLevel::Verbose), None)

@@ -65,27 +65,18 @@ fn emit_dispatch_file(
 
     // Doc comment
     out.push_str(&format!(
-        "/// Dynamic dispatch enum for the {tag} API. Use via the [`{struct_name}`] trait.\n"
+        "/// Dynamic dispatch struct for the {tag} API. Use via the [`{struct_name}`] trait.\n"
     ));
+    out.push_str("///\n");
+    out.push_str("/// Holds a borrow of the [`DynamicClient`](crate::dynamic::DynamicClient);\n");
+    out.push_str("/// the server version is detected lazily on the first API call.\n");
 
-    // Enum definition (unchanged)
-    out.push_str("#[allow(private_interfaces)]\n");
+    // Struct definition: holds a borrow of DynamicClient so each method can
+    // detect the version lazily.
     out.push_str("#[non_exhaustive]\n");
-    out.push_str(&format!("pub enum {dispatch_name}<'a> {{\n"));
-    for (ver, mod_name, _feature, _spec) in versions {
-        let variant = version_to_variant(ver);
-        let wrapper_struct = format!("{}{}", version_struct_prefix(mod_name), struct_name);
-        out.push_str(&format!(
-            "    {variant}(super::super::impls::{mod_name}::{wrapper_struct}<'a>),\n"
-        ));
-    }
+    out.push_str(&format!("pub struct {dispatch_name}<'a> {{\n"));
+    out.push_str("    pub(crate) client: &'a crate::dynamic::DynamicClient,\n");
     out.push_str("}\n\n");
-
-    // Helper methods on the dispatch enum: client() and version()
-    // Only needed when there are sub-groups (to construct sub-resource dispatch structs)
-    if !sub_groups.sub_groups.is_empty() {
-        emit_dispatch_helpers(&mut out, versions, &dispatch_name);
-    }
 
     // Trait impl for the root trait
     out.push_str(&format!("impl {struct_name} for {dispatch_name}<'_> {{\n"));
@@ -97,21 +88,21 @@ fn emit_dispatch_file(
         let accessor = &sg.accessor_fn;
         let primary = &sg.primary_param;
 
-        // Accessor method (RPITIT)
+        // Accessor method (RPITIT) — infallible; the sub-resource also detects
+        // the version lazily when its own methods are called.
         out.push_str(&format!(
             "    fn {accessor}<'b>(&'b self, {primary}: &'b str) -> impl {sub_trait_name} + 'b {{\n"
         ));
         out.push_str(&format!("        {sub_dispatch_name} {{\n"));
-        out.push_str("            client: self.client(),\n");
+        out.push_str("            client: self.client,\n");
         out.push_str(&format!("            {primary}: {primary}.to_string(),\n"));
-        out.push_str("            version: self.version(),\n");
         out.push_str("        }\n");
         out.push_str("    }\n\n");
     }
 
-    // Root endpoint methods (match dispatch)
+    // Root endpoint methods (lazy-detect + dispatch)
     for (fn_name, ep_by_version) in &sub_groups.root_endpoints {
-        emit_dispatch_method(&mut out, versions, fn_name, ep_by_version, None);
+        emit_dispatch_method(&mut out, versions, fn_name, ep_by_version, struct_name);
     }
 
     out.push_str("}\n\n");
@@ -124,41 +115,6 @@ fn emit_dispatch_file(
     out
 }
 
-/// Emit `client()` and `version()` helper methods on the dispatch enum.
-fn emit_dispatch_helpers(
-    out: &mut String,
-    versions: &[(&str, &str, &str, &ApiSpec)],
-    dispatch_name: &str,
-) {
-    out.push_str(&format!("impl<'a> {dispatch_name}<'a> {{\n"));
-
-    // client()
-    out.push_str("    fn client(&self) -> &'a crate::NifiClient {\n");
-    out.push_str("        match self {\n");
-    for (ver, _mod_name, _feature, _spec) in versions {
-        let variant = version_to_variant(ver);
-        out.push_str(&format!(
-            "            Self::{variant}(api) => api.client,\n"
-        ));
-    }
-    out.push_str("        }\n");
-    out.push_str("    }\n");
-
-    // version()
-    out.push_str("    fn version(&self) -> crate::dynamic::DetectedVersion {\n");
-    out.push_str("        match self {\n");
-    for (ver, _mod_name, _feature, _spec) in versions {
-        let variant = version_to_variant(ver);
-        out.push_str(&format!(
-            "            Self::{variant}(_) => crate::dynamic::DetectedVersion::{variant},\n"
-        ));
-    }
-    out.push_str("        }\n");
-    out.push_str("    }\n");
-
-    out.push_str("}\n\n");
-}
-
 /// Emit a sub-resource dispatch struct and its trait impl.
 fn emit_sub_resource_dispatch_struct(
     out: &mut String,
@@ -169,14 +125,14 @@ fn emit_sub_resource_dispatch_struct(
     let sub_dispatch_name = format!("{sub_trait_name}Dispatch");
     let primary = &sg.primary_param;
 
-    // Struct definition
+    // Struct definition — holds a borrow of DynamicClient so each method
+    // can detect the version lazily.
     out.push_str(&format!(
         "/// Sub-resource dispatch struct for [{sub_trait_name}].\n"
     ));
     out.push_str(&format!("pub struct {sub_dispatch_name}<'a> {{\n"));
-    out.push_str("    pub(crate) client: &'a crate::NifiClient,\n");
+    out.push_str("    pub(crate) client: &'a crate::dynamic::DynamicClient,\n");
     out.push_str(&format!("    pub(crate) {primary}: String,\n"));
-    out.push_str("    pub(crate) version: crate::dynamic::DetectedVersion,\n");
     out.push_str("}\n\n");
 
     // Trait impl
@@ -196,7 +152,7 @@ fn emit_dispatch_method(
     versions: &[(&str, &str, &str, &ApiSpec)],
     fn_name: &str,
     ep_by_version: &BTreeMap<&str, EndpointInfo<'_>>,
-    skip_primary: Option<&str>,
+    tag_struct_name: &str,
 ) {
     let representative = ep_by_version.values().next().unwrap();
     let ep = representative.endpoint;
@@ -219,14 +175,9 @@ fn emit_dispatch_method(
     // --- Path param args (must match trait signature) ---
     let mut path_param_names: Vec<String> = Vec::new();
     if let Some(primary) = representative.primary_param {
-        if skip_primary.is_none() || skip_primary != Some(primary) {
-            path_param_names.push(primary.to_string());
-        }
+        path_param_names.push(primary.to_string());
     }
     for p in &ep.path_params {
-        if skip_primary == Some(p.name.as_str()) {
-            continue;
-        }
         if !path_param_names.contains(&p.name) {
             path_param_names.push(p.name.clone());
         }
@@ -268,7 +219,7 @@ fn emit_dispatch_method(
         }
     };
 
-    // --- Collect param names for forwarding ---
+    // --- Collect param names for forwarding to per-version impl methods ---
     let mut forward_args = Vec::new();
     for name in &path_param_names {
         forward_args.push(escape_keyword(name));
@@ -293,13 +244,31 @@ fn emit_dispatch_method(
         "    async fn {fn_name}(&self{path_param_args}{query_param_args}{body_arg}) -> {return_result} {{\n"
     ));
 
-    // --- Match dispatch ---
-    out.push_str("        match self {\n");
-    for (ver, _mod_name, _feature, _spec) in versions {
+    // --- Lazy version detection + dispatch ---
+    // Detect the server version on first call (idempotent via OnceCell), then
+    // construct the per-version impl wrapper inline and delegate. Versions
+    // that don't have this endpoint return UnsupportedEndpoint.
+    out.push_str("        #[allow(unreachable_patterns)]\n");
+    out.push_str("        match self.client.detect_version().await? {\n");
+    for (ver, mod_name, _feature, _spec) in versions {
         let variant = version_to_variant(ver);
-        out.push_str(&format!(
-            "            Self::{variant}(api) => api.{fn_name}({forward_args_str}).await,\n"
-        ));
+        if ep_by_version.contains_key(ver) {
+            let wrapper_struct = format!("{}{}", version_struct_prefix(mod_name), tag_struct_name);
+            out.push_str(&format!(
+                "            crate::dynamic::DetectedVersion::{variant} => {{\n"
+            ));
+            out.push_str(&format!(
+                "                let api = crate::dynamic::impls::{mod_name}::{wrapper_struct} {{ client: &self.client.client }};\n"
+            ));
+            out.push_str(&format!(
+                "                api.{fn_name}({forward_args_str}).await\n"
+            ));
+            out.push_str("            }\n");
+        } else {
+            out.push_str(&format!(
+                "            crate::dynamic::DetectedVersion::{variant} => Err(NifiError::UnsupportedEndpoint {{ endpoint: \"{fn_name}\".to_string(), version: \"{ver}\".to_string() }}),\n"
+            ));
+        }
     }
     out.push_str("        }\n");
     out.push_str("    }\n\n");
@@ -389,11 +358,12 @@ fn emit_sub_dispatch_method(
         "    async fn {fn_name}(&self{path_param_args}{query_param_args}{body_arg}) -> {return_result} {{\n"
     ));
 
-    // --- Version match dispatch ---
-    // For each version, construct the static sub-struct and call the method
-    // with proper type conversions (dynamic -> version-specific -> dynamic)
+    // --- Lazy version detection + dispatch ---
+    // Detect the server version on first call (idempotent via OnceCell), then
+    // construct the static sub-struct and call the method with proper type
+    // conversions (dynamic -> version-specific -> dynamic).
     out.push_str("        #[allow(unreachable_patterns)]\n");
-    out.push_str("        match self.version {\n");
+    out.push_str("        match self.client.detect_version().await? {\n");
     for (ver, mod_name, _feature, spec) in versions {
         let variant = version_to_variant(ver);
 
@@ -493,7 +463,7 @@ fn emit_sub_dispatch_method(
         out.push_str(&format!(
             "                let api = crate::{mod_name}::api::{static_module}::{static_sub_struct_name} {{\n"
         ));
-        out.push_str("                    client: self.client,\n");
+        out.push_str("                    client: &self.client.client,\n");
         out.push_str(&format!(
             "                    {primary}: &self.{primary},\n"
         ));
@@ -659,20 +629,18 @@ mod tests {
             .find(|(f, _)| f == "controller_services.rs")
             .unwrap();
 
-        // Dispatch enum exists
+        // Root dispatch is a struct (not an enum) holding &DynamicClient.
         assert!(
-            content.contains("pub enum ControllerServicesApiDispatch<'a>"),
-            "Missing dispatch enum"
-        );
-
-        // Helper methods exist
-        assert!(
-            content.contains("fn client(&self) -> &'a crate::NifiClient"),
-            "Missing client() helper"
+            content.contains("pub struct ControllerServicesApiDispatch<'a>"),
+            "Missing root dispatch struct"
         );
         assert!(
-            content.contains("fn version(&self) -> crate::dynamic::DetectedVersion"),
-            "Missing version() helper"
+            content.contains("pub(crate) client: &'a crate::dynamic::DynamicClient"),
+            "Root dispatch should borrow &DynamicClient"
+        );
+        assert!(
+            !content.contains("pub enum ControllerServicesApiDispatch"),
+            "Root dispatch should no longer be an enum"
         );
 
         // Root trait impl has RPITIT accessor (no GAT binding)
@@ -687,10 +655,15 @@ mod tests {
             "Missing RPITIT accessor method in root trait impl"
         );
 
-        // Root endpoint stays on the dispatch enum
+        // Root endpoint stays on the dispatch struct
         assert!(
             content.contains("async fn get_controller_service("),
-            "Missing root method on dispatch enum"
+            "Missing root method on dispatch struct"
+        );
+        // Root endpoint method should lazy-detect via detect_version().await?
+        assert!(
+            content.contains("self.client.detect_version().await?"),
+            "Root dispatch method should lazy-detect the version"
         );
 
         // Sub-resource dispatch struct exists
@@ -699,18 +672,18 @@ mod tests {
             "Missing sub-resource dispatch struct"
         );
 
-        // Sub-resource struct has the right fields
+        // Sub-resource struct now holds a &DynamicClient; no version field.
         assert!(
-            content.contains("pub(crate) client: &'a crate::NifiClient"),
-            "Missing client field on sub-resource struct"
+            content.contains("pub(crate) client: &'a crate::dynamic::DynamicClient"),
+            "Sub-resource dispatch struct should borrow &DynamicClient"
         );
         assert!(
             content.contains("pub(crate) id: String"),
             "Missing id field on sub-resource struct"
         );
         assert!(
-            content.contains("pub(crate) version: crate::dynamic::DetectedVersion"),
-            "Missing version field on sub-resource struct"
+            !content.contains("pub(crate) version: crate::dynamic::DetectedVersion"),
+            "Sub-resource struct should no longer carry a version field"
         );
 
         // Sub-resource trait impl exists
@@ -755,17 +728,22 @@ mod tests {
             "Sub-resource method should not have primary param. Sig: {delete_sig}"
         );
 
-        // Version match dispatch in sub-resource
+        // Sub-resource methods lazy-detect via detect_version().await?
         assert!(
-            content.contains("match self.version"),
-            "Sub-resource should dispatch on self.version"
+            content.contains("self.client.detect_version().await?"),
+            "Sub-resource method should lazy-detect the version"
         );
 
-        // Static sub-struct construction
+        // Static sub-struct construction — client comes from &self.client.client
+        // (the NifiClient inside the DynamicClient reference).
         assert!(
             content
                 .contains("crate::v2_8_0::api::controller_services::ControllerServicesConfigApi"),
             "Should construct static sub-struct"
+        );
+        assert!(
+            content.contains("client: &self.client.client"),
+            "Should pass &self.client.client to static sub-struct"
         );
         assert!(
             content.contains("id: &self.id"),
@@ -784,11 +762,11 @@ mod tests {
             "Sub-resource non-void return should use .into(). Content:\n{content}"
         );
 
-        // mod.rs re-exports both dispatch enum and sub-resource dispatch struct
+        // mod.rs re-exports both root and sub-resource dispatch structs
         let (_, mod_content) = files.iter().find(|(f, _)| f == "mod.rs").unwrap();
         assert!(
             mod_content.contains("ControllerServicesApiDispatch"),
-            "Missing dispatch enum re-export"
+            "Missing root dispatch struct re-export"
         );
         assert!(
             mod_content.contains("ControllerServicesConfigApiDispatch"),

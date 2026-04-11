@@ -3,7 +3,7 @@ use std::collections::BTreeMap;
 use crate::parser::{ApiSpec, HttpMethod, RequestBodyKind};
 use crate::util::{
     EndpointInfo, collect_all_tags, collect_tag_sub_groups, dynamic_query_param_type,
-    escape_keyword, format_source, merge_query_params, version_to_variant,
+    escape_keyword, format_source, merge_query_params,
 };
 
 /// Returns `Vec<(path, content)>` for `dynamic/impls/`.
@@ -40,8 +40,11 @@ fn emit_version_impls(
 ) -> Vec<(String, String)> {
     let mut files = Vec::new();
 
-    // Build version mod.rs
+    // Build version mod.rs. Tags with no root endpoints in any version produce
+    // wrapper structs with no callers — silence the unused-import warning on
+    // those re-exports.
     let mut mod_out = String::new();
+    mod_out.push_str("#![allow(unused_imports)]\n");
     for (_tag, struct_name, module_name, _accessor_fn) in all_tags {
         let wrapper_struct = format!("{}{struct_name}", version_struct_prefix(mod_name));
         mod_out.push_str(&format!("pub(crate) mod {module_name};\n"));
@@ -86,54 +89,24 @@ fn emit_tag_impl_file(
     out.push_str("#[allow(unused_imports)]\n");
     out.push_str("use crate::NifiError;\n");
     out.push_str("#[allow(unused_imports)]\n");
-    out.push_str("use crate::dynamic::types;\n");
-    out.push_str(&format!("use crate::dynamic::traits::{struct_name};\n"));
+    out.push_str("use crate::dynamic::types;\n\n");
 
-    // Import sub-resource trait names (needed for RPITIT bounds)
-    for sg in &sub_groups.sub_groups {
-        out.push_str(&format!(
-            "#[allow(unused_imports)]\nuse crate::dynamic::traits::{};\n",
-            sg.struct_name
-        ));
-    }
-    out.push('\n');
-
-    // Struct definition
+    // Struct definition — per-version wrapper that adapts static per-version
+    // APIs to the dynamic type surface. Called by the dispatch structs, not
+    // exposed to end users and not required to implement the dynamic trait.
+    // Tags with no root endpoints produce an empty wrapper; dead_code silences
+    // the resulting "unused field" warning.
+    out.push_str("#[allow(dead_code)]\n");
     out.push_str(&format!(
         "pub(crate) struct {wrapper_struct}<'a> {{\n    pub(crate) client: &'a crate::NifiClient,\n}}\n\n"
     ));
 
-    // Trait impl
-    out.push_str("#[allow(unused_variables)]\n");
-    out.push_str(&format!("impl {struct_name} for {wrapper_struct}<'_> {{\n"));
+    // Inherent impl block — only root endpoint methods present in this version.
+    // Sub-resource accessors live on the root dispatch struct directly.
+    out.push_str("#[allow(unused_variables, clippy::too_many_arguments)]\n");
+    out.push_str(&format!("impl {wrapper_struct}<'_> {{\n"));
 
-    // Accessor methods for sub-resources (RPITIT — no GAT bindings needed)
-    let variant = version_to_variant(ver);
-    for sg in &sub_groups.sub_groups {
-        let sub_trait_name = &sg.struct_name;
-        let sub_dispatch_name = format!("{sub_trait_name}Dispatch");
-        let accessor = &sg.accessor_fn;
-        let primary = &sg.primary_param;
-
-        // Accessor method (RPITIT)
-        out.push_str(&format!(
-            "    fn {accessor}<'b>(&'b self, {primary}: &'b str) -> impl {sub_trait_name} + 'b {{\n"
-        ));
-        out.push_str(&format!(
-            "        crate::dynamic::dispatch::{sub_dispatch_name} {{\n"
-        ));
-        out.push_str("            client: self.client,\n");
-        out.push_str(&format!("            {primary}: {primary}.to_string(),\n"));
-        out.push_str(&format!(
-            "            version: crate::dynamic::DetectedVersion::{variant},\n"
-        ));
-        out.push_str("        }\n");
-        out.push_str("    }\n\n");
-    }
-
-    // Only root endpoint methods (sub-group endpoints are handled by dispatch structs)
     for (fn_name, ep_by_version) in &sub_groups.root_endpoints {
-        // Only emit methods that exist in this version; missing ones use the trait default.
         if let Some(info) = ep_by_version.get(ver) {
             emit_impl_method(
                 &mut out,
@@ -231,9 +204,9 @@ fn emit_impl_method(
         }
     };
 
-    // --- Method signature ---
+    // --- Method signature (pub(crate) so dispatch.rs can call it) ---
     out.push_str(&format!(
-        "    async fn {fn_name}(&self{path_param_args}{query_param_args}{body_arg}) -> {return_result} {{\n"
+        "    pub(crate) async fn {fn_name}(&self{path_param_args}{query_param_args}{body_arg}) -> {return_result} {{\n"
     ));
 
     // --- Construct the version-specific API struct ---
@@ -459,44 +432,33 @@ mod tests {
             "Missing struct definition"
         );
 
-        // RPITIT accessor (no GAT type binding)
+        // Per-version wrapper is now an inherent impl, not a trait impl — the
+        // root dispatch struct handles sub-resource accessors and trait bounds.
         assert!(
-            !content.contains("type ControllerServicesConfigApi<'b>"),
-            "GAT type binding should not be present. Content:\n{content}"
+            !content.contains("impl ControllerServicesApi for V2_8_0ControllerServicesApi"),
+            "Per-version wrapper should no longer implement the dynamic trait. Content:\n{content}"
+        );
+        assert!(
+            content.contains("impl V2_8_0ControllerServicesApi<'_>"),
+            "Missing inherent impl block. Content:\n{content}"
         );
 
-        // Accessor method with RPITIT return type constructs dispatch struct
+        // Sub-resource accessor is NOT emitted on per-version wrappers anymore.
         assert!(
-            content.contains(
-                "fn config<'b>(&'b self, id: &'b str) -> impl ControllerServicesConfigApi + 'b"
-            ),
-            "Missing RPITIT accessor method. Content:\n{content}"
-        );
-        assert!(
-            content.contains("crate::dynamic::dispatch::ControllerServicesConfigApiDispatch {"),
-            "Missing dispatch struct construction. Content:\n{content}"
-        );
-        assert!(
-            content.contains("DetectedVersion::V2_8_0"),
-            "Missing version variant. Content:\n{content}"
+            !content.contains("fn config<'b>(&'b self, id: &'b str)"),
+            "Sub-resource accessor should live on the root dispatch struct, not the per-version wrapper. Content:\n{content}"
         );
 
-        // Root endpoint method present
+        // Root endpoint method present, and pub(crate) so dispatch.rs can call it
         assert!(
-            content.contains("async fn get_controller_service("),
-            "Missing root endpoint method. Content:\n{content}"
+            content.contains("pub(crate) async fn get_controller_service("),
+            "Missing pub(crate) root endpoint method. Content:\n{content}"
         );
 
         // Sub-group endpoint method NOT present (handled by dispatch)
         assert!(
             !content.contains("async fn analyze_configuration("),
             "Sub-group method should NOT be in per-version impl. Content:\n{content}"
-        );
-
-        // Sub-resource trait import
-        assert!(
-            content.contains("use crate::dynamic::traits::ControllerServicesConfigApi"),
-            "Missing sub-resource trait import. Content:\n{content}"
         );
     }
 

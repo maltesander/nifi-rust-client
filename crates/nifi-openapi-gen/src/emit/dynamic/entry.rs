@@ -227,16 +227,14 @@ fn emit_dynamic_client(out: &mut String, versions: &[(&str, &str, &str, &ApiSpec
     out.push_str("    }\n\n");
 
     // detected_version()
-    out.push_str(
-        "    /// Returns the detected NiFi server version, or `None` if not yet detected.\n",
-    );
-    out.push_str("    pub fn detected_version(&self) -> DetectedVersion {\n");
-    out.push_str("        *self.version.get().expect(\"NiFi version not yet detected — call login() or detect_version() first\")\n");
-    out.push_str("    }\n\n");
-
-    // version()
-    out.push_str("    /// Returns the detected version if available, or `None`.\n");
-    out.push_str("    pub fn version(&self) -> Option<DetectedVersion> {\n");
+    out.push_str("    /// Returns the detected NiFi server version, if it has been detected.\n");
+    out.push_str("    ///\n");
+    out.push_str("    /// Returns `None` if called before [`login`](Self::login) or\n");
+    out.push_str("    /// [`detect_version`](Self::detect_version) has populated the version.\n");
+    out.push_str("    /// API calls on accessors like [`flow_api`](Self::flow_api) detect the\n");
+    out.push_str("    /// version lazily and propagate transport errors normally — this method\n");
+    out.push_str("    /// is only useful for inspection after detection has already happened.\n");
+    out.push_str("    pub fn detected_version(&self) -> Option<DetectedVersion> {\n");
     out.push_str("        self.version.get().copied()\n");
     out.push_str("    }\n\n");
 
@@ -266,7 +264,8 @@ fn emit_dynamic_client(out: &mut String, versions: &[(&str, &str, &str, &ApiSpec
     out.push_str("        self.client.logout().await\n");
     out.push_str("    }\n\n");
 
-    // Per-tag accessor methods returning dispatch enums
+    // Per-tag accessor methods returning dispatch structs (infallible).
+    // Version detection happens lazily inside each API method call.
     let all_tags = collect_all_tags(versions);
     for (tag, struct_name, _module_name, accessor_fn) in &all_tags {
         let dispatch_name = format!("{struct_name}Dispatch");
@@ -274,25 +273,14 @@ fn emit_dynamic_client(out: &mut String, versions: &[(&str, &str, &str, &ApiSpec
             "    /// Access the [{tag} API](https://nifi.apache.org/nifi-docs/rest-api.html) with dynamic dispatch.\n"
         ));
         out.push_str(
-            "    ///\n    /// # Panics\n    /// Panics if the NiFi version has not been detected yet. Call `login()` or `detect_version()` first.\n"
+            "    ///\n    /// The returned accessor detects the NiFi server version lazily on the\n    /// first API call. Detection errors (transport, auth, unsupported version)\n    /// are propagated as regular [`NifiError`] values from that call.\n"
         );
         out.push_str(&format!(
             "    pub fn {accessor_fn}(&self) -> dispatch::{dispatch_name}<'_> {{\n"
         ));
-        out.push_str("        match self.detected_version() {\n");
-        for (ver, mod_name, _, _) in versions {
-            let variant = version_to_variant(ver);
-            let prefix = version_struct_prefix(mod_name);
-            let wrapper_struct = format!("{prefix}{struct_name}");
-            out.push_str(&format!(
-                "            DetectedVersion::{variant} => dispatch::{dispatch_name}::{variant}(\n"
-            ));
-            out.push_str(&format!(
-                "                impls::{mod_name}::{wrapper_struct} {{ client: &self.client }},\n"
-            ));
-            out.push_str("            ),\n");
-        }
-        out.push_str("        }\n");
+        out.push_str(&format!(
+            "        dispatch::{dispatch_name} {{ client: self }}\n"
+        ));
         out.push_str("    }\n\n");
     }
 
@@ -305,15 +293,6 @@ fn emit_dynamic_client(out: &mut String, versions: &[(&str, &str, &str, &ApiSpec
     out.push_str("        &self.client\n");
     out.push_str("    }\n");
     out.push_str("}\n\n");
-}
-
-/// Build the struct prefix from the mod_name, e.g. "v2_8_0" -> "V2_8_0".
-fn version_struct_prefix(mod_name: &str) -> String {
-    let mut chars = mod_name.chars();
-    match chars.next() {
-        Some(c) => c.to_uppercase().collect::<String>() + chars.as_str(),
-        None => String::new(),
-    }
 }
 
 #[cfg(test)]
@@ -441,12 +420,12 @@ mod tests {
         assert!(output.contains("FlowApiDispatch"));
         // Should NOT contain old DynamicFlowApi struct
         assert!(!output.contains("pub struct DynamicFlowApi"));
-        // Should contain dispatch construction with version variants
-        assert!(output.contains("DetectedVersion::V2_7_2"));
-        assert!(output.contains("DetectedVersion::V2_8_0"));
-        // Should reference impls module structs
-        assert!(output.contains("V2_7_2FlowApi") || output.contains("impls::v2_7_2"));
-        assert!(output.contains("V2_8_0FlowApi") || output.contains("impls::v2_8_0"));
+        // Accessor is infallible and constructs a dispatch struct holding &DynamicClient.
+        // rustfmt may split the brace construction across lines, so check both parts.
+        assert!(output.contains("dispatch::FlowApiDispatch"));
+        assert!(output.contains("client: self"));
+        // The accessor no longer matches on DetectedVersion — dispatch is lazy.
+        assert!(!output.contains("match self.detected_version()"));
     }
 
     #[test]

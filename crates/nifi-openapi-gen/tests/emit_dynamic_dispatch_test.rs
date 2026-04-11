@@ -44,7 +44,7 @@ fn about_endpoint() -> Endpoint {
 }
 
 #[test]
-fn emits_dispatch_enum_with_trait_impl() {
+fn emits_dispatch_struct_with_trait_impl() {
     let spec_v1 = make_spec(make_flow_tag(vec![about_endpoint()]));
     let spec_v2 = make_spec(make_flow_tag(vec![about_endpoint()]));
     let versions: Vec<(&str, &str, &str, &ApiSpec)> = vec![
@@ -71,10 +71,10 @@ fn emits_dispatch_enum_with_trait_impl() {
 
     let flow_rs = &files[1].1;
 
-    // Doc comment
+    // Doc comment (lazy dispatch design)
     assert!(
-        flow_rs.contains("Dynamic dispatch enum for the Flow API"),
-        "Should have doc comment: {flow_rs}"
+        flow_rs.contains("Dynamic dispatch struct for the Flow API"),
+        "Should have struct doc comment: {flow_rs}"
     );
 
     // #[non_exhaustive]
@@ -83,30 +83,18 @@ fn emits_dispatch_enum_with_trait_impl() {
         "Should have #[non_exhaustive]: {flow_rs}"
     );
 
-    // Enum name
+    // Struct definition holding &DynamicClient
     assert!(
-        flow_rs.contains("pub enum FlowApiDispatch"),
-        "Should define FlowApiDispatch enum: {flow_rs}"
-    );
-
-    // Variant names for both versions
-    assert!(
-        flow_rs.contains("V2_6_0("),
-        "Should have V2_6_0 variant: {flow_rs}"
+        flow_rs.contains("pub struct FlowApiDispatch"),
+        "Should define FlowApiDispatch struct: {flow_rs}"
     );
     assert!(
-        flow_rs.contains("V2_8_0("),
-        "Should have V2_8_0 variant: {flow_rs}"
-    );
-
-    // Variants reference impls structs
-    assert!(
-        flow_rs.contains("super::super::impls::v2_6_0::V2_6_0FlowApi"),
-        "Should reference v2_6_0 impl struct: {flow_rs}"
+        flow_rs.contains("pub(crate) client: &'a crate::dynamic::DynamicClient"),
+        "Struct should borrow &DynamicClient: {flow_rs}"
     );
     assert!(
-        flow_rs.contains("super::super::impls::v2_8_0::V2_8_0FlowApi"),
-        "Should reference v2_8_0 impl struct: {flow_rs}"
+        !flow_rs.contains("pub enum FlowApiDispatch"),
+        "Should no longer be an enum: {flow_rs}"
     );
 
     // Trait impl
@@ -121,14 +109,22 @@ fn emits_dispatch_enum_with_trait_impl() {
         "Should have get_about_info method: {flow_rs}"
     );
 
-    // Match arms for both versions
+    // Lazy version detection + dispatch to per-version impls
     assert!(
-        flow_rs.contains("Self::V2_6_0(api) => api.get_about_info("),
-        "Should have V2_6_0 match arm: {flow_rs}"
+        flow_rs.contains("self.client.detect_version().await?"),
+        "Should lazy-detect version in each method: {flow_rs}"
     );
     assert!(
-        flow_rs.contains("Self::V2_8_0(api) => api.get_about_info("),
-        "Should have V2_8_0 match arm: {flow_rs}"
+        flow_rs.contains("crate::dynamic::impls::v2_6_0::V2_6_0FlowApi"),
+        "Should construct v2_6_0 per-version impl: {flow_rs}"
+    );
+    assert!(
+        flow_rs.contains("crate::dynamic::impls::v2_8_0::V2_8_0FlowApi"),
+        "Should construct v2_8_0 per-version impl: {flow_rs}"
+    );
+    assert!(
+        flow_rs.contains("client: &self.client.client"),
+        "Per-version impl should be built from &self.client.client: {flow_rs}"
     );
 
     // Return type uses types::
@@ -213,10 +209,10 @@ fn dispatch_forwards_all_params() {
         "Should have borrowed body param: {proc_rs}"
     );
 
-    // Match arm forwards all three params
+    // Per-version impl delegation forwards all three params
     assert!(
         proc_rs.contains("api.update_processor(id, include_descendants, body)"),
-        "Should forward all params in match arm: {proc_rs}"
+        "Should forward all params to per-version impl: {proc_rs}"
     );
 }
 

@@ -133,9 +133,9 @@ async fn dynamic_patch_version_detection() {
     // patch version 2.8.1 should map to v2.8.0 (major.minor match)
     assert_eq!(
         dynamic.detected_version(),
-        nifi_rust_client::dynamic::DetectedVersion::V2_8_0
+        Some(nifi_rust_client::dynamic::DetectedVersion::V2_8_0)
     );
-    assert_eq!(dynamic.detected_version().to_string(), "2.8.0");
+    assert_eq!(dynamic.detected_version().unwrap().to_string(), "2.8.0");
 }
 
 // ── Query param dispatch tests ───────────────────────────────────────────────

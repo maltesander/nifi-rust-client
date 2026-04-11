@@ -170,15 +170,25 @@ fn emits_per_version_trait_impl() {
         "version mod.rs should re-export wrapper struct: {v280_mod}"
     );
 
-    // v2_8_0/flow.rs should contain the wrapper struct and trait impl
+    // v2_8_0/flow.rs should contain the wrapper struct and inherent impl
     let flow_rs = find_file(&files, "v2_8_0/flow.rs").expect("should have v2_8_0/flow.rs");
     assert!(
         flow_rs.contains("pub(crate) struct V2_8_0FlowApi<'a>"),
         "should define wrapper struct: {flow_rs}"
     );
+    // Per-version wrappers are now inherent impls, not trait impls.
     assert!(
-        flow_rs.contains("impl FlowApi for V2_8_0FlowApi<'_>"),
-        "should impl FlowApi trait: {flow_rs}"
+        !flow_rs.contains("impl FlowApi for V2_8_0FlowApi"),
+        "wrapper should no longer implement the dynamic trait: {flow_rs}"
+    );
+    assert!(
+        flow_rs.contains("impl V2_8_0FlowApi<'_>"),
+        "should have inherent impl block: {flow_rs}"
+    );
+    // Methods are pub(crate) so dispatch.rs can call them from another module.
+    assert!(
+        flow_rs.contains("pub(crate) async fn get_about_info"),
+        "method should be pub(crate): {flow_rs}"
     );
     assert!(
         flow_rs.contains("crate::v2_8_0::api::flow::FlowApi"),
@@ -189,15 +199,15 @@ fn emits_per_version_trait_impl() {
         "should convert result with .into(): {flow_rs}"
     );
 
-    // v2_7_2 should also have the impl
+    // v2_7_2 should also have the inherent impl
     let v272_flow = find_file(&files, "v2_7_2/flow.rs").expect("should have v2_7_2/flow.rs");
     assert!(
         v272_flow.contains("pub(crate) struct V2_7_2FlowApi<'a>"),
         "should define v2_7_2 wrapper struct: {v272_flow}"
     );
     assert!(
-        v272_flow.contains("impl FlowApi for V2_7_2FlowApi<'_>"),
-        "should impl FlowApi for v2_7_2: {v272_flow}"
+        v272_flow.contains("impl V2_7_2FlowApi<'_>"),
+        "should have inherent impl for v2_7_2: {v272_flow}"
     );
 }
 
@@ -278,7 +288,7 @@ fn emits_body_param_with_try_from() {
 }
 
 #[test]
-fn emits_sub_group_gat_and_accessor() {
+fn per_version_impl_does_not_expose_sub_resource_accessors() {
     let spec = make_spec(vec![sub_group_tag()]);
     let versions: Vec<(&str, &str, &str, &ApiSpec)> =
         vec![("2.8.0", "v2_8_0", "nifi-2-8-0", &spec)];
@@ -287,30 +297,15 @@ fn emits_sub_group_gat_and_accessor() {
     let pg_rs = find_file(&files, "v2_8_0/process_groups.rs")
         .expect("should have v2_8_0/process_groups.rs");
 
-    // RPITIT accessor (no GAT type binding)
+    // Sub-resource accessors now live on the root dispatch struct directly.
+    // Per-version wrappers should not have them.
     assert!(
-        !pg_rs.contains("type ProcessGroupConnectionsApi<'b>"),
-        "GAT type binding should not be present: {pg_rs}"
-    );
-
-    // Accessor method with RPITIT return type
-    assert!(
-        pg_rs.contains(
-            "fn connections<'b>(&'b self, id: &'b str) -> impl ProcessGroupConnectionsApi + 'b"
-        ),
-        "should have RPITIT accessor method: {pg_rs}"
+        !pg_rs.contains("fn connections<'b>"),
+        "per-version wrapper should not emit sub-resource accessor: {pg_rs}"
     );
     assert!(
-        pg_rs.contains("crate::dynamic::dispatch::ProcessGroupConnectionsApiDispatch {"),
-        "should construct dispatch struct: {pg_rs}"
-    );
-    assert!(
-        pg_rs.contains("DetectedVersion::V2_8_0"),
-        "should pass version variant: {pg_rs}"
-    );
-    assert!(
-        pg_rs.contains("client: self.client"),
-        "should pass client to dispatch struct: {pg_rs}"
+        !pg_rs.contains("ProcessGroupConnectionsApiDispatch"),
+        "per-version wrapper should not reference dispatch struct: {pg_rs}"
     );
 
     // Sub-group endpoint method should NOT be in per-version impl

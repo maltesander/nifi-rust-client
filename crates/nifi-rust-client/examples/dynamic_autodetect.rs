@@ -36,7 +36,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // login() authenticates AND triggers version detection.
     client.login(&user, &pass).await?;
 
-    println!("Detected NiFi version: {:?}", client.detected_version());
+    if let Some(version) = client.detected_version() {
+        println!("Detected NiFi version: {version}");
+    }
 
     let about = client.flow_api().get_about_info().await?;
     println!("Server title: {:?}", about.title);

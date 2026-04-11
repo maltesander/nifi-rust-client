@@ -32,7 +32,7 @@ pub fn emit_dynamic_tests(specs: &[(&str, &str, &ApiSpec)]) -> String {
         out.push_str("        .build().unwrap();\n");
         out.push_str("    let dynamic = nifi_rust_client::dynamic::DynamicClient::from_client(client).await.unwrap();\n");
         out.push_str(&format!(
-            "    assert_eq!(dynamic.detected_version().to_string(), \"{version}\");\n"
+            "    assert_eq!(dynamic.detected_version().unwrap().to_string(), \"{version}\");\n"
         ));
         out.push_str("}\n\n");
     }

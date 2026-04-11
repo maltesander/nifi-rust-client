@@ -70,7 +70,9 @@ let client = NifiClientBuilder::new("https://nifi:8443")?
 
 // login() authenticates AND auto-detects the NiFi version.
 client.login("admin", "password").await?;
-println!("Connected to NiFi {}", client.detected_version());
+if let Some(version) = client.detected_version() {
+    println!("Connected to NiFi {version}");
+}
 
 // Enum query params are typed — nodewise reporting with verbose diagnostics
 let diag = client.systemdiagnostics_api()
