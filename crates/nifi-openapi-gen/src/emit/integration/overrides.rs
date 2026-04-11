@@ -407,6 +407,8 @@ mod tests {
                     added_fields: vec!["new_field".to_string()],
                     removed_fields: vec![],
                     changed_fields: vec![],
+                    added_variants: vec![],
+                    removed_variants: vec![],
                 }],
             },
         }];

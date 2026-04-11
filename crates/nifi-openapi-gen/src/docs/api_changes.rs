@@ -110,6 +110,8 @@ pub fn format_diff_body(diff: &VersionDiff) -> String {
             !tc.added_fields.is_empty()
                 || !tc.removed_fields.is_empty()
                 || !tc.changed_fields.is_empty()
+                || !tc.added_variants.is_empty()
+                || !tc.removed_variants.is_empty()
         })
         .collect();
 
@@ -132,6 +134,18 @@ pub fn format_diff_body(diff: &VersionDiff) -> String {
                     FieldChangeKind::BecameRequired => "became required".to_string(),
                 };
                 parts.push(format!("`{}` {}", fc.name, desc));
+            }
+            if !tc.added_variants.is_empty() {
+                parts.push(format!(
+                    "added variants: `{}`",
+                    tc.added_variants.join("`, `")
+                ));
+            }
+            if !tc.removed_variants.is_empty() {
+                parts.push(format!(
+                    "removed variants: `{}`",
+                    tc.removed_variants.join("`, `")
+                ));
             }
             out.push_str(&format!("- `{}` \u{2014} {}\n", tc.name, parts.join("; ")));
         }

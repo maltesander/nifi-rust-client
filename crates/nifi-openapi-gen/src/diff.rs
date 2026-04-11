@@ -58,6 +58,8 @@ pub struct TypeChanges {
     pub added_fields: Vec<String>,
     pub removed_fields: Vec<String>,
     pub changed_fields: Vec<FieldChange>,
+    pub added_variants: Vec<String>,   // for StringEnum types
+    pub removed_variants: Vec<String>, // for StringEnum types
 }
 
 #[derive(Serialize, Debug, PartialEq)]
@@ -107,7 +109,13 @@ impl VersionDiff {
             .iter()
             .flat_map(|ec| ec.changed_params.iter())
             .map(|pc| pc.added_enum_values.len())
-            .sum();
+            .sum::<usize>()
+            + self
+                .types
+                .changed
+                .iter()
+                .map(|tc| tc.added_variants.len())
+                .sum::<usize>();
 
         let removed_enum_vals: usize = self
             .endpoints
@@ -115,7 +123,13 @@ impl VersionDiff {
             .iter()
             .flat_map(|ec| ec.changed_params.iter())
             .map(|pc| pc.removed_enum_values.len())
-            .sum();
+            .sum::<usize>()
+            + self
+                .types
+                .changed
+                .iter()
+                .map(|tc| tc.removed_variants.len())
+                .sum::<usize>();
 
         let added_types = self.types.added.len() as i64;
         let removed_types = self.types.removed.len() as i64;
@@ -353,6 +367,8 @@ fn diff_types(from: &ApiSpec, to: &ApiSpec) -> TypesDiff {
             if !tc.added_fields.is_empty()
                 || !tc.removed_fields.is_empty()
                 || !tc.changed_fields.is_empty()
+                || !tc.added_variants.is_empty()
+                || !tc.removed_variants.is_empty()
             {
                 changed.push(tc);
             }
@@ -377,6 +393,30 @@ fn diff_types(from: &ApiSpec, to: &ApiSpec) -> TypesDiff {
 }
 
 fn diff_type_fields(name: &str, from_type: &TypeDef, to_type: &TypeDef) -> TypeChanges {
+    use crate::parser::TypeKind;
+    use std::collections::HashSet;
+
+    // StringEnum: compare variant lists directly (no fields to diff)
+    let (added_variants, removed_variants) = match (&from_type.kind, &to_type.kind) {
+        (TypeKind::StringEnum(from_vals), TypeKind::StringEnum(to_vals)) => {
+            let from_set: HashSet<&str> = from_vals.iter().map(String::as_str).collect();
+            let to_set: HashSet<&str> = to_vals.iter().map(String::as_str).collect();
+            let mut added: Vec<String> = to_set
+                .difference(&from_set)
+                .map(|s| s.to_string())
+                .collect();
+            let mut removed: Vec<String> = from_set
+                .difference(&to_set)
+                .map(|s| s.to_string())
+                .collect();
+            added.sort();
+            removed.sort();
+            (added, removed)
+        }
+        _ => (vec![], vec![]),
+    };
+
+    // Dto / Entity: compare fields
     let from_fields: HashMap<&str, &Field> = from_type
         .fields
         .iter()
@@ -427,6 +467,8 @@ fn diff_type_fields(name: &str, from_type: &TypeDef, to_type: &TypeDef) -> TypeC
         added_fields,
         removed_fields,
         changed_fields,
+        added_variants,
+        removed_variants,
     }
 }
 
@@ -807,6 +849,40 @@ mod tests {
         let spec = make_spec(vec![], vec![]);
         let diff = compute_diff(&spec, &spec, "2.7.2", "2.8.0");
         assert_eq!(diff.summary(), "no API changes vs 2.7.2");
+    }
+
+    #[test]
+    fn test_string_enum_variant_added() {
+        use crate::parser::TypeKind;
+        let make_enum_type = |name: &str, variants: &[&str]| TypeDef {
+            name: name.to_string(),
+            kind: TypeKind::StringEnum(variants.iter().map(|s| s.to_string()).collect()),
+            fields: vec![],
+            doc: None,
+        };
+        let from = make_spec(vec![], vec![make_enum_type("Strategy", &["A", "B"])]);
+        let to = make_spec(vec![], vec![make_enum_type("Strategy", &["A", "B", "C"])]);
+        let diff = compute_diff(&from, &to, "2.7.2", "2.8.0");
+        assert_eq!(diff.types.changed.len(), 1);
+        assert_eq!(diff.types.changed[0].added_variants, vec!["C"]);
+        assert!(diff.types.changed[0].removed_variants.is_empty());
+    }
+
+    #[test]
+    fn test_string_enum_variant_removed() {
+        use crate::parser::TypeKind;
+        let make_enum_type = |name: &str, variants: &[&str]| TypeDef {
+            name: name.to_string(),
+            kind: TypeKind::StringEnum(variants.iter().map(|s| s.to_string()).collect()),
+            fields: vec![],
+            doc: None,
+        };
+        let from = make_spec(vec![], vec![make_enum_type("Strategy", &["A", "B", "C"])]);
+        let to = make_spec(vec![], vec![make_enum_type("Strategy", &["A", "B"])]);
+        let diff = compute_diff(&from, &to, "2.7.2", "2.8.0");
+        assert_eq!(diff.types.changed.len(), 1);
+        assert_eq!(diff.types.changed[0].removed_variants, vec!["C"]);
+        assert!(diff.types.changed[0].added_variants.is_empty());
     }
 
     #[test]

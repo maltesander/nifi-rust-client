@@ -195,6 +195,8 @@ mod tests {
                     added_fields: vec!["some_field".to_string()],
                     removed_fields: vec![],
                     changed_fields: vec![],
+                    added_variants: vec![],
+                    removed_variants: vec![],
                 }],
             },
         }];
@@ -225,6 +227,8 @@ mod tests {
                     added_fields: vec!["physicalState".to_string()],
                     removed_fields: vec![],
                     changed_fields: vec![],
+                    added_variants: vec![],
+                    removed_variants: vec![],
                 }],
             },
         }];
@@ -257,6 +261,8 @@ mod tests {
                     added_fields: vec!["physicalState".to_string()],
                     removed_fields: vec![],
                     changed_fields: vec![],
+                    added_variants: vec![],
+                    removed_variants: vec![],
                 }],
             },
         }];
@@ -296,6 +302,8 @@ mod tests {
                     added_fields: vec!["connector_id".to_string()],
                     removed_fields: vec![],
                     changed_fields: vec![],
+                    added_variants: vec![],
+                    removed_variants: vec![],
                 }],
             },
         }];
