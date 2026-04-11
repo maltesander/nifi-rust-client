@@ -45,11 +45,17 @@ pub struct ContractChange {
 }
 
 #[derive(Serialize)]
+pub struct AddedParam {
+    pub name: String,
+    pub required: bool,
+}
+
+#[derive(Serialize)]
 pub struct EndpointChanges {
     pub method: HttpMethod,
     pub path: String,
     pub tag: String,
-    pub added_params: Vec<String>,
+    pub added_params: Vec<AddedParam>,
     pub removed_params: Vec<String>,
     pub changed_params: Vec<ParamChange>,
     pub added_path_params: Vec<String>,
@@ -62,6 +68,7 @@ pub struct ParamChange {
     pub name: String,
     pub added_enum_values: Vec<String>,
     pub removed_enum_values: Vec<String>,
+    pub type_changed: Option<(String, String)>,
 }
 
 #[derive(Serialize)]
@@ -291,7 +298,7 @@ fn diff_endpoints(from: &ApiSpec, to: &ApiSpec) -> EndpointDiff {
 }
 
 struct RawEndpointChanges {
-    added_params: Vec<String>,
+    added_params: Vec<AddedParam>,
     removed_params: Vec<String>,
     changed_params: Vec<ParamChange>,
 }
@@ -314,7 +321,10 @@ fn diff_endpoint_params(to_ep: &Endpoint, from_ep: &Endpoint) -> RawEndpointChan
 
     for (name, to_p) in &to_params {
         if !from_params.contains_key(name) {
-            added_params.push(name.to_string());
+            added_params.push(AddedParam {
+                name: name.to_string(),
+                required: to_p.required,
+            });
         } else {
             let from_p = from_params[name];
             if let Some(pc) = diff_param_enums(name, from_p, to_p) {
@@ -329,7 +339,7 @@ fn diff_endpoint_params(to_ep: &Endpoint, from_ep: &Endpoint) -> RawEndpointChan
         }
     }
 
-    added_params.sort();
+    added_params.sort_by(|a, b| a.name.cmp(&b.name));
     removed_params.sort();
     changed_params.sort_by(|a, b| a.name.cmp(&b.name));
 
@@ -337,6 +347,17 @@ fn diff_endpoint_params(to_ep: &Endpoint, from_ep: &Endpoint) -> RawEndpointChan
         added_params,
         removed_params,
         changed_params,
+    }
+}
+
+fn query_param_type_name(ty: &QueryParamType) -> &'static str {
+    match ty {
+        QueryParamType::Str => "string",
+        QueryParamType::Bool => "boolean",
+        QueryParamType::I32 => "integer",
+        QueryParamType::I64 => "int64",
+        QueryParamType::F64 => "number",
+        QueryParamType::Enum(_) => "enum",
     }
 }
 
@@ -353,28 +374,37 @@ fn diff_param_enums(name: &str, from_p: &QueryParam, to_p: &QueryParam) -> Optio
     let from_set: std::collections::HashSet<&str> = from_vals.iter().map(String::as_str).collect();
     let to_set: std::collections::HashSet<&str> = to_vals.iter().map(String::as_str).collect();
 
-    let added: Vec<String> = to_set
+    let mut added: Vec<String> = to_set
         .difference(&from_set)
         .map(|s| s.to_string())
         .collect();
-    let removed: Vec<String> = from_set
+    let mut removed: Vec<String> = from_set
         .difference(&to_set)
         .map(|s| s.to_string())
         .collect();
-
-    if added.is_empty() && removed.is_empty() {
-        return None;
-    }
-
-    let mut added = added;
-    let mut removed = removed;
     added.sort();
     removed.sort();
+
+    // Detect type changes (e.g. Str → Enum) by comparing discriminants
+    let type_changed =
+        if std::mem::discriminant(&from_p.ty) != std::mem::discriminant(&to_p.ty) {
+            Some((
+                query_param_type_name(&from_p.ty).to_string(),
+                query_param_type_name(&to_p.ty).to_string(),
+            ))
+        } else {
+            None
+        };
+
+    if added.is_empty() && removed.is_empty() && type_changed.is_none() {
+        return None;
+    }
 
     Some(ParamChange {
         name: name.to_string(),
         added_enum_values: added,
         removed_enum_values: removed,
+        type_changed,
     })
 }
 
@@ -750,8 +780,63 @@ mod tests {
         let diff = compute_diff(&from, &to, "2.7.2", "2.8.0");
         assert_eq!(diff.endpoints.changed.len(), 1);
         let change = &diff.endpoints.changed[0];
-        assert_eq!(change.added_params, vec!["verbose"]);
+        assert_eq!(change.added_params.len(), 1);
+        assert_eq!(change.added_params[0].name, "verbose");
+        assert!(!change.added_params[0].required);
         assert!(change.removed_params.is_empty());
+    }
+
+    #[test]
+    fn test_added_required_query_param() {
+        let from = make_spec(
+            vec![make_tag("Flow", vec![make_endpoint(HttpMethod::Get, "/flow/about")])],
+            vec![],
+        );
+        let mut required_param = make_str_param("clusterId");
+        required_param.required = true;
+        let mut ep = make_endpoint(HttpMethod::Get, "/flow/about");
+        ep.query_params.push(required_param);
+        let to = make_spec(vec![make_tag("Flow", vec![ep])], vec![]);
+        let diff = compute_diff(&from, &to, "2.7.2", "2.8.0");
+        assert_eq!(diff.endpoints.changed.len(), 1);
+        let ec = &diff.endpoints.changed[0];
+        assert_eq!(ec.added_params.len(), 1);
+        assert_eq!(ec.added_params[0].name, "clusterId");
+        assert!(ec.added_params[0].required);
+    }
+
+    #[test]
+    fn test_query_param_type_changed_str_to_enum() {
+        let from = make_spec(
+            vec![make_tag(
+                "Flow",
+                vec![make_endpoint_with_param(
+                    HttpMethod::Get,
+                    "/flow/about",
+                    make_str_param("strategy"),
+                )],
+            )],
+            vec![],
+        );
+        let to = make_spec(
+            vec![make_tag(
+                "Flow",
+                vec![make_endpoint_with_param(
+                    HttpMethod::Get,
+                    "/flow/about",
+                    make_enum_param("strategy", &["A", "B"]),
+                )],
+            )],
+            vec![],
+        );
+        let diff = compute_diff(&from, &to, "2.7.2", "2.8.0");
+        assert_eq!(diff.endpoints.changed.len(), 1);
+        let ec = &diff.endpoints.changed[0];
+        assert_eq!(ec.changed_params.len(), 1);
+        assert!(ec.changed_params[0].type_changed.is_some());
+        let (from_t, to_t) = ec.changed_params[0].type_changed.as_ref().unwrap();
+        assert_eq!(from_t, "string");
+        assert_eq!(to_t, "enum");
     }
 
     #[test]

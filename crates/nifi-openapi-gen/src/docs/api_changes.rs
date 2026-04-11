@@ -55,7 +55,18 @@ pub fn format_diff_body(diff: &VersionDiff) -> String {
         for ec in meaningful_changes {
             let mut parts = Vec::new();
             if !ec.added_params.is_empty() {
-                parts.push(format!("added params: `{}`", ec.added_params.join("`, `")));
+                let descs: Vec<String> = ec
+                    .added_params
+                    .iter()
+                    .map(|p| {
+                        if p.required {
+                            format!("`{}` (required)", p.name)
+                        } else {
+                            format!("`{}`", p.name)
+                        }
+                    })
+                    .collect();
+                parts.push(format!("added params: {}", descs.join(", ")));
             }
             if !ec.removed_params.is_empty() {
                 parts.push(format!(
@@ -64,6 +75,12 @@ pub fn format_diff_body(diff: &VersionDiff) -> String {
                 ));
             }
             for pc in &ec.changed_params {
+                if let Some((from_t, to_t)) = &pc.type_changed {
+                    parts.push(format!(
+                        "param `{}`: type changed `{}` → `{}`",
+                        pc.name, from_t, to_t
+                    ));
+                }
                 if !pc.added_enum_values.is_empty() {
                     parts.push(format!(
                         "param `{}`: +enum values (`{}`)",

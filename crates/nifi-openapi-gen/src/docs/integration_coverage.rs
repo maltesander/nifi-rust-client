@@ -128,7 +128,7 @@ pub fn generate_integration_coverage_content(
         // Added query params on changed endpoints
         for ec in &diff.endpoints.changed {
             for param in &ec.added_params {
-                let key = format!("{} {} {param}", method_str(&ec.method), ec.path);
+                let key = format!("{} {} {}", method_str(&ec.method), ec.path, param.name);
                 let marker = if tested_query_params.contains(&key) {
                     " ✓"
                 } else {
@@ -137,9 +137,10 @@ pub fn generate_integration_coverage_content(
                 rows.push((
                     "Query param".to_string(),
                     format!(
-                        "`{} {}` +`{param}`{marker}",
+                        "`{} {}` +`{}`{marker}",
                         method_str(&ec.method),
-                        ec.path
+                        ec.path,
+                        param.name,
                     ),
                 ));
             }

@@ -67,7 +67,8 @@ pub fn emit_query_param_coverage_tests(
                 None => continue,
             };
 
-            for param_name in &ep_change.added_params {
+            for added_param in &ep_change.added_params {
+                let param_name = &added_param.name;
                 // Look up the query param metadata by its camelCase name.
                 let qp = match endpoint
                     .query_params
