@@ -37,13 +37,13 @@ impl RequestBodyKind {
 pub enum ResponseBodyKind {
     /// application/json, schema via $ref.
     Json { schema_ref: String },
-    /// text/plain — returned as String.
+    /// text/plain — returned as `String`.
     Text,
-    /// application/octet-stream — returned as Vec<u8>.
+    /// application/octet-stream — returned as `Vec<u8>`.
     OctetStream,
-    /// application/xml — returned as String. No deserialization.
+    /// application/xml — returned as `String`. No deserialization.
     Xml,
-    /// */* — returned as Vec<u8>. Caller interprets.
+    /// */* — returned as `Vec<u8>`. Caller interprets.
     Wildcard,
     /// No body (2xx without content).
     Empty,
