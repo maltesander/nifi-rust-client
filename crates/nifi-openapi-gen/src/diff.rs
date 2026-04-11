@@ -16,7 +16,7 @@ pub struct VersionDiff {
 }
 
 /// Suggested semantic version bump level for this diff.
-#[derive(Debug, PartialEq)]
+#[derive(Serialize, Debug, PartialEq)]
 pub enum SemverBump {
     /// Backwards-incompatible: removed endpoints/types/fields, required param added, type changed.
     Major,
@@ -217,8 +217,11 @@ impl VersionDiff {
 
         // Changes to existing endpoints
         for ec in &self.endpoints.changed {
-            // Removed query or path params
-            if !ec.removed_params.is_empty() || !ec.removed_path_params.is_empty() {
+            // Removed query or path params, or added path params (breaking)
+            if !ec.removed_params.is_empty()
+                || !ec.removed_path_params.is_empty()
+                || !ec.added_path_params.is_empty()
+            {
                 return true;
             }
             // Contract changes (request/response type, body kind)
@@ -1506,5 +1509,23 @@ mod tests {
         let diff = compute_diff(&spec, &spec, "2.7.2", "2.8.0");
         assert!(!diff.is_breaking());
         assert_eq!(diff.semver_bump(), SemverBump::Patch);
+    }
+
+    #[test]
+    fn test_is_breaking_path_param_added() {
+        use crate::parser::PathParam;
+        let from = make_spec(
+            vec![make_tag("Flow", vec![make_endpoint(HttpMethod::Get, "/flow/about")])],
+            vec![],
+        );
+        let mut ep = make_endpoint(HttpMethod::Get, "/flow/about");
+        ep.path_params.push(PathParam { name: "cluster_id".to_string(), doc: None });
+        let to = make_spec(
+            vec![make_tag("Flow", vec![ep])],
+            vec![],
+        );
+        let diff = compute_diff(&from, &to, "2.7.2", "2.8.0");
+        assert!(diff.is_breaking());
+        assert_eq!(diff.semver_bump(), SemverBump::Major);
     }
 }
