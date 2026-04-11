@@ -1,4 +1,4 @@
-use crate::diff::VersionDiff;
+use crate::diff::{FieldChangeKind, VersionDiff};
 use crate::parser::ApiSpec;
 
 pub fn format_diff_body(diff: &VersionDiff) -> String {
@@ -127,7 +127,11 @@ pub fn format_diff_body(diff: &VersionDiff) -> String {
                 ));
             }
             for fc in &tc.changed_fields {
-                parts.push(format!("`{}` {}", fc.name, fc.description));
+                let desc = match &fc.kind {
+                    FieldChangeKind::BecameOptional => "became optional".to_string(),
+                    FieldChangeKind::BecameRequired => "became required".to_string(),
+                };
+                parts.push(format!("`{}` {}", fc.name, desc));
             }
             out.push_str(&format!("- `{}` \u{2014} {}\n", tc.name, parts.join("; ")));
         }

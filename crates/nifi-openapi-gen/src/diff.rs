@@ -60,10 +60,16 @@ pub struct TypeChanges {
     pub changed_fields: Vec<FieldChange>,
 }
 
+#[derive(Serialize, Debug, PartialEq)]
+pub enum FieldChangeKind {
+    BecameOptional,
+    BecameRequired,
+}
+
 #[derive(Serialize)]
 pub struct FieldChange {
     pub name: String,
-    pub description: String,
+    pub kind: FieldChangeKind,
 }
 
 pub fn compute_diff(from: &ApiSpec, to: &ApiSpec, from_ver: &str, to_ver: &str) -> VersionDiff {
@@ -396,10 +402,10 @@ fn diff_type_fields(name: &str, from_type: &TypeDef, to_type: &TypeDef) -> TypeC
             if from_opt != to_opt {
                 changed_fields.push(FieldChange {
                     name: fname.to_string(),
-                    description: if to_opt {
-                        "became optional".to_string()
+                    kind: if to_opt {
+                        FieldChangeKind::BecameOptional
                     } else {
-                        "became required".to_string()
+                        FieldChangeKind::BecameRequired
                     },
                 });
             }
@@ -717,7 +723,28 @@ mod tests {
         let tc = &diff.types.changed[0];
         assert_eq!(tc.changed_fields.len(), 1);
         assert_eq!(tc.changed_fields[0].name, "version");
-        assert_eq!(tc.changed_fields[0].description, "became optional");
+        assert_eq!(tc.changed_fields[0].kind, FieldChangeKind::BecameOptional);
+    }
+
+    #[test]
+    fn test_field_became_required() {
+        let from = make_spec(
+            vec![],
+            vec![make_dto(
+                "AboutDTO",
+                vec![make_field("version", FieldType::Opt(Box::new(FieldType::Str)))],
+            )],
+        );
+        let to = make_spec(
+            vec![],
+            vec![make_dto(
+                "AboutDTO",
+                vec![make_field("version", FieldType::Str)],
+            )],
+        );
+        let diff = compute_diff(&from, &to, "2.7.2", "2.8.0");
+        let tc = &diff.types.changed[0];
+        assert_eq!(tc.changed_fields[0].kind, FieldChangeKind::BecameRequired);
     }
 
     #[test]
