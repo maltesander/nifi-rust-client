@@ -12,7 +12,10 @@ use helpers::dynamic_logged_in_client;
 #[ignore = "requires a running NiFi instance (use tests/run.sh)"]
 async fn dynamic_detects_version() {
     let client = dynamic_logged_in_client().await;
-    let version = client.detected_version().to_string();
+    let version = client
+        .detected_version()
+        .expect("login should have populated version")
+        .to_string();
     assert!(
         version.starts_with("2."),
         "expected NiFi 2.x, got {version}"
