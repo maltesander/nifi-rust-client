@@ -44,6 +44,8 @@ pub fn format_diff_body(diff: &VersionDiff) -> String {
             !ec.added_params.is_empty()
                 || !ec.removed_params.is_empty()
                 || !ec.changed_params.is_empty()
+                || !ec.added_path_params.is_empty()
+                || !ec.removed_path_params.is_empty()
         })
         .collect();
 
@@ -75,6 +77,18 @@ pub fn format_diff_body(diff: &VersionDiff) -> String {
                         pc.removed_enum_values.join("`, `")
                     ));
                 }
+            }
+            if !ec.added_path_params.is_empty() {
+                parts.push(format!(
+                    "added path params: `{}`",
+                    ec.added_path_params.join("`, `")
+                ));
+            }
+            if !ec.removed_path_params.is_empty() {
+                parts.push(format!(
+                    "removed path params: `{}`",
+                    ec.removed_path_params.join("`, `")
+                ));
             }
             out.push_str(&format!(
                 "- `{} {}` \u{2014} {}\n",

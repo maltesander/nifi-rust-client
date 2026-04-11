@@ -1,5 +1,6 @@
 use crate::parser::{
-    ApiSpec, Endpoint, Field, FieldType, HttpMethod, QueryParam, QueryParamType, TypeDef,
+    ApiSpec, Endpoint, Field, FieldType, HttpMethod, PathParam, QueryParam, QueryParamType,
+    TypeDef,
 };
 use serde::Serialize;
 use std::collections::HashMap;
@@ -37,6 +38,8 @@ pub struct EndpointChanges {
     pub added_params: Vec<String>,
     pub removed_params: Vec<String>,
     pub changed_params: Vec<ParamChange>,
+    pub added_path_params: Vec<String>,
+    pub removed_path_params: Vec<String>,
 }
 
 #[derive(Serialize)]
@@ -224,9 +227,12 @@ fn diff_endpoints(from: &ApiSpec, to: &ApiSpec) -> EndpointDiff {
         } else {
             let (from_ep, _) = &from_map[key];
             let ec = diff_endpoint_params(ep, from_ep);
+            let (added_path_params, removed_path_params) = diff_path_params(ep, from_ep);
             if ec.added_params.is_empty()
                 && ec.removed_params.is_empty()
                 && ec.changed_params.is_empty()
+                && added_path_params.is_empty()
+                && removed_path_params.is_empty()
             {
                 continue;
             }
@@ -237,6 +243,8 @@ fn diff_endpoints(from: &ApiSpec, to: &ApiSpec) -> EndpointDiff {
                 added_params: ec.added_params,
                 removed_params: ec.removed_params,
                 changed_params: ec.changed_params,
+                added_path_params,
+                removed_path_params,
             });
         }
     }
@@ -350,6 +358,31 @@ fn diff_param_enums(name: &str, from_p: &QueryParam, to_p: &QueryParam) -> Optio
         added_enum_values: added,
         removed_enum_values: removed,
     })
+}
+
+fn diff_path_params(to_ep: &Endpoint, from_ep: &Endpoint) -> (Vec<String>, Vec<String>) {
+    use std::collections::HashSet;
+    let from_names: HashSet<&str> = from_ep
+        .path_params
+        .iter()
+        .map(|p| p.name.as_str())
+        .collect();
+    let to_names: HashSet<&str> = to_ep
+        .path_params
+        .iter()
+        .map(|p| p.name.as_str())
+        .collect();
+    let mut added: Vec<String> = to_names
+        .difference(&from_names)
+        .map(|s| s.to_string())
+        .collect();
+    let mut removed: Vec<String> = from_names
+        .difference(&to_names)
+        .map(|s| s.to_string())
+        .collect();
+    added.sort();
+    removed.sort();
+    (added, removed)
 }
 
 fn diff_types(from: &ApiSpec, to: &ApiSpec) -> TypesDiff {
@@ -505,6 +538,15 @@ mod tests {
     fn make_endpoint_with_param(method: HttpMethod, path: &str, param: QueryParam) -> Endpoint {
         let mut ep = make_endpoint(method, path);
         ep.query_params.push(param);
+        ep
+    }
+
+    fn make_endpoint_with_path_param(method: HttpMethod, path: &str, param_name: &str) -> Endpoint {
+        let mut ep = make_endpoint(method, path);
+        ep.path_params.push(PathParam {
+            name: param_name.to_string(),
+            doc: None,
+        });
         ep
     }
 
@@ -933,5 +975,51 @@ mod tests {
         );
         let diff = compute_diff(&from, &to, "2.7.2", "2.8.0");
         assert_eq!(diff.endpoints.changed[0].tag, "Flow");
+    }
+
+    #[test]
+    fn test_path_param_added() {
+        let from = make_spec(
+            vec![make_tag("Flow", vec![make_endpoint(HttpMethod::Get, "/flow/about")])],
+            vec![],
+        );
+        let to = make_spec(
+            vec![make_tag(
+                "Flow",
+                vec![make_endpoint_with_path_param(
+                    HttpMethod::Get,
+                    "/flow/about",
+                    "cluster_id",
+                )],
+            )],
+            vec![],
+        );
+        let diff = compute_diff(&from, &to, "2.7.2", "2.8.0");
+        assert_eq!(diff.endpoints.changed.len(), 1);
+        assert_eq!(diff.endpoints.changed[0].added_path_params, vec!["cluster_id"]);
+        assert!(diff.endpoints.changed[0].removed_path_params.is_empty());
+    }
+
+    #[test]
+    fn test_path_param_removed() {
+        let from = make_spec(
+            vec![make_tag(
+                "Flow",
+                vec![make_endpoint_with_path_param(
+                    HttpMethod::Get,
+                    "/flow/about",
+                    "cluster_id",
+                )],
+            )],
+            vec![],
+        );
+        let to = make_spec(
+            vec![make_tag("Flow", vec![make_endpoint(HttpMethod::Get, "/flow/about")])],
+            vec![],
+        );
+        let diff = compute_diff(&from, &to, "2.7.2", "2.8.0");
+        assert_eq!(diff.endpoints.changed.len(), 1);
+        assert_eq!(diff.endpoints.changed[0].removed_path_params, vec!["cluster_id"]);
+        assert!(diff.endpoints.changed[0].added_path_params.is_empty());
     }
 }
