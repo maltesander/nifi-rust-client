@@ -36,6 +36,9 @@ fn about_endpoint() -> Endpoint {
         response_type: Some("AboutEntity".into()),
         response_inner: Some("AboutDto".into()),
         response_field: Some("about".into()),
+        response_kind: nifi_openapi_gen::content_type::ResponseBodyKind::Json {
+            schema_ref: "AboutEntity".into(),
+        },
         query_params: vec![],
         success_responses: vec![],
         error_responses: vec![],
@@ -166,6 +169,9 @@ fn dispatch_forwards_all_params() {
         response_type: Some("ProcessorEntity".into()),
         response_inner: Some("ProcessorDto".into()),
         response_field: Some("component".into()),
+        response_kind: nifi_openapi_gen::content_type::ResponseBodyKind::Json {
+            schema_ref: "ProcessorEntity".into(),
+        },
         query_params: vec![QueryParam {
             name: "includeDescendants".into(),
             rust_name: "include_descendants".into(),
@@ -231,6 +237,7 @@ fn dispatch_skips_form_encoded_endpoints() {
         response_type: None,
         response_inner: None,
         response_field: None,
+        response_kind: nifi_openapi_gen::content_type::ResponseBodyKind::Empty,
         query_params: vec![],
         success_responses: vec![],
         error_responses: vec![],

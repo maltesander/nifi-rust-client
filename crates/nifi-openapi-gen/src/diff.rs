@@ -763,6 +763,7 @@ mod tests {
             response_type: None,
             response_inner: None,
             response_field: None,
+            response_kind: crate::content_type::ResponseBodyKind::Empty,
             query_params: vec![],
             success_responses: vec![],
             error_responses: vec![],
@@ -860,6 +861,9 @@ mod tests {
     ) -> Endpoint {
         let mut ep = make_endpoint(method, path);
         ep.response_type = Some(resp_type.to_string());
+        ep.response_kind = crate::content_type::ResponseBodyKind::Json {
+            schema_ref: resp_type.to_string(),
+        };
         ep
     }
 

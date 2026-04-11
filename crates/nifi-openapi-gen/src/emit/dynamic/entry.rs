@@ -353,6 +353,12 @@ mod tests {
             response_type: response_type.map(|s| s.to_string()),
             response_inner: response_inner.map(|s| s.to_string()),
             response_field: response_inner.map(|_| "inner".to_string()),
+            response_kind: match response_type {
+                Some(rt) => crate::content_type::ResponseBodyKind::Json {
+                    schema_ref: rt.to_string(),
+                },
+                None => crate::content_type::ResponseBodyKind::Empty,
+            },
             query_params,
             success_responses: vec![],
             error_responses: vec![],

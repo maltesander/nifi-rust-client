@@ -193,6 +193,9 @@ fn mod_rs_reexports_all_modules() {
                         response_type: Some("FlowDto".into()),
                         response_inner: None,
                         response_field: None,
+                        response_kind: nifi_openapi_gen::content_type::ResponseBodyKind::Json {
+                            schema_ref: "FlowDto".into(),
+                        },
                         query_params: vec![],
                         success_responses: vec![],
                         error_responses: vec![],
@@ -212,6 +215,9 @@ fn mod_rs_reexports_all_modules() {
                         response_type: Some("SharedDto".into()),
                         response_inner: None,
                         response_field: None,
+                        response_kind: nifi_openapi_gen::content_type::ResponseBodyKind::Json {
+                            schema_ref: "SharedDto".into(),
+                        },
                         query_params: vec![],
                         success_responses: vec![],
                         error_responses: vec![],
@@ -244,6 +250,9 @@ fn mod_rs_reexports_all_modules() {
                         response_type: Some("ProcDto".into()),
                         response_inner: None,
                         response_field: None,
+                        response_kind: nifi_openapi_gen::content_type::ResponseBodyKind::Json {
+                            schema_ref: "ProcDto".into(),
+                        },
                         query_params: vec![],
                         success_responses: vec![],
                         error_responses: vec![],
@@ -263,6 +272,9 @@ fn mod_rs_reexports_all_modules() {
                         response_type: Some("SharedDto".into()),
                         response_inner: None,
                         response_field: None,
+                        response_kind: nifi_openapi_gen::content_type::ResponseBodyKind::Json {
+                            schema_ref: "SharedDto".into(),
+                        },
                         query_params: vec![],
                         success_responses: vec![],
                         error_responses: vec![],

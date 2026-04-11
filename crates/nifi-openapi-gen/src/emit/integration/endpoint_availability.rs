@@ -278,6 +278,7 @@ mod tests {
             response_type: None,
             response_inner: None,
             response_field: None,
+            response_kind: crate::content_type::ResponseBodyKind::Empty,
             query_params: vec![],
             success_responses: vec![],
             error_responses: vec![],

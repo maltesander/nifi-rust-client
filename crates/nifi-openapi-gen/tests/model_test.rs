@@ -36,6 +36,9 @@ fn can_construct_internal_model() {
                 response_type: Some("AboutEntity".into()),
                 response_inner: Some("AboutDto".into()),
                 response_field: Some("about".into()),
+                response_kind: nifi_openapi_gen::content_type::ResponseBodyKind::Json {
+                    schema_ref: "AboutEntity".into(),
+                },
                 query_params: vec![],
                 success_responses: vec![],
                 error_responses: vec![],

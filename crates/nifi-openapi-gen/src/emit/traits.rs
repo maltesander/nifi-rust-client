@@ -189,6 +189,9 @@ mod tests {
             response_type: Some("ControllerServiceEntity".to_string()),
             response_inner: Some("ControllerServiceDto".to_string()),
             response_field: Some("component".to_string()),
+            response_kind: crate::content_type::ResponseBodyKind::Json {
+                schema_ref: "ControllerServiceEntity".to_string(),
+            },
             query_params: vec![],
             success_responses: vec![],
             error_responses: vec![],
@@ -211,6 +214,9 @@ mod tests {
             response_type: Some("ConfigurationAnalysisEntity".to_string()),
             response_inner: Some("ConfigurationAnalysisDto".to_string()),
             response_field: Some("configuration_analysis".to_string()),
+            response_kind: crate::content_type::ResponseBodyKind::Json {
+                schema_ref: "ConfigurationAnalysisEntity".to_string(),
+            },
             query_params: vec![],
             success_responses: vec![],
             error_responses: vec![],

@@ -140,6 +140,11 @@ pub struct Endpoint {
     pub response_inner: Option<String>,
     /// If response_type is an Entity, the field name to unwrap.
     pub response_field: Option<String>,
+    /// Content-type classification of the success response body.
+    /// Currently informational only — emitters still consume
+    /// `response_type`/`response_inner`/`response_field` for code generation.
+    /// Task 3.2 will migrate emitters to consume `response_kind` directly.
+    pub response_kind: crate::content_type::ResponseBodyKind,
     pub query_params: Vec<QueryParam>,
     /// 2xx responses: (status_code, description), e.g. ("206", "Partial Content...").
     pub success_responses: Vec<(String, String)>,
@@ -565,6 +570,20 @@ fn parse_tags(
                 .and_then(|r| r["content"]["application/json"]["schema"]["$ref"].as_str())
                 .map(|r| r.trim_start_matches("#/components/schemas/").to_string());
 
+            let response_kind = responses
+                .and_then(|r| {
+                    r.get("200")
+                        .or_else(|| r.get("201"))
+                        .or_else(|| r.get("202"))
+                        .or_else(|| r.get("default"))
+                })
+                .and_then(|r| r.get("content"))
+                .map(|content| {
+                    let pointer = format!("{raw_path}.{http_method}.responses.2xx");
+                    crate::content_type::resolve_response_body(content, &pointer)
+                })
+                .unwrap_or(crate::content_type::ResponseBodyKind::Empty);
+
             let (response_type, response_inner, response_field) = match response_schema_ref {
                 None => (None, None, None),
                 Some(ref_name) => {
@@ -649,6 +668,7 @@ fn parse_tags(
                 response_type,
                 response_inner,
                 response_field,
+                response_kind,
                 query_params,
                 success_responses,
                 error_responses,
@@ -849,5 +869,84 @@ mod tests {
             })
             .expect("data-transfer transactions endpoint missing");
         assert_eq!(ep.body_kind, Some(RequestBodyKind::Wildcard));
+    }
+
+    #[test]
+    fn text_plain_response_is_captured_in_29() {
+        let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("specs/2.9.0/nifi-api.json");
+        let content = std::fs::read_to_string(&path).unwrap();
+        let v: serde_json::Value = serde_json::from_str(&content).unwrap();
+        let schemas = v["components"]["schemas"].as_object().unwrap().clone();
+        let tags = parse_tags(&v, &schemas, &[]);
+        let ep = tags
+            .iter()
+            .flat_map(|t| {
+                t.root_endpoints
+                    .iter()
+                    .chain(t.sub_groups.iter().flat_map(|sg| sg.endpoints.iter()))
+            })
+            .find(|e| e.path == "/flow/client-id" && matches!(e.method, HttpMethod::Get))
+            .expect("/flow/client-id missing from parsed 2.9.0 spec");
+        assert!(matches!(
+            ep.response_kind,
+            crate::content_type::ResponseBodyKind::Text
+        ));
+    }
+
+    #[test]
+    fn octet_stream_response_is_captured_in_29() {
+        let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("specs/2.9.0/nifi-api.json");
+        let content = std::fs::read_to_string(&path).unwrap();
+        let v: serde_json::Value = serde_json::from_str(&content).unwrap();
+        let schemas = v["components"]["schemas"].as_object().unwrap().clone();
+        let tags = parse_tags(&v, &schemas, &[]);
+        let ep = tags
+            .iter()
+            .flat_map(|t| {
+                t.root_endpoints
+                    .iter()
+                    .chain(t.sub_groups.iter().flat_map(|sg| sg.endpoints.iter()))
+            })
+            .find(|e| {
+                e.path == "/connectors/{id}/assets/{assetId}"
+                    && matches!(e.method, HttpMethod::Get)
+            })
+            .expect("/connectors/{id}/assets/{assetId} missing");
+        assert!(matches!(
+            ep.response_kind,
+            crate::content_type::ResponseBodyKind::OctetStream
+        ));
+    }
+
+    // NOTE: no XML-only response exists in any bundled NiFi 2.x spec. The
+    // only application/xml producer, /site-to-site/peers, also advertises
+    // application/json, and resolve_response_body picks JSON first by
+    // design. XML endpoint verification is deferred to Task 3.3.
+
+    #[test]
+    fn json_response_still_captures_ref() {
+        let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("specs/2.9.0/nifi-api.json");
+        let content = std::fs::read_to_string(&path).unwrap();
+        let v: serde_json::Value = serde_json::from_str(&content).unwrap();
+        let schemas = v["components"]["schemas"].as_object().unwrap().clone();
+        let tags = parse_tags(&v, &schemas, &[]);
+        let ep = tags
+            .iter()
+            .flat_map(|t| {
+                t.root_endpoints
+                    .iter()
+                    .chain(t.sub_groups.iter().flat_map(|sg| sg.endpoints.iter()))
+            })
+            .find(|e| e.path == "/flow/about")
+            .expect("/flow/about missing");
+        assert!(matches!(
+            &ep.response_kind,
+            crate::content_type::ResponseBodyKind::Json { .. }
+        ));
+        // response_type should still be populated the old way
+        assert!(ep.response_type.is_some());
     }
 }
