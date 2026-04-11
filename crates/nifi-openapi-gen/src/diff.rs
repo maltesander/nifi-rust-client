@@ -15,6 +15,17 @@ pub struct VersionDiff {
     pub types: TypesDiff,
 }
 
+/// Suggested semantic version bump level for this diff.
+#[derive(Debug, PartialEq)]
+pub enum SemverBump {
+    /// Backwards-incompatible: removed endpoints/types/fields, required param added, type changed.
+    Major,
+    /// Backwards-compatible additions: new endpoints, optional fields, new types.
+    Minor,
+    /// No additions or removals: relaxed optionality, no net API changes.
+    Patch,
+}
+
 #[derive(Serialize)]
 pub struct EndpointDiff {
     pub added: Vec<EndpointSummary>,
@@ -194,6 +205,76 @@ impl VersionDiff {
             format!("no API changes vs {}", self.from)
         } else {
             format!("{} vs {}", parts.join(", "), self.from)
+        }
+    }
+
+    /// Returns `true` if the diff contains any backwards-incompatible change.
+    pub fn is_breaking(&self) -> bool {
+        // Removed endpoints or types
+        if !self.endpoints.removed.is_empty() || !self.types.removed.is_empty() {
+            return true;
+        }
+
+        // Changes to existing endpoints
+        for ec in &self.endpoints.changed {
+            // Removed query or path params
+            if !ec.removed_params.is_empty() || !ec.removed_path_params.is_empty() {
+                return true;
+            }
+            // Contract changes (request/response type, body kind)
+            if !ec.contract_changes.is_empty() {
+                return true;
+            }
+            // Required query param added
+            if ec.added_params.iter().any(|p| p.required) {
+                return true;
+            }
+            // Query param enum values removed or type changed
+            if ec.changed_params.iter().any(|pc| {
+                !pc.removed_enum_values.is_empty() || pc.type_changed.is_some()
+            }) {
+                return true;
+            }
+        }
+
+        // Changes to existing types
+        for tc in &self.types.changed {
+            // Removed fields or enum variants
+            if !tc.removed_fields.is_empty() || !tc.removed_variants.is_empty() {
+                return true;
+            }
+            // Fields that became required or changed type
+            if tc.changed_fields.iter().any(|fc| {
+                matches!(
+                    fc.kind,
+                    FieldChangeKind::BecameRequired | FieldChangeKind::TypeChanged { .. }
+                )
+            }) {
+                return true;
+            }
+        }
+
+        false
+    }
+
+    /// Suggests a semantic version bump level for this diff.
+    pub fn semver_bump(&self) -> SemverBump {
+        if self.is_breaking() {
+            return SemverBump::Major;
+        }
+        // Additive changes → Minor
+        let is_additive = !self.endpoints.added.is_empty()
+            || !self.types.added.is_empty()
+            || self.types.changed.iter().any(|tc| {
+                !tc.added_fields.is_empty() || !tc.added_variants.is_empty()
+            })
+            || self.endpoints.changed.iter().any(|ec| {
+                ec.added_params.iter().any(|p| !p.required)
+            });
+        if is_additive {
+            SemverBump::Minor
+        } else {
+            SemverBump::Patch
         }
     }
 }
@@ -1327,5 +1408,103 @@ mod tests {
         let kinds: Vec<_> = tc.changed_fields.iter().map(|f| &f.kind).collect();
         assert!(kinds.iter().any(|k| matches!(k, FieldChangeKind::BecameOptional)));
         assert!(kinds.iter().any(|k| matches!(k, FieldChangeKind::TypeChanged { .. })));
+    }
+
+    #[test]
+    fn test_is_breaking_endpoint_removed() {
+        let from = make_spec(
+            vec![make_tag(
+                "Flow",
+                vec![
+                    make_endpoint(HttpMethod::Get, "/flow/about"),
+                    make_endpoint(HttpMethod::Get, "/flow/old"),
+                ],
+            )],
+            vec![],
+        );
+        let to = make_spec(
+            vec![make_tag(
+                "Flow",
+                vec![make_endpoint(HttpMethod::Get, "/flow/about")],
+            )],
+            vec![],
+        );
+        let diff = compute_diff(&from, &to, "2.7.2", "2.8.0");
+        assert!(diff.is_breaking());
+        assert_eq!(diff.semver_bump(), SemverBump::Major);
+    }
+
+    #[test]
+    fn test_is_breaking_endpoint_added_only() {
+        let from = make_spec(
+            vec![make_tag(
+                "Flow",
+                vec![make_endpoint(HttpMethod::Get, "/flow/about")],
+            )],
+            vec![],
+        );
+        let to = make_spec(
+            vec![make_tag(
+                "Flow",
+                vec![
+                    make_endpoint(HttpMethod::Get, "/flow/about"),
+                    make_endpoint(HttpMethod::Get, "/flow/metrics"),
+                ],
+            )],
+            vec![],
+        );
+        let diff = compute_diff(&from, &to, "2.7.2", "2.8.0");
+        assert!(!diff.is_breaking());
+        assert_eq!(diff.semver_bump(), SemverBump::Minor);
+    }
+
+    #[test]
+    fn test_is_breaking_field_became_required() {
+        let from = make_spec(
+            vec![],
+            vec![make_dto(
+                "AboutDTO",
+                vec![make_field("version", FieldType::Opt(Box::new(FieldType::Str)))],
+            )],
+        );
+        let to = make_spec(
+            vec![],
+            vec![make_dto(
+                "AboutDTO",
+                vec![make_field("version", FieldType::Str)],
+            )],
+        );
+        let diff = compute_diff(&from, &to, "2.7.2", "2.8.0");
+        assert!(diff.is_breaking());
+        assert_eq!(diff.semver_bump(), SemverBump::Major);
+    }
+
+    #[test]
+    fn test_is_breaking_field_became_optional_only() {
+        let from = make_spec(
+            vec![],
+            vec![make_dto(
+                "AboutDTO",
+                vec![make_field("version", FieldType::Str)],
+            )],
+        );
+        let to = make_spec(
+            vec![],
+            vec![make_dto(
+                "AboutDTO",
+                vec![make_field("version", FieldType::Opt(Box::new(FieldType::Str)))],
+            )],
+        );
+        let diff = compute_diff(&from, &to, "2.7.2", "2.8.0");
+        assert!(!diff.is_breaking());
+        assert_eq!(diff.semver_bump(), SemverBump::Patch);
+    }
+
+    #[test]
+    fn test_is_not_breaking_no_changes() {
+        let spec = make_spec(vec![], vec![]);
+        let diff = compute_diff(&spec, &spec, "2.7.2", "2.8.0");
+        assert!(!diff.is_breaking());
+        assert_eq!(diff.semver_bump(), SemverBump::Patch);
     }
 }
