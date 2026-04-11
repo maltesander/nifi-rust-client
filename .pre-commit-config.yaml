@@ -41,6 +41,14 @@ repos:
         pass_filenames: false
         files: \.rs$
 
+      - id: cargo-rustdoc
+        name: cargo-rustdoc
+        language: system
+        entry: bash -c 'RUSTDOCFLAGS="-D warnings" cargo doc --workspace --exclude nifi-integration-tests --no-deps'
+        stages: [pre-commit, pre-merge-commit]
+        pass_filenames: false
+        files: \.rs$
+
       - id: cargo-deny
         name: cargo-deny
         language: system
