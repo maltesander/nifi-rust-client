@@ -214,15 +214,11 @@ pub fn load(path: &str) -> ApiSpec {
 fn parse_all_types(schemas: &serde_json::Map<String, Value>) -> Vec<TypeDef> {
     schemas
         .iter()
-        .filter_map(|(name, schema)| parse_type_def(name, schema, schemas))
+        .filter_map(|(name, schema)| parse_type_def(name, schema))
         .collect()
 }
 
-fn parse_type_def(
-    name: &str,
-    schema: &Value,
-    all_schemas: &serde_json::Map<String, Value>,
-) -> Option<TypeDef> {
+fn parse_type_def(name: &str, schema: &Value) -> Option<TypeDef> {
     let rust_name = spec_name_to_rust(name);
     let props = match schema.get("properties").and_then(|p| p.as_object()) {
         Some(p) => p,
@@ -279,7 +275,10 @@ fn parse_type_def(
         .iter()
         .map(|(prop_name, prop_val)| {
             let is_required = required.contains(prop_name);
-            let base_ty = parse_field_type(prop_val, all_schemas);
+            let base_ty = parse_field_type(
+                prop_val,
+                &format!("/components/schemas/{name}/properties/{prop_name}"),
+            );
             let ty = if is_required {
                 base_ty
             } else {
@@ -312,7 +311,7 @@ fn parse_type_def(
     })
 }
 
-fn parse_field_type(prop: &Value, _all: &serde_json::Map<String, Value>) -> FieldType {
+fn parse_field_type(prop: &Value, json_pointer: &str) -> FieldType {
     if let Some(ref_name) = extract_ref(prop) {
         return FieldType::Ref(spec_name_to_rust(&ref_name));
     }
@@ -335,12 +334,13 @@ fn parse_field_type(prop: &Value, _all: &serde_json::Map<String, Value>) -> Fiel
         Some("number") => FieldType::F64,
         Some("array") => {
             let items = &prop["items"];
-            let inner = parse_field_type(items, _all);
+            let inner = parse_field_type(items, &format!("{json_pointer}/items"));
             FieldType::List(Box::new(inner))
         }
         Some("object") => {
             if let Some(additional) = prop.get("additionalProperties") {
-                let value_ty = parse_field_type(additional, _all);
+                let value_ty =
+                    parse_field_type(additional, &format!("{json_pointer}/additionalProperties"));
                 // Wrap in Option: map values can be null in real NiFi responses
                 // even when the spec says type: string (e.g. unset processor properties).
                 FieldType::Map(Box::new(FieldType::Opt(Box::new(value_ty))))
@@ -349,7 +349,16 @@ fn parse_field_type(prop: &Value, _all: &serde_json::Map<String, Value>) -> Fiel
                 FieldType::Ref("serde_json::Value".to_string())
             }
         }
-        _ => FieldType::Str, // fallback for unknown
+        Some(other) => crate::parser_strict::panic_unknown(
+            "field_type",
+            json_pointer,
+            &format!("type={other:?}"),
+        ),
+        None => crate::parser_strict::panic_unknown(
+            "field_type",
+            json_pointer,
+            "schema has no \"type\" and no \"$ref\"",
+        ),
     }
 }
 
@@ -760,6 +769,7 @@ fn tag_to_accessor(tag: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use serde_json::json;
 
     #[test]
     fn test_http_method_as_str() {
@@ -767,5 +777,19 @@ mod tests {
         assert_eq!(HttpMethod::Post.as_str(), "POST");
         assert_eq!(HttpMethod::Put.as_str(), "PUT");
         assert_eq!(HttpMethod::Delete.as_str(), "DELETE");
+    }
+
+    #[test]
+    #[should_panic(expected = "nifi-openapi-gen: unknown field_type")]
+    fn unknown_field_type_panics() {
+        let prop = json!({ "type": "frobnitz" });
+        parse_field_type(&prop, "/components/schemas/Foo/properties/bar");
+    }
+
+    #[test]
+    fn known_field_types_still_work() {
+        let prop = json!({ "type": "string" });
+        let ft = parse_field_type(&prop, "/x");
+        assert!(matches!(ft, FieldType::Str));
     }
 }
