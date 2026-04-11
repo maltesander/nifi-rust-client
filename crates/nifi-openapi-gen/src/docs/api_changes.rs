@@ -177,6 +177,16 @@ pub fn format_diff_body(diff: &VersionDiff) -> String {
                     FieldChangeKind::TypeChanged { from, to } => {
                         format!("type changed: `{from}` → `{to}`")
                     }
+                    FieldChangeKind::InlineEnumChanged { added, removed } => {
+                        let mut parts = Vec::new();
+                        if !added.is_empty() {
+                            parts.push(format!("+[`{}`]", added.join("`, `")));
+                        }
+                        if !removed.is_empty() {
+                            parts.push(format!("-[`{}`]", removed.join("`, `")));
+                        }
+                        format!("enum variants changed: {}", parts.join(" "))
+                    }
                 };
                 parts.push(format!("`{}` {}", fc.name, desc));
             }

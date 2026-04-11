@@ -102,7 +102,14 @@ pub struct TypeChanges {
 pub enum FieldChangeKind {
     BecameOptional,
     BecameRequired,
-    TypeChanged { from: String, to: String },
+    TypeChanged {
+        from: String,
+        to: String,
+    },
+    InlineEnumChanged {
+        added: Vec<String>,
+        removed: Vec<String>,
+    },
 }
 
 #[derive(Serialize)]
@@ -247,12 +254,11 @@ impl VersionDiff {
             if !tc.removed_fields.is_empty() || !tc.removed_variants.is_empty() {
                 return true;
             }
-            // Fields that became required or changed type
-            if tc.changed_fields.iter().any(|fc| {
-                matches!(
-                    fc.kind,
-                    FieldChangeKind::BecameRequired | FieldChangeKind::TypeChanged { .. }
-                )
+            // Fields that became required, changed type, or lost enum variants
+            if tc.changed_fields.iter().any(|fc| match &fc.kind {
+                FieldChangeKind::BecameRequired | FieldChangeKind::TypeChanged { .. } => true,
+                FieldChangeKind::InlineEnumChanged { removed, .. } => !removed.is_empty(),
+                _ => false,
             }) {
                 return true;
             }
@@ -691,12 +697,26 @@ fn diff_type_fields(name: &str, from_type: &TypeDef, to_type: &TypeDef) -> TypeC
                 _ => from_base != to_base,
             };
             if types_differ {
-                changed_fields.push(FieldChange {
-                    name: fname.to_string(),
-                    kind: FieldChangeKind::TypeChanged {
+                let kind = match (from_base, to_base) {
+                    (FieldType::Enum(fv), FieldType::Enum(tv)) => {
+                        let fset: std::collections::HashSet<_> = fv.iter().collect();
+                        let tset: std::collections::HashSet<_> = tv.iter().collect();
+                        let mut added: Vec<String> =
+                            tset.difference(&fset).map(|s| s.to_string()).collect();
+                        let mut removed: Vec<String> =
+                            fset.difference(&tset).map(|s| s.to_string()).collect();
+                        added.sort();
+                        removed.sort();
+                        FieldChangeKind::InlineEnumChanged { added, removed }
+                    }
+                    _ => FieldChangeKind::TypeChanged {
                         from: field_type_display(from_base),
                         to: field_type_display(to_base),
                     },
+                };
+                changed_fields.push(FieldChange {
+                    name: fname.to_string(),
+                    kind,
                 });
             }
         }
