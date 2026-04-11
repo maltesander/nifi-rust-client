@@ -30,6 +30,20 @@ pub struct EndpointSummary {
     pub doc: Option<String>,
 }
 
+#[derive(Serialize, Debug, PartialEq)]
+pub enum ContractAspect {
+    RequestType,
+    ResponseType,
+    BodyKind,
+}
+
+#[derive(Serialize)]
+pub struct ContractChange {
+    pub aspect: ContractAspect,
+    pub from: Option<String>,
+    pub to: Option<String>,
+}
+
 #[derive(Serialize)]
 pub struct EndpointChanges {
     pub method: HttpMethod,
@@ -40,6 +54,7 @@ pub struct EndpointChanges {
     pub changed_params: Vec<ParamChange>,
     pub added_path_params: Vec<String>,
     pub removed_path_params: Vec<String>,
+    pub contract_changes: Vec<ContractChange>,
 }
 
 #[derive(Serialize)]
@@ -228,11 +243,13 @@ fn diff_endpoints(from: &ApiSpec, to: &ApiSpec) -> EndpointDiff {
             let (from_ep, _) = &from_map[key];
             let ec = diff_endpoint_params(ep, from_ep);
             let (added_path_params, removed_path_params) = diff_path_params(ep, from_ep);
+            let contract_changes = diff_contract(ep, from_ep);
             if ec.added_params.is_empty()
                 && ec.removed_params.is_empty()
                 && ec.changed_params.is_empty()
                 && added_path_params.is_empty()
                 && removed_path_params.is_empty()
+                && contract_changes.is_empty()
             {
                 continue;
             }
@@ -245,6 +262,7 @@ fn diff_endpoints(from: &ApiSpec, to: &ApiSpec) -> EndpointDiff {
                 changed_params: ec.changed_params,
                 added_path_params,
                 removed_path_params,
+                contract_changes,
             });
         }
     }
@@ -383,6 +401,39 @@ fn diff_path_params(to_ep: &Endpoint, from_ep: &Endpoint) -> (Vec<String>, Vec<S
     added.sort();
     removed.sort();
     (added, removed)
+}
+
+fn diff_contract(to_ep: &Endpoint, from_ep: &Endpoint) -> Vec<ContractChange> {
+    use crate::parser::RequestBodyKind;
+    let mut changes = Vec::new();
+
+    if from_ep.request_type != to_ep.request_type {
+        changes.push(ContractChange {
+            aspect: ContractAspect::RequestType,
+            from: from_ep.request_type.clone(),
+            to: to_ep.request_type.clone(),
+        });
+    }
+
+    if from_ep.response_type != to_ep.response_type {
+        changes.push(ContractChange {
+            aspect: ContractAspect::ResponseType,
+            from: from_ep.response_type.clone(),
+            to: to_ep.response_type.clone(),
+        });
+    }
+
+    let from_body = from_ep.body_kind.as_ref().map(RequestBodyKind::as_str);
+    let to_body = to_ep.body_kind.as_ref().map(RequestBodyKind::as_str);
+    if from_body != to_body {
+        changes.push(ContractChange {
+            aspect: ContractAspect::BodyKind,
+            from: from_body.map(str::to_string),
+            to: to_body.map(str::to_string),
+        });
+    }
+
+    changes
 }
 
 fn diff_types(from: &ApiSpec, to: &ApiSpec) -> TypesDiff {
@@ -608,6 +659,20 @@ mod tests {
             doc: None,
             read_only: false,
         }
+    }
+
+    fn make_endpoint_with_request_type(method: HttpMethod, path: &str, req_type: &str) -> Endpoint {
+        use crate::parser::RequestBodyKind;
+        let mut ep = make_endpoint(method, path);
+        ep.request_type = Some(req_type.to_string());
+        ep.body_kind = Some(RequestBodyKind::Json);
+        ep
+    }
+
+    fn make_endpoint_with_response_type(method: HttpMethod, path: &str, resp_type: &str) -> Endpoint {
+        let mut ep = make_endpoint(method, path);
+        ep.response_type = Some(resp_type.to_string());
+        ep
     }
 
     // ─── Tests ───────────────────────────────────────────────────────────────
@@ -1021,5 +1086,71 @@ mod tests {
         assert_eq!(diff.endpoints.changed.len(), 1);
         assert_eq!(diff.endpoints.changed[0].removed_path_params, vec!["cluster_id"]);
         assert!(diff.endpoints.changed[0].added_path_params.is_empty());
+    }
+
+    #[test]
+    fn test_request_type_changed() {
+        let from = make_spec(
+            vec![make_tag(
+                "Flow",
+                vec![make_endpoint_with_request_type(
+                    HttpMethod::Post,
+                    "/flow/process-groups",
+                    "ProcessGroupDto",
+                )],
+            )],
+            vec![],
+        );
+        let to = make_spec(
+            vec![make_tag(
+                "Flow",
+                vec![make_endpoint_with_request_type(
+                    HttpMethod::Post,
+                    "/flow/process-groups",
+                    "ProcessGroupEntity",
+                )],
+            )],
+            vec![],
+        );
+        let diff = compute_diff(&from, &to, "2.7.2", "2.8.0");
+        assert_eq!(diff.endpoints.changed.len(), 1);
+        let ec = &diff.endpoints.changed[0];
+        assert_eq!(ec.contract_changes.len(), 1);
+        assert_eq!(ec.contract_changes[0].aspect, ContractAspect::RequestType);
+        assert_eq!(ec.contract_changes[0].from.as_deref(), Some("ProcessGroupDto"));
+        assert_eq!(ec.contract_changes[0].to.as_deref(), Some("ProcessGroupEntity"));
+    }
+
+    #[test]
+    fn test_response_type_changed() {
+        let from = make_spec(
+            vec![make_tag(
+                "Flow",
+                vec![make_endpoint_with_response_type(
+                    HttpMethod::Get,
+                    "/flow/about",
+                    "AboutDto",
+                )],
+            )],
+            vec![],
+        );
+        let to = make_spec(
+            vec![make_tag(
+                "Flow",
+                vec![make_endpoint_with_response_type(
+                    HttpMethod::Get,
+                    "/flow/about",
+                    "AboutEntity",
+                )],
+            )],
+            vec![],
+        );
+        let diff = compute_diff(&from, &to, "2.7.2", "2.8.0");
+        assert_eq!(diff.endpoints.changed.len(), 1);
+        let ec = &diff.endpoints.changed[0];
+        assert_eq!(ec.contract_changes.len(), 1);
+        assert_eq!(ec.contract_changes[0].aspect, ContractAspect::ResponseType);
+        assert_eq!(ec.contract_changes[0].from.as_deref(), Some("AboutDto"));
+        assert_eq!(ec.contract_changes[0].to.as_deref(), Some("AboutEntity"));
     }
 }

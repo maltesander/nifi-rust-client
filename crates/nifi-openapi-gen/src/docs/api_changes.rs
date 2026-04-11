@@ -46,6 +46,7 @@ pub fn format_diff_body(diff: &VersionDiff) -> String {
                 || !ec.changed_params.is_empty()
                 || !ec.added_path_params.is_empty()
                 || !ec.removed_path_params.is_empty()
+                || !ec.contract_changes.is_empty()
         })
         .collect();
 
@@ -89,6 +90,16 @@ pub fn format_diff_body(diff: &VersionDiff) -> String {
                     "removed path params: `{}`",
                     ec.removed_path_params.join("`, `")
                 ));
+            }
+            for cc in &ec.contract_changes {
+                let aspect = match &cc.aspect {
+                    crate::diff::ContractAspect::RequestType => "request type",
+                    crate::diff::ContractAspect::ResponseType => "response type",
+                    crate::diff::ContractAspect::BodyKind => "body kind",
+                };
+                let from = cc.from.as_deref().unwrap_or("none");
+                let to = cc.to.as_deref().unwrap_or("none");
+                parts.push(format!("{aspect} changed: `{from}` → `{to}`"));
             }
             out.push_str(&format!(
                 "- `{} {}` \u{2014} {}\n",

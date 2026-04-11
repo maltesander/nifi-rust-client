@@ -130,6 +130,16 @@ pub enum RequestBodyKind {
     FormEncoded,
 }
 
+impl RequestBodyKind {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            RequestBodyKind::Json => "Json",
+            RequestBodyKind::OctetStream => "OctetStream",
+            RequestBodyKind::FormEncoded => "FormEncoded",
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct Endpoint {
     pub method: HttpMethod,
