@@ -32,6 +32,9 @@ pub fn emit_dynamic(versions: &[(&str, &str, &str, &ApiSpec)]) -> String {
     // AboutResponse / AboutInner deserialization structs
     emit_about_structs(&mut out);
 
+    // ClusterSummaryResponse / ClusterResponse deserialization structs
+    emit_cluster_structs(&mut out);
+
     // SUPPORTED_VERSIONS constant
     emit_supported_versions(&mut out, versions);
 
@@ -115,6 +118,41 @@ fn emit_about_structs(out: &mut String) {
     out.push_str("}\n\n");
 }
 
+fn emit_cluster_structs(out: &mut String) {
+    // ClusterSummaryResponse wraps ClusterSummaryInner
+    out.push_str("#[derive(serde::Deserialize)]\n");
+    out.push_str("#[serde(rename_all = \"camelCase\")]\n");
+    out.push_str("struct ClusterSummaryResponse {\n");
+    out.push_str("    cluster_summary: ClusterSummaryInner,\n");
+    out.push_str("}\n\n");
+
+    out.push_str("#[derive(serde::Deserialize)]\n");
+    out.push_str("#[serde(rename_all = \"camelCase\")]\n");
+    out.push_str("struct ClusterSummaryInner {\n");
+    out.push_str("    clustered: bool,\n");
+    out.push_str("}\n\n");
+
+    // ClusterResponse wraps ClusterInner with a Vec of nodes
+    out.push_str("#[derive(serde::Deserialize)]\n");
+    out.push_str("#[serde(rename_all = \"camelCase\")]\n");
+    out.push_str("struct ClusterResponse {\n");
+    out.push_str("    cluster: ClusterInner,\n");
+    out.push_str("}\n\n");
+
+    out.push_str("#[derive(serde::Deserialize)]\n");
+    out.push_str("#[serde(rename_all = \"camelCase\")]\n");
+    out.push_str("struct ClusterInner {\n");
+    out.push_str("    nodes: Vec<ClusterNode>,\n");
+    out.push_str("}\n\n");
+
+    out.push_str("#[derive(serde::Deserialize)]\n");
+    out.push_str("#[serde(rename_all = \"camelCase\")]\n");
+    out.push_str("struct ClusterNode {\n");
+    out.push_str("    node_id: Option<String>,\n");
+    out.push_str("    status: Option<String>,\n");
+    out.push_str("}\n\n");
+}
+
 fn emit_supported_versions(out: &mut String, versions: &[(&str, &str, &str, &ApiSpec)]) {
     out.push_str("/// All supported versions compiled into this build, used by version resolution strategies.\n");
     out.push_str("const SUPPORTED_VERSIONS: &[(&str, DetectedVersion)] = &[\n");
@@ -148,6 +186,7 @@ fn emit_dynamic_client(out: &mut String, versions: &[(&str, &str, &str, &ApiSpec
     out.push_str("    client: NifiClient,\n");
     out.push_str("    version: tokio::sync::OnceCell<DetectedVersion>,\n");
     out.push_str("    strategy: strategy::VersionResolutionStrategy,\n");
+    out.push_str("    cluster_node_id: tokio::sync::OnceCell<Option<String>>,\n");
     out.push_str("}\n\n");
 
     // Manual Debug impl (OnceCell<T> is Debug if T is Debug)
@@ -156,6 +195,7 @@ fn emit_dynamic_client(out: &mut String, versions: &[(&str, &str, &str, &ApiSpec
     out.push_str("        f.debug_struct(\"DynamicClient\")\n");
     out.push_str("            .field(\"version\", &self.version.get())\n");
     out.push_str("            .field(\"strategy\", &self.strategy)\n");
+    out.push_str("            .field(\"cluster_node_id\", &self.cluster_node_id.get())\n");
     out.push_str("            .finish()\n");
     out.push_str("    }\n");
     out.push_str("}\n\n");
@@ -174,7 +214,7 @@ fn emit_dynamic_client(out: &mut String, versions: &[(&str, &str, &str, &ApiSpec
         "    /// Use [`with_strategy`](Self::with_strategy) to configure fallback behavior.\n",
     );
     out.push_str("    pub fn new(client: NifiClient) -> Self {\n");
-    out.push_str("        Self { client, version: tokio::sync::OnceCell::new(), strategy: strategy::VersionResolutionStrategy::default() }\n");
+    out.push_str("        Self { client, version: tokio::sync::OnceCell::new(), strategy: strategy::VersionResolutionStrategy::default(), cluster_node_id: tokio::sync::OnceCell::new() }\n");
     out.push_str("    }\n\n");
 
     // with_strategy()
@@ -184,7 +224,7 @@ fn emit_dynamic_client(out: &mut String, versions: &[(&str, &str, &str, &ApiSpec
     out.push_str("    ///\n");
     out.push_str("    /// See [`VersionResolutionStrategy`] for available strategies.\n");
     out.push_str("    pub fn with_strategy(client: NifiClient, strategy: strategy::VersionResolutionStrategy) -> Self {\n");
-    out.push_str("        Self { client, version: tokio::sync::OnceCell::new(), strategy }\n");
+    out.push_str("        Self { client, version: tokio::sync::OnceCell::new(), strategy, cluster_node_id: tokio::sync::OnceCell::new() }\n");
     out.push_str("    }\n\n");
 
     // from_client() — eagerly detects (backwards-compatible)
@@ -204,6 +244,7 @@ fn emit_dynamic_client(out: &mut String, versions: &[(&str, &str, &str, &ApiSpec
     out.push_str("    pub async fn from_client(client: NifiClient) -> Result<Self, NifiError> {\n");
     out.push_str("        let dc = Self::new(client);\n");
     out.push_str("        dc.detect_version().await?;\n");
+    out.push_str("        dc.discover_cluster().await;\n");
     out.push_str("        Ok(dc)\n");
     out.push_str("    }\n\n");
 
@@ -250,11 +291,46 @@ fn emit_dynamic_client(out: &mut String, versions: &[(&str, &str, &str, &ApiSpec
     out.push_str("        self.strategy\n");
     out.push_str("    }\n\n");
 
+    // discover_cluster()
+    out.push_str("    /// Discover the cluster node ID by querying the cluster summary and nodes.\n");
+    out.push_str("    /// On standalone NiFi (not clustered or if the calls fail), stores `None`.\n");
+    out.push_str("    /// Idempotent — only runs the discovery once.\n");
+    out.push_str("    async fn discover_cluster(&self) {\n");
+    out.push_str("        let _ = self.cluster_node_id.get_or_init(|| async {\n");
+    out.push_str("            let summary: Result<ClusterSummaryResponse, NifiError> = self.client.get(\"/flow/cluster/summary\").await;\n");
+    out.push_str("            match summary {\n");
+    out.push_str("                Ok(s) if s.cluster_summary.clustered => {\n");
+    out.push_str("                    let cluster: Result<ClusterResponse, NifiError> = self.client.get(\"/controller/cluster\").await;\n");
+    out.push_str("                    match cluster {\n");
+    out.push_str("                        Ok(c) => c.cluster.nodes.iter()\n");
+    out.push_str("                            .find(|n| n.status.as_deref() == Some(\"CONNECTED\"))\n");
+    out.push_str("                            .and_then(|n| n.node_id.clone()),\n");
+    out.push_str("                        Err(_) => None,\n");
+    out.push_str("                    }\n");
+    out.push_str("                }\n");
+    out.push_str("                _ => None,\n");
+    out.push_str("            }\n");
+    out.push_str("        }).await;\n");
+    out.push_str("    }\n\n");
+
+    // cluster_node_id()
+    out.push_str("    /// Returns the discovered cluster node ID, if this NiFi instance is clustered.\n");
+    out.push_str("    ///\n");
+    out.push_str("    /// Returns `None` for standalone NiFi instances, or if cluster discovery\n");
+    out.push_str("    /// has not yet run (call [`login`](Self::login) or [`from_client`](Self::from_client) first).\n");
+    out.push_str("    ///\n");
+    out.push_str("    /// Provenance and lineage dispatch methods auto-inject this value when the\n");
+    out.push_str("    /// caller passes `None` for `cluster_node_id`.\n");
+    out.push_str("    pub fn cluster_node_id(&self) -> Option<&str> {\n");
+    out.push_str("        self.cluster_node_id.get().and_then(|opt| opt.as_deref())\n");
+    out.push_str("    }\n\n");
+
     // login() — now also triggers version detection
     out.push_str("    /// Authenticate with the NiFi instance and detect the server version.\n");
     out.push_str("    pub async fn login(&self, username: &str, password: &str) -> Result<(), NifiError> {\n");
     out.push_str("        self.client.login(username, password).await?;\n");
     out.push_str("        self.detect_version().await?;\n");
+    out.push_str("        self.discover_cluster().await;\n");
     out.push_str("        Ok(())\n");
     out.push_str("    }\n\n");
 
@@ -390,6 +466,27 @@ mod tests {
         assert!(output.contains("pub async fn login("));
         assert!(output.contains("pub async fn logout("));
         assert!(output.contains("pub fn detected_version("));
+        assert!(output.contains("pub fn cluster_node_id("));
+    }
+
+    #[test]
+    fn test_cluster_discovery_structs() {
+        let spec = minimal_spec_with_tag("Flow", "FlowApi", "flow", "flow_api", vec![]);
+        let output = emit_dynamic(&[("2.8.0", "v2_8_0", "nifi-2-8-0", &spec)]);
+        assert!(output.contains("struct ClusterSummaryResponse"));
+        assert!(output.contains("struct ClusterSummaryInner"));
+        assert!(output.contains("struct ClusterResponse"));
+        assert!(output.contains("struct ClusterInner"));
+        assert!(output.contains("struct ClusterNode"));
+        assert!(output.contains("async fn discover_cluster("));
+        assert!(output.contains("pub fn cluster_node_id("));
+        // discover_cluster is called from both login and from_client
+        assert_eq!(
+            output.matches("self.discover_cluster().await;").count()
+                + output.matches("dc.discover_cluster().await;").count(),
+            2,
+            "discover_cluster() should be called from both login() and from_client()"
+        );
     }
 
     #[test]

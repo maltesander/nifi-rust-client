@@ -147,6 +147,23 @@ fn emit_sub_resource_dispatch_struct(
     out.push_str("}\n\n");
 }
 
+/// For known body types that carry `clusterNodeId` nested inside a request field,
+/// returns the injection code that sets the field from `DynamicClient::cluster_node_id()`
+/// when the caller left it as `None`.
+///
+/// Known types:
+/// - `LineageEntity` → `lineage.request.cluster_node_id`
+/// - `ProvenanceEntity` → `provenance.request.cluster_node_id`
+fn cluster_node_id_body_injection(body_type: &str) -> Option<(&'static str, &'static str)> {
+    // Returns (outer_field, inner_field) for the injection path:
+    //   body.{outer_field}.{inner_field}.cluster_node_id
+    match body_type {
+        "LineageEntity" => Some(("lineage", "request")),
+        "ProvenanceEntity" => Some(("provenance", "request")),
+        _ => None,
+    }
+}
+
 fn emit_dispatch_method(
     out: &mut String,
     versions: &[(&str, &str, &str, &ApiSpec)],
@@ -226,6 +243,32 @@ fn emit_dispatch_method(
     out.push_str(&format!(
         "    async fn {fn_name}(&self{path_param_args}{query_param_args}{body_arg}) -> {return_result} {{\n"
     ));
+
+    // --- Auto-inject cluster_node_id from DynamicClient when caller passes None ---
+    let has_cluster_node_id_qp = merged_query_params
+        .iter()
+        .any(|(qp, _)| qp.rust_name == "cluster_node_id");
+    if has_cluster_node_id_qp {
+        out.push_str("        let cluster_node_id = cluster_node_id.or(self.client.cluster_node_id());\n");
+    }
+
+    // --- Auto-inject cluster_node_id into known body types ---
+    if ep.body_kind.as_ref() == Some(&RequestBodyKind::Json)
+        && let Some((outer, inner)) =
+            ep.request_type.as_deref().and_then(cluster_node_id_body_injection)
+    {
+        out.push_str("        let body = {\n");
+        out.push_str("            let mut b = body.clone();\n");
+        out.push_str(&format!("            if let Some(ref mut {outer}) = b.{outer}\n"));
+        out.push_str(&format!("                && let Some(ref mut {inner}) = {outer}.{inner}\n"));
+        out.push_str(&format!("                && {inner}.cluster_node_id.is_none()\n"));
+        out.push_str("            {\n");
+        out.push_str(&format!("                {inner}.cluster_node_id = self.client.cluster_node_id().map(|s| s.to_string());\n"));
+        out.push_str("            }\n");
+        out.push_str("            b\n");
+        out.push_str("        };\n");
+        out.push_str("        let body = &body;\n");
+    }
 
     // --- Lazy version detection + dispatch ---
     // Detect the server version on first call (idempotent via OnceCell), then
@@ -333,6 +376,14 @@ fn emit_sub_dispatch_method(
     out.push_str(&format!(
         "    async fn {fn_name}(&self{path_param_args}{query_param_args}{body_arg}) -> {return_result} {{\n"
     ));
+
+    // --- Auto-inject cluster_node_id from DynamicClient when caller passes None ---
+    let has_cluster_node_id_qp = merged_query_params
+        .iter()
+        .any(|(qp, _)| qp.rust_name == "cluster_node_id");
+    if has_cluster_node_id_qp {
+        out.push_str("        let cluster_node_id = cluster_node_id.or(self.client.cluster_node_id());\n");
+    }
 
     // --- Lazy version detection + dispatch ---
     // Detect the server version on first call (idempotent via OnceCell), then
@@ -806,6 +857,126 @@ mod tests {
         assert!(
             content.contains("version: \"2.6.0\""),
             "V2_6_0 should return UnsupportedEndpoint for missing endpoints"
+        );
+    }
+
+    #[test]
+    fn emit_dispatch_auto_injects_cluster_node_id_query_param() {
+        let ep = Endpoint {
+            method: HttpMethod::Get,
+            path: "/provenance/lineage/{id}".to_string(),
+            fn_name: "get_lineage".to_string(),
+            doc: Some("Gets a lineage query".to_string()),
+            description: None,
+            path_params: vec![PathParam {
+                name: "id".to_string(),
+                doc: None,
+            }],
+            request_type: None,
+            body_kind: None,
+            body_doc: None,
+            response_type: Some("LineageDto".to_string()),
+            response_inner: None,
+            response_field: None,
+            response_kind: json_resp("LineageDto"),
+            query_params: vec![QueryParam {
+                name: "clusterNodeId".to_string(),
+                rust_name: "cluster_node_id".to_string(),
+                ty: QueryParamType::Str,
+                required: false,
+                doc: Some("The cluster node id".to_string()),
+                enum_type_name: None,
+            }],
+            success_responses: vec![],
+            error_responses: vec![],
+            security: None,
+        };
+        let spec = ApiSpec {
+            tags: vec![TagGroup {
+                tag: "Provenance".to_string(),
+                struct_name: "ProvenanceApi".to_string(),
+                module_name: "provenance".to_string(),
+                accessor_fn: "provenance_api".to_string(),
+                types: vec![],
+                root_endpoints: vec![ep],
+                sub_groups: vec![],
+            }],
+            all_types: vec![],
+        };
+        let versions: Vec<(&str, &str, &str, &ApiSpec)> =
+            vec![("2.8.0", "v2_8_0", "nifi-2-8-0", &spec)];
+        let files = emit_dynamic_dispatch(&versions);
+
+        let (_, content) = files
+            .iter()
+            .find(|(f, _)| f == "provenance.rs")
+            .unwrap();
+
+        // Should contain the auto-injection rebinding
+        assert!(
+            content.contains("let cluster_node_id = cluster_node_id.or(self.client.cluster_node_id());"),
+            "Missing cluster_node_id auto-injection. Content:\n{content}"
+        );
+    }
+
+    #[test]
+    fn emit_dispatch_auto_injects_cluster_node_id_into_lineage_body() {
+        let ep = Endpoint {
+            method: HttpMethod::Post,
+            path: "/provenance/lineage".to_string(),
+            fn_name: "submit_lineage_request".to_string(),
+            doc: Some("Submits a lineage query".to_string()),
+            description: None,
+            path_params: vec![],
+            request_type: Some("LineageEntity".to_string()),
+            body_kind: Some(RequestBodyKind::Json),
+            body_doc: None,
+            response_type: Some("LineageDto".to_string()),
+            response_inner: None,
+            response_field: None,
+            response_kind: json_resp("LineageDto"),
+            query_params: vec![],
+            success_responses: vec![],
+            error_responses: vec![],
+            security: None,
+        };
+        let spec = ApiSpec {
+            tags: vec![TagGroup {
+                tag: "Provenance".to_string(),
+                struct_name: "ProvenanceApi".to_string(),
+                module_name: "provenance".to_string(),
+                accessor_fn: "provenance_api".to_string(),
+                types: vec![],
+                root_endpoints: vec![ep],
+                sub_groups: vec![],
+            }],
+            all_types: vec![],
+        };
+        let versions: Vec<(&str, &str, &str, &ApiSpec)> =
+            vec![("2.8.0", "v2_8_0", "nifi-2-8-0", &spec)];
+        let files = emit_dynamic_dispatch(&versions);
+
+        let (_, content) = files
+            .iter()
+            .find(|(f, _)| f == "provenance.rs")
+            .unwrap();
+
+        // Should clone body and inject cluster_node_id
+        assert!(
+            content.contains("let mut b = body.clone()"),
+            "Missing body clone for cluster_node_id injection. Content:\n{content}"
+        );
+        assert!(
+            content.contains("b.lineage"),
+            "Missing lineage field access. Content:\n{content}"
+        );
+        assert!(
+            content.contains(".cluster_node_id"),
+            "Missing cluster_node_id field access. Content:\n{content}"
+        );
+        assert!(
+            content.contains("cluster_node_id()"),
+            "Missing DynamicClient cluster_node_id() call. Content:\n{content}"
         );
     }
 }
