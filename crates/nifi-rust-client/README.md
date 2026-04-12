@@ -291,6 +291,49 @@ This retries on HTTP 408, 429, 500, 502, 503, 504, and network errors. Non-retry
 Retry composes with token refresh: if a retried request gets a 401, the client refreshes the
 token (if a credential provider is configured) before continuing.
 
+## Pagination
+
+NiFi's `GET /flow/history` endpoint supports offset/count paging. The
+crate ships a `HistoryPaginator` that walks the history one page (or
+one action) at a time, hiding the offset arithmetic and the
+server-reported `total` termination check. Zero new dependencies —
+the paginator is a plain async state machine.
+
+```rust
+use nifi_rust_client::{NifiClientBuilder, NifiError};
+use nifi_rust_client::pagination::{flow_history, HistoryFilter};
+
+async fn example() -> Result<(), NifiError> {
+    let client = NifiClientBuilder::new("https://nifi.example.com:8443")?.build()?;
+    client.login("admin", "adminpassword123").await?;
+
+    // Filter by user and ask for pages of 100.
+    let filter = HistoryFilter {
+        user_identity: Some("admin".to_string()),
+        ..HistoryFilter::default()
+    };
+    let mut pag = flow_history(&client, filter, 100);
+
+    // Page-at-a-time:
+    while let Some(page) = pag.next_page().await? {
+        for action in page {
+            println!("{action:?}");
+        }
+    }
+
+    // Or item-at-a-time (buffers one page internally):
+    let mut pag = flow_history(&client, HistoryFilter::default(), 100);
+    while let Some(action) = pag.next().await? {
+        println!("{action:?}");
+    }
+    Ok(())
+}
+```
+
+In dynamic mode, use `flow_history_dynamic(&dyn_client, filter, page_size)` instead — same return type and iteration semantics, gated on `#[cfg(feature = "dynamic")]`.
+
+On a missing `actions` or `total` field in the response, the paginator surfaces `NifiError::MissingField { path }` via the same `require!` machinery used elsewhere in the crate. Transient HTTP errors are retried per-page by `NifiClient`'s existing retry policy; the paginator adds no retry logic of its own.
+
 ## Resource accessors
 
 All API methods are grouped into resource structs mirroring NiFi's own API grouping. Access them via the client:
