@@ -14,8 +14,10 @@
 use std::collections::VecDeque;
 
 use crate::error::NifiError;
+#[cfg(not(feature = "dynamic"))]
 use crate::types::ActionEntity;
-use crate::{require, NifiClient};
+#[cfg(feature = "dynamic")]
+use crate::dynamic::types::ActionEntity;
 
 /// Boxed future returned by the fetch closures in this module.
 ///
@@ -167,11 +169,53 @@ where
 /// # Ok(())
 /// # }
 /// ```
+#[cfg(not(feature = "dynamic"))]
 pub fn flow_history<'a>(
-    client: &'a NifiClient,
+    client: &'a crate::NifiClient,
     filter: HistoryFilter,
     page_size: u32,
 ) -> HistoryPaginator<impl FnMut(u32, u32) -> BoxedFetchFuture<'a> + 'a> {
+    use crate::require;
+    let fetch = move |offset: u32, count: u32| -> BoxedFetchFuture<'a> {
+        let filter = filter.clone();
+        Box::pin(async move {
+            let offset_s = offset.to_string();
+            let count_s = count.to_string();
+            let resp = client
+                .flow_api()
+                .query_history(
+                    &offset_s,
+                    &count_s,
+                    filter.sort_column.as_deref(),
+                    filter.sort_order.as_deref(),
+                    filter.start_date.as_deref(),
+                    filter.end_date.as_deref(),
+                    filter.user_identity.as_deref(),
+                    filter.source_id.as_deref(),
+                )
+                .await?;
+            let actions = require!(resp.actions).clone();
+            let total = *require!(resp.total);
+            Ok(HistoryPage { actions, total })
+        })
+    };
+    HistoryPaginator::from_fetcher(fetch, page_size)
+}
+
+/// Build a [`HistoryPaginator`] backed by a dynamic-mode
+/// [`crate::dynamic::DynamicClient`].
+///
+/// Same iteration semantics as [`flow_history`]. Missing `actions` /
+/// `total` fields in the response surface as
+/// [`NifiError::MissingField`] via the [`crate::require!`] macro.
+#[cfg(feature = "dynamic")]
+pub fn flow_history_dynamic<'a>(
+    client: &'a crate::dynamic::DynamicClient,
+    filter: HistoryFilter,
+    page_size: u32,
+) -> HistoryPaginator<impl FnMut(u32, u32) -> BoxedFetchFuture<'a> + 'a> {
+    use crate::dynamic::traits::FlowApi as _;
+    use crate::require;
     let fetch = move |offset: u32, count: u32| -> BoxedFetchFuture<'a> {
         let filter = filter.clone();
         Box::pin(async move {
