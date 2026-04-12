@@ -1,5 +1,7 @@
 use std::path::Path;
 
+use crate::layout::RepoLayout;
+use crate::plan::FileEdit;
 use crate::util::version_to_feature;
 
 /// Patch the client crate's `Cargo.toml` `[features]` section to include all version features,
@@ -78,6 +80,32 @@ pub fn patch_tests_cargo_features(toml_str: &str, versions: &[&str]) -> String {
     doc.to_string()
 }
 
+/// Returns a `FileEdit::Overwrite` for the client crate's Cargo.toml.
+pub fn emit_cargo_features_client(
+    layout: &RepoLayout,
+    current_toml: &str,
+    versions: &[&str],
+) -> Vec<FileEdit> {
+    let patched = patch_client_cargo_features(current_toml, versions);
+    vec![FileEdit::Overwrite {
+        path: layout.client_cargo_toml.clone(),
+        content: patched,
+    }]
+}
+
+/// Returns a `FileEdit::Overwrite` for the tests crate's Cargo.toml.
+pub fn emit_cargo_features_tests(
+    layout: &RepoLayout,
+    current_toml: &str,
+    versions: &[&str],
+) -> Vec<FileEdit> {
+    let patched = patch_tests_cargo_features(current_toml, versions);
+    vec![FileEdit::Overwrite {
+        path: layout.tests_cargo_toml.clone(),
+        content: patched,
+    }]
+}
+
 /// Discover versions from the bundled OpenAPI specs directory and patch the
 /// client crate's `Cargo.toml` features.
 pub fn update_cargo_features_client(client_crate: &Path) {
@@ -109,6 +137,32 @@ pub fn update_cargo_features_tests(tests_crate: &Path) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::layout::RepoLayout;
+    use crate::plan::FileEdit;
+    use std::path::Path;
+
+    #[test]
+    fn emit_cargo_features_client_returns_overwrite() {
+        let layout = RepoLayout::from_workspace_root(Path::new("/fake"));
+        let toml = "[package]\nname = \"nifi-rust-client\"\n";
+        let edits = super::emit_cargo_features_client(&layout, toml, &["2.8.0"]);
+        assert_eq!(edits.len(), 1);
+        assert!(matches!(&edits[0], FileEdit::Overwrite { path, content }
+            if *path == Path::new("/fake/crates/nifi-rust-client/Cargo.toml")
+            && content.contains("nifi-2-8-0")
+        ));
+    }
+
+    #[test]
+    fn emit_cargo_features_tests_returns_overwrite() {
+        let layout = RepoLayout::from_workspace_root(Path::new("/fake"));
+        let toml = "[package]\nname = \"nifi-integration-tests\"\n";
+        let edits = super::emit_cargo_features_tests(&layout, toml, &["2.8.0"]);
+        assert_eq!(edits.len(), 1);
+        assert!(matches!(&edits[0], FileEdit::Overwrite { path, .. }
+            if *path == Path::new("/fake/tests/Cargo.toml")
+        ));
+    }
 
     #[test]
     fn test_patch_client_cargo_features_adds_section() {

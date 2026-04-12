@@ -4,6 +4,7 @@ pub mod docker_compose;
 pub mod lib_rs;
 
 pub use cargo_features::{
+    emit_cargo_features_client, emit_cargo_features_tests,
     patch_client_cargo_features, patch_tests_cargo_features, update_cargo_features_client,
     update_cargo_features_tests,
 };
