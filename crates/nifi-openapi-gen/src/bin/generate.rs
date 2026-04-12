@@ -25,8 +25,8 @@ use nifi_openapi_gen::repo::{
 };
 use nifi_openapi_gen::util::discover_spec_versions;
 use nifi_openapi_gen::{
-    collect_endpoint_metadata, collect_enum_metadata, collect_query_param_metadata, compute_diff,
-    load, tested_type_names, ApiSpec, VersionDiff,
+    ApiSpec, VersionDiff, collect_endpoint_metadata, collect_enum_metadata,
+    collect_query_param_metadata, compute_diff, load, tested_type_names,
 };
 
 /// Extract major.minor version shorthand from Cargo.toml content.
@@ -103,8 +103,16 @@ fn main() {
     let mut edits: Vec<FileEdit> = Vec::new();
 
     // Cargo.toml features
-    edits.extend(emit_cargo_features_client(&layout, &client_toml, &version_strs));
-    edits.extend(emit_cargo_features_tests(&layout, &tests_toml, &version_strs));
+    edits.extend(emit_cargo_features_client(
+        &layout,
+        &client_toml,
+        &version_strs,
+    ));
+    edits.extend(emit_cargo_features_tests(
+        &layout,
+        &tests_toml,
+        &version_strs,
+    ));
 
     // README versions table (workspace + client)
     edits.extend(emit_versions_table(&layout, &all_parsed));
@@ -121,7 +129,11 @@ fn main() {
     ));
 
     // Docker-compose default image tag
-    edits.extend(emit_docker_compose_default(&layout, &dc_content, &latest_version));
+    edits.extend(emit_docker_compose_default(
+        &layout,
+        &dc_content,
+        &latest_version,
+    ));
 
     // API changes doc
     edits.extend(emit_api_changes(&layout, &all_parsed));

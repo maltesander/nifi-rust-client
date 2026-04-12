@@ -228,9 +228,11 @@ mod tests {
             &HashSet::new(),
         );
         assert_eq!(edits.len(), 1);
-        assert!(matches!(&edits[0], FileEdit::ReplaceBlock { path, start_marker, .. }
-            if *path == Path::new("/fake/crates/nifi-rust-client/README.md")
-            && start_marker.contains("INTEGRATION_COVERAGE_START")
-        ));
+        assert!(
+            matches!(&edits[0], FileEdit::ReplaceBlock { path, start_marker, .. }
+                if *path == Path::new("/fake/crates/nifi-rust-client/README.md")
+                && start_marker.contains("INTEGRATION_COVERAGE_START")
+            )
+        );
     }
 }

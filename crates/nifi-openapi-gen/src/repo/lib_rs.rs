@@ -127,7 +127,6 @@ pub fn emit_lib_rs_feature_flags(layout: &RepoLayout, versions: &[&str]) -> Vec<
     }]
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -140,12 +139,14 @@ mod tests {
         let layout = RepoLayout::from_workspace_root(Path::new("/fake"));
         let edits = emit_lib_rs_feature_flags(&layout, &["2.7.2", "2.8.0"]);
         assert_eq!(edits.len(), 1);
-        assert!(matches!(&edits[0], FileEdit::ReplaceBlock { path, start_marker, content, .. }
-            if *path == Path::new("/fake/crates/nifi-rust-client/src/lib.rs")
-            && start_marker.contains("NIFI_FEATURE_FLAGS_START")
-            && content.contains("nifi-2-7-2")
-            && content.contains("nifi-2-8-0")
-        ));
+        assert!(
+            matches!(&edits[0], FileEdit::ReplaceBlock { path, start_marker, content, .. }
+                if *path == Path::new("/fake/crates/nifi-rust-client/src/lib.rs")
+                && start_marker.contains("NIFI_FEATURE_FLAGS_START")
+                && content.contains("nifi-2-7-2")
+                && content.contains("nifi-2-8-0")
+            )
+        );
     }
 
     #[test]

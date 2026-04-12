@@ -27,7 +27,6 @@ pub fn replace_image_tag_default(content: &str, latest: &str) -> String {
     content.to_string()
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;

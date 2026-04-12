@@ -294,11 +294,13 @@ mod tests {
         let layout = RepoLayout::from_workspace_root(Path::new("/fake"));
         let edits = emit_api_changes(&layout, &[]);
         assert_eq!(edits.len(), 1);
-        assert!(matches!(&edits[0], FileEdit::CreateOrReplaceBlock { path, start_marker, template, .. }
-            if *path == Path::new("/fake/NIFI_API_CHANGES.md")
-            && start_marker.contains("NIFI_API_CHANGES_START")
-            && template.contains("# NiFi API Changes")
-        ));
+        assert!(
+            matches!(&edits[0], FileEdit::CreateOrReplaceBlock { path, start_marker, template, .. }
+                if *path == Path::new("/fake/NIFI_API_CHANGES.md")
+                && start_marker.contains("NIFI_API_CHANGES_START")
+                && template.contains("# NiFi API Changes")
+            )
+        );
     }
 
     #[test]

@@ -12,10 +12,7 @@ pub enum FileEdit {
         content: String,
     },
     /// Overwrite the entire file.
-    Overwrite {
-        path: PathBuf,
-        content: String,
-    },
+    Overwrite { path: PathBuf, content: String },
     /// Create the file from a template if missing, then replace a marker block.
     CreateOrReplaceBlock {
         path: PathBuf,
@@ -38,10 +35,21 @@ impl FileEdit {
 
 #[derive(Debug)]
 pub enum PlanError {
-    FileNotFound { path: PathBuf },
-    MarkerNotFound { path: PathBuf, marker: String },
-    DuplicateTarget { path: PathBuf, marker: String },
-    IoError { path: PathBuf, source: std::io::Error },
+    FileNotFound {
+        path: PathBuf,
+    },
+    MarkerNotFound {
+        path: PathBuf,
+        marker: String,
+    },
+    DuplicateTarget {
+        path: PathBuf,
+        marker: String,
+    },
+    IoError {
+        path: PathBuf,
+        source: std::io::Error,
+    },
 }
 
 impl std::fmt::Display for PlanError {
@@ -52,7 +60,12 @@ impl std::fmt::Display for PlanError {
                 write!(f, "marker '{}' not found in {}", marker, path.display())
             }
             Self::DuplicateTarget { path, marker } => {
-                write!(f, "duplicate write to marker '{}' in {}", marker, path.display())
+                write!(
+                    f,
+                    "duplicate write to marker '{}' in {}",
+                    marker,
+                    path.display()
+                )
             }
             Self::IoError { path, source } => {
                 write!(f, "I/O error on {}: {}", path.display(), source)
@@ -97,7 +110,11 @@ impl std::fmt::Display for CheckReport {
         for entry in &self.drifted {
             writeln!(f, "DRIFT {}", entry.path.display())?;
             let total = entry.diff_lines.len();
-            let show = if f.alternate() { total } else { total.min(TRUNCATE_AT) };
+            let show = if f.alternate() {
+                total
+            } else {
+                total.min(TRUNCATE_AT)
+            };
             for line in &entry.diff_lines[..show] {
                 writeln!(f, "  {line}")?;
             }
@@ -172,7 +189,10 @@ impl MutationPlan {
                     }
                 }
                 FileEdit::ReplaceBlock {
-                    path, start_marker, end_marker, ..
+                    path,
+                    start_marker,
+                    end_marker,
+                    ..
                 } => {
                     if !path.exists() {
                         errors.push(PlanError::FileNotFound { path: path.clone() });
@@ -181,29 +201,48 @@ impl MutationPlan {
                     let content = match std::fs::read_to_string(path) {
                         Ok(c) => c,
                         Err(e) => {
-                            errors.push(PlanError::IoError { path: path.clone(), source: e });
+                            errors.push(PlanError::IoError {
+                                path: path.clone(),
+                                source: e,
+                            });
                             continue;
                         }
                     };
                     if !content.contains(start_marker.as_str()) {
-                        errors.push(PlanError::MarkerNotFound { path: path.clone(), marker: start_marker.clone() });
+                        errors.push(PlanError::MarkerNotFound {
+                            path: path.clone(),
+                            marker: start_marker.clone(),
+                        });
                     }
                     if !content.contains(end_marker.as_str()) {
-                        errors.push(PlanError::MarkerNotFound { path: path.clone(), marker: end_marker.clone() });
+                        errors.push(PlanError::MarkerNotFound {
+                            path: path.clone(),
+                            marker: end_marker.clone(),
+                        });
                     }
                     let key = (path.clone(), start_marker.clone());
                     if !seen_targets.insert(key) {
-                        errors.push(PlanError::DuplicateTarget { path: path.clone(), marker: start_marker.clone() });
+                        errors.push(PlanError::DuplicateTarget {
+                            path: path.clone(),
+                            marker: start_marker.clone(),
+                        });
                     }
                 }
                 FileEdit::CreateOrReplaceBlock {
-                    path, start_marker, end_marker, template, ..
+                    path,
+                    start_marker,
+                    end_marker,
+                    template,
+                    ..
                 } => {
                     let content = if path.exists() {
                         match std::fs::read_to_string(path) {
                             Ok(c) => c,
                             Err(e) => {
-                                errors.push(PlanError::IoError { path: path.clone(), source: e });
+                                errors.push(PlanError::IoError {
+                                    path: path.clone(),
+                                    source: e,
+                                });
                                 continue;
                             }
                         }
@@ -211,20 +250,33 @@ impl MutationPlan {
                         template.clone()
                     };
                     if !content.contains(start_marker.as_str()) {
-                        errors.push(PlanError::MarkerNotFound { path: path.clone(), marker: start_marker.clone() });
+                        errors.push(PlanError::MarkerNotFound {
+                            path: path.clone(),
+                            marker: start_marker.clone(),
+                        });
                     }
                     if !content.contains(end_marker.as_str()) {
-                        errors.push(PlanError::MarkerNotFound { path: path.clone(), marker: end_marker.clone() });
+                        errors.push(PlanError::MarkerNotFound {
+                            path: path.clone(),
+                            marker: end_marker.clone(),
+                        });
                     }
                     let key = (path.clone(), start_marker.clone());
                     if !seen_targets.insert(key) {
-                        errors.push(PlanError::DuplicateTarget { path: path.clone(), marker: start_marker.clone() });
+                        errors.push(PlanError::DuplicateTarget {
+                            path: path.clone(),
+                            marker: start_marker.clone(),
+                        });
                     }
                 }
             }
         }
 
-        if errors.is_empty() { Ok(()) } else { Err(errors) }
+        if errors.is_empty() {
+            Ok(())
+        } else {
+            Err(errors)
+        }
     }
 
     /// Validate, then diff the plan against disk without writing.
@@ -242,26 +294,53 @@ impl MutationPlan {
                     let on_disk = std::fs::read_to_string(path).unwrap_or_default();
                     (on_disk, content.clone())
                 }
-                FileEdit::ReplaceBlock { path, start_marker, end_marker, content } => {
+                FileEdit::ReplaceBlock {
+                    path,
+                    start_marker,
+                    end_marker,
+                    content,
+                } => {
                     let on_disk = std::fs::read_to_string(path).map_err(|e| {
-                        vec![PlanError::IoError { path: path.clone(), source: e }]
+                        vec![PlanError::IoError {
+                            path: path.clone(),
+                            source: e,
+                        }]
                     })?;
                     let planned = crate::util::replace_between_markers(
-                        &on_disk, start_marker, end_marker, content,
+                        &on_disk,
+                        start_marker,
+                        end_marker,
+                        content,
                     );
                     (on_disk, planned)
                 }
-                FileEdit::CreateOrReplaceBlock { path, start_marker, end_marker, content, template } => {
+                FileEdit::CreateOrReplaceBlock {
+                    path,
+                    start_marker,
+                    end_marker,
+                    content,
+                    template,
+                } => {
                     let on_disk = if path.exists() {
                         std::fs::read_to_string(path).map_err(|e| {
-                            vec![PlanError::IoError { path: path.clone(), source: e }]
+                            vec![PlanError::IoError {
+                                path: path.clone(),
+                                source: e,
+                            }]
                         })?
                     } else {
                         String::new()
                     };
-                    let base = if path.exists() { &on_disk } else { template.as_str() };
+                    let base = if path.exists() {
+                        &on_disk
+                    } else {
+                        template.as_str()
+                    };
                     let planned = crate::util::replace_between_markers(
-                        base, start_marker, end_marker, content,
+                        base,
+                        start_marker,
+                        end_marker,
+                        content,
                     );
                     (on_disk, planned)
                 }
@@ -294,47 +373,86 @@ impl MutationPlan {
                         report.unchanged += 1;
                     } else {
                         std::fs::write(path, content).map_err(|e| {
-                            vec![PlanError::IoError { path: path.clone(), source: e }]
+                            vec![PlanError::IoError {
+                                path: path.clone(),
+                                source: e,
+                            }]
                         })?;
                         println!("  wrote {}", path.display());
                         report.written += 1;
                     }
                 }
-                FileEdit::ReplaceBlock { path, start_marker, end_marker, content } => {
+                FileEdit::ReplaceBlock {
+                    path,
+                    start_marker,
+                    end_marker,
+                    content,
+                } => {
                     let on_disk = std::fs::read_to_string(path).map_err(|e| {
-                        vec![PlanError::IoError { path: path.clone(), source: e }]
+                        vec![PlanError::IoError {
+                            path: path.clone(),
+                            source: e,
+                        }]
                     })?;
-                    let patched = crate::util::replace_between_markers(&on_disk, start_marker, end_marker, content);
+                    let patched = crate::util::replace_between_markers(
+                        &on_disk,
+                        start_marker,
+                        end_marker,
+                        content,
+                    );
                     if on_disk == patched {
                         report.unchanged += 1;
                     } else {
                         std::fs::write(path, &patched).map_err(|e| {
-                            vec![PlanError::IoError { path: path.clone(), source: e }]
+                            vec![PlanError::IoError {
+                                path: path.clone(),
+                                source: e,
+                            }]
                         })?;
                         println!("  wrote {}", path.display());
                         report.written += 1;
                     }
                 }
-                FileEdit::CreateOrReplaceBlock { path, start_marker, end_marker, content, template } => {
+                FileEdit::CreateOrReplaceBlock {
+                    path,
+                    start_marker,
+                    end_marker,
+                    content,
+                    template,
+                } => {
                     let on_disk = if path.exists() {
                         std::fs::read_to_string(path).map_err(|e| {
-                            vec![PlanError::IoError { path: path.clone(), source: e }]
+                            vec![PlanError::IoError {
+                                path: path.clone(),
+                                source: e,
+                            }]
                         })?
                     } else {
                         if let Some(parent) = path.parent() {
                             std::fs::create_dir_all(parent).map_err(|e| {
-                                vec![PlanError::IoError { path: path.clone(), source: e }]
+                                vec![PlanError::IoError {
+                                    path: path.clone(),
+                                    source: e,
+                                }]
                             })?;
                         }
                         println!("  created {}", path.display());
                         template.clone()
                     };
-                    let patched = crate::util::replace_between_markers(&on_disk, start_marker, end_marker, content);
+                    let patched = crate::util::replace_between_markers(
+                        &on_disk,
+                        start_marker,
+                        end_marker,
+                        content,
+                    );
                     if on_disk == patched && path.exists() {
                         report.unchanged += 1;
                     } else {
                         std::fs::write(path, &patched).map_err(|e| {
-                            vec![PlanError::IoError { path: path.clone(), source: e }]
+                            vec![PlanError::IoError {
+                                path: path.clone(),
+                                source: e,
+                            }]
                         })?;
                         if on_disk != patched {
                             println!("  wrote {}", path.display());
@@ -399,7 +517,11 @@ mod tests {
             }],
         };
         let errors = plan.validate().unwrap_err();
-        assert!(errors.iter().any(|e| matches!(e, PlanError::MarkerNotFound { .. })));
+        assert!(
+            errors
+                .iter()
+                .any(|e| matches!(e, PlanError::MarkerNotFound { .. }))
+        );
     }
 
     #[test]
@@ -423,7 +545,11 @@ mod tests {
             ],
         };
         let errors = plan.validate().unwrap_err();
-        assert!(errors.iter().any(|e| matches!(e, PlanError::DuplicateTarget { .. })));
+        assert!(
+            errors
+                .iter()
+                .any(|e| matches!(e, PlanError::DuplicateTarget { .. }))
+        );
     }
 
     #[test]
@@ -531,8 +657,14 @@ mod tests {
 
     #[test]
     fn check_truncates_diff_when_not_verbose() {
-        let old_lines = (0..20).map(|i| format!("line{i}")).collect::<Vec<_>>().join("\n");
-        let new_lines = (0..20).map(|i| format!("changed{i}")).collect::<Vec<_>>().join("\n");
+        let old_lines = (0..20)
+            .map(|i| format!("line{i}"))
+            .collect::<Vec<_>>()
+            .join("\n");
+        let new_lines = (0..20)
+            .map(|i| format!("changed{i}"))
+            .collect::<Vec<_>>()
+            .join("\n");
         let file_content = format!("<!-- S -->\n{old_lines}\n<!-- E -->");
         let f = tmp_file(&file_content);
         let plan = MutationPlan {

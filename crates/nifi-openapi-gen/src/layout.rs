@@ -51,12 +51,33 @@ mod tests {
     fn discover_resolves_all_paths_from_workspace_root() {
         let layout = RepoLayout::from_workspace_root(Path::new("/fake/workspace"));
         assert_eq!(layout.workspace_root, Path::new("/fake/workspace"));
-        assert_eq!(layout.client_cargo_toml, Path::new("/fake/workspace/crates/nifi-rust-client/Cargo.toml"));
-        assert_eq!(layout.tests_cargo_toml, Path::new("/fake/workspace/tests/Cargo.toml"));
-        assert_eq!(layout.workspace_readme, Path::new("/fake/workspace/README.md"));
-        assert_eq!(layout.client_readme, Path::new("/fake/workspace/crates/nifi-rust-client/README.md"));
-        assert_eq!(layout.client_lib_rs, Path::new("/fake/workspace/crates/nifi-rust-client/src/lib.rs"));
-        assert_eq!(layout.docker_compose, Path::new("/fake/workspace/tests/docker-compose.yml"));
-        assert_eq!(layout.api_changes_md, Path::new("/fake/workspace/NIFI_API_CHANGES.md"));
+        assert_eq!(
+            layout.client_cargo_toml,
+            Path::new("/fake/workspace/crates/nifi-rust-client/Cargo.toml")
+        );
+        assert_eq!(
+            layout.tests_cargo_toml,
+            Path::new("/fake/workspace/tests/Cargo.toml")
+        );
+        assert_eq!(
+            layout.workspace_readme,
+            Path::new("/fake/workspace/README.md")
+        );
+        assert_eq!(
+            layout.client_readme,
+            Path::new("/fake/workspace/crates/nifi-rust-client/README.md")
+        );
+        assert_eq!(
+            layout.client_lib_rs,
+            Path::new("/fake/workspace/crates/nifi-rust-client/src/lib.rs")
+        );
+        assert_eq!(
+            layout.docker_compose,
+            Path::new("/fake/workspace/tests/docker-compose.yml")
+        );
+        assert_eq!(
+            layout.api_changes_md,
+            Path::new("/fake/workspace/NIFI_API_CHANGES.md")
+        );
     }
 }

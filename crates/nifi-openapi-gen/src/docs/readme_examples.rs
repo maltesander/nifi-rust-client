@@ -38,7 +38,6 @@ pub fn emit_client_readme_examples(
     ]
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;

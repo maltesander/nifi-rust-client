@@ -55,10 +55,7 @@ pub fn generate_versions_table_content(all_specs: &[(String, ApiSpec)]) -> Strin
     rows.join("\n")
 }
 
-pub fn emit_versions_table(
-    layout: &RepoLayout,
-    all_specs: &[(String, ApiSpec)],
-) -> Vec<FileEdit> {
+pub fn emit_versions_table(layout: &RepoLayout, all_specs: &[(String, ApiSpec)]) -> Vec<FileEdit> {
     let content = generate_versions_table_content(all_specs);
     vec![
         FileEdit::ReplaceBlock {
@@ -89,10 +86,12 @@ mod tests {
         let layout = RepoLayout::from_workspace_root(Path::new("/fake"));
         let edits = emit_versions_table(&layout, &[]);
         assert_eq!(edits.len(), 2);
-        assert!(matches!(&edits[0], FileEdit::ReplaceBlock { path, start_marker, .. }
-            if *path == Path::new("/fake/README.md")
-            && start_marker.contains("SUPPORTED_VERSIONS_START")
-        ));
+        assert!(
+            matches!(&edits[0], FileEdit::ReplaceBlock { path, start_marker, .. }
+                if *path == Path::new("/fake/README.md")
+                && start_marker.contains("SUPPORTED_VERSIONS_START")
+            )
+        );
         assert!(matches!(&edits[1], FileEdit::ReplaceBlock { path, .. }
             if *path == Path::new("/fake/crates/nifi-rust-client/README.md")
         ));

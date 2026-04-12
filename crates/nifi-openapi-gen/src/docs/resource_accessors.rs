@@ -124,8 +124,8 @@ pub fn emit_resource_accessors(
 mod tests {
     use super::*;
     use crate::layout::RepoLayout;
-    use crate::plan::FileEdit;
     use crate::parser::{Endpoint, HttpMethod, SubGroup, TagGroup};
+    use crate::plan::FileEdit;
     use std::path::Path;
 
     #[test]
@@ -133,10 +133,12 @@ mod tests {
         let layout = RepoLayout::from_workspace_root(Path::new("/fake"));
         let edits = emit_resource_accessors(&layout, &[]);
         assert_eq!(edits.len(), 1);
-        assert!(matches!(&edits[0], FileEdit::ReplaceBlock { path, start_marker, .. }
-            if *path == Path::new("/fake/crates/nifi-rust-client/README.md")
-            && start_marker.contains("RESOURCE_ACCESSORS_START")
-        ));
+        assert!(
+            matches!(&edits[0], FileEdit::ReplaceBlock { path, start_marker, .. }
+                if *path == Path::new("/fake/crates/nifi-rust-client/README.md")
+                && start_marker.contains("RESOURCE_ACCESSORS_START")
+            )
+        );
     }
 
     fn make_endpoint(name: &str) -> Endpoint {

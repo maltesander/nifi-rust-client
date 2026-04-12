@@ -104,7 +104,6 @@ pub fn emit_cargo_features_tests(
     }]
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
