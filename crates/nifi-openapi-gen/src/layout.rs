@@ -12,6 +12,10 @@ pub struct RepoLayout {
     pub client_lib_rs: PathBuf,
     pub docker_compose: PathBuf,
     pub api_changes_md: PathBuf,
+    /// Absolute path to `crates/nifi-openapi-gen/specs`. Used by emitters
+    /// that write per-version artifacts (e.g. fn_names goldens) alongside
+    /// the committed spec files.
+    pub specs_dir: PathBuf,
 }
 
 impl RepoLayout {
@@ -27,6 +31,7 @@ impl RepoLayout {
             client_lib_rs: client.join("src/lib.rs"),
             docker_compose: root.join("tests/docker-compose.yml"),
             api_changes_md: root.join("NIFI_API_CHANGES.md"),
+            specs_dir: root.join("crates/nifi-openapi-gen/specs"),
         }
     }
 
@@ -78,6 +83,10 @@ mod tests {
         assert_eq!(
             layout.api_changes_md,
             Path::new("/fake/workspace/NIFI_API_CHANGES.md")
+        );
+        assert_eq!(
+            layout.specs_dir,
+            Path::new("/fake/workspace/crates/nifi-openapi-gen/specs")
         );
     }
 }
