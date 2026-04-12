@@ -86,7 +86,7 @@ async fn clear_input_port_bulletins_returns_cleared_count() {
     let result = client
         .inputports_api()
         .bulletins("some-id")
-        .clear_bulletins_2(&body)
+        .clear_bulletins(&body)
         .await;
 
     assert!(

@@ -125,7 +125,7 @@ async fn clear_processor_bulletins_returns_cleared_count() {
     let result = client
         .processors_api()
         .bulletins("some-id")
-        .clear_bulletins_5(&body)
+        .clear_bulletins(&body)
         .await;
 
     assert!(

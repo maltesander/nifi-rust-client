@@ -194,7 +194,7 @@ async fn get_state_returns_component_state() {
     let state = client
         .parameterproviders_api()
         .state("pp-1")
-        .get_state_1()
+        .get_state()
         .await
         .unwrap();
 
@@ -228,7 +228,7 @@ async fn clear_state_returns_component_state() {
     let state = client
         .parameterproviders_api()
         .state("pp-1")
-        .clear_state_2(&body)
+        .clear_state(&body)
         .await
         .unwrap();
 
@@ -261,7 +261,7 @@ async fn get_property_descriptor_returns_display_name() {
     let descriptor = client
         .parameterproviders_api()
         .descriptors("pp-1")
-        .get_property_descriptor_2("Directory")
+        .get_property_descriptor("Directory")
         .await
         .unwrap();
 
@@ -297,7 +297,7 @@ async fn analyze_configuration_returns_dto() {
     let analysis = client
         .parameterproviders_api()
         .config("pp-1")
-        .analyze_configuration_1(&body)
+        .analyze_configuration(&body)
         .await
         .unwrap();
 
@@ -332,7 +332,7 @@ async fn submit_config_verification_request_returns_dto() {
     let req = client
         .parameterproviders_api()
         .config("pp-1")
-        .submit_config_verification_request_1(&body)
+        .submit_config_verification_request(&body)
         .await
         .unwrap();
 
@@ -366,7 +366,7 @@ async fn get_verification_request_returns_dto() {
     let req = client
         .parameterproviders_api()
         .config("pp-1")
-        .get_verification_request_1("vr-1")
+        .get_verification_request("vr-1")
         .await
         .unwrap();
 
@@ -401,7 +401,7 @@ async fn delete_verification_request_returns_dto() {
     let req = client
         .parameterproviders_api()
         .config("pp-1")
-        .delete_verification_request_1("vr-1")
+        .delete_verification_request("vr-1")
         .await
         .unwrap();
 
@@ -579,7 +579,7 @@ async fn clear_bulletins_returns_result_entity() {
     let result = client
         .parameterproviders_api()
         .bulletins("pp-1")
-        .clear_bulletins_4(&body)
+        .clear_bulletins(&body)
         .await
         .unwrap();
 

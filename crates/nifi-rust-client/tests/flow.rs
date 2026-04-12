@@ -226,9 +226,6 @@ async fn get_flow_returns_process_group_id() {
         .unwrap()
         .build()
         .unwrap();
-    #[cfg(feature = "nifi-2-9-0")]
-    let entity = client.flow_api().get_flow_1("root", None).await.unwrap();
-    #[cfg(not(feature = "nifi-2-9-0"))]
     let entity = client.flow_api().get_flow("root", None).await.unwrap();
 
     assert_eq!(
@@ -310,7 +307,7 @@ async fn clear_process_group_bulletins_returns_cleared_count() {
     let result = client
         .flow_api()
         .bulletins("some-id")
-        .clear_bulletins_1(&body)
+        .clear_bulletins(&body)
         .await;
 
     assert!(

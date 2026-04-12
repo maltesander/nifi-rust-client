@@ -68,7 +68,7 @@ async fn clear_remote_process_group_bulletins_returns_cleared_count() {
     let result = client
         .remoteprocessgroups_api()
         .bulletins("some-id")
-        .clear_bulletins_6(&body)
+        .clear_bulletins(&body)
         .await;
 
     assert!(

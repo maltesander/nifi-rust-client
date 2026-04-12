@@ -63,7 +63,7 @@ async fn clear_reporting_task_bulletins_returns_cleared_count() {
     let result = client
         .reportingtasks_api()
         .bulletins("some-id")
-        .clear_bulletins_7(&body)
+        .clear_bulletins(&body)
         .await;
 
     assert!(
