@@ -113,6 +113,23 @@ where
             Ok(Some(page.actions))
         }
     }
+
+    /// Yield the next action, buffering pages internally.
+    ///
+    /// Returns `Ok(None)` once the history is exhausted. Each
+    /// underlying page is fetched lazily on demand via
+    /// [`next_page`](Self::next_page).
+    pub async fn next(&mut self) -> Result<Option<ActionEntity>, NifiError> {
+        loop {
+            if let Some(item) = self.buffer.pop_front() {
+                return Ok(Some(item));
+            }
+            match self.next_page().await? {
+                Some(page) => self.buffer.extend(page),
+                None => return Ok(None),
+            }
+        }
+    }
 }
 
 #[cfg(test)]
@@ -275,5 +292,19 @@ mod tests {
             assert!(pages < 25_000_000, "paginator failed to terminate");
         }
         // Not asserting an exact page count — only that it terminated.
+    }
+
+    #[tokio::test]
+    async fn item_next_buffers_pages_and_yields_all() {
+        let (fetch, calls) = fake_fetcher(5);
+        let mut pag = HistoryPaginator::from_fetcher(fetch, 2);
+
+        let mut ids = Vec::new();
+        while let Some(action) = pag.next().await.unwrap() {
+            ids.push(action.id.unwrap());
+        }
+        assert_eq!(ids, vec![0, 1, 2, 3, 4]);
+        // 5 items at page_size=2 → pages of 2/2/1 → 3 fetches.
+        assert_eq!(calls.load(std::sync::atomic::Ordering::SeqCst), 3);
     }
 }
