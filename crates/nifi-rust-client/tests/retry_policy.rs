@@ -1,9 +1,8 @@
 #![cfg(not(feature = "dynamic"))]
-#![allow(deprecated)]
 
 use std::time::Duration;
 
-use nifi_rust_client::config::credentials::StaticCredentials;
+use nifi_rust_client::config::auth::PasswordAuth;
 use nifi_rust_client::config::retry::RetryPolicy;
 use nifi_rust_client::{NifiClientBuilder, NifiError};
 use wiremock::matchers::{method, path};
@@ -186,7 +185,7 @@ async fn retry_composes_with_auth_refresh() {
 
     let client = NifiClientBuilder::new(&mock_server.uri())
         .unwrap()
-        .credential_provider(StaticCredentials::new("admin", "password"))
+        .auth_provider(PasswordAuth::new("admin", "password"))
         .retry_policy(fast_policy())
         .build()
         .unwrap();

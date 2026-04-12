@@ -1,7 +1,6 @@
 #![cfg(not(feature = "dynamic"))]
-#![allow(deprecated)]
 
-use nifi_rust_client::config::credentials::StaticCredentials;
+use nifi_rust_client::config::auth::PasswordAuth;
 use nifi_rust_client::{NifiClientBuilder, NifiError};
 use wiremock::matchers::{method, path};
 use wiremock::{Mock, MockServer, ResponseTemplate};
@@ -49,7 +48,7 @@ async fn auto_refreshes_token_on_401() {
 
     let client = NifiClientBuilder::new(&mock_server.uri())
         .unwrap()
-        .credential_provider(StaticCredentials::new("admin", "password"))
+        .auth_provider(PasswordAuth::new("admin", "password"))
         .build()
         .unwrap();
 
@@ -64,10 +63,10 @@ async fn auto_refreshes_token_on_401() {
     assert_eq!(client.token().await.as_deref(), Some("fresh-jwt-token"));
 }
 
-// -- no retry without credential provider ─────────────────────────────────────
+// -- no retry without auth provider ──────────────────────────────────────────
 
 #[tokio::test]
-async fn no_retry_without_credential_provider() {
+async fn no_retry_without_auth_provider() {
     let mock_server = MockServer::start().await;
 
     Mock::given(method("GET"))
@@ -84,7 +83,7 @@ async fn no_retry_without_credential_provider() {
 
     client.set_token("expired-jwt".to_string()).await;
 
-    // Without a credential provider, the 401 should propagate immediately.
+    // Without an auth provider, the 401 should propagate immediately.
     let err = client.flow_api().get_about_info().await.unwrap_err();
     assert!(
         matches!(err, NifiError::Unauthorized { .. }),
@@ -102,7 +101,7 @@ async fn no_infinite_loop_when_refresh_fails() {
     Mock::given(method("GET"))
         .and(path("/nifi-api/flow/about"))
         .respond_with(ResponseTemplate::new(401).set_body_string("Token expired"))
-        .expect(1) // only once: login_with_provider fails, so no retry of the original call
+        .expect(1) // only once: authenticate fails, so no retry of the original call
         .mount(&mock_server)
         .await;
 
@@ -116,7 +115,7 @@ async fn no_infinite_loop_when_refresh_fails() {
 
     let client = NifiClientBuilder::new(&mock_server.uri())
         .unwrap()
-        .credential_provider(StaticCredentials::new("admin", "wrong-password"))
+        .auth_provider(PasswordAuth::new("admin", "wrong-password"))
         .build()
         .unwrap();
 
@@ -133,7 +132,6 @@ async fn no_infinite_loop_when_refresh_fails() {
 // -- authenticate uses auth provider ──────────────────────────────────────────
 
 #[tokio::test]
-#[allow(deprecated)]
 async fn authenticate_uses_auth_provider() {
     let mock_server = MockServer::start().await;
 
@@ -146,7 +144,7 @@ async fn authenticate_uses_auth_provider() {
 
     let client = NifiClientBuilder::new(&mock_server.uri())
         .unwrap()
-        .credential_provider(StaticCredentials::new("admin", "secret"))
+        .auth_provider(PasswordAuth::new("admin", "secret"))
         .build()
         .unwrap();
 
