@@ -35,8 +35,9 @@ crates/
       client.rs           # Hand-written: NifiClient struct and HTTP helpers
       builder.rs          # Hand-written: NifiClientBuilder
       error.rs            # Hand-written: NifiError via snafu
-      credentials.rs      # Hand-written: CredentialProvider
-      retry.rs            # Hand-written: retry logic
+      config/
+        credentials.rs    # Hand-written: CredentialProvider
+        retry.rs          # Hand-written: retry logic
       dynamic/
         strategy.rs       # Hand-written: VersionResolutionStrategy
       # Generated at build time into $OUT_DIR (not tracked in git):
