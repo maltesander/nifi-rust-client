@@ -3,9 +3,9 @@
 // ---------------------------------------------------------------------------
 #[cfg(not(feature = "dynamic"))]
 mod static_tests {
-    use nifi_rust_client::pagination::{flow_history, HistoryFilter};
     use nifi_rust_client::NifiClientBuilder;
     use nifi_rust_client::NifiError;
+    use nifi_rust_client::pagination::{HistoryFilter, flow_history};
     use wiremock::matchers::{method, path, query_param};
     use wiremock::{Mock, MockServer, ResponseTemplate};
 
@@ -38,9 +38,7 @@ mod static_tests {
             .and(path("/nifi-api/flow/history"))
             .and(query_param("offset", "0"))
             .and(query_param("count", "100"))
-            .respond_with(
-                ResponseTemplate::new(200).set_body_json(history_response(0, 100, 250)),
-            )
+            .respond_with(ResponseTemplate::new(200).set_body_json(history_response(0, 100, 250)))
             .mount(&mock)
             .await;
 
@@ -49,9 +47,7 @@ mod static_tests {
             .and(path("/nifi-api/flow/history"))
             .and(query_param("offset", "100"))
             .and(query_param("count", "100"))
-            .respond_with(
-                ResponseTemplate::new(200).set_body_json(history_response(100, 100, 250)),
-            )
+            .respond_with(ResponseTemplate::new(200).set_body_json(history_response(100, 100, 250)))
             .mount(&mock)
             .await;
 
@@ -60,9 +56,7 @@ mod static_tests {
             .and(path("/nifi-api/flow/history"))
             .and(query_param("offset", "200"))
             .and(query_param("count", "100"))
-            .respond_with(
-                ResponseTemplate::new(200).set_body_json(history_response(200, 100, 250)),
-            )
+            .respond_with(ResponseTemplate::new(200).set_body_json(history_response(200, 100, 250)))
             .mount(&mock)
             .await;
 
@@ -92,9 +86,7 @@ mod static_tests {
             .and(path("/nifi-api/flow/history"))
             .and(query_param("offset", "0"))
             .and(query_param("count", "100"))
-            .respond_with(
-                ResponseTemplate::new(200).set_body_json(history_response(0, 100, 250)),
-            )
+            .respond_with(ResponseTemplate::new(200).set_body_json(history_response(0, 100, 250)))
             .mount(&mock)
             .await;
 
@@ -132,13 +124,14 @@ mod static_tests {
 // ---------------------------------------------------------------------------
 #[cfg(feature = "dynamic")]
 mod dynamic_tests {
-    use nifi_rust_client::pagination::{flow_history_dynamic, HistoryFilter};
     use nifi_rust_client::NifiClientBuilder;
     use nifi_rust_client::NifiError;
+    use nifi_rust_client::pagination::{HistoryFilter, flow_history_dynamic};
     use wiremock::matchers::{method, path, query_param};
     use wiremock::{Mock, MockServer, ResponseTemplate};
 
     /// Mount the `/flow/about` mock and build a `DynamicClient`.
+    #[allow(clippy::unwrap_used)]
     async fn dynamic_client_on(
         mock: &MockServer,
         version: &str,
@@ -189,9 +182,7 @@ mod dynamic_tests {
             .and(path("/nifi-api/flow/history"))
             .and(query_param("offset", "0"))
             .and(query_param("count", "100"))
-            .respond_with(
-                ResponseTemplate::new(200).set_body_json(history_response(0, 100, 250)),
-            )
+            .respond_with(ResponseTemplate::new(200).set_body_json(history_response(0, 100, 250)))
             .mount(&mock)
             .await;
 
@@ -200,9 +191,7 @@ mod dynamic_tests {
             .and(path("/nifi-api/flow/history"))
             .and(query_param("offset", "100"))
             .and(query_param("count", "100"))
-            .respond_with(
-                ResponseTemplate::new(200).set_body_json(history_response(100, 100, 250)),
-            )
+            .respond_with(ResponseTemplate::new(200).set_body_json(history_response(100, 100, 250)))
             .mount(&mock)
             .await;
 
@@ -211,9 +200,7 @@ mod dynamic_tests {
             .and(path("/nifi-api/flow/history"))
             .and(query_param("offset", "200"))
             .and(query_param("count", "100"))
-            .respond_with(
-                ResponseTemplate::new(200).set_body_json(history_response(200, 100, 250)),
-            )
+            .respond_with(ResponseTemplate::new(200).set_body_json(history_response(200, 100, 250)))
             .mount(&mock)
             .await;
 
@@ -239,14 +226,12 @@ mod dynamic_tests {
             .and(path("/nifi-api/flow/history"))
             .and(query_param("offset", "0"))
             .and(query_param("count", "100"))
-            .respond_with(
-                ResponseTemplate::new(200).set_body_json(serde_json::json!({
-                    "history": {
-                        "actions": null,
-                        "total": 10
-                    }
-                })),
-            )
+            .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+                "history": {
+                    "actions": null,
+                    "total": 10
+                }
+            })))
             .mount(&mock)
             .await;
 

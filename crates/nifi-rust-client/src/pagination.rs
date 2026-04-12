@@ -1,9 +1,10 @@
 //! Pagination helpers for NiFi REST endpoints.
 //!
-//! Currently provides [`HistoryPaginator`] for walking
+//! Currently provides `HistoryPaginator` for walking
 //! `GET /flow/history` one page (or one action) at a time. See
-//! [`flow_history`] for the static-mode constructor and
-//! [`flow_history_dynamic`] for the dynamic-mode constructor.
+//! `flow_history` for the static-mode constructor and
+//! `flow_history_dynamic` (requires `dynamic` feature) for the
+//! dynamic-mode constructor.
 //!
 //! The paginator is a thin state machine: one HTTP call per page,
 //! offset advanced by `page_size`, termination by any of
@@ -13,19 +14,20 @@
 
 use std::collections::VecDeque;
 
+#[cfg(feature = "dynamic")]
+use crate::dynamic::types::ActionEntity;
 use crate::error::NifiError;
 #[cfg(not(feature = "dynamic"))]
 use crate::types::ActionEntity;
-#[cfg(feature = "dynamic")]
-use crate::dynamic::types::ActionEntity;
 
 /// Boxed future returned by the fetch closures in this module.
 ///
 /// Using `Pin<Box<dyn Future>>` sidesteps chained-`impl Trait` lifetime
 /// issues in the constructor return types. One allocation per page —
 /// negligible against the HTTP round trip.
-type BoxedFetchFuture<'a> =
-    std::pin::Pin<Box<dyn core::future::Future<Output = Result<HistoryPage, NifiError>> + Send + 'a>>;
+type BoxedFetchFuture<'a> = std::pin::Pin<
+    Box<dyn core::future::Future<Output = Result<HistoryPage, NifiError>> + Send + 'a>,
+>;
 
 /// Filter criteria for `GET /flow/history`. All fields are optional;
 /// `HistoryFilter::default()` yields an unfiltered history query.
@@ -52,8 +54,8 @@ pub struct HistoryFilter {
 /// Shape returned by a page-fetch closure given to [`HistoryPaginator`].
 ///
 /// Exposed so advanced users can drive the paginator with their own
-/// closure for endpoints not covered by [`flow_history`] /
-/// [`flow_history_dynamic`].
+/// closure for endpoints not covered by `flow_history` /
+/// `flow_history_dynamic`.
 #[derive(Debug, Clone)]
 pub struct HistoryPage {
     /// Actions returned by the server for this page.
@@ -64,7 +66,7 @@ pub struct HistoryPage {
 
 /// Async iterator over pages of NiFi flow history actions.
 ///
-/// Created via [`flow_history`] or [`flow_history_dynamic`]. Each call
+/// Created via `flow_history` or `flow_history_dynamic`. Each call
 /// to [`next_page`](Self::next_page) issues one `GET /flow/history`
 /// request advancing `offset` by `page_size`. [`next`](Self::next)
 /// yields one item at a time, buffering the current page internally.
@@ -83,7 +85,7 @@ where
 {
     /// Construct a paginator directly from a fetch closure.
     ///
-    /// Most users call [`flow_history`] or [`flow_history_dynamic`]
+    /// Most users call `flow_history` or `flow_history_dynamic`
     /// instead, which build the closure for the NiFi history endpoint.
     /// Advanced callers can use this constructor to paginate their
     /// own endpoints that follow the same offset/count + total shape.
@@ -143,7 +145,7 @@ where
     }
 }
 
-/// Build a [`HistoryPaginator`] backed by a static-mode [`NifiClient`].
+/// Build a [`HistoryPaginator`] backed by a static-mode [`crate::NifiClient`].
 ///
 /// Each page is fetched by calling `client.flow_api().query_history(...)`
 /// with the provided `filter` and the current offset/page_size. Missing
@@ -205,7 +207,7 @@ pub fn flow_history<'a>(
 /// Build a [`HistoryPaginator`] backed by a dynamic-mode
 /// [`crate::dynamic::DynamicClient`].
 ///
-/// Same iteration semantics as [`flow_history`]. Missing `actions` /
+/// Same iteration semantics as `flow_history`. Missing `actions` /
 /// `total` fields in the response surface as
 /// [`NifiError::MissingField`] via the [`crate::require!`] macro.
 #[cfg(feature = "dynamic")]
@@ -276,7 +278,9 @@ mod tests {
             };
             let page = HistoryPage { actions, total };
             Box::pin(async move { Ok(page) })
-                as std::pin::Pin<Box<dyn core::future::Future<Output = Result<HistoryPage, NifiError>> + Send>>
+                as std::pin::Pin<
+                    Box<dyn core::future::Future<Output = Result<HistoryPage, NifiError>> + Send>,
+                >
         };
         (fetch, calls)
     }
@@ -360,7 +364,9 @@ mod tests {
                     })
                 }
             })
-                as std::pin::Pin<Box<dyn core::future::Future<Output = Result<HistoryPage, NifiError>> + Send>>
+                as std::pin::Pin<
+                    Box<dyn core::future::Future<Output = Result<HistoryPage, NifiError>> + Send>,
+                >
         };
         let mut pag = HistoryPaginator::from_fetcher(fetch, 100);
 
@@ -391,7 +397,9 @@ mod tests {
                     total: i32::MAX,
                 })
             })
-                as std::pin::Pin<Box<dyn core::future::Future<Output = Result<HistoryPage, NifiError>> + Send>>
+                as std::pin::Pin<
+                    Box<dyn core::future::Future<Output = Result<HistoryPage, NifiError>> + Send>,
+                >
         };
         let mut pag = HistoryPaginator::from_fetcher(fetch, count);
         // Walk a bounded number of pages; the paginator must terminate
