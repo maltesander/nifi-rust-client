@@ -148,3 +148,78 @@ fn collision_message(
     ));
     out
 }
+
+/// Drift-check map key: `(tag, method, path)`.
+type DriftKey = (String, String, String);
+
+/// Drift-check map value entry: `(version, fn_name, raw_operation_id)`.
+type DriftEntry = (String, String, String);
+
+/// Panic if the same `(tag, method, path)` triple resolves to different
+/// `fn_name`s in different versions. Strict across the entire supported
+/// version set — dynamic mode requires one canonical name per endpoint
+/// and does not allow intra-major drift.
+pub fn check_drift(all_parsed: &[(String, ApiSpec)]) {
+    // Map (tag, method, path) -> Vec<(version, fn_name, raw_op_id)>
+    let mut seen: HashMap<DriftKey, Vec<DriftEntry>> = HashMap::new();
+
+    for (version, spec) in all_parsed {
+        for tag in &spec.tags {
+            for ep in &tag.root_endpoints {
+                insert_drift_entry(&mut seen, version, &tag.tag, ep);
+            }
+            for sg in &tag.sub_groups {
+                for ep in &sg.endpoints {
+                    insert_drift_entry(&mut seen, version, &tag.tag, ep);
+                }
+            }
+        }
+    }
+
+    for ((tag, method, path), versions) in seen.iter() {
+        let first_name = &versions[0].1;
+        if versions.iter().any(|(_, name, _)| name != first_name) {
+            panic!("{}", drift_message(tag, method, path, versions));
+        }
+    }
+}
+
+fn insert_drift_entry(
+    map: &mut HashMap<DriftKey, Vec<DriftEntry>>,
+    version: &str,
+    tag: &str,
+    ep: &Endpoint,
+) {
+    map.entry((tag.to_string(), ep.method.as_str().to_string(), ep.path.clone()))
+        .or_default()
+        .push((
+            version.to_string(),
+            ep.fn_name.clone(),
+            ep.raw_operation_id.clone(),
+        ));
+}
+
+fn drift_message(tag: &str, method: &str, path: &str, versions: &[DriftEntry]) -> String {
+    let mut out = format!(
+        "nifi-openapi-gen: fn_name drift across versions\n\n\
+         The same endpoint (tag \"{tag}\") resolves to different Rust method \
+         names in different versions:\n\n\
+         \x20 {method} {path}\n\n"
+    );
+    for (version, fn_name, op_id) in versions {
+        out.push_str(&format!(
+            "    {version}: {fn_name}   (operationId: {op_id})\n"
+        ));
+    }
+    let (latest_version, latest_name, latest_op_id) =
+        versions.last().expect("at least one version");
+    out.push_str(&format!(
+        "\nDynamic mode requires one canonical name per endpoint. Either:\n\
+         \x20 1. Pin the older name by overriding {latest_version}'s operationId:\n\
+         \x20      m.insert((\"{latest_version}\", \"{latest_op_id}\"), \"<older_fn_name>\");\n\
+         \x20 2. Accept the rename: update the golden at \
+         specs/{latest_version}/fn_names.txt and note the breaking change \
+         in NIFI_API_CHANGES.md. Current new name: {latest_name}.\n"
+    ));
+    out
+}

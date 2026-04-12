@@ -187,3 +187,66 @@ fn collision_message_is_actionable() {
     assert!(msg.contains("updateFoo_2"), "got: {msg}");
     assert!(msg.contains("naming_overrides.rs"), "got: {msg}");
 }
+
+#[test]
+#[should_panic(expected = "fn_name drift across versions")]
+fn drift_across_versions_panics() {
+    let v1 = make_spec(
+        "Foo",
+        vec![make_endpoint(
+            HttpMethod::Put,
+            "/foo",
+            "update_run_status",
+            "updateRunStatus_2",
+        )],
+    );
+    let v2 = make_spec(
+        "Foo",
+        vec![make_endpoint(
+            HttpMethod::Put,
+            "/foo",
+            "set_run_status",
+            "setRunStatus_2",
+        )],
+    );
+    let specs = vec![("2.8.0".to_string(), v1), ("2.9.0".to_string(), v2)];
+    naming::check_drift(&specs);
+}
+
+#[test]
+fn no_drift_when_all_versions_agree() {
+    let v1 = make_spec(
+        "Foo",
+        vec![make_endpoint(
+            HttpMethod::Put,
+            "/foo",
+            "update_run_status",
+            "updateRunStatus_2",
+        )],
+    );
+    let v2 = make_spec(
+        "Foo",
+        vec![make_endpoint(
+            HttpMethod::Put,
+            "/foo",
+            "update_run_status",
+            "updateRunStatus_2",
+        )],
+    );
+    let specs = vec![("2.8.0".to_string(), v1), ("2.9.0".to_string(), v2)];
+    naming::check_drift(&specs); // must not panic
+}
+
+#[test]
+fn no_drift_when_endpoint_only_exists_in_one_version() {
+    let v1 = make_spec(
+        "Foo",
+        vec![make_endpoint(HttpMethod::Put, "/foo", "update", "updateFoo")],
+    );
+    let v2 = make_spec(
+        "Foo",
+        vec![make_endpoint(HttpMethod::Put, "/bar", "update", "updateBar")],
+    );
+    let specs = vec![("2.8.0".to_string(), v1), ("2.9.0".to_string(), v2)];
+    naming::check_drift(&specs); // must not panic — different paths are different endpoints
+}
