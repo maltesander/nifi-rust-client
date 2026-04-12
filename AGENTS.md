@@ -87,6 +87,16 @@ Resource struct methods (e.g. `FlowApi::about`) that delegate to a generic helpe
 own `tracing::debug!` call — the helper already emits it. Only methods that send requests directly
 (bypassing the helpers) need their own debug line.
 
+#### Pagination helpers
+
+Hand-written pagination helpers live in
+`crates/nifi-rust-client/src/pagination.rs`. Currently provides
+`HistoryPaginator` for `GET /flow/history` (offset/count paging) with
+two constructors: `flow_history(&NifiClient, ...)` for static mode and
+`flow_history_dynamic(&DynamicClient, ...)` for dynamic mode (gated on
+`#[cfg(feature = "dynamic")]`). Additional paged endpoints follow the
+same pattern — a new constructor in the same file, no generator work.
+
 ### Resource Struct Pattern
 
 The API surface is split into resource structs mirroring NiFi's own API grouping.
