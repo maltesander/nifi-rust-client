@@ -178,6 +178,7 @@ via the `AuthProvider` trait:
 | Custom `AuthProvider` impl | Any JWT-producing mechanism (OIDC exchange, Kerberos, etc.) |
 
 The login flow:
+
 1. `AuthProvider::authenticate(&self, client)` obtains a JWT and calls `client.set_token(jwt)`
 2. The token is sent as `Authorization: Bearer <token>` on every request
 3. On 401, the client calls `authenticate()` again and retries the request once

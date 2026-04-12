@@ -63,44 +63,6 @@ impl AuthProvider for Arc<dyn AuthProvider> {
     }
 }
 
-// ── CredentialProviderAdapter ─────────────────────────────────────────────────
-
-/// Bridges a legacy [`CredentialProvider`](crate::config::credentials::CredentialProvider) into
-/// the [`AuthProvider`] trait.
-///
-/// Used internally by the deprecated
-/// [`NifiClientBuilder::credential_provider`](crate::NifiClientBuilder::credential_provider)
-/// method. Not intended for direct use.
-pub(crate) struct CredentialProviderAdapter<P> {
-    inner: P,
-}
-
-impl<P> CredentialProviderAdapter<P> {
-    /// Wrap a `CredentialProvider` as an `AuthProvider`.
-    pub(crate) fn new(inner: P) -> Self {
-        Self { inner }
-    }
-}
-
-impl<P: fmt::Debug> fmt::Debug for CredentialProviderAdapter<P> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("CredentialProviderAdapter")
-            .field("inner", &self.inner)
-            .finish()
-    }
-}
-
-#[async_trait::async_trait]
-impl<P> AuthProvider for CredentialProviderAdapter<P>
-where
-    P: crate::config::credentials::CredentialProvider + 'static,
-{
-    async fn authenticate(&self, client: &NifiClient) -> Result<(), NifiError> {
-        let (username, password) = self.inner.credentials().await?;
-        client.login(&username, &password).await
-    }
-}
-
 // ── PasswordAuth ─────────────────────────────────────────────────────────────
 
 /// Authenticates with a fixed username and password via [`NifiClient::login`].

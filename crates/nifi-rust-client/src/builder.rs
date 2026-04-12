@@ -165,29 +165,6 @@ impl NifiClientBuilder {
         self
     }
 
-    /// Configure a [`CredentialProvider`](crate::config::credentials::CredentialProvider)
-    /// for automatic token refresh.
-    ///
-    /// **Deprecated:** Use [`auth_provider`](Self::auth_provider) with
-    /// [`PasswordAuth`](crate::config::auth::PasswordAuth) instead.
-    ///
-    /// When set, the client will automatically re-authenticate on 401 responses
-    /// by calling the provider to obtain fresh credentials and then re-issuing
-    /// the failed request.
-    #[deprecated(
-        since = "0.6.0",
-        note = "use auth_provider() with PasswordAuth instead"
-    )]
-    pub fn credential_provider(
-        mut self,
-        provider: impl crate::config::credentials::CredentialProvider + 'static,
-    ) -> Self {
-        self.auth_provider = Some(Arc::new(
-            crate::config::auth::CredentialProviderAdapter::new(provider),
-        ));
-        self
-    }
-
     /// Attach a PEM-encoded client identity for mTLS.
     ///
     /// The `pem` bytes should contain the concatenated PEM-encoded private key

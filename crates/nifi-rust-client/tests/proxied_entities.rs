@@ -36,7 +36,11 @@ async fn proxied_entities_chain_header_sent_on_requests() {
     client.set_token("some-jwt".to_string()).await;
 
     let result = client.flow_api().get_about_info().await;
-    assert!(result.is_ok(), "expected success but got: {:?}", result.err());
+    assert!(
+        result.is_ok(),
+        "expected success but got: {:?}",
+        result.err()
+    );
 }
 
 #[tokio::test]
@@ -56,5 +60,9 @@ async fn no_proxied_entities_header_by_default() {
     client.set_token("some-jwt".to_string()).await;
 
     let result = client.flow_api().get_about_info().await;
-    assert!(result.is_ok(), "expected success but got: {:?}", result.err());
+    assert!(
+        result.is_ok(),
+        "expected success but got: {:?}",
+        result.err()
+    );
 }
