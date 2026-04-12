@@ -15,6 +15,15 @@ use std::collections::VecDeque;
 
 use crate::error::NifiError;
 use crate::types::ActionEntity;
+use crate::{require, NifiClient};
+
+/// Boxed future returned by the fetch closures in this module.
+///
+/// Using `Pin<Box<dyn Future>>` sidesteps chained-`impl Trait` lifetime
+/// issues in the constructor return types. One allocation per page —
+/// negligible against the HTTP round trip.
+type BoxedFetchFuture<'a> =
+    std::pin::Pin<Box<dyn core::future::Future<Output = Result<HistoryPage, NifiError>> + 'a>>;
 
 /// Filter criteria for `GET /flow/history`. All fields are optional;
 /// `HistoryFilter::default()` yields an unfiltered history query.
@@ -130,6 +139,63 @@ where
             }
         }
     }
+}
+
+/// Build a [`HistoryPaginator`] backed by a static-mode [`NifiClient`].
+///
+/// Each page is fetched by calling `client.flow_api().query_history(...)`
+/// with the provided `filter` and the current offset/page_size. Missing
+/// `actions` or `total` fields in the response surface as
+/// [`NifiError::MissingField`] via the [`crate::require!`] macro.
+///
+/// # Example
+///
+/// ```no_run
+/// use nifi_rust_client::{NifiClientBuilder, NifiError};
+/// use nifi_rust_client::pagination::{flow_history, HistoryFilter};
+///
+/// # async fn example() -> Result<(), NifiError> {
+/// let client = NifiClientBuilder::new("https://nifi.example.com:8443")?.build()?;
+/// client.login("admin", "adminpassword123").await?;
+///
+/// let mut pag = flow_history(&client, HistoryFilter::default(), 100);
+/// while let Some(page) = pag.next_page().await? {
+///     for action in page {
+///         println!("{action:?}");
+///     }
+/// }
+/// # Ok(())
+/// # }
+/// ```
+pub fn flow_history<'a>(
+    client: &'a NifiClient,
+    filter: HistoryFilter,
+    page_size: u32,
+) -> HistoryPaginator<impl FnMut(u32, u32) -> BoxedFetchFuture<'a> + 'a> {
+    let fetch = move |offset: u32, count: u32| -> BoxedFetchFuture<'a> {
+        let filter = filter.clone();
+        Box::pin(async move {
+            let offset_s = offset.to_string();
+            let count_s = count.to_string();
+            let resp = client
+                .flow_api()
+                .query_history(
+                    &offset_s,
+                    &count_s,
+                    filter.sort_column.as_deref(),
+                    filter.sort_order.as_deref(),
+                    filter.start_date.as_deref(),
+                    filter.end_date.as_deref(),
+                    filter.user_identity.as_deref(),
+                    filter.source_id.as_deref(),
+                )
+                .await?;
+            let actions = require!(resp.actions).clone();
+            let total = *require!(resp.total);
+            Ok(HistoryPage { actions, total })
+        })
+    };
+    HistoryPaginator::from_fetcher(fetch, page_size)
 }
 
 #[cfg(test)]
