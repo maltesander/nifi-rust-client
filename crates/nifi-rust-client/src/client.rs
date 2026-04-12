@@ -93,6 +93,7 @@ impl NifiClient {
     /// If the server returns an error (e.g. `401` because the token had already
     /// expired) the local token is still cleared and the error is returned to the
     /// caller.
+    #[tracing::instrument(skip(self))]
     pub async fn logout(&self) -> Result<(), NifiError> {
         let result = self.delete_inner("/access/logout").await;
         *self.token.write().await = None;
@@ -114,6 +115,7 @@ impl NifiClient {
     /// any API call returns [`NifiError::Unauthorized`]. Configure a
     /// [`CredentialProvider`] on the builder to enable
     /// automatic token refresh on 401 responses.
+    #[tracing::instrument(skip(self, username, password))]
     pub async fn login(&self, username: &str, password: &str) -> Result<(), NifiError> {
         tracing::debug!(method = "POST", path = "/access/token", "NiFi API request");
         let url = self.api_url("/access/token");
@@ -161,6 +163,7 @@ impl NifiClient {
     /// Authenticate using the configured [`CredentialProvider`].
     ///
     /// Returns [`NifiError::Auth`] if no credential provider has been configured.
+    #[tracing::instrument(skip(self))]
     pub async fn login_with_provider(&self) -> Result<(), NifiError> {
         let creds = self.credentials.as_ref().ok_or_else(|| NifiError::Auth {
             message: "no credential provider configured".to_string(),
@@ -237,6 +240,7 @@ impl NifiClient {
 
     // ── Private helpers ───────────────────────────────────────────────────────
 
+    #[tracing::instrument(skip(self))]
     pub(crate) async fn get<T: DeserializeOwned>(&self, path: &str) -> Result<T, NifiError> {
         self.with_retry(|| async {
             tracing::debug!(method = "GET", path, "NiFi API request");
@@ -252,6 +256,7 @@ impl NifiClient {
         .await
     }
 
+    #[tracing::instrument(skip(self, body))]
     pub(crate) async fn post<B, T>(&self, path: &str, body: &B) -> Result<T, NifiError>
     where
         B: serde::Serialize,
@@ -272,6 +277,7 @@ impl NifiClient {
         .await
     }
 
+    #[tracing::instrument(skip(self, body))]
     pub(crate) async fn put<B, T>(&self, path: &str, body: &B) -> Result<T, NifiError>
     where
         B: serde::Serialize,
@@ -296,6 +302,7 @@ impl NifiClient {
     // Currently unused: no NiFi 2.x endpoint has a JSON body POST with an empty
     // response. Kept for forward compatibility with the emitter.
     #[allow(dead_code)]
+    #[tracing::instrument(skip(self, body))]
     pub(crate) async fn post_void<B: serde::Serialize>(
         &self,
         path: &str,
@@ -318,6 +325,7 @@ impl NifiClient {
 
     /// PUT that ignores the response body (for endpoints with no JSON response).
     #[allow(dead_code)]
+    #[tracing::instrument(skip(self, body))]
     pub(crate) async fn put_void<B: serde::Serialize>(
         &self,
         path: &str,
@@ -339,6 +347,7 @@ impl NifiClient {
     }
 
     /// POST with no request body; deserializes the JSON response.
+    #[tracing::instrument(skip(self))]
     pub(crate) async fn post_no_body<T: DeserializeOwned>(
         &self,
         path: &str,
@@ -361,6 +370,7 @@ impl NifiClient {
     // Used by the code generator for void no-body POST endpoints without query params.
     // No current NiFi 2.x endpoint triggers this path, but keep it for forward compatibility.
     #[allow(dead_code)]
+    #[tracing::instrument(skip(self))]
     pub(crate) async fn post_void_no_body(&self, path: &str) -> Result<(), NifiError> {
         self.with_retry(|| async {
             tracing::debug!(method = "POST", path, "NiFi API request");
@@ -377,6 +387,7 @@ impl NifiClient {
     }
 
     /// PUT with no request body; deserializes the JSON response.
+    #[tracing::instrument(skip(self))]
     pub(crate) async fn put_no_body<T: DeserializeOwned>(
         &self,
         path: &str,
@@ -397,6 +408,7 @@ impl NifiClient {
 
     /// PUT with no request body; ignores the response body.
     #[allow(dead_code)]
+    #[tracing::instrument(skip(self))]
     pub(crate) async fn put_void_no_body(&self, path: &str) -> Result<(), NifiError> {
         self.with_retry(|| async {
             tracing::debug!(method = "PUT", path, "NiFi API request");
@@ -416,6 +428,7 @@ impl NifiClient {
     ///
     /// Used for binary upload endpoints (e.g. NAR upload).
     /// `filename` is sent as the `Filename` request header when provided.
+    #[tracing::instrument(skip(self, data))]
     pub(crate) async fn post_octet_stream<T: DeserializeOwned>(
         &self,
         path: &str,
@@ -448,6 +461,7 @@ impl NifiClient {
     // Currently unused: no NiFi 2.x endpoint has an octet-stream request body
     // with an empty response body. Kept for forward compatibility.
     #[allow(dead_code)]
+    #[tracing::instrument(skip(self, data))]
     pub(crate) async fn post_void_octet_stream(
         &self,
         path: &str,
@@ -480,6 +494,7 @@ impl NifiClient {
     /// part named `"file"` carrying the given filename and raw bytes. The
     /// `Content-Type` header (including the generated boundary) is set by
     /// reqwest when `.multipart(form)` is called.
+    #[tracing::instrument(skip(self, data))]
     pub(crate) async fn post_multipart<T: DeserializeOwned>(
         &self,
         path: &str,
@@ -509,6 +524,7 @@ impl NifiClient {
     /// Variant of [`Self::post_multipart`] for upload endpoints that do not
     /// return a JSON payload.
     #[allow(dead_code)]
+    #[tracing::instrument(skip(self, data))]
     pub(crate) async fn post_void_multipart(
         &self,
         path: &str,
@@ -537,6 +553,7 @@ impl NifiClient {
     ///
     /// Used for endpoints that accept query parameters and have no JSON response body.
     #[allow(dead_code)]
+    #[tracing::instrument(skip(self, body, query))]
     pub(crate) async fn post_void_with_query<B: serde::Serialize>(
         &self,
         path: &str,
@@ -562,6 +579,7 @@ impl NifiClient {
     ///
     /// Treats 302 as success in addition to 2xx: NiFi's `GET /access/logout/complete`
     /// responds with a redirect once the logout is complete.
+    #[tracing::instrument(skip(self))]
     pub(crate) async fn get_void(&self, path: &str) -> Result<(), NifiError> {
         self.with_retry(|| async {
             tracing::debug!(method = "GET", path, "NiFi API request");
@@ -577,6 +595,7 @@ impl NifiClient {
         .await
     }
 
+    #[tracing::instrument(skip(self, query))]
     pub(crate) async fn get_with_query<T: DeserializeOwned>(
         &self,
         path: &str,
@@ -597,6 +616,7 @@ impl NifiClient {
     }
 
     /// GET returning raw text (`text/plain`).
+    #[tracing::instrument(skip(self))]
     pub(crate) async fn get_text(&self, path: &str) -> Result<String, NifiError> {
         self.with_retry(|| async {
             tracing::debug!(method = "GET", path, "NiFi API request");
@@ -613,6 +633,7 @@ impl NifiClient {
     }
 
     /// GET returning raw bytes (`application/octet-stream` or `*/*`).
+    #[tracing::instrument(skip(self))]
     pub(crate) async fn get_bytes(&self, path: &str) -> Result<Vec<u8>, NifiError> {
         self.with_retry(|| async {
             tracing::debug!(method = "GET", path, "NiFi API request");
@@ -629,6 +650,7 @@ impl NifiClient {
     }
 
     /// GET with query parameters returning raw bytes.
+    #[tracing::instrument(skip(self, query))]
     pub(crate) async fn get_bytes_with_query(
         &self,
         path: &str,
@@ -649,6 +671,7 @@ impl NifiClient {
     }
 
     /// POST a JSON body and return the `text/plain` response body.
+    #[tracing::instrument(skip(self, body))]
     pub(crate) async fn post_returning_text<B: serde::Serialize>(
         &self,
         path: &str,
@@ -670,6 +693,7 @@ impl NifiClient {
     }
 
     /// POST an `application/octet-stream` body and return the `text/plain` response body.
+    #[tracing::instrument(skip(self, data))]
     pub(crate) async fn post_octet_stream_returning_text(
         &self,
         path: &str,
@@ -692,6 +716,7 @@ impl NifiClient {
     // No longer referenced by generated code: every void GET with query params
     // in the current NiFi specs resolves through a different helper.
     #[allow(dead_code)]
+    #[tracing::instrument(skip(self, query))]
     pub(crate) async fn get_void_with_query(
         &self,
         path: &str,
@@ -711,6 +736,7 @@ impl NifiClient {
         .await
     }
 
+    #[tracing::instrument(skip(self, query))]
     pub(crate) async fn delete_returning_with_query<T: DeserializeOwned>(
         &self,
         path: &str,
@@ -730,6 +756,7 @@ impl NifiClient {
         .await
     }
 
+    #[tracing::instrument(skip(self, query))]
     pub(crate) async fn delete_with_query(
         &self,
         path: &str,
@@ -749,6 +776,7 @@ impl NifiClient {
         .await
     }
 
+    #[tracing::instrument(skip(self, body, query))]
     pub(crate) async fn post_with_query<B, T>(
         &self,
         path: &str,
@@ -774,6 +802,7 @@ impl NifiClient {
         .await
     }
 
+    #[tracing::instrument(skip(self))]
     pub(crate) async fn delete_returning<T: DeserializeOwned>(
         &self,
         path: &str,
@@ -792,6 +821,7 @@ impl NifiClient {
         .await
     }
 
+    #[tracing::instrument(skip(self))]
     pub(crate) async fn delete(&self, path: &str) -> Result<(), NifiError> {
         self.with_retry(|| async {
             tracing::debug!(method = "DELETE", path, "NiFi API request");
