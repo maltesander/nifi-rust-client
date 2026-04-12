@@ -1,6 +1,8 @@
 use std::collections::BTreeMap;
 
+use crate::layout::RepoLayout;
 use crate::parser::{ApiSpec, TagGroup};
+use crate::plan::FileEdit;
 
 /// Counts the total number of endpoints in a tag group (root + sub-group endpoints).
 fn tag_endpoint_count(tag: &TagGroup) -> usize {
@@ -105,10 +107,37 @@ pub fn generate_resource_accessors_content(all_specs: &[(String, ApiSpec)]) -> S
     rows.join("\n")
 }
 
+pub fn emit_resource_accessors(
+    layout: &RepoLayout,
+    all_specs: &[(String, ApiSpec)],
+) -> Vec<FileEdit> {
+    let content = generate_resource_accessors_content(all_specs);
+    vec![FileEdit::ReplaceBlock {
+        path: layout.client_readme.clone(),
+        start_marker: "<!-- RESOURCE_ACCESSORS_START -->".into(),
+        end_marker: "<!-- RESOURCE_ACCESSORS_END -->".into(),
+        content,
+    }]
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::layout::RepoLayout;
+    use crate::plan::FileEdit;
     use crate::parser::{Endpoint, HttpMethod, SubGroup, TagGroup};
+    use std::path::Path;
+
+    #[test]
+    fn emit_resource_accessors_returns_one_replace_block() {
+        let layout = RepoLayout::from_workspace_root(Path::new("/fake"));
+        let edits = emit_resource_accessors(&layout, &[]);
+        assert_eq!(edits.len(), 1);
+        assert!(matches!(&edits[0], FileEdit::ReplaceBlock { path, start_marker, .. }
+            if *path == Path::new("/fake/crates/nifi-rust-client/README.md")
+            && start_marker.contains("RESOURCE_ACCESSORS_START")
+        ));
+    }
 
     fn make_endpoint(name: &str) -> Endpoint {
         Endpoint {
