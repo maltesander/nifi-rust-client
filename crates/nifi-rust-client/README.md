@@ -360,6 +360,38 @@ Helper methods:
 - `err.status_code()` — returns `Option<u16>` for API error variants
 - `err.is_retryable()` — returns `true` for transient errors (408, 429, 5xx, network errors)
 
+### Extracting required fields from `Option<T>`
+
+Dynamic-mode DTOs carry every field as `Option<T>` because the union of
+fields across supported NiFi versions includes values that not every
+server populates. The crate provides a `RequireField` trait and a
+`require!` macro to replace `.ok_or_else()` ladders with a single call
+per field:
+
+```rust
+use nifi_rust_client::{require, NifiClientBuilder, NifiError, RequireField};
+
+let client = NifiClientBuilder::new("https://nifi.example.com:8443")?
+    .build_dynamic()?;
+client.login("admin", "adminpassword123").await?;
+let resp = client.flow_api().get_about_info().await?;
+
+// Nested: errors carry a dotted path like "about.version"
+let version: &String = require!(resp.about.version);
+
+// Or the trait directly, when the macro doesn't fit:
+let title = resp.about.require("about")?.title.require("title")?;
+```
+
+On a missing field, these helpers return
+`NifiError::MissingField { path }` with `path` set to the dotted
+identifier chain. That variant is *not* retryable and is distinct from
+`NifiError::MissingRequiredField`, which is emitted by the generated
+conversion layer.
+
+The same helpers work on static-mode `Option<T>` fields — the module
+is not mode-gated.
+
 ### Dynamic mode version coverage
 
 <!-- markdownlint-disable MD033 -->
