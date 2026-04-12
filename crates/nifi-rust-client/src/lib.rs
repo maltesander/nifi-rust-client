@@ -27,10 +27,12 @@
 //!
 //! Enable a specific version via Cargo features:
 //!
+//! <!-- LIB_STATIC_FEATURE_EXAMPLE_START -->
 //! ```toml
 //! [dependencies]
-//! nifi-rust-client = { version = "0.7", features = ["nifi-2-8-0"] }
+//! nifi-rust-client = { version = "0.7", features = ["nifi-2-9-0"] }
 //! ```
+//! <!-- LIB_STATIC_FEATURE_EXAMPLE_END -->
 //!
 //! ## Dynamic mode (`dynamic` feature)
 //!
@@ -56,10 +58,12 @@
 //!
 //! Enable via:
 //!
+//! <!-- LIB_DYNAMIC_FEATURE_EXAMPLE_START -->
 //! ```toml
 //! [dependencies]
 //! nifi-rust-client = { version = "0.7", features = ["dynamic"] }
 //! ```
+//! <!-- LIB_DYNAMIC_FEATURE_EXAMPLE_END -->
 //!
 //! ## Entry points
 //!

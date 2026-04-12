@@ -6,6 +6,6 @@ mod versions_table;
 
 pub use api_changes::{emit_api_changes, format_diff_body, generate_api_changes_content};
 pub use integration_coverage::{emit_integration_coverage, generate_integration_coverage_content};
-pub use readme_examples::emit_client_readme_examples;
+pub use readme_examples::{emit_client_readme_examples, emit_lib_rs_examples};
 pub use resource_accessors::{emit_resource_accessors, generate_resource_accessors_content};
 pub use versions_table::{emit_versions_table, generate_versions_table_content};

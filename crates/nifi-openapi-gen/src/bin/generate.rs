@@ -14,7 +14,7 @@
 use std::path::{Path, PathBuf};
 
 use nifi_openapi_gen::docs::{
-    emit_api_changes, emit_client_readme_examples, emit_integration_coverage,
+    emit_api_changes, emit_client_readme_examples, emit_integration_coverage, emit_lib_rs_examples,
     emit_resource_accessors, emit_versions_table,
 };
 use nifi_openapi_gen::layout::RepoLayout;
@@ -123,6 +123,13 @@ fn main() {
     // README examples (client README)
     let crate_version = read_crate_version_shorthand(&client_toml);
     edits.extend(emit_client_readme_examples(
+        &layout,
+        &latest_version,
+        &crate_version,
+    ));
+
+    // lib.rs doc comment version examples
+    edits.extend(emit_lib_rs_examples(
         &layout,
         &latest_version,
         &crate_version,
