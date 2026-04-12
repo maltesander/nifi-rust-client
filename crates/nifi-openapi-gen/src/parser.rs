@@ -128,6 +128,10 @@ pub struct Endpoint {
     pub method: HttpMethod,
     pub path: String,
     pub fn_name: String,
+    /// Raw `operationId` from the spec, preserved verbatim for override
+    /// lookup and diagnostics (e.g. "updateRunStatus_5"). `fn_name` is the
+    /// suffix-stripped snake_case form.
+    pub raw_operation_id: String,
     /// Short summary from the spec (`summary` field).
     pub doc: Option<String>,
     /// Long-form description from the spec (`description` field), if present.
@@ -468,7 +472,9 @@ fn parse_tags(
             let tag = tags.into_iter().next().unwrap_or_else(|| "Other".into());
 
             let operation_id = op["operationId"].as_str().unwrap_or("unknown");
-            let fn_name = operation_id_to_fn_name(operation_id);
+            let stripped = strip_trailing_numeric_suffix(operation_id);
+            let fn_name = operation_id_to_fn_name(stripped);
+            let raw_operation_id = operation_id.to_string();
             let doc = op.get("summary").and_then(|s| s.as_str()).map(String::from);
             let description = op
                 .get("description")
@@ -678,6 +684,7 @@ fn parse_tags(
                 method,
                 path: raw_path.clone(),
                 fn_name,
+                raw_operation_id,
                 doc,
                 description,
                 path_params,
@@ -779,6 +786,29 @@ fn operation_id_to_fn_name(id: &str) -> String {
         out.push(ch.to_ascii_lowercase());
     }
     out
+}
+
+/// Strips a single trailing `_N` suffix (where N is a decimal integer) from
+/// an `operationId`. Only one trailing group is stripped — `getFoo_1_2`
+/// becomes `getFoo_1`, not `getFoo`. The goal is to remove NiFi's Java-world
+/// collision-counter suffix, not to aggressively rewrite names.
+///
+/// Examples:
+///   "getFoo"         -> "getFoo"
+///   "getFoo_5"       -> "getFoo"
+///   "getFoo_1_2"     -> "getFoo_1"
+///   "_5"             -> "_5"  (nothing before the suffix; leave alone)
+fn strip_trailing_numeric_suffix(op_id: &str) -> &str {
+    let bytes = op_id.as_bytes();
+    let mut end = bytes.len();
+    while end > 0 && bytes[end - 1].is_ascii_digit() {
+        end -= 1;
+    }
+    if end < bytes.len() && end >= 2 && bytes[end - 1] == b'_' {
+        &op_id[..end - 1]
+    } else {
+        op_id
+    }
 }
 
 fn tag_to_accessor(tag: &str) -> String {

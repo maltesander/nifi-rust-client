@@ -171,6 +171,7 @@ mod tests {
             method: HttpMethod::Get,
             path: "/controller-services/{id}".to_string(),
             fn_name: "get_controller_service".to_string(),
+            raw_operation_id: String::new(),
             doc: Some("Gets a controller service".to_string()),
             description: None,
             path_params: vec![PathParam {
@@ -196,6 +197,7 @@ mod tests {
             method: HttpMethod::Post,
             path: "/controller-services/{id}/config/analysis".to_string(),
             fn_name: "analyze_configuration".to_string(),
+            raw_operation_id: String::new(),
             doc: Some("Performs analysis of the component's configuration".to_string()),
             description: None,
             path_params: vec![PathParam {

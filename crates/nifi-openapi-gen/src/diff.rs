@@ -871,6 +871,7 @@ mod tests {
             method,
             path: path.to_string(),
             fn_name: path.replace('/', "_"),
+            raw_operation_id: String::new(),
             doc: None,
             description: None,
             path_params: vec![],

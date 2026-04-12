@@ -27,6 +27,7 @@ fn about_endpoint() -> Endpoint {
         method: HttpMethod::Get,
         path: "/flow/about".into(),
         fn_name: "get_about_info".into(),
+        raw_operation_id: String::new(),
         doc: Some("Retrieves details about this NiFi.".into()),
         description: None,
         path_params: vec![],
@@ -157,6 +158,7 @@ fn dispatch_forwards_all_params() {
         method: HttpMethod::Put,
         path: "/processors/{id}".into(),
         fn_name: "update_processor".into(),
+        raw_operation_id: String::new(),
         doc: Some("Updates a processor.".into()),
         description: None,
         path_params: vec![PathParam {
@@ -228,6 +230,7 @@ fn dispatch_skips_form_encoded_endpoints() {
         method: HttpMethod::Post,
         path: "/access/token".into(),
         fn_name: "create_access_token".into(),
+        raw_operation_id: String::new(),
         doc: Some("Creates a token.".into()),
         description: None,
         path_params: vec![],

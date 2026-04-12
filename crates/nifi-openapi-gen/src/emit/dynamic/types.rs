@@ -394,6 +394,7 @@ mod tests {
             .into_iter()
             .map(|t| Endpoint {
                 fn_name: format!("get_{t}"),
+                raw_operation_id: String::new(),
                 path: format!("/{t}"),
                 method: HttpMethod::Get,
                 doc: None,

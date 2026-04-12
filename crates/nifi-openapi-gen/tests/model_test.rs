@@ -27,6 +27,7 @@ fn can_construct_internal_model() {
                 method: HttpMethod::Get,
                 path: "/flow/about".into(),
                 fn_name: "get_about_info".into(),
+                raw_operation_id: String::new(),
                 doc: Some("Returns about info".into()),
                 description: None,
                 path_params: vec![],

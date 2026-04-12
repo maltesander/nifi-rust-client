@@ -579,6 +579,7 @@ mod tests {
             method: HttpMethod::Get,
             path: "/controller-services/{id}".to_string(),
             fn_name: "get_controller_service".to_string(),
+            raw_operation_id: String::new(),
             doc: Some("Gets a controller service".to_string()),
             description: None,
             path_params: vec![PathParam {
@@ -601,6 +602,7 @@ mod tests {
             method: HttpMethod::Post,
             path: "/controller-services/{id}/config/analysis".to_string(),
             fn_name: "analyze_configuration".to_string(),
+            raw_operation_id: String::new(),
             doc: Some("Performs analysis".to_string()),
             description: None,
             path_params: vec![PathParam {
@@ -623,6 +625,7 @@ mod tests {
             method: HttpMethod::Delete,
             path: "/controller-services/{id}/config/verification-requests/{requestId}".to_string(),
             fn_name: "delete_verification_request".to_string(),
+            raw_operation_id: String::new(),
             doc: Some("Deletes a verification request".to_string()),
             description: None,
             path_params: vec![
@@ -878,6 +881,7 @@ mod tests {
             method: HttpMethod::Get,
             path: "/provenance/lineage/{id}".to_string(),
             fn_name: "get_lineage".to_string(),
+            raw_operation_id: String::new(),
             doc: Some("Gets a lineage query".to_string()),
             description: None,
             path_params: vec![PathParam {
@@ -936,6 +940,7 @@ mod tests {
             method: HttpMethod::Post,
             path: "/provenance/lineage".to_string(),
             fn_name: "submit_lineage_request".to_string(),
+            raw_operation_id: String::new(),
             doc: Some("Submits a lineage query".to_string()),
             description: None,
             path_params: vec![],

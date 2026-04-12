@@ -556,6 +556,7 @@ mod tests {
             method,
             path: path.to_string(),
             fn_name: fn_name.to_string(),
+            raw_operation_id: String::new(),
             doc: Some(format!("Does {fn_name}")),
             description: None,
             path_params,

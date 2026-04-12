@@ -146,6 +146,7 @@ mod tests {
             method: HttpMethod::Get,
             path: format!("/nifi-api/{name}"),
             fn_name: name.to_string(),
+            raw_operation_id: String::new(),
             doc: None,
             description: None,
             path_params: vec![],

@@ -424,6 +424,7 @@ mod tests {
             method,
             path: path.to_string(),
             fn_name: fn_name.to_string(),
+            raw_operation_id: String::new(),
             doc: summary.map(|s| s.to_string()),
             description: None,
             path_params: path_params

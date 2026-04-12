@@ -192,6 +192,7 @@ mod tests {
             method,
             path: "/test".to_string(),
             fn_name: fn_name.to_string(),
+            raw_operation_id: String::new(),
             doc: None,
             description: None,
             path_params,
