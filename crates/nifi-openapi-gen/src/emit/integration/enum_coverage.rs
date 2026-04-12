@@ -224,6 +224,15 @@ fn build_call_args(
     args.join(",\n        ")
 }
 
+/// Collect the set of tested enum value keys without generating code.
+pub fn collect_enum_metadata(
+    all_specs: &[(String, ApiSpec)],
+    diffs: &[VersionDiff],
+) -> HashSet<String> {
+    let (_, tested) = emit_enum_coverage_tests(all_specs, diffs);
+    tested
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

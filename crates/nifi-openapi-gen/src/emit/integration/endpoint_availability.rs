@@ -241,6 +241,15 @@ fn build_call_args(endpoint: &Endpoint, sub_group: Option<&SubGroup>) -> String 
     args.join(",\n        ")
 }
 
+/// Collect the set of tested endpoint keys without generating code.
+pub fn collect_endpoint_metadata(
+    all_specs: &[(String, ApiSpec)],
+    diffs: &[VersionDiff],
+) -> HashSet<String> {
+    let (_, tested) = emit_endpoint_availability_tests(all_specs, diffs);
+    tested
+}
+
 /// Produce the test function base name, e.g. `endpoint_flow_get_listen_ports`.
 fn test_base_name(accessor_fn: &str, fn_name: &str) -> String {
     // Strip the trailing "_api" from accessor_fn if present.
