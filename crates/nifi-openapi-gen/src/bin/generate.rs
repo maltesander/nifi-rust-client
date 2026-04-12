@@ -21,7 +21,7 @@ use nifi_openapi_gen::layout::RepoLayout;
 use nifi_openapi_gen::plan::{FileEdit, MutationPlan};
 use nifi_openapi_gen::repo::{
     emit_cargo_features_client, emit_cargo_features_tests, emit_docker_compose_default,
-    emit_lib_rs_feature_flags,
+    emit_fn_names_goldens, emit_lib_rs_feature_flags,
 };
 use nifi_openapi_gen::util::discover_spec_versions;
 use nifi_openapi_gen::{
@@ -151,6 +151,9 @@ fn main() {
 
     // API changes doc
     edits.extend(emit_api_changes(&layout, &all_parsed));
+
+    // fn_names goldens (one per version)
+    edits.extend(emit_fn_names_goldens(&layout, &all_parsed));
 
     // Feature flags in lib.rs
     edits.extend(emit_lib_rs_feature_flags(&layout, &version_strs));
