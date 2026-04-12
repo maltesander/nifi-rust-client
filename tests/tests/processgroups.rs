@@ -308,7 +308,7 @@ async fn processor_run_status_lifecycle() {
     let descriptor = client
         .processors_api()
         .descriptors(&proc_id)
-        .get_property_descriptor_3(None, "File Size", None)
+        .get_property_descriptor(None, "File Size", None)
         .await
         .expect("failed to get property descriptor");
     assert!(
@@ -320,36 +320,24 @@ async fn processor_run_status_lifecycle() {
     client
         .processors_api()
         .state(&proc_id)
-        .get_state_2()
+        .get_state()
         .await
         .expect("failed to get processor state");
 
     client
         .processors_api()
         .state(&proc_id)
-        .clear_state_3(&ComponentStateEntity {
+        .clear_state(&ComponentStateEntity {
             ..Default::default()
         })
         .await
         .expect("failed to clear processor state");
 
     // ── start / stop ──────────────────────────────────────────────────────────
-    #[cfg(feature = "nifi-2-9-0")]
     let started = client
         .processors_api()
         .run_status(&proc_id)
-        .update_run_status_5(&ProcessorRunStatusEntity {
-            state: Some(ProcessorRunStatusEntityState::Running),
-            revision: Some(helpers::revision(proc_version)),
-            ..Default::default()
-        })
-        .await
-        .expect("failed to start processor");
-    #[cfg(not(feature = "nifi-2-9-0"))]
-    let started = client
-        .processors_api()
-        .run_status(&proc_id)
-        .update_run_status_4(&ProcessorRunStatusEntity {
+        .update_run_status(&ProcessorRunStatusEntity {
             state: Some(ProcessorRunStatusEntityState::Running),
             revision: Some(helpers::revision(proc_version)),
             ..Default::default()
@@ -377,22 +365,10 @@ async fn processor_run_status_lifecycle() {
         .await
         .expect("failed to get processor diagnostics");
 
-    #[cfg(feature = "nifi-2-9-0")]
     let stopped = client
         .processors_api()
         .run_status(&proc_id)
-        .update_run_status_5(&ProcessorRunStatusEntity {
-            state: Some(ProcessorRunStatusEntityState::Stopped),
-            revision: Some(helpers::revision(running_version)),
-            ..Default::default()
-        })
-        .await
-        .expect("failed to stop processor");
-    #[cfg(not(feature = "nifi-2-9-0"))]
-    let stopped = client
-        .processors_api()
-        .run_status(&proc_id)
-        .update_run_status_4(&ProcessorRunStatusEntity {
+        .update_run_status(&ProcessorRunStatusEntity {
             state: Some(ProcessorRunStatusEntityState::Stopped),
             revision: Some(helpers::revision(running_version)),
             ..Default::default()

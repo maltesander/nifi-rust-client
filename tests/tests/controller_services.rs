@@ -133,22 +133,10 @@ async fn controller_service_run_status_and_state() {
         .expect("created service has no revision version");
 
     // ── enable / disable ─────────────────────────────────────────────────────
-    #[cfg(feature = "nifi-2-9-0")]
     client
         .controller_services_api()
         .run_status(&svc_id)
-        .update_run_status_2(&ControllerServiceRunStatusEntity {
-            state: Some(ControllerServiceRunStatusEntityState::Enabled),
-            revision: Some(helpers::revision(version)),
-            ..Default::default()
-        })
-        .await
-        .expect("failed to enable controller service");
-    #[cfg(not(feature = "nifi-2-9-0"))]
-    client
-        .controller_services_api()
-        .run_status(&svc_id)
-        .update_run_status_1(&ControllerServiceRunStatusEntity {
+        .update_run_status(&ControllerServiceRunStatusEntity {
             state: Some(ControllerServiceRunStatusEntityState::Enabled),
             revision: Some(helpers::revision(version)),
             ..Default::default()
@@ -181,22 +169,10 @@ async fn controller_service_run_status_and_state() {
         "expected controller service state ENABLED or ENABLING after enable"
     );
 
-    #[cfg(feature = "nifi-2-9-0")]
     client
         .controller_services_api()
         .run_status(&svc_id)
-        .update_run_status_2(&ControllerServiceRunStatusEntity {
-            state: Some(ControllerServiceRunStatusEntityState::Disabled),
-            revision: Some(helpers::revision(version_after_enable)),
-            ..Default::default()
-        })
-        .await
-        .expect("failed to disable controller service");
-    #[cfg(not(feature = "nifi-2-9-0"))]
-    client
-        .controller_services_api()
-        .run_status(&svc_id)
-        .update_run_status_1(&ControllerServiceRunStatusEntity {
+        .update_run_status(&ControllerServiceRunStatusEntity {
             state: Some(ControllerServiceRunStatusEntityState::Disabled),
             revision: Some(helpers::revision(version_after_enable)),
             ..Default::default()
@@ -257,7 +233,7 @@ async fn controller_service_run_status_and_state() {
     client
         .controller_services_api()
         .state(&svc_id)
-        .clear_state_1(&ComponentStateEntity {
+        .clear_state(&ComponentStateEntity {
             ..Default::default()
         })
         .await
