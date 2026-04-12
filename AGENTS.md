@@ -171,6 +171,18 @@ Errors use `snafu`. All variants are in `crate::error::NifiError`.
 Use `#[snafu(display(...))]` and `.context(SomeSnafu)` at call sites.
 Do not use `unwrap` or `expect` in non-test code — clippy denies it.
 
+Two distinct "missing field" variants exist:
+
+- `NifiError::MissingRequiredField { field, type_name, version }` — emitted
+  by generated dynamic-mode conversion code when the server response omits
+  a field the target type requires. Carries version/type context.
+- `NifiError::MissingField { path }` — emitted by end-user code calling
+  `RequireField::require` or the `require!` macro on an `Option<T>` that
+  turned out to be `None`. Carries only a dotted path string.
+
+Neither variant is retryable. Do not merge or rename either; they serve
+different layers.
+
 ### Strict parsing & content-type allow-list
 
 `nifi-openapi-gen` refuses to silently drop OpenAPI shapes it doesn't
@@ -332,6 +344,12 @@ let analysis = client.controller_services_api()
 ```
 
 **Forward compatibility:** All dynamic structs and enums carry `#[non_exhaustive]`. All fields are `Option<T>`. Trait methods for endpoints that don't exist in a given version have default impls returning `NifiError::UnsupportedEndpoint`.
+
+To extract values from dynamic-mode `Option<T>` fields, use
+`RequireField::require` or the `require!` macro from the crate root
+(see `crates/nifi-rust-client/src/require.rs`). Nested extractions go
+through the macro so the error path reflects the full dotted identifier
+chain (`"component.name"`).
 
 #### VersionResolutionStrategy
 
