@@ -23,6 +23,8 @@ pub mod emit;
 #[doc(hidden)]
 pub mod layout;
 #[doc(hidden)]
+pub mod naming_overrides;
+#[doc(hidden)]
 pub mod parser;
 #[doc(hidden)]
 pub mod parser_strict;
