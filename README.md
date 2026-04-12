@@ -6,7 +6,7 @@
 [![Crates.io](https://img.shields.io/crates/v/nifi-rust-client.svg)](https://crates.io/crates/nifi-rust-client)
 [![Docs.rs](https://docs.rs/nifi-rust-client/badge.svg)](https://docs.rs/nifi-rust-client)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](https://github.com/maltesander/nifi-rust-client/blob/main/LICENSE)
-![MSRV: 1.85](https://img.shields.io/badge/MSRV-1.85-blue.svg)
+![MSRV: 1.88](https://img.shields.io/badge/MSRV-1.88-blue.svg)
 
 ## Supported NiFi Versions
 
