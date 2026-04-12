@@ -197,6 +197,17 @@ For integration tests, credentials are read from `NIFI_USERNAME` / `NIFI_PASSWOR
 - `.proxied_entities_chain("<user1><user2>")` — sets the `X-ProxiedEntitiesChain`
   header on every request, used behind trusted proxies (Knox, nginx with mTLS).
 
+#### Cluster / load balancer deployments
+
+NiFi 2.x clusters share signing key material across all nodes, so a JWT
+issued by any node is valid on every other node. No sticky sessions or
+per-node token caching is required — point the client at a round-robin
+load balancer URL and the single stored token works cluster-wide.
+
+The existing 401 retry logic (re-authenticate via `AuthProvider`, then
+retry once) handles edge cases like mid-rotation key propagation delays
+transparently.
+
 ### Error Handling
 
 Errors use `snafu`. All variants are in `crate::error::NifiError`.

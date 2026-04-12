@@ -270,6 +270,28 @@ client.logout().await?;
 // client.token() is now None
 ```
 
+### Cluster / load balancer deployments
+
+NiFi 2.x clusters share signing key material across all nodes, so a JWT issued by any node is
+valid on every other node. This means **no sticky sessions are required** — point the client at
+a plain round-robin load balancer and tokens work cluster-wide:
+
+```rust,no_run
+use nifi_rust_client::NifiClientBuilder;
+use nifi_rust_client::config::auth::PasswordAuth;
+
+let client = NifiClientBuilder::new("https://nifi-loadbalancer:8443")?
+    .auth_provider(PasswordAuth::new("admin", "password"))
+    .build()?;
+
+// The LB may route login to node1 and subsequent calls to node2 — the token is valid on both.
+client.authenticate().await?;
+let about = client.flow_api().get_about_info().await?;
+```
+
+No per-node token cache or special routing headers are needed. The existing retry logic
+(re-authenticate on 401) handles edge cases like mid-rotation key propagation delays.
+
 ### Client methods
 
 | Method | Description |
