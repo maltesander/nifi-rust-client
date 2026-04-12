@@ -118,6 +118,26 @@ pub enum NifiError {
         /// The NiFi version involved.
         version: String,
     },
+
+    /// A required `Option<T>` field was absent when an end-user called
+    /// [`RequireField::require`](crate::RequireField::require) or the
+    /// [`require!`](crate::require) macro.
+    ///
+    /// This variant is distinct from [`Self::MissingRequiredField`], which
+    /// is emitted by generated dynamic-mode conversion code and carries
+    /// runtime version/type info. `MissingField` is a user-facing error
+    /// produced when a caller asks for a value that the server did not
+    /// populate (e.g. because the NiFi version predates the field, or the
+    /// field is conditional-by-design).
+    ///
+    /// `path` contains whatever string the caller passed to `.require()`.
+    /// When produced via the `require!` macro, it is a dotted path of
+    /// identifiers (e.g. `"about.version"`).
+    #[snafu(display("required field `{path}` was not populated"))]
+    MissingField {
+        /// Dotted path identifying the missing field.
+        path: String,
+    },
 }
 
 impl NifiError {
@@ -151,5 +171,23 @@ pub(crate) fn api_error(status: u16, message: String) -> NifiError {
         404 => NifiError::NotFound { message },
         409 => NifiError::Conflict { message },
         _ => NifiError::Api { status, message },
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn missing_field_variant_exists_and_is_not_retryable() {
+        let err = NifiError::MissingField {
+            path: "about.version".to_string(),
+        };
+        assert!(!err.is_retryable());
+        assert_eq!(err.status_code(), None);
+        assert_eq!(
+            err.to_string(),
+            "required field `about.version` was not populated"
+        );
     }
 }
