@@ -25,7 +25,7 @@ use crate::dynamic::types::ActionEntity;
 /// issues in the constructor return types. One allocation per page —
 /// negligible against the HTTP round trip.
 type BoxedFetchFuture<'a> =
-    std::pin::Pin<Box<dyn core::future::Future<Output = Result<HistoryPage, NifiError>> + 'a>>;
+    std::pin::Pin<Box<dyn core::future::Future<Output = Result<HistoryPage, NifiError>> + Send + 'a>>;
 
 /// Filter criteria for `GET /flow/history`. All fields are optional;
 /// `HistoryFilter::default()` yields an unfiltered history query.
@@ -260,7 +260,7 @@ mod tests {
     fn fake_fetcher(
         total: i32,
     ) -> (
-        impl FnMut(u32, u32) -> std::pin::Pin<Box<dyn core::future::Future<Output = Result<HistoryPage, NifiError>>>>,
+        impl FnMut(u32, u32) -> BoxedFetchFuture<'static>,
         std::sync::Arc<std::sync::atomic::AtomicUsize>,
     ) {
         let calls = std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0));
@@ -276,7 +276,7 @@ mod tests {
             };
             let page = HistoryPage { actions, total };
             Box::pin(async move { Ok(page) })
-                as std::pin::Pin<Box<dyn core::future::Future<Output = Result<HistoryPage, NifiError>>>>
+                as std::pin::Pin<Box<dyn core::future::Future<Output = Result<HistoryPage, NifiError>> + Send>>
         };
         (fetch, calls)
     }
@@ -360,7 +360,7 @@ mod tests {
                     })
                 }
             })
-                as std::pin::Pin<Box<dyn core::future::Future<Output = Result<HistoryPage, NifiError>>>>
+                as std::pin::Pin<Box<dyn core::future::Future<Output = Result<HistoryPage, NifiError>> + Send>>
         };
         let mut pag = HistoryPaginator::from_fetcher(fetch, 100);
 
@@ -379,10 +379,11 @@ mod tests {
         // saturation of the offset + i64-widened comparison.
         let calls = std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0));
         let calls_clone = std::sync::Arc::clone(&calls);
+        let count = 100_000_u32;
         let fetch = move |offset: u32, _count: u32| {
             calls_clone.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
-            let actions: Vec<ActionEntity> = (0..100)
-                .map(|i| make_action((offset as i32).wrapping_add(i)))
+            let actions: Vec<ActionEntity> = (0..count)
+                .map(|i| make_action((offset as i32).wrapping_add(i as i32)))
                 .collect();
             Box::pin(async move {
                 Ok(HistoryPage {
@@ -390,16 +391,16 @@ mod tests {
                     total: i32::MAX,
                 })
             })
-                as std::pin::Pin<Box<dyn core::future::Future<Output = Result<HistoryPage, NifiError>>>>
+                as std::pin::Pin<Box<dyn core::future::Future<Output = Result<HistoryPage, NifiError>> + Send>>
         };
-        let mut pag = HistoryPaginator::from_fetcher(fetch, 100);
+        let mut pag = HistoryPaginator::from_fetcher(fetch, count);
         // Walk a bounded number of pages; the paginator must terminate
         // naturally via offset >= total (i64 comparison). Guard with a
         // hard cap so an infinite loop bug fails the test quickly.
         let mut pages = 0_usize;
         while pag.next_page().await.unwrap().is_some() {
             pages += 1;
-            assert!(pages < 25_000_000, "paginator failed to terminate");
+            assert!(pages < 25_000, "paginator failed to terminate");
         }
         // Not asserting an exact page count — only that it terminated.
     }
