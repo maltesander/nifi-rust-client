@@ -13,6 +13,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-04-12
+
+### Added
+
+- Auto-update lib.rs doc comment version examples ([a133550](https://github.com/maltesander/nifi-rust-client/commit/a133550))
+- Add AuthProvider trait replacing CredentialProvider ([3cedb00](https://github.com/maltesander/nifi-rust-client/commit/3cedb00))
+- Add tracing::instrument spans to all HTTP helpers ([755a599](https://github.com/maltesander/nifi-rust-client/commit/755a599))
+- Add flow_history_dynamic paginator constructor ([100b867](https://github.com/maltesander/nifi-rust-client/commit/100b867))
+- Add flow_history paginator constructor for static mode ([0d2930d](https://github.com/maltesander/nifi-rust-client/commit/0d2930d))
+- Add HistoryPaginator::next item-level iterator ([5964411](https://github.com/maltesander/nifi-rust-client/commit/5964411))
+- Implement HistoryPaginator::next_page ([f9db99f](https://github.com/maltesander/nifi-rust-client/commit/f9db99f))
+- Add pagination module skeleton ([66a1ee3](https://github.com/maltesander/nifi-rust-client/commit/66a1ee3))
+- Add require! macro for nested Option field extraction ([276fdf3](https://github.com/maltesander/nifi-rust-client/commit/276fdf3))
+- Wire RequireField trait into crate root ([8edb8d5](https://github.com/maltesander/nifi-rust-client/commit/8edb8d5))
+- Add RequireField trait for Option<T> ([c9dd1fa](https://github.com/maltesander/nifi-rust-client/commit/c9dd1fa))
+- Add NifiError::MissingField variant for require helper ([372f912](https://github.com/maltesander/nifi-rust-client/commit/372f912))
+
+### Changed
+
+- Delete credentials.rs, replaced by auth.rs ([6d21697](https://github.com/maltesander/nifi-rust-client/commit/6d21697))
+
+### Fixed
+
+- Add Send bound to BoxedFetchFuture and speed up overflow test ([47c73bb](https://github.com/maltesander/nifi-rust-client/commit/47c73bb))
+
+### Documentation
+
+- Document cluster/load balancer token handling ([0655e61](https://github.com/maltesander/nifi-rust-client/commit/0655e61))
+- Fix stale version number in lib.rs doc examples ([efcfe12](https://github.com/maltesander/nifi-rust-client/commit/efcfe12))
+- Update README and AGENTS.md for AuthProvider migration ([ac51418](https://github.com/maltesander/nifi-rust-client/commit/ac51418))
+- Update credentials_and_retry example to use AuthProvider ([78eb18a](https://github.com/maltesander/nifi-rust-client/commit/78eb18a))
+- Document flow_history paginator ([9a6b528](https://github.com/maltesander/nifi-rust-client/commit/9a6b528))
+- Fix RequireField example to use real field chain ([00461bd](https://github.com/maltesander/nifi-rust-client/commit/00461bd))
+- Document RequireField and require! helpers ([04a1b13](https://github.com/maltesander/nifi-rust-client/commit/04a1b13))
+
+### Tests
+
+- Add wiremock tests for X-ProxiedEntitiesChain header ([53b18d6](https://github.com/maltesander/nifi-rust-client/commit/53b18d6))
+- Migrate tests from CredentialProvider to AuthProvider ([7be464e](https://github.com/maltesander/nifi-rust-client/commit/7be464e))
+- Wiremock coverage for flow_history paginators ([63f9144](https://github.com/maltesander/nifi-rust-client/commit/63f9144))
+- Wiremock coverage for flow_history paginators ([fc78dbd](https://github.com/maltesander/nifi-rust-client/commit/fc78dbd))
+
 ## [0.7.0] - 2026-04-12
 
 ### Added
@@ -379,7 +421,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Structured error handling** — `NifiError` via `snafu` with distinct variants for HTTP, auth, serialization, and network errors.
 - **Tracing** — all HTTP requests emit a `tracing::debug!` event with method and path before sending.
 
-[Unreleased]: https://github.com/maltesander/nifi-rust-client/compare/client-v0.7.0...HEAD
+[Unreleased]: https://github.com/maltesander/nifi-rust-client/compare/client-v0.8.0...HEAD
+[0.8.0]: https://github.com/maltesander/nifi-rust-client/compare/client-v0.7.0...client-v0.8.0
 [0.7.0]: https://github.com/maltesander/nifi-rust-client/compare/client-v0.6.0...client-v0.7.0
 [0.6.0]: https://github.com/maltesander/nifi-rust-client/compare/v0.5.0...client-v0.6.0
 [0.5.0]: https://github.com/maltesander/nifi-rust-client/compare/v0.4.2...v0.5.0
