@@ -215,7 +215,7 @@ pub fn generate_cli(specs_dir: &Path, out_dir: &Path, config: &GenerateConfig) {
 
 /// Load and parse all OpenAPI spec files for the given versions.
 fn parse_specs(specs_dir: &Path, versions: &[String]) -> Vec<(String, ApiSpec)> {
-    versions
+    let mut all_parsed: Vec<(String, ApiSpec)> = versions
         .iter()
         .map(|version| {
             let spec_path = specs_dir.join(version).join("nifi-api.json");
@@ -227,7 +227,17 @@ fn parse_specs(specs_dir: &Path, versions: &[String]) -> Vec<(String, ApiSpec)> 
             let spec = crate::load(spec_path.to_str().expect("UTF-8 spec path"));
             (version.clone(), spec)
         })
-        .collect()
+        .collect();
+
+    // Apply overrides + run same-tag collision check per version.
+    for (version, spec) in &mut all_parsed {
+        crate::naming::apply_overrides_and_check_single(spec, version);
+    }
+
+    // Run cross-version drift check once across all loaded versions.
+    crate::naming::check_drift(&all_parsed);
+
+    all_parsed
 }
 
 /// Generate the dynamic module (types, conversions, dispatch, impls, traits, mod.rs, tests).
