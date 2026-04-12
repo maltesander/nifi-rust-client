@@ -34,6 +34,7 @@ from typing import List, Optional
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 REPO_URL = "https://github.com/maltesander/nifi-rust-client"
 CLIENT_BUILD_DEP_CARGO_TOML = os.path.join(ROOT, "crates", "nifi-rust-client", "Cargo.toml")
+CTL_BUILD_DEP_CARGO_TOML = os.path.join(ROOT, "crates", "nifictl", "Cargo.toml")
 
 BINARY_EXTENSIONS = {
     ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".ico", ".svg",
@@ -96,10 +97,11 @@ CRATES = {
         stage_files=[
             "crates/nifi-openapi-gen/Cargo.toml",
             "crates/nifi-openapi-gen/CHANGELOG.md",
-            # Gen release must also bump nifi-rust-client's build-dep reference
-            # so the workspace path dep (with its version constraint) still
-            # resolves. This is a workspace-coherence edit, not a client release.
+            # Gen release must also bump dependent crates' version constraints
+            # so the workspace path deps still resolve. This is a
+            # workspace-coherence edit, not a release for those crates.
             "crates/nifi-rust-client/Cargo.toml",
+            "crates/nifictl/Cargo.toml",
             "Cargo.lock",
         ],
         readme_shorthand_paths=[],
@@ -294,34 +296,35 @@ def update_crate_cargo_toml(cargo_toml, old_version, new_version, dry_run):
 
 
 def update_client_build_dep(new_gen_version, dry_run):
-    """Rewrite nifi-rust-client's build-dep on nifi-openapi-gen.
+    """Rewrite nifi-openapi-gen version pins in dependent crates.
 
-    The workspace has a path dep with a version constraint. When gen's
-    Cargo.toml version is bumped, the client's build-dep constraint must
+    The workspace has path deps with version constraints. When gen's
+    Cargo.toml version is bumped, the dependent crates' constraints must
     be bumped in lockstep or `cargo generate-lockfile` fails to resolve.
-    This is a workspace-coherence edit — it does NOT bump the client's
-    own version or trigger a client release.
+    This is a workspace-coherence edit — it does NOT bump any dependent
+    crate's own version or trigger a release for them.
     """
-    with open(CLIENT_BUILD_DEP_CARGO_TOML, "r") as f:
-        content = f.read()
-
     pattern = re.compile(
         r'(nifi-openapi-gen\s*=\s*\{[^}]*version\s*=\s*")\d+\.\d+\.\d+(")'
     )
-    new_content, count = pattern.subn(
-        rf'\g<1>{new_gen_version}\g<2>',
-        content,
-    )
-    rel = os.path.relpath(CLIENT_BUILD_DEP_CARGO_TOML, ROOT)
-    if count == 0:
-        print(f"  WARNING: nifi-openapi-gen build-dep not found in {rel}", file=sys.stderr)
-        return
-    print(f"      {rel}: nifi-openapi-gen build-dep → \"{new_gen_version}\"")
-    if not dry_run:
-        with open(CLIENT_BUILD_DEP_CARGO_TOML, "w") as f:
-            f.write(new_content)
-    else:
-        print("      (skipped write — dry-run)")
+    for toml_path in [CLIENT_BUILD_DEP_CARGO_TOML, CTL_BUILD_DEP_CARGO_TOML]:
+        if not os.path.exists(toml_path):
+            continue
+        with open(toml_path, "r") as f:
+            content = f.read()
+        new_content, count = pattern.subn(
+            rf'\g<1>{new_gen_version}\g<2>',
+            content,
+        )
+        rel = os.path.relpath(toml_path, ROOT)
+        if count == 0:
+            continue
+        print(f"      {rel}: nifi-openapi-gen dep → \"{new_gen_version}\"")
+        if not dry_run:
+            with open(toml_path, "w") as f:
+                f.write(new_content)
+        else:
+            print("      (skipped write — dry-run)")
 
 
 # ---------------------------------------------------------------------------
