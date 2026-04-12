@@ -26,6 +26,7 @@ Full changelog: [NIFI_API_CHANGES.md](NIFI_API_CHANGES.md)
 | Crate | Description |
 |-------|-------------|
 | [`nifi-rust-client`](crates/nifi-rust-client/) | Published library — API types, resource methods, auth |
+| [`nifictl`](crates/nifictl/) | CLI tool for Apache NiFi 2.x — operator-friendly commands for every API endpoint |
 | [`nifi-openapi-gen`](crates/nifi-openapi-gen/) | Internal code, test and documentation generator |
 
 ## Quick Start

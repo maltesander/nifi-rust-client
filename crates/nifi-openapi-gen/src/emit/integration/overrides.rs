@@ -95,24 +95,25 @@ pub fn lookup_endpoint_override(
     tag: &str,
 ) -> Option<&'static EndpointOverride> {
     for ov in ENDPOINT_OVERRIDES {
-        if let EndpointScope::Exact { method: m, path: p } = &ov.scope {
-            if m == method && *p == path {
-                return Some(ov);
-            }
+        if let EndpointScope::Exact { method: m, path: p } = &ov.scope
+            && m == method
+            && *p == path
+        {
+            return Some(ov);
         }
     }
     for ov in ENDPOINT_OVERRIDES {
-        if let EndpointScope::PathPrefix { prefix } = &ov.scope {
-            if path.starts_with(prefix) {
-                return Some(ov);
-            }
+        if let EndpointScope::PathPrefix { prefix } = &ov.scope
+            && path.starts_with(prefix)
+        {
+            return Some(ov);
         }
     }
     for ov in ENDPOINT_OVERRIDES {
-        if let EndpointScope::Tag { name } = &ov.scope {
-            if *name == tag {
-                return Some(ov);
-            }
+        if let EndpointScope::Tag { name } = &ov.scope
+            && *name == tag
+        {
+            return Some(ov);
         }
     }
     None

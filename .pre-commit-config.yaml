@@ -60,7 +60,7 @@ repos:
       - id: cargo-msrv-check
         name: cargo-msrv-check
         language: system
-        entry: cargo +1.85.0 check --workspace --exclude nifi-integration-tests
+        entry: cargo +1.88.0 check --workspace --exclude nifi-integration-tests
         stages: [pre-commit, pre-merge-commit]
         pass_filenames: false
         files: \.rs$|Cargo\.(toml|lock)

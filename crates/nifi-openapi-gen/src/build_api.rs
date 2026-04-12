@@ -196,6 +196,21 @@ fn strip_include_incompatible_lines(content: &str) -> String {
         .join("\n")
 }
 
+/// Generate CLI subcommand code (clap derive structs + handlers).
+///
+/// Uses the **latest** spec version — CLI commands reflect the newest API.
+/// All specs are passed for fn_name canonicalization (matching the dynamic
+/// dispatch layer which uses the oldest version's name).
+/// Writes `generated_cli.rs` into `out_dir`.
+pub fn generate_cli(specs_dir: &Path, out_dir: &Path, config: &GenerateConfig) {
+    let all_parsed = parse_specs(specs_dir, &config.versions);
+
+    let files = crate::emit::cli::emit_cli(&all_parsed);
+    for (filename, content) in files {
+        write_generated(&out_dir.join(&filename), &with_header(&content));
+    }
+}
+
 // ── Private helpers ─────────────────────────────────────────────────────────
 
 /// Load and parse all OpenAPI spec files for the given versions.

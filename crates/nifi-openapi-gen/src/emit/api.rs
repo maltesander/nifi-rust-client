@@ -124,10 +124,10 @@ fn emit_param_docs(out: &mut String, ep: &Endpoint, skip_param: Option<&str>) {
     for (name, doc) in &query_docs {
         out.push_str(&format!("    /// - `{name}`: {doc}\n"));
     }
-    if let Some(doc) = &ep.body_doc {
-        if ep.request_type.is_some() {
-            out.push_str(&format!("    /// - `body`: {doc}\n"));
-        }
+    if let Some(doc) = &ep.body_doc
+        && ep.request_type.is_some()
+    {
+        out.push_str(&format!("    /// - `body`: {doc}\n"));
     }
 }
 

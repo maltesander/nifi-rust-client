@@ -32,12 +32,12 @@ use nifi_openapi_gen::{
 /// Extract major.minor version shorthand from Cargo.toml content.
 fn read_crate_version_shorthand(toml_content: &str) -> String {
     for line in toml_content.lines() {
-        if let Some(rest) = line.strip_prefix("version = \"") {
-            if let Some(ver) = rest.strip_suffix('"') {
-                let parts: Vec<&str> = ver.splitn(3, '.').collect();
-                if parts.len() >= 2 {
-                    return format!("{}.{}", parts[0], parts[1]);
-                }
+        if let Some(rest) = line.strip_prefix("version = \"")
+            && let Some(ver) = rest.strip_suffix('"')
+        {
+            let parts: Vec<&str> = ver.splitn(3, '.').collect();
+            if parts.len() >= 2 {
+                return format!("{}.{}", parts[0], parts[1]);
             }
         }
     }

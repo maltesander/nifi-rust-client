@@ -505,6 +505,7 @@ releases.
 |---|---|
 | `nifi-openapi-gen` | New NiFi spec bundled, emitter bug fix, API extension for new kinds of codegen overrides |
 | `nifi-rust-client` | Picks up a newer `nifi-openapi-gen`, or ships a hand-written client change (builder, retry, tracing, etc.) |
+| `nifictl` | CLI feature additions, porcelain commands, output formatting changes |
 
 ### Tag scheme
 
@@ -512,8 +513,9 @@ releases.
 |---|---|
 | `nifi-openapi-gen` | `gen-vX.Y.Z` |
 | `nifi-rust-client` | `client-vX.Y.Z` |
+| `nifictl` | `ctl-vX.Y.Z` |
 
-`.github/workflows/release.yml` listens for both prefixes and dispatches
+`.github/workflows/release.yml` listens for all three prefixes and dispatches
 three jobs per crate: `{prefix}-test → {prefix}-publish → {prefix}-release`.
 The `test` job asserts the Git tag matches the corresponding crate's
 `Cargo.toml` version so mismatches fail fast.
@@ -531,6 +533,9 @@ python3 release/release.py gen patch --tag-message "release message"
 #   2. Commit: chore(client): bump nifi-openapi-gen build-dep to X.Y.Z
 #   3. Run:
 python3 release/release.py client patch --tag-message "release message"
+
+# Release nifictl (independent of gen and client)
+python3 release/release.py ctl patch --tag-message "release message"
 ```
 
 `release.py client` runs a crates.io lookup as its first gate: it parses
@@ -545,15 +550,15 @@ an unpublished generator.
 
 - `crates/nifi-openapi-gen/CHANGELOG.md`
 - `crates/nifi-rust-client/CHANGELOG.md`
+- `crates/nifictl/CHANGELOG.md`
 
-Both are generated from conventional commits via `git log {old-tag}..HEAD
--- <crate-paths>`, so each changelog only lists commits that touched its
-crate's files. A commit that touches both crates (e.g. "add NiFi 2.9.0
-support" which lands a new spec AND a new feature flag in the client)
-appears in both changelogs, which is almost always what you want.
+All three are generated from conventional commits via `git log
+{old-tag}..HEAD -- <crate-paths>`, so each changelog only lists commits
+that touched its crate's files. A commit that touches multiple crates
+appears in each relevant changelog, which is almost always what you want.
 
 Commit scopes that are purely internal (`ci`, `release`, `rustfmt`,
-`rust-analyzer`) and the `chore` type are filtered out in both
+`rust-analyzer`) and the `chore` type are filtered out in all
 changelogs.
 
 ### First-release-under-new-scheme fallback

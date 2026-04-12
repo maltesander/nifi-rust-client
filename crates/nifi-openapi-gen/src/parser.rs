@@ -574,10 +574,10 @@ fn parse_tags(
                 let try_codes = ["200", "201", "202", "default"];
                 // First pass: first code that has content.
                 for code in try_codes {
-                    if let Some(v) = r.get(code) {
-                        if v.get("content").is_some() {
-                            return Some(v.clone());
-                        }
+                    if let Some(v) = r.get(code)
+                        && v.get("content").is_some()
+                    {
+                        return Some(v.clone());
                     }
                 }
                 // Fallback: first code that exists, even without content.

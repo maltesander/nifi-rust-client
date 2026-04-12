@@ -74,11 +74,11 @@ CATEGORY_ORDER = ["Breaking Changes", "Added", "Changed", "Fixed", "Documentatio
 class CrateConfig:
     """Per-crate release configuration."""
 
-    id: str                             # "gen" or "client"
+    id: str                             # "gen", "client", or "ctl"
     name: str                           # crate name, e.g. "nifi-openapi-gen"
     cargo_toml: str                     # absolute path to Cargo.toml
     changelog: str                      # absolute path to CHANGELOG.md
-    tag_prefix: str                     # "gen" or "client"
+    tag_prefix: str                     # "gen", "client", or "ctl"
     commit_paths: List[str]             # paths passed to `git log -- ...` for changelog scoping
     stage_files: List[str]              # repo-relative files staged in the release commit
     readme_shorthand_paths: List[str]   # READMEs with version shorthands to bump on minor/major
@@ -124,6 +124,21 @@ CRATES = {
             os.path.join(ROOT, "crates", "nifi-rust-client", "README.md"),
         ],
         validate_build_dep=True,
+    ),
+    "ctl": CrateConfig(
+        id="ctl",
+        name="nifictl",
+        cargo_toml=os.path.join(ROOT, "crates", "nifictl", "Cargo.toml"),
+        changelog=os.path.join(ROOT, "crates", "nifictl", "CHANGELOG.md"),
+        tag_prefix="ctl",
+        commit_paths=["crates/nifictl/"],
+        stage_files=[
+            "crates/nifictl/Cargo.toml",
+            "crates/nifictl/CHANGELOG.md",
+            "Cargo.lock",
+        ],
+        readme_shorthand_paths=[],
+        validate_build_dep=False,
     ),
 }
 
@@ -759,6 +774,20 @@ def run_checks(crate: CrateConfig, dry_run, skip_integration):
             (
                 "cargo clippy -p nifi-openapi-gen --all-targets --all-features -- -D warnings",
                 "Clippy (nifi-openapi-gen)",
+            ),
+            ("pre-commit run --all-files", "Pre-commit"),
+            (
+                f"cargo package -p {crate.name} --allow-dirty",
+                f"Package validation ({crate.name}, post-lockfile)",
+            ),
+        ]
+    elif crate.id == "ctl":
+        checks = [
+            ("cargo build -p nifictl", "Build (nifictl)"),
+            ("cargo test -p nifictl", "Tests (nifictl)"),
+            (
+                "cargo clippy -p nifictl --all-targets -- -D warnings",
+                "Clippy (nifictl)",
             ),
             ("pre-commit run --all-files", "Pre-commit"),
             (
