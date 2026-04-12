@@ -13,6 +13,8 @@
 pub mod build_api;
 
 #[doc(hidden)]
+pub mod layout;
+#[doc(hidden)]
 pub mod content_type;
 #[doc(hidden)]
 pub mod diff;
