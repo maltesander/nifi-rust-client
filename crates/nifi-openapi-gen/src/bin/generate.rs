@@ -82,7 +82,7 @@ fn main() {
     // Load all specs for repo maintenance.
     let latest_version = all_spec_versions.last().cloned().unwrap_or_default();
     let version_strs: Vec<&str> = all_spec_versions.iter().map(String::as_str).collect();
-    let all_parsed: Vec<(String, ApiSpec)> = all_spec_versions
+    let mut all_parsed: Vec<(String, ApiSpec)> = all_spec_versions
         .iter()
         .map(|v| {
             let path = specs_dir.join(v).join("nifi-api.json");
@@ -90,6 +90,13 @@ fn main() {
             (v.clone(), spec)
         })
         .collect();
+
+    // Apply naming overrides + per-version same-tag collision check.
+    for (version, spec) in &mut all_parsed {
+        nifi_openapi_gen::naming::apply_overrides_and_check_single(spec, version);
+    }
+    // Cross-version drift check.
+    nifi_openapi_gen::naming::check_drift(&all_parsed);
 
     // Read files that need patching (Overwrite edits need current content).
     let client_toml =
