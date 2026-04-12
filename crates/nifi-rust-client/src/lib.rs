@@ -124,6 +124,8 @@ pub mod client;
 pub mod config;
 /// Error type returned by all client operations.
 pub mod error;
+/// Pagination helpers for NiFi REST endpoints that support offset/count paging.
+pub mod pagination;
 mod require;
 pub use builder::NifiClientBuilder;
 pub use client::NifiClient;
