@@ -63,6 +63,13 @@ impl std::fmt::Display for PlanError {
 
 impl std::error::Error for PlanError {}
 
+/// Summary of what `apply()` did.
+#[derive(Debug, Default)]
+pub struct ApplyReport {
+    pub written: usize,
+    pub unchanged: usize,
+}
+
 /// Collects all `FileEdit`s and validates/applies them.
 pub struct MutationPlan {
     pub edits: Vec<FileEdit>,
@@ -144,6 +151,72 @@ impl MutationPlan {
 
         if errors.is_empty() { Ok(()) } else { Err(errors) }
     }
+
+    /// Validate, then apply all edits. Returns a report of what changed.
+    pub fn apply(&self) -> Result<ApplyReport, Vec<PlanError>> {
+        self.validate()?;
+        let mut report = ApplyReport::default();
+
+        for edit in &self.edits {
+            match edit {
+                FileEdit::Overwrite { path, content } => {
+                    let on_disk = std::fs::read_to_string(path).unwrap_or_default();
+                    if on_disk == *content {
+                        report.unchanged += 1;
+                    } else {
+                        std::fs::write(path, content).map_err(|e| {
+                            vec![PlanError::IoError { path: path.clone(), source: e }]
+                        })?;
+                        println!("  wrote {}", path.display());
+                        report.written += 1;
+                    }
+                }
+                FileEdit::ReplaceBlock { path, start_marker, end_marker, content } => {
+                    let on_disk = std::fs::read_to_string(path).map_err(|e| {
+                        vec![PlanError::IoError { path: path.clone(), source: e }]
+                    })?;
+                    let patched = crate::util::replace_between_markers(&on_disk, start_marker, end_marker, content);
+                    if on_disk == patched {
+                        report.unchanged += 1;
+                    } else {
+                        std::fs::write(path, &patched).map_err(|e| {
+                            vec![PlanError::IoError { path: path.clone(), source: e }]
+                        })?;
+                        println!("  wrote {}", path.display());
+                        report.written += 1;
+                    }
+                }
+                FileEdit::CreateOrReplaceBlock { path, start_marker, end_marker, content, template } => {
+                    let on_disk = if path.exists() {
+                        std::fs::read_to_string(path).map_err(|e| {
+                            vec![PlanError::IoError { path: path.clone(), source: e }]
+                        })?
+                    } else {
+                        if let Some(parent) = path.parent() {
+                            std::fs::create_dir_all(parent).map_err(|e| {
+                                vec![PlanError::IoError { path: path.clone(), source: e }]
+                            })?;
+                        }
+                        println!("  created {}", path.display());
+                        template.clone()
+                    };
+                    let patched = crate::util::replace_between_markers(&on_disk, start_marker, end_marker, content);
+                    if on_disk == patched && path.exists() {
+                        report.unchanged += 1;
+                    } else {
+                        std::fs::write(path, &patched).map_err(|e| {
+                            vec![PlanError::IoError { path: path.clone(), source: e }]
+                        })?;
+                        if on_disk != patched {
+                            println!("  wrote {}", path.display());
+                        }
+                        report.written += 1;
+                    }
+                }
+            }
+        }
+        Ok(report)
+    }
 }
 
 #[cfg(test)]
@@ -222,6 +295,77 @@ mod tests {
         };
         let errors = plan.validate().unwrap_err();
         assert!(errors.iter().any(|e| matches!(e, PlanError::DuplicateTarget { .. })));
+    }
+
+    #[test]
+    fn apply_replace_block_updates_content() {
+        let f = tmp_file("before\n<!-- START -->\nold\n<!-- END -->\nafter");
+        let plan = MutationPlan {
+            edits: vec![FileEdit::ReplaceBlock {
+                path: f.path().to_path_buf(),
+                start_marker: "<!-- START -->".into(),
+                end_marker: "<!-- END -->".into(),
+                content: "new content".into(),
+            }],
+        };
+        let report = plan.apply().unwrap();
+        assert_eq!(report.written, 1);
+        assert_eq!(report.unchanged, 0);
+        let result = std::fs::read_to_string(f.path()).unwrap();
+        assert!(result.contains("new content"));
+        assert!(result.contains("before"));
+        assert!(result.contains("after"));
+    }
+
+    #[test]
+    fn apply_overwrite_replaces_file() {
+        let f = tmp_file("old content");
+        let plan = MutationPlan {
+            edits: vec![FileEdit::Overwrite {
+                path: f.path().to_path_buf(),
+                content: "new content".into(),
+            }],
+        };
+        let report = plan.apply().unwrap();
+        assert_eq!(report.written, 1);
+        let result = std::fs::read_to_string(f.path()).unwrap();
+        assert_eq!(result, "new content");
+    }
+
+    #[test]
+    fn apply_skips_unchanged_file() {
+        let f = tmp_file("before\n<!-- START -->\nold\n<!-- END -->\nafter");
+        let plan = MutationPlan {
+            edits: vec![FileEdit::ReplaceBlock {
+                path: f.path().to_path_buf(),
+                start_marker: "<!-- START -->".into(),
+                end_marker: "<!-- END -->".into(),
+                content: "old".into(),
+            }],
+        };
+        let report = plan.apply().unwrap();
+        assert_eq!(report.written, 0);
+        assert_eq!(report.unchanged, 1);
+    }
+
+    #[test]
+    fn apply_create_or_replace_creates_missing_file() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("new-file.md");
+        let plan = MutationPlan {
+            edits: vec![FileEdit::CreateOrReplaceBlock {
+                path: path.clone(),
+                start_marker: "<!-- START -->".into(),
+                end_marker: "<!-- END -->".into(),
+                content: "body".into(),
+                template: "# Title\n\n<!-- START -->\n<!-- END -->\n".into(),
+            }],
+        };
+        let report = plan.apply().unwrap();
+        assert_eq!(report.written, 1);
+        let result = std::fs::read_to_string(&path).unwrap();
+        assert!(result.contains("body"));
+        assert!(result.contains("# Title"));
     }
 
     #[test]
