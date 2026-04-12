@@ -1,7 +1,9 @@
 use std::collections::HashSet;
 
 use crate::diff::VersionDiff;
+use crate::layout::RepoLayout;
 use crate::parser::{ApiSpec, HttpMethod};
+use crate::plan::FileEdit;
 use crate::util::wire_to_pascal;
 
 fn method_str(m: &HttpMethod) -> &'static str {
@@ -179,4 +181,56 @@ pub fn generate_integration_coverage_content(
     }
 
     out
+}
+
+pub fn emit_integration_coverage(
+    layout: &RepoLayout,
+    all_specs: &[(String, ApiSpec)],
+    diffs: &[VersionDiff],
+    tested_types: &[&str],
+    tested_endpoints: &HashSet<String>,
+    tested_enum_values: &HashSet<String>,
+    tested_query_params: &HashSet<String>,
+) -> Vec<FileEdit> {
+    let content = generate_integration_coverage_content(
+        all_specs,
+        diffs,
+        tested_types,
+        tested_endpoints,
+        tested_enum_values,
+        tested_query_params,
+    );
+    vec![FileEdit::ReplaceBlock {
+        path: layout.client_readme.clone(),
+        start_marker: "<!-- INTEGRATION_COVERAGE_START -->".into(),
+        end_marker: "<!-- INTEGRATION_COVERAGE_END -->".into(),
+        content,
+    }]
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::layout::RepoLayout;
+    use crate::plan::FileEdit;
+    use std::path::Path;
+
+    #[test]
+    fn emit_integration_coverage_returns_one_replace_block() {
+        let layout = RepoLayout::from_workspace_root(Path::new("/fake"));
+        let edits = emit_integration_coverage(
+            &layout,
+            &[],
+            &[],
+            &[],
+            &HashSet::new(),
+            &HashSet::new(),
+            &HashSet::new(),
+        );
+        assert_eq!(edits.len(), 1);
+        assert!(matches!(&edits[0], FileEdit::ReplaceBlock { path, start_marker, .. }
+            if *path == Path::new("/fake/crates/nifi-rust-client/README.md")
+            && start_marker.contains("INTEGRATION_COVERAGE_START")
+        ));
+    }
 }
