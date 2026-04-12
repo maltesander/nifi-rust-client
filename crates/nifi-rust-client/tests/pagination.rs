@@ -132,7 +132,6 @@ mod static_tests {
 // ---------------------------------------------------------------------------
 #[cfg(feature = "dynamic")]
 mod dynamic_tests {
-    use nifi_rust_client::dynamic::traits::FlowApi as _;
     use nifi_rust_client::pagination::{flow_history_dynamic, HistoryFilter};
     use nifi_rust_client::NifiClientBuilder;
     use nifi_rust_client::NifiError;
