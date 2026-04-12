@@ -292,8 +292,12 @@ fn emit_dynamic_client(out: &mut String, versions: &[(&str, &str, &str, &ApiSpec
     out.push_str("    }\n\n");
 
     // discover_cluster()
-    out.push_str("    /// Discover the cluster node ID by querying the cluster summary and nodes.\n");
-    out.push_str("    /// On standalone NiFi (not clustered or if the calls fail), stores `None`.\n");
+    out.push_str(
+        "    /// Discover the cluster node ID by querying the cluster summary and nodes.\n",
+    );
+    out.push_str(
+        "    /// On standalone NiFi (not clustered or if the calls fail), stores `None`.\n",
+    );
     out.push_str("    /// Idempotent — only runs the discovery once.\n");
     out.push_str("    async fn discover_cluster(&self) {\n");
     out.push_str("        let _ = self.cluster_node_id.get_or_init(|| async {\n");
@@ -303,7 +307,9 @@ fn emit_dynamic_client(out: &mut String, versions: &[(&str, &str, &str, &ApiSpec
     out.push_str("                    let cluster: Result<ClusterResponse, NifiError> = self.client.get(\"/controller/cluster\").await;\n");
     out.push_str("                    match cluster {\n");
     out.push_str("                        Ok(c) => c.cluster.nodes.iter()\n");
-    out.push_str("                            .find(|n| n.status.as_deref() == Some(\"CONNECTED\"))\n");
+    out.push_str(
+        "                            .find(|n| n.status.as_deref() == Some(\"CONNECTED\"))\n",
+    );
     out.push_str("                            .and_then(|n| n.node_id.clone()),\n");
     out.push_str("                        Err(_) => None,\n");
     out.push_str("                    }\n");
@@ -314,12 +320,16 @@ fn emit_dynamic_client(out: &mut String, versions: &[(&str, &str, &str, &ApiSpec
     out.push_str("    }\n\n");
 
     // cluster_node_id()
-    out.push_str("    /// Returns the discovered cluster node ID, if this NiFi instance is clustered.\n");
+    out.push_str(
+        "    /// Returns the discovered cluster node ID, if this NiFi instance is clustered.\n",
+    );
     out.push_str("    ///\n");
     out.push_str("    /// Returns `None` for standalone NiFi instances, or if cluster discovery\n");
     out.push_str("    /// has not yet run (call [`login`](Self::login) or [`from_client`](Self::from_client) first).\n");
     out.push_str("    ///\n");
-    out.push_str("    /// Provenance and lineage dispatch methods auto-inject this value when the\n");
+    out.push_str(
+        "    /// Provenance and lineage dispatch methods auto-inject this value when the\n",
+    );
     out.push_str("    /// caller passes `None` for `cluster_node_id`.\n");
     out.push_str("    pub fn cluster_node_id(&self) -> Option<&str> {\n");
     out.push_str("        self.cluster_node_id.get().and_then(|opt| opt.as_deref())\n");

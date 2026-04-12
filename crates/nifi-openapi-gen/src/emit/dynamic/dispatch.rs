@@ -249,19 +249,29 @@ fn emit_dispatch_method(
         .iter()
         .any(|(qp, _)| qp.rust_name == "cluster_node_id");
     if has_cluster_node_id_qp {
-        out.push_str("        let cluster_node_id = cluster_node_id.or(self.client.cluster_node_id());\n");
+        out.push_str(
+            "        let cluster_node_id = cluster_node_id.or(self.client.cluster_node_id());\n",
+        );
     }
 
     // --- Auto-inject cluster_node_id into known body types ---
     if ep.body_kind.as_ref() == Some(&RequestBodyKind::Json)
-        && let Some((outer, inner)) =
-            ep.request_type.as_deref().and_then(cluster_node_id_body_injection)
+        && let Some((outer, inner)) = ep
+            .request_type
+            .as_deref()
+            .and_then(cluster_node_id_body_injection)
     {
         out.push_str("        let body = {\n");
         out.push_str("            let mut b = body.clone();\n");
-        out.push_str(&format!("            if let Some(ref mut {outer}) = b.{outer}\n"));
-        out.push_str(&format!("                && let Some(ref mut {inner}) = {outer}.{inner}\n"));
-        out.push_str(&format!("                && {inner}.cluster_node_id.is_none()\n"));
+        out.push_str(&format!(
+            "            if let Some(ref mut {outer}) = b.{outer}\n"
+        ));
+        out.push_str(&format!(
+            "                && let Some(ref mut {inner}) = {outer}.{inner}\n"
+        ));
+        out.push_str(&format!(
+            "                && {inner}.cluster_node_id.is_none()\n"
+        ));
         out.push_str("            {\n");
         out.push_str(&format!("                {inner}.cluster_node_id = self.client.cluster_node_id().map(|s| s.to_string());\n"));
         out.push_str("            }\n");
@@ -382,7 +392,9 @@ fn emit_sub_dispatch_method(
         .iter()
         .any(|(qp, _)| qp.rust_name == "cluster_node_id");
     if has_cluster_node_id_qp {
-        out.push_str("        let cluster_node_id = cluster_node_id.or(self.client.cluster_node_id());\n");
+        out.push_str(
+            "        let cluster_node_id = cluster_node_id.or(self.client.cluster_node_id());\n",
+        );
     }
 
     // --- Lazy version detection + dispatch ---
@@ -907,14 +919,13 @@ mod tests {
             vec![("2.8.0", "v2_8_0", "nifi-2-8-0", &spec)];
         let files = emit_dynamic_dispatch(&versions);
 
-        let (_, content) = files
-            .iter()
-            .find(|(f, _)| f == "provenance.rs")
-            .unwrap();
+        let (_, content) = files.iter().find(|(f, _)| f == "provenance.rs").unwrap();
 
         // Should contain the auto-injection rebinding
         assert!(
-            content.contains("let cluster_node_id = cluster_node_id.or(self.client.cluster_node_id());"),
+            content.contains(
+                "let cluster_node_id = cluster_node_id.or(self.client.cluster_node_id());"
+            ),
             "Missing cluster_node_id auto-injection. Content:\n{content}"
         );
     }
@@ -956,10 +967,7 @@ mod tests {
             vec![("2.8.0", "v2_8_0", "nifi-2-8-0", &spec)];
         let files = emit_dynamic_dispatch(&versions);
 
-        let (_, content) = files
-            .iter()
-            .find(|(f, _)| f == "provenance.rs")
-            .unwrap();
+        let (_, content) = files.iter().find(|(f, _)| f == "provenance.rs").unwrap();
 
         // Should clone body and inject cluster_node_id
         assert!(
