@@ -3,9 +3,10 @@
 use nifi_rust_client::NifiClientBuilder;
 use nifi_rust_client::dynamic::traits::{
     ControllerServicesApi, ControllerServicesBulletinsApi, FlowApi, ResourcesApi,
+    SystemDiagnosticsApi,
 };
 use nifi_rust_client::dynamic::types::{FlowMetricsReportingStrategy, IncludedRegistries};
-use wiremock::matchers::{method, path, query_param};
+use wiremock::matchers::{method, path, query_param, query_param_is_missing};
 use wiremock::{Mock, MockServer, ResponseTemplate};
 
 /// Helper: mount the about mock and create a DynamicClient
@@ -315,4 +316,117 @@ async fn dynamic_missing_required_field_error() {
         ),
         "expected MissingRequiredField, got: {err:?}"
     );
+}
+
+/// Mount the about + cluster discovery mocks so that DynamicClient resolves
+/// `cluster_node_id()` to `Some("node-abc")`. Used by tests that need to
+/// exercise the auto-injection code path.
+#[allow(clippy::unwrap_used)]
+async fn clustered_dynamic_client_on(
+    mock: &MockServer,
+    version: &str,
+) -> nifi_rust_client::dynamic::DynamicClient {
+    Mock::given(method("GET"))
+        .and(path("/nifi-api/flow/about"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+            "about": { "title": "NiFi", "version": version }
+        })))
+        .mount(mock)
+        .await;
+
+    Mock::given(method("GET"))
+        .and(path("/nifi-api/flow/cluster/summary"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+            "clusterSummary": { "clustered": true, "connectedToCluster": true }
+        })))
+        .mount(mock)
+        .await;
+
+    Mock::given(method("GET"))
+        .and(path("/nifi-api/controller/cluster"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+            "cluster": {
+                "nodes": [
+                    { "nodeId": "node-abc", "status": "CONNECTED" }
+                ]
+            }
+        })))
+        .mount(mock)
+        .await;
+
+    let client = NifiClientBuilder::new(&mock.uri())
+        .unwrap()
+        .build()
+        .unwrap();
+    let dynamic = nifi_rust_client::dynamic::DynamicClient::from_client(client)
+        .await
+        .unwrap();
+    assert_eq!(
+        dynamic.cluster_node_id(),
+        Some("node-abc"),
+        "cluster discovery must populate cluster_node_id for this test to be meaningful",
+    );
+    dynamic
+}
+
+/// Regression: when the caller passes `nodewise=Some(true)` to
+/// `get_system_diagnostics`, the dispatch layer must NOT auto-inject
+/// `cluster_node_id` from the clustered `DynamicClient`. NiFi rejects the
+/// combination `nodewise=true` + `clusterNodeId=<id>` because they mean
+/// mutually exclusive things (all-nodes breakdown vs. single-node view).
+#[tokio::test]
+async fn dynamic_system_diagnostics_nodewise_true_omits_cluster_node_id() {
+    let mock = MockServer::start().await;
+    let dynamic = clustered_dynamic_client_on(&mock, "2.8.0").await;
+
+    Mock::given(method("GET"))
+        .and(path("/nifi-api/system-diagnostics"))
+        .and(query_param("nodewise", "true"))
+        .and(query_param_is_missing("clusterNodeId"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+            "systemDiagnostics": {
+                "aggregateSnapshot": { "availableProcessors": 8 }
+            }
+        })))
+        .mount(&mock)
+        .await;
+
+    let diag = dynamic
+        .systemdiagnostics_api()
+        .get_system_diagnostics(Some(true), None, None)
+        .await
+        .expect("nodewise=true must not trigger cluster_node_id auto-injection");
+
+    assert_eq!(
+        diag.aggregate_snapshot
+            .as_ref()
+            .and_then(|s| s.available_processors),
+        Some(8),
+    );
+}
+
+/// Complement to the test above: when the caller leaves `nodewise` as
+/// `None` (or `Some(false)`), auto-injection should still happen so that
+/// `DynamicClient::cluster_node_id()` is honored.
+#[tokio::test]
+async fn dynamic_system_diagnostics_nodewise_none_injects_cluster_node_id() {
+    let mock = MockServer::start().await;
+    let dynamic = clustered_dynamic_client_on(&mock, "2.8.0").await;
+
+    Mock::given(method("GET"))
+        .and(path("/nifi-api/system-diagnostics"))
+        .and(query_param("clusterNodeId", "node-abc"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+            "systemDiagnostics": {
+                "aggregateSnapshot": { "availableProcessors": 8 }
+            }
+        })))
+        .mount(&mock)
+        .await;
+
+    dynamic
+        .systemdiagnostics_api()
+        .get_system_diagnostics(None, None, None)
+        .await
+        .expect("auto-injection should supply cluster_node_id when nodewise is None");
 }

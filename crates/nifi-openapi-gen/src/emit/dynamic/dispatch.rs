@@ -245,13 +245,33 @@ fn emit_dispatch_method(
     ));
 
     // --- Auto-inject cluster_node_id from DynamicClient when caller passes None ---
+    //
+    // Rule: NiFi rejects `clusterNodeId` alongside `nodewise=true` because the two
+    // mean mutually exclusive things (single-node view vs. all-nodes breakdown).
+    // When the endpoint carries both params, only auto-inject when the caller did
+    // NOT pass `nodewise=Some(true)`.
     let has_cluster_node_id_qp = merged_query_params
         .iter()
         .any(|(qp, _)| qp.rust_name == "cluster_node_id");
+    let has_nodewise_qp = merged_query_params
+        .iter()
+        .any(|(qp, _)| qp.rust_name == "nodewise");
     if has_cluster_node_id_qp {
-        out.push_str(
-            "        let cluster_node_id = cluster_node_id.or(self.client.cluster_node_id());\n",
-        );
+        if has_nodewise_qp {
+            out.push_str(
+                "        let cluster_node_id = if matches!(nodewise, Some(true)) {\n",
+            );
+            out.push_str("            cluster_node_id\n");
+            out.push_str("        } else {\n");
+            out.push_str(
+                "            cluster_node_id.or(self.client.cluster_node_id())\n",
+            );
+            out.push_str("        };\n");
+        } else {
+            out.push_str(
+                "        let cluster_node_id = cluster_node_id.or(self.client.cluster_node_id());\n",
+            );
+        }
     }
 
     // --- Auto-inject cluster_node_id into known body types ---
@@ -388,13 +408,33 @@ fn emit_sub_dispatch_method(
     ));
 
     // --- Auto-inject cluster_node_id from DynamicClient when caller passes None ---
+    //
+    // Rule: NiFi rejects `clusterNodeId` alongside `nodewise=true` because the two
+    // mean mutually exclusive things (single-node view vs. all-nodes breakdown).
+    // When the endpoint carries both params, only auto-inject when the caller did
+    // NOT pass `nodewise=Some(true)`.
     let has_cluster_node_id_qp = merged_query_params
         .iter()
         .any(|(qp, _)| qp.rust_name == "cluster_node_id");
+    let has_nodewise_qp = merged_query_params
+        .iter()
+        .any(|(qp, _)| qp.rust_name == "nodewise");
     if has_cluster_node_id_qp {
-        out.push_str(
-            "        let cluster_node_id = cluster_node_id.or(self.client.cluster_node_id());\n",
-        );
+        if has_nodewise_qp {
+            out.push_str(
+                "        let cluster_node_id = if matches!(nodewise, Some(true)) {\n",
+            );
+            out.push_str("            cluster_node_id\n");
+            out.push_str("        } else {\n");
+            out.push_str(
+                "            cluster_node_id.or(self.client.cluster_node_id())\n",
+            );
+            out.push_str("        };\n");
+        } else {
+            out.push_str(
+                "        let cluster_node_id = cluster_node_id.or(self.client.cluster_node_id());\n",
+            );
+        }
     }
 
     // --- Lazy version detection + dispatch ---
