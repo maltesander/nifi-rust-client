@@ -71,9 +71,9 @@
 //!   (`Unauthorized`, `Forbidden`, `NotFound`, `Conflict`,
 //!   `UnsupportedEndpoint`, etc.) and helpers like `status_code()` and
 //!   `is_retryable()`.
-//! - [`CredentialProvider`] and its impls (`StaticCredentials`,
-//!   `EnvCredentials`) in the [`config::credentials`] module — used with
-//!   [`NifiClientBuilder::credential_provider`] to enable auto-refresh on 401.
+//! - [`AuthProvider`] and its impls (`PasswordAuth`, `EnvPasswordAuth`,
+//!   `StaticTokenAuth`) in the [`config::auth`] module — used with
+//!   [`NifiClientBuilder::auth_provider`] to enable auto-refresh on 401.
 //! - [`config::retry::RetryPolicy`] — exponential-backoff retry on transient
 //!   errors, configured via [`NifiClientBuilder::retry_policy`].
 //!
@@ -129,6 +129,7 @@ pub mod pagination;
 mod require;
 pub use builder::NifiClientBuilder;
 pub use client::NifiClient;
+pub use config::auth::AuthProvider;
 pub use config::credentials::CredentialProvider;
 pub use error::NifiError;
 pub use require::RequireField;

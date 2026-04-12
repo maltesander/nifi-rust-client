@@ -7,7 +7,7 @@ use url::Url;
 
 use crate::NifiClient;
 use crate::NifiError;
-use crate::config::credentials::CredentialProvider;
+use crate::config::auth::AuthProvider;
 use crate::error::{HttpSnafu, InvalidBaseUrlSnafu, InvalidCertificateSnafu};
 
 /// Builder for [`NifiClient`].
@@ -42,7 +42,9 @@ pub struct NifiClientBuilder {
     proxy_https: Option<Url>,
     danger_accept_invalid_certs: bool,
     root_certificates: Vec<Vec<u8>>,
-    credential_provider: Option<Arc<dyn CredentialProvider>>,
+    auth_provider: Option<Arc<dyn AuthProvider>>,
+    client_identity: Option<reqwest::Identity>,
+    proxied_entities_chain: Option<String>,
     retry_policy: Option<crate::config::retry::RetryPolicy>,
     #[cfg(feature = "dynamic")]
     version_strategy: Option<crate::dynamic::VersionResolutionStrategy>,
@@ -66,9 +68,14 @@ impl std::fmt::Debug for NifiClientBuilder {
                 &format!("[{} certs]", self.root_certificates.len()),
             )
             .field(
-                "credential_provider",
-                &self.credential_provider.as_ref().map(|c| format!("{c:?}")),
+                "auth_provider",
+                &self.auth_provider.as_ref().map(|c| format!("{c:?}")),
             )
+            .field(
+                "client_identity",
+                &self.client_identity.as_ref().map(|_| "<identity>"),
+            )
+            .field("proxied_entities_chain", &self.proxied_entities_chain)
             .field("retry_policy", &self.retry_policy);
         #[cfg(feature = "dynamic")]
         s.field("version_strategy", &self.version_strategy);
@@ -91,7 +98,9 @@ impl NifiClientBuilder {
             proxy_https: None,
             danger_accept_invalid_certs: false,
             root_certificates: Vec::new(),
-            credential_provider: None,
+            auth_provider: None,
+            client_identity: None,
+            proxied_entities_chain: None,
             retry_policy: None,
             #[cfg(feature = "dynamic")]
             version_strategy: None,
@@ -147,13 +156,55 @@ impl NifiClientBuilder {
         self
     }
 
-    /// Configure a [`CredentialProvider`] for automatic token refresh.
+    /// Configure an [`AuthProvider`] for authentication and automatic token refresh.
+    ///
+    /// When set, the client will automatically re-authenticate on 401 responses
+    /// by calling the provider and then re-issuing the failed request.
+    pub fn auth_provider(mut self, provider: impl AuthProvider + 'static) -> Self {
+        self.auth_provider = Some(Arc::new(provider));
+        self
+    }
+
+    /// Configure a [`CredentialProvider`](crate::config::credentials::CredentialProvider)
+    /// for automatic token refresh.
+    ///
+    /// **Deprecated:** Use [`auth_provider`](Self::auth_provider) with
+    /// [`PasswordAuth`](crate::config::auth::PasswordAuth) instead.
     ///
     /// When set, the client will automatically re-authenticate on 401 responses
     /// by calling the provider to obtain fresh credentials and then re-issuing
     /// the failed request.
-    pub fn credential_provider(mut self, provider: impl CredentialProvider + 'static) -> Self {
-        self.credential_provider = Some(Arc::new(provider));
+    #[deprecated(
+        since = "0.6.0",
+        note = "use auth_provider() with PasswordAuth instead"
+    )]
+    pub fn credential_provider(
+        mut self,
+        provider: impl crate::config::credentials::CredentialProvider + 'static,
+    ) -> Self {
+        self.auth_provider = Some(Arc::new(
+            crate::config::auth::CredentialProviderAdapter::new(provider),
+        ));
+        self
+    }
+
+    /// Attach a PEM-encoded client identity for mTLS.
+    ///
+    /// The `pem` bytes should contain the concatenated PEM-encoded private key
+    /// and certificate chain. The private key must be in RSA, SEC1 Elliptic
+    /// Curve, or PKCS#8 format.
+    pub fn client_identity_pem(mut self, pem: &[u8]) -> Result<Self, NifiError> {
+        let identity = reqwest::Identity::from_pem(pem).context(InvalidCertificateSnafu)?;
+        self.client_identity = Some(identity);
+        Ok(self)
+    }
+
+    /// Set the `X-ProxiedEntitiesChain` header sent with every request.
+    ///
+    /// This header is used in NiFi proxy deployments to propagate the end-user
+    /// identity through one or more reverse proxies.
+    pub fn proxied_entities_chain(mut self, chain: impl Into<String>) -> Self {
+        self.proxied_entities_chain = Some(chain.into());
         self
     }
 
@@ -207,11 +258,16 @@ impl NifiClientBuilder {
             builder = builder.proxy(proxy);
         }
 
+        if let Some(identity) = self.client_identity {
+            builder = builder.identity(identity);
+        }
+
         let http = builder.build().context(HttpSnafu)?;
         Ok(NifiClient::from_parts(
             self.base_url,
             http,
-            self.credential_provider,
+            self.auth_provider,
+            self.proxied_entities_chain,
             self.retry_policy,
         ))
     }

@@ -1,4 +1,5 @@
 #![cfg(not(feature = "dynamic"))]
+#![allow(deprecated)]
 
 use std::time::Duration;
 

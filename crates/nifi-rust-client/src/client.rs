@@ -8,7 +8,7 @@ use tokio::sync::RwLock;
 use url::Url;
 
 use crate::NifiError;
-use crate::config::credentials::CredentialProvider;
+use crate::config::auth::AuthProvider;
 use crate::error::{AuthSnafu, HttpSnafu};
 
 /// Client for the Apache NiFi REST API.
@@ -16,7 +16,8 @@ pub struct NifiClient {
     base_url: Url,
     http: Client,
     token: Arc<RwLock<Option<String>>>,
-    credentials: Option<Arc<dyn CredentialProvider>>,
+    auth_provider: Option<Arc<dyn AuthProvider>>,
+    proxied_entities_chain: Option<String>,
     #[allow(dead_code)]
     retry_policy: Option<crate::config::retry::RetryPolicy>,
 }
@@ -27,7 +28,8 @@ impl Clone for NifiClient {
             base_url: self.base_url.clone(),
             http: self.http.clone(),
             token: Arc::clone(&self.token),
-            credentials: self.credentials.clone(),
+            auth_provider: self.auth_provider.clone(),
+            proxied_entities_chain: self.proxied_entities_chain.clone(),
             retry_policy: self.retry_policy.clone(),
         }
     }
@@ -38,9 +40,10 @@ impl std::fmt::Debug for NifiClient {
         f.debug_struct("NifiClient")
             .field("base_url", &self.base_url)
             .field(
-                "credentials",
-                &self.credentials.as_ref().map(|c| format!("{c:?}")),
+                "auth_provider",
+                &self.auth_provider.as_ref().map(|c| format!("{c:?}")),
             )
+            .field("proxied_entities_chain", &self.proxied_entities_chain)
             .field("retry_policy", &self.retry_policy)
             .finish_non_exhaustive()
     }
@@ -51,14 +54,16 @@ impl NifiClient {
     pub(crate) fn from_parts(
         base_url: Url,
         http: Client,
-        credentials: Option<Arc<dyn CredentialProvider>>,
+        auth_provider: Option<Arc<dyn AuthProvider>>,
+        proxied_entities_chain: Option<String>,
         retry_policy: Option<crate::config::retry::RetryPolicy>,
     ) -> Self {
         Self {
             base_url,
             http,
             token: Arc::new(RwLock::new(None)),
-            credentials,
+            auth_provider,
+            proxied_entities_chain,
             retry_policy,
         }
     }
@@ -112,8 +117,8 @@ impl NifiClient {
     ///
     /// NiFi JWTs expire after 12 hours by default (configurable server-side via
     /// `nifi.security.user.login.identity.provider.expiration`). Once expired,
-    /// any API call returns [`NifiError::Unauthorized`]. Configure a
-    /// [`CredentialProvider`] on the builder to enable
+    /// any API call returns [`NifiError::Unauthorized`]. Configure an
+    /// [`AuthProvider`] on the builder to enable
     /// automatic token refresh on 401 responses.
     #[tracing::instrument(skip(self, username, password))]
     pub async fn login(&self, username: &str, password: &str) -> Result<(), NifiError> {
@@ -160,16 +165,15 @@ impl NifiClient {
         Ok(())
     }
 
-    /// Authenticate using the configured [`CredentialProvider`].
+    /// Authenticate using the configured [`AuthProvider`].
     ///
-    /// Returns [`NifiError::Auth`] if no credential provider has been configured.
+    /// Returns [`NifiError::Auth`] if no auth provider has been configured.
     #[tracing::instrument(skip(self))]
-    pub async fn login_with_provider(&self) -> Result<(), NifiError> {
-        let creds = self.credentials.as_ref().ok_or_else(|| NifiError::Auth {
-            message: "no credential provider configured".to_string(),
+    pub async fn authenticate(&self) -> Result<(), NifiError> {
+        let provider = self.auth_provider.as_ref().ok_or_else(|| NifiError::Auth {
+            message: "no auth provider configured".to_string(),
         })?;
-        let (username, password) = creds.credentials().await?;
-        self.login(&username, &password).await
+        provider.authenticate(self).await
     }
 
     // ── Auth-retry wrapper ────────────────────────────────────────────────────
@@ -183,9 +187,9 @@ impl NifiClient {
         Fut: std::future::Future<Output = Result<T, NifiError>>,
     {
         match f().await {
-            Err(NifiError::Unauthorized { .. }) if self.credentials.is_some() => {
-                tracing::info!("received 401, refreshing token via credential provider");
-                self.login_with_provider().await?;
+            Err(NifiError::Unauthorized { .. }) if self.auth_provider.is_some() => {
+                tracing::info!("received 401, refreshing token via auth provider");
+                self.authenticate().await?;
                 f().await
             }
             other => other,
@@ -853,7 +857,7 @@ impl NifiClient {
 
     async fn authenticated(&self, req: reqwest::RequestBuilder) -> reqwest::RequestBuilder {
         let guard = self.token.read().await;
-        match guard.as_deref() {
+        let mut req = match guard.as_deref() {
             Some(token) => req.bearer_auth(token),
             None => {
                 tracing::warn!(
@@ -861,7 +865,11 @@ impl NifiClient {
                 );
                 req
             }
+        };
+        if let Some(chain) = &self.proxied_entities_chain {
+            req = req.header("X-ProxiedEntitiesChain", chain);
         }
+        req
     }
 
     async fn deserialize<T: DeserializeOwned>(

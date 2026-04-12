@@ -1,4 +1,5 @@
 #![cfg(not(feature = "dynamic"))]
+#![allow(deprecated)]
 
 use nifi_rust_client::config::credentials::StaticCredentials;
 use nifi_rust_client::{NifiClientBuilder, NifiError};
@@ -129,10 +130,11 @@ async fn no_infinite_loop_when_refresh_fails() {
     );
 }
 
-// -- login_with_provider uses credential provider ─────────────────────────────
+// -- authenticate uses auth provider ──────────────────────────────────────────
 
 #[tokio::test]
-async fn login_with_provider_uses_credential_provider() {
+#[allow(deprecated)]
+async fn authenticate_uses_auth_provider() {
     let mock_server = MockServer::start().await;
 
     Mock::given(method("POST"))
@@ -148,7 +150,7 @@ async fn login_with_provider_uses_credential_provider() {
         .build()
         .unwrap();
 
-    client.login_with_provider().await.unwrap();
+    client.authenticate().await.unwrap();
     assert_eq!(client.token().await.as_deref(), Some("provider-jwt-token"));
 }
 
