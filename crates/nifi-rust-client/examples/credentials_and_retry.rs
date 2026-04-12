@@ -1,7 +1,7 @@
-//! Credential provider + retry policy.
+//! Auth provider + retry policy.
 //!
 //! Configures the client to automatically re-authenticate on 401 responses
-//! (via [`StaticCredentials`]) and to retry transient HTTP errors (via
+//! (via [`PasswordAuth`]) and to retry transient HTTP errors (via
 //! [`RetryPolicy`]) with exponential backoff.
 //!
 //! Run with:
@@ -22,7 +22,7 @@ fn main() {
 #[cfg(not(feature = "dynamic"))]
 use nifi_rust_client::NifiClientBuilder;
 #[cfg(not(feature = "dynamic"))]
-use nifi_rust_client::config::credentials::StaticCredentials;
+use nifi_rust_client::config::auth::PasswordAuth;
 #[cfg(not(feature = "dynamic"))]
 use nifi_rust_client::config::retry::RetryPolicy;
 #[cfg(not(feature = "dynamic"))]
@@ -42,10 +42,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let user = std::env::var("NIFI_USERNAME").unwrap_or_else(|_| "admin".into());
     let pass = std::env::var("NIFI_PASSWORD").unwrap_or_else(|_| "adminpassword123".into());
 
-    // StaticCredentials holds username+password and hands them back whenever
+    // PasswordAuth holds username+password and hands them back whenever
     // the client needs to refresh its JWT. NifiClient automatically calls
-    // provider.refresh() on any 401 response and retries the failed request.
-    let credentials = StaticCredentials::new(&user, &pass);
+    // provider.authenticate() on any 401 response and retries the failed request.
+    let credentials = PasswordAuth::new(&user, &pass);
 
     // RetryPolicy retries transient errors (408, 429, 500, 502, 503, 504, and
     // reqwest-level connection failures) with exponential backoff. Max 3
@@ -58,7 +58,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let client = NifiClientBuilder::new(&url)?
         .danger_accept_invalid_certs(true)
-        .credential_provider(credentials)
+        .auth_provider(credentials)
         .retry_policy(retry)
         .build()?;
 
