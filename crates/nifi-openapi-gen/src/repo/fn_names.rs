@@ -147,9 +147,7 @@ mod tests {
             FileEdit::Overwrite { path, .. } => {
                 assert_eq!(
                     path,
-                    std::path::Path::new(
-                        "/fake/crates/nifi-openapi-gen/specs/2.8.0/fn_names.txt"
-                    )
+                    std::path::Path::new("/fake/crates/nifi-openapi-gen/specs/2.8.0/fn_names.txt")
                 );
             }
             _ => panic!("expected Overwrite"),

@@ -25,18 +25,17 @@ use std::sync::LazyLock;
 /// Keyed by `(spec_version, raw_operationId)`, valued by the explicit
 /// `fn_name` to use for that operation. Consulted after suffix stripping
 /// but before collision and drift checks.
-pub static NAMING_OVERRIDES: LazyLock<
-    HashMap<(&'static str, &'static str), &'static str>,
-> = LazyLock::new(|| {
-    let mut m: HashMap<(&'static str, &'static str), &'static str> = HashMap::new();
-    // Example (not active):
-    // m.insert(
-    //     ("2.9.0", "updateRunStatus_9"),
-    //     "update_run_status_for_new_endpoint",
-    // );
-    let _ = &mut m;
-    m
-});
+pub static NAMING_OVERRIDES: LazyLock<HashMap<(&'static str, &'static str), &'static str>> =
+    LazyLock::new(|| {
+        let mut m: HashMap<(&'static str, &'static str), &'static str> = HashMap::new();
+        // Example (not active):
+        // m.insert(
+        //     ("2.9.0", "updateRunStatus_9"),
+        //     "update_run_status_for_new_endpoint",
+        // );
+        let _ = &mut m;
+        m
+    });
 
 /// Returns the override `fn_name` for `(version, operation_id)` if one is
 /// registered, otherwise `None`.

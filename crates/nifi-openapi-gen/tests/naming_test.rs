@@ -109,7 +109,12 @@ fn apply_overrides_rewrites_matching_fn_name() {
 
     let mut spec = make_spec(
         "Foo",
-        vec![make_endpoint(HttpMethod::Get, "/foo", "get_foo", "getFoo_5")],
+        vec![make_endpoint(
+            HttpMethod::Get,
+            "/foo",
+            "get_foo",
+            "getFoo_5",
+        )],
     );
 
     naming::apply_overrides_with_table(&mut spec, "test-1.0", &overrides);
@@ -241,11 +246,21 @@ fn no_drift_when_all_versions_agree() {
 fn no_drift_when_endpoint_only_exists_in_one_version() {
     let v1 = make_spec(
         "Foo",
-        vec![make_endpoint(HttpMethod::Put, "/foo", "update", "updateFoo")],
+        vec![make_endpoint(
+            HttpMethod::Put,
+            "/foo",
+            "update",
+            "updateFoo",
+        )],
     );
     let v2 = make_spec(
         "Foo",
-        vec![make_endpoint(HttpMethod::Put, "/bar", "update", "updateBar")],
+        vec![make_endpoint(
+            HttpMethod::Put,
+            "/bar",
+            "update",
+            "updateBar",
+        )],
     );
     let specs = vec![("2.8.0".to_string(), v1), ("2.9.0".to_string(), v2)];
     naming::check_drift(&specs); // must not panic — different paths are different endpoints

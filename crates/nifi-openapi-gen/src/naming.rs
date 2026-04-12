@@ -54,11 +54,7 @@ pub fn apply_overrides_with_table(
     }
 }
 
-fn maybe_override(
-    ep: &mut Endpoint,
-    version: &str,
-    overrides: &HashMap<(String, String), String>,
-) {
+fn maybe_override(ep: &mut Endpoint, version: &str, overrides: &HashMap<(String, String), String>) {
     let key = (version.to_string(), ep.raw_operation_id.clone());
     if let Some(name) = overrides.get(&key) {
         ep.fn_name = name.clone();
@@ -190,13 +186,17 @@ fn insert_drift_entry(
     tag: &str,
     ep: &Endpoint,
 ) {
-    map.entry((tag.to_string(), ep.method.as_str().to_string(), ep.path.clone()))
-        .or_default()
-        .push((
-            version.to_string(),
-            ep.fn_name.clone(),
-            ep.raw_operation_id.clone(),
-        ));
+    map.entry((
+        tag.to_string(),
+        ep.method.as_str().to_string(),
+        ep.path.clone(),
+    ))
+    .or_default()
+    .push((
+        version.to_string(),
+        ep.fn_name.clone(),
+        ep.raw_operation_id.clone(),
+    ));
 }
 
 fn drift_message(tag: &str, method: &str, path: &str, versions: &[DriftEntry]) -> String {
