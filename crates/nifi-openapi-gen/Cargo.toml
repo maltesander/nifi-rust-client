@@ -10,6 +10,7 @@ homepage.workspace = true
 documentation = "https://docs.rs/nifi-openapi-gen"
 description = "OpenAPI code generator for nifi-rust-client — not intended for general use"
 exclude = ["scripts/", "tests/"]
+default-run = "generate"
 
 [[bin]]
 name = "openapi-diff"
