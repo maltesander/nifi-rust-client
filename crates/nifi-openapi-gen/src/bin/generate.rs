@@ -168,7 +168,7 @@ fn main() {
 
     // Apply or check.
     if check_mode {
-        match plan.check(verbose) {
+        match plan.check() {
             Ok(report) => {
                 if verbose {
                     print!("{report:#}");

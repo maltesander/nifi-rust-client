@@ -240,22 +240,6 @@ pub(crate) fn replace_between_markers(
     )
 }
 
-/// Read a file, replace content between markers, and write back if changed.
-pub fn update_file_between_markers(
-    path: &std::path::Path,
-    start_marker: &str,
-    end_marker: &str,
-    new_content: &str,
-) {
-    let on_disk =
-        std::fs::read_to_string(path).unwrap_or_else(|_| panic!("read {}", path.display()));
-    let patched = replace_between_markers(&on_disk, start_marker, end_marker, new_content);
-    if on_disk != patched {
-        std::fs::write(path, &patched).unwrap_or_else(|_| panic!("write {}", path.display()));
-        println!("  wrote {}", path.display());
-    }
-}
-
 /// Info about a sub-group collected across all versions.
 pub(crate) struct CollectedSubGroup<'a> {
     pub struct_name: String,
@@ -548,38 +532,6 @@ mod tests {
     #[should_panic(expected = "end marker")]
     fn replace_between_markers_missing_end() {
         replace_between_markers("// START\ncontent", "// START", "// END", "x");
-    }
-
-    // --- update_file_between_markers ---
-
-    #[test]
-    fn update_file_between_markers_writes_when_changed() {
-        let tmp = make_temp_dir("update_changed");
-        let path = tmp.join("test.txt");
-        std::fs::write(&path, "before\n// START\nold\n// END\nafter").unwrap();
-
-        update_file_between_markers(&path, "// START", "// END", "new");
-
-        let result = std::fs::read_to_string(&path).unwrap();
-        assert_eq!(result, "before\n// START\nnew\n// END\nafter");
-
-        let _ = std::fs::remove_dir_all(&tmp);
-    }
-
-    #[test]
-    fn update_file_between_markers_no_write_when_unchanged() {
-        let tmp = make_temp_dir("update_unchanged");
-        let path = tmp.join("test.txt");
-        let content = "before\n// START\nnew\n// END\nafter";
-        std::fs::write(&path, content).unwrap();
-
-        // This should not panic or error — content already matches
-        update_file_between_markers(&path, "// START", "// END", "new");
-
-        let result = std::fs::read_to_string(&path).unwrap();
-        assert_eq!(result, content);
-
-        let _ = std::fs::remove_dir_all(&tmp);
     }
 
     // --- escape_keyword ---

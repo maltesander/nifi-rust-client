@@ -280,8 +280,10 @@ impl MutationPlan {
     }
 
     /// Validate, then diff the plan against disk without writing.
-    /// Use `format!("{report}")` for truncated output, `format!("{report:#}")` for full.
-    pub fn check(&self, _verbose: bool) -> Result<CheckReport, Vec<PlanError>> {
+    ///
+    /// Use `format!("{report}")` for truncated output (first 5 diff lines per file),
+    /// or `format!("{report:#}")` for full diffs.
+    pub fn check(&self) -> Result<CheckReport, Vec<PlanError>> {
         self.validate()?;
         let mut report = CheckReport {
             drifted: Vec::new(),
@@ -634,7 +636,7 @@ mod tests {
                 content: "old".into(),
             }],
         };
-        let report = plan.check(false).unwrap();
+        let report = plan.check().unwrap();
         assert!(!report.has_drift());
         assert_eq!(report.up_to_date, 1);
     }
@@ -650,7 +652,7 @@ mod tests {
                 content: "new content here".into(),
             }],
         };
-        let report = plan.check(false).unwrap();
+        let report = plan.check().unwrap();
         assert!(report.has_drift());
         assert_eq!(report.drifted.len(), 1);
     }
@@ -675,7 +677,7 @@ mod tests {
                 content: new_lines,
             }],
         };
-        let report = plan.check(false).unwrap();
+        let report = plan.check().unwrap();
         let output = format!("{report}");
         assert!(output.contains("..."));
         assert!(output.contains("--verbose"));
@@ -692,7 +694,7 @@ mod tests {
                 content: "new1\nnew2\nnew3\nnew4\nnew5\nnew6\nnew7".into(),
             }],
         };
-        let report = plan.check(true).unwrap();
+        let report = plan.check().unwrap();
         let output = format!("{report:#}");
         assert!(!output.contains("--verbose"));
     }
