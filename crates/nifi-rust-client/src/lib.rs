@@ -29,7 +29,7 @@
 //!
 //! ```toml
 //! [dependencies]
-//! nifi-rust-client = { version = "0.5", features = ["nifi-2-8-0"] }
+//! nifi-rust-client = { version = "0.7", features = ["nifi-2-8-0"] }
 //! ```
 //!
 //! ## Dynamic mode (`dynamic` feature)
@@ -58,7 +58,7 @@
 //!
 //! ```toml
 //! [dependencies]
-//! nifi-rust-client = { version = "0.5", features = ["dynamic"] }
+//! nifi-rust-client = { version = "0.7", features = ["dynamic"] }
 //! ```
 //!
 //! ## Entry points
