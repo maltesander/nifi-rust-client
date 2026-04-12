@@ -6,41 +6,56 @@
 //! — this binary no longer writes to `src/` or generated test files.
 //!
 //! Usage:
-//!   cargo run -p nifi-openapi-gen                     # auto-detect spec version
-//!   NIFI_VERSION=2.8.0 cargo run -p nifi-openapi-gen  # pin a specific version
-//!   NIFI_API_SPEC=/path/to/spec.json cargo run -p nifi-openapi-gen  # full path override
+//!   cargo run -p nifi-openapi-gen                              # validate + apply
+//!   cargo run -p nifi-openapi-gen -- --check                   # validate + diff, exit 1 on drift
+//!   cargo run -p nifi-openapi-gen -- --check --verbose         # full diffs
+//!   NIFI_VERSION=2.8.0 cargo run -p nifi-openapi-gen           # pin a specific version
 
 use std::path::{Path, PathBuf};
 
 use nifi_openapi_gen::docs::{
-    generate_api_changes_content, generate_resource_accessors_content,
-    generate_versions_table_content, update_client_readme_examples,
+    emit_api_changes, emit_client_readme_examples, emit_integration_coverage,
+    emit_resource_accessors, emit_versions_table,
 };
+use nifi_openapi_gen::layout::RepoLayout;
+use nifi_openapi_gen::plan::{FileEdit, MutationPlan};
 use nifi_openapi_gen::repo::{
-    update_cargo_features_client, update_cargo_features_tests, update_docker_compose_default,
+    emit_cargo_features_client, emit_cargo_features_tests, emit_docker_compose_default,
+    emit_lib_rs_feature_flags,
 };
-use nifi_openapi_gen::util::{
-    discover_spec_versions, update_file_between_markers, version_to_feature,
-};
+use nifi_openapi_gen::util::discover_spec_versions;
 use nifi_openapi_gen::{
-    emit_endpoint_availability_tests, emit_enum_coverage_tests, emit_field_presence_tests,
-    emit_query_param_coverage_tests, load,
+    collect_endpoint_metadata, collect_enum_metadata, collect_query_param_metadata, compute_diff,
+    load, tested_type_names, ApiSpec, VersionDiff,
 };
 
+/// Extract major.minor version shorthand from Cargo.toml content.
+fn read_crate_version_shorthand(toml_content: &str) -> String {
+    for line in toml_content.lines() {
+        if let Some(rest) = line.strip_prefix("version = \"") {
+            if let Some(ver) = rest.strip_suffix('"') {
+                let parts: Vec<&str> = ver.splitn(3, '.').collect();
+                if parts.len() >= 2 {
+                    return format!("{}.{}", parts[0], parts[1]);
+                }
+            }
+        }
+    }
+    panic!("could not find version in Cargo.toml content");
+}
+
 fn main() {
-    let codegen_dir = Path::new(env!("CARGO_MANIFEST_DIR"));
-    let workspace_root = codegen_dir
-        .parent()
-        .expect("crates/")
-        .parent()
-        .expect("workspace root");
-    let client = workspace_root.join("crates/nifi-rust-client");
-    let specs_dir = codegen_dir.join("specs");
+    let args: Vec<String> = std::env::args().collect();
+    let check_mode = args.iter().any(|a| a == "--check");
+    let verbose = args.iter().any(|a| a == "--verbose");
+
+    let layout = RepoLayout::discover();
+    let specs_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("specs");
 
     // Discover all spec versions for repo maintenance.
     let all_spec_versions = discover_spec_versions(&specs_dir);
 
-    // Determine which specs are being added/updated this run (for Cargo.toml features).
+    // Determine which specs are being added/updated this run.
     let spec_versions = if let Ok(version) = std::env::var("NIFI_VERSION") {
         vec![version]
     } else if let Ok(path) = std::env::var("NIFI_API_SPEC") {
@@ -64,14 +79,10 @@ fn main() {
         }
     }
 
-    // 1. Update Cargo.toml [features] sections for both crates.
-    let tests_crate = workspace_root.join("tests");
-    update_cargo_features_client(&client);
-    update_cargo_features_tests(&tests_crate);
-
-    // 2. Repo maintenance: README tables, docker-compose, API changes.
+    // Load all specs for repo maintenance.
     let latest_version = all_spec_versions.last().cloned().unwrap_or_default();
-    let all_parsed: Vec<(String, nifi_openapi_gen::ApiSpec)> = all_spec_versions
+    let version_strs: Vec<&str> = all_spec_versions.iter().map(String::as_str).collect();
+    let all_parsed: Vec<(String, ApiSpec)> = all_spec_versions
         .iter()
         .map(|v| {
             let path = specs_dir.join(v).join("nifi-api.json");
@@ -80,105 +91,103 @@ fn main() {
         })
         .collect();
 
-    // README versions table
-    {
-        const START: &str = "<!-- SUPPORTED_VERSIONS_START -->";
-        const END: &str = "<!-- SUPPORTED_VERSIONS_END -->";
-        let content = generate_versions_table_content(&all_parsed);
-        update_file_between_markers(&workspace_root.join("README.md"), START, END, &content);
-        update_file_between_markers(
-            &workspace_root.join("crates/nifi-rust-client/README.md"),
-            START,
-            END,
-            &content,
-        );
-    }
+    // Read files that need patching (Overwrite edits need current content).
+    let client_toml =
+        std::fs::read_to_string(&layout.client_cargo_toml).expect("read client Cargo.toml");
+    let tests_toml =
+        std::fs::read_to_string(&layout.tests_cargo_toml).expect("read tests Cargo.toml");
+    let dc_content =
+        std::fs::read_to_string(&layout.docker_compose).expect("read docker-compose.yml");
 
-    // Resource accessors table
-    {
-        const START: &str = "<!-- RESOURCE_ACCESSORS_START -->";
-        const END: &str = "<!-- RESOURCE_ACCESSORS_END -->";
-        let content = generate_resource_accessors_content(&all_parsed);
-        update_file_between_markers(
-            &workspace_root.join("crates/nifi-rust-client/README.md"),
-            START,
-            END,
-            &content,
-        );
-    }
+    // Build the mutation plan from all emitters.
+    let mut edits: Vec<FileEdit> = Vec::new();
 
-    update_client_readme_examples(workspace_root, &latest_version);
-    update_docker_compose_default(
-        &workspace_root.join("tests/docker-compose.yml"),
+    // Cargo.toml features
+    edits.extend(emit_cargo_features_client(&layout, &client_toml, &version_strs));
+    edits.extend(emit_cargo_features_tests(&layout, &tests_toml, &version_strs));
+
+    // README versions table (workspace + client)
+    edits.extend(emit_versions_table(&layout, &all_parsed));
+
+    // Resource accessors table (client README)
+    edits.extend(emit_resource_accessors(&layout, &all_parsed));
+
+    // README examples (client README)
+    let crate_version = read_crate_version_shorthand(&client_toml);
+    edits.extend(emit_client_readme_examples(
+        &layout,
         &latest_version,
-    );
+        &crate_version,
+    ));
 
-    // API changes file
-    {
-        const START: &str = "<!-- NIFI_API_CHANGES_START -->";
-        const END: &str = "<!-- NIFI_API_CHANGES_END -->";
-        let path = workspace_root.join("NIFI_API_CHANGES.md");
+    // Docker-compose default image tag
+    edits.extend(emit_docker_compose_default(&layout, &dc_content, &latest_version));
 
-        if !path.exists() {
-            std::fs::write(
-                &path,
-                format!(
-                    "# NiFi API Changes\n\n<!-- markdownlint-disable MD024 MD033 -->\n\nAuto-generated by `cargo run -p nifi-openapi-gen`. Do not edit manually.\n\n{START}\n{END}\n"
-                ),
-            )
-            .unwrap_or_else(|_| panic!("create {}", path.display()));
-            println!("  created {}", path.display());
-        }
+    // API changes doc
+    edits.extend(emit_api_changes(&layout, &all_parsed));
 
-        let content = generate_api_changes_content(&all_parsed);
-        update_file_between_markers(&path, START, END, &content);
-    }
+    // Feature flags in lib.rs
+    edits.extend(emit_lib_rs_feature_flags(&layout, &version_strs));
 
-    // Feature flags table in crate-level doc
-    {
-        const START: &str = "<!-- NIFI_FEATURE_FLAGS_START -->";
-        const END: &str = "<!-- NIFI_FEATURE_FLAGS_END -->";
-        let features: Vec<String> = all_spec_versions
-            .iter()
-            .map(|v| format!("`{}`", version_to_feature(v)))
-            .collect();
-        let features_list = features.join(", ");
-        let content = format!(
-            "//! | {features_list} | Compile against a specific NiFi version. The semver-latest is the default. |\n"
-        );
-        update_file_between_markers(&client.join("src/lib.rs"), START, END, &content);
-    }
-
-    // 3. Integration coverage section in client README.
-    //    We call the test emitters to collect tested-key sets (endpoints, enums,
-    //    query params) but do NOT write the test files — that is build.rs's job.
-    let diffs: Vec<nifi_openapi_gen::VersionDiff> = (1..all_parsed.len())
+    // Integration coverage section
+    let diffs: Vec<VersionDiff> = (1..all_parsed.len())
         .map(|i| {
             let (from_ver, from_spec) = &all_parsed[i - 1];
             let (to_ver, to_spec) = &all_parsed[i];
-            nifi_openapi_gen::compute_diff(from_spec, to_spec, from_ver, to_ver)
+            compute_diff(from_spec, to_spec, from_ver, to_ver)
         })
         .collect();
 
-    let (_, tested_endpoints) = emit_endpoint_availability_tests(&all_parsed, &diffs);
-    let (_, tested_enum_values) = emit_enum_coverage_tests(&all_parsed, &diffs);
-    let _ = emit_field_presence_tests(&all_parsed, &diffs);
-    let (_, tested_query_params) = emit_query_param_coverage_tests(&all_parsed, &diffs);
+    let tested_endpoints = collect_endpoint_metadata(&all_parsed, &diffs);
+    let tested_enum_values = collect_enum_metadata(&all_parsed, &diffs);
+    let tested_query_params = collect_query_param_metadata(&all_parsed, &diffs);
+    let tested_types = tested_type_names();
+    edits.extend(emit_integration_coverage(
+        &layout,
+        &all_parsed,
+        &diffs,
+        &tested_types,
+        &tested_endpoints,
+        &tested_enum_values,
+        &tested_query_params,
+    ));
 
-    {
-        const START: &str = "<!-- INTEGRATION_COVERAGE_START -->";
-        const END: &str = "<!-- INTEGRATION_COVERAGE_END -->";
-        let tested_types = nifi_openapi_gen::tested_type_names();
-        let content = nifi_openapi_gen::docs::generate_integration_coverage_content(
-            &all_parsed,
-            &diffs,
-            &tested_types,
-            &tested_endpoints,
-            &tested_enum_values,
-            &tested_query_params,
-        );
-        update_file_between_markers(&client.join("README.md"), START, END, &content);
+    let plan = MutationPlan { edits };
+
+    // Apply or check.
+    if check_mode {
+        match plan.check(verbose) {
+            Ok(report) => {
+                if verbose {
+                    print!("{report:#}");
+                } else {
+                    print!("{report}");
+                }
+                if report.has_drift() {
+                    std::process::exit(1);
+                }
+            }
+            Err(errors) => {
+                for e in &errors {
+                    eprintln!("ERROR: {e}");
+                }
+                std::process::exit(2);
+            }
+        }
+    } else {
+        match plan.apply() {
+            Ok(report) => {
+                println!(
+                    "Done. {} file(s) written, {} unchanged.",
+                    report.written, report.unchanged
+                );
+            }
+            Err(errors) => {
+                for e in &errors {
+                    eprintln!("ERROR: {e}");
+                }
+                std::process::exit(2);
+            }
+        }
     }
-
-    println!("Done.");
 }
