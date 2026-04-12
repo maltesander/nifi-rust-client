@@ -64,3 +64,216 @@ pub struct HistoryPaginator<F> {
     buffer: VecDeque<ActionEntity>,
     exhausted: bool,
 }
+
+impl<F, Fut> HistoryPaginator<F>
+where
+    F: FnMut(u32, u32) -> Fut,
+    Fut: core::future::Future<Output = Result<HistoryPage, NifiError>>,
+{
+    /// Construct a paginator directly from a fetch closure.
+    ///
+    /// Most users call [`flow_history`] or [`flow_history_dynamic`]
+    /// instead, which build the closure for the NiFi history endpoint.
+    /// Advanced callers can use this constructor to paginate their
+    /// own endpoints that follow the same offset/count + total shape.
+    pub fn from_fetcher(fetch: F, page_size: u32) -> Self {
+        Self {
+            fetch,
+            page_size,
+            offset: 0,
+            buffer: VecDeque::new(),
+            exhausted: false,
+        }
+    }
+
+    /// Fetch the next page of actions.
+    ///
+    /// Returns `Ok(None)` once the history is exhausted. Idempotent
+    /// after exhaustion — further calls return `Ok(None)` without
+    /// issuing a request.
+    pub async fn next_page(&mut self) -> Result<Option<Vec<ActionEntity>>, NifiError> {
+        if self.exhausted {
+            return Ok(None);
+        }
+        let page = (self.fetch)(self.offset, self.page_size).await?;
+
+        let returned = page.actions.len() as u32;
+        self.offset = self.offset.saturating_add(returned);
+
+        if returned == 0
+            || returned < self.page_size
+            || i64::from(self.offset) >= i64::from(page.total)
+        {
+            self.exhausted = true;
+        }
+
+        if page.actions.is_empty() {
+            Ok(None)
+        } else {
+            Ok(Some(page.actions))
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Build an `ActionEntity` with a given id for identity in tests.
+    fn make_action(id: i32) -> ActionEntity {
+        ActionEntity {
+            id: Some(id),
+            ..ActionEntity::default()
+        }
+    }
+
+    /// Build a fake fetcher that serves up to `total` actions with ids
+    /// `0..total`, honoring `offset` and `count` arguments. Records
+    /// the number of invocations in the returned `Arc<AtomicUsize>`.
+    fn fake_fetcher(
+        total: i32,
+    ) -> (
+        impl FnMut(u32, u32) -> std::pin::Pin<Box<dyn core::future::Future<Output = Result<HistoryPage, NifiError>>>>,
+        std::sync::Arc<std::sync::atomic::AtomicUsize>,
+    ) {
+        let calls = std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0));
+        let calls_clone = std::sync::Arc::clone(&calls);
+        let fetch = move |offset: u32, count: u32| {
+            calls_clone.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+            let start = offset as i32;
+            let end = core::cmp::min(start.saturating_add(count as i32), total);
+            let actions: Vec<ActionEntity> = if start >= total {
+                Vec::new()
+            } else {
+                (start..end).map(make_action).collect()
+            };
+            let page = HistoryPage { actions, total };
+            Box::pin(async move { Ok(page) })
+                as std::pin::Pin<Box<dyn core::future::Future<Output = Result<HistoryPage, NifiError>>>>
+        };
+        (fetch, calls)
+    }
+
+    #[tokio::test]
+    async fn next_page_walks_all_pages_then_returns_none() {
+        let (fetch, calls) = fake_fetcher(250);
+        let mut pag = HistoryPaginator::from_fetcher(fetch, 100);
+
+        let p1 = pag.next_page().await.unwrap().unwrap();
+        assert_eq!(p1.len(), 100);
+        let p2 = pag.next_page().await.unwrap().unwrap();
+        assert_eq!(p2.len(), 100);
+        let p3 = pag.next_page().await.unwrap().unwrap();
+        assert_eq!(p3.len(), 50);
+        assert!(pag.next_page().await.unwrap().is_none());
+        assert_eq!(calls.load(std::sync::atomic::Ordering::SeqCst), 3);
+    }
+
+    #[tokio::test]
+    async fn next_page_short_page_terminates() {
+        let (fetch, calls) = fake_fetcher(150);
+        let mut pag = HistoryPaginator::from_fetcher(fetch, 100);
+
+        let p1 = pag.next_page().await.unwrap().unwrap();
+        assert_eq!(p1.len(), 100);
+        let p2 = pag.next_page().await.unwrap().unwrap();
+        assert_eq!(p2.len(), 50);
+        assert!(pag.next_page().await.unwrap().is_none());
+        assert_eq!(calls.load(std::sync::atomic::Ordering::SeqCst), 2);
+    }
+
+    #[tokio::test]
+    async fn next_page_empty_first_response_returns_none() {
+        let (fetch, calls) = fake_fetcher(0);
+        let mut pag = HistoryPaginator::from_fetcher(fetch, 100);
+
+        assert!(pag.next_page().await.unwrap().is_none());
+        assert!(pag.next_page().await.unwrap().is_none());
+        // Second call after exhaustion must not re-invoke the fetcher.
+        assert_eq!(calls.load(std::sync::atomic::Ordering::SeqCst), 1);
+    }
+
+    #[tokio::test]
+    async fn next_page_is_idempotent_after_exhaustion() {
+        let (fetch, calls) = fake_fetcher(50);
+        let mut pag = HistoryPaginator::from_fetcher(fetch, 100);
+
+        let p1 = pag.next_page().await.unwrap().unwrap();
+        assert_eq!(p1.len(), 50);
+        assert!(pag.next_page().await.unwrap().is_none());
+        assert!(pag.next_page().await.unwrap().is_none());
+        assert!(pag.next_page().await.unwrap().is_none());
+        assert_eq!(
+            calls.load(std::sync::atomic::Ordering::SeqCst),
+            1,
+            "fetcher must not be called after exhaustion"
+        );
+    }
+
+    #[tokio::test]
+    async fn next_page_does_not_advance_on_error() {
+        // Fake fetcher that fails on call 2, then recovers.
+        let calls = std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0));
+        let calls_clone = std::sync::Arc::clone(&calls);
+        let fetch = move |offset: u32, count: u32| {
+            let n = calls_clone.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+            let actions: Vec<ActionEntity> = (offset..offset + count)
+                .map(|i| make_action(i as i32))
+                .collect();
+            let fail = n == 1;
+            Box::pin(async move {
+                if fail {
+                    Err(NifiError::Unauthorized {
+                        message: "simulated".to_string(),
+                    })
+                } else {
+                    Ok(HistoryPage {
+                        actions,
+                        total: 300,
+                    })
+                }
+            })
+                as std::pin::Pin<Box<dyn core::future::Future<Output = Result<HistoryPage, NifiError>>>>
+        };
+        let mut pag = HistoryPaginator::from_fetcher(fetch, 100);
+
+        let p1 = pag.next_page().await.unwrap().unwrap();
+        assert_eq!(p1.len(), 100);
+        assert!(pag.next_page().await.is_err());
+        // After the error, offset must still be 100 (not 200).
+        let p2 = pag.next_page().await.unwrap().unwrap();
+        assert_eq!(p2.first().and_then(|a| a.id), Some(100));
+    }
+
+    #[tokio::test]
+    async fn next_page_offset_overflow_saturates() {
+        // Simulate `total = i32::MAX` with a fetcher that always returns
+        // a full page. The paginator must eventually terminate via
+        // saturation of the offset + i64-widened comparison.
+        let calls = std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0));
+        let calls_clone = std::sync::Arc::clone(&calls);
+        let fetch = move |offset: u32, _count: u32| {
+            calls_clone.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+            let actions: Vec<ActionEntity> = (0..100)
+                .map(|i| make_action((offset as i32).wrapping_add(i)))
+                .collect();
+            Box::pin(async move {
+                Ok(HistoryPage {
+                    actions,
+                    total: i32::MAX,
+                })
+            })
+                as std::pin::Pin<Box<dyn core::future::Future<Output = Result<HistoryPage, NifiError>>>>
+        };
+        let mut pag = HistoryPaginator::from_fetcher(fetch, 100);
+        // Walk a bounded number of pages; the paginator must terminate
+        // naturally via offset >= total (i64 comparison). Guard with a
+        // hard cap so an infinite loop bug fails the test quickly.
+        let mut pages = 0_usize;
+        while pag.next_page().await.unwrap().is_some() {
+            pages += 1;
+            assert!(pages < 25_000_000, "paginator failed to terminate");
+        }
+        // Not asserting an exact page count — only that it terminated.
+    }
+}
