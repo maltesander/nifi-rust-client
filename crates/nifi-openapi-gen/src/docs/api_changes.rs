@@ -6,16 +6,16 @@ use crate::plan::FileEdit;
 pub fn format_diff_body(diff: &VersionDiff) -> String {
     let mut out = String::new();
 
+    // ── Endpoints ────────────────────────────────────────────────────────
+
     if !diff.endpoints.added.is_empty() {
         out.push_str("### Added endpoints\n\n");
+        out.push_str("| Method | Path | Description | Tag |\n");
+        out.push_str("|--------|------|-------------|-----|\n");
         for ep in &diff.endpoints.added {
-            let doc = ep
-                .doc
-                .as_deref()
-                .map(|d| format!(" \u{2014} {d}"))
-                .unwrap_or_default();
+            let doc = ep.doc.as_deref().unwrap_or("");
             out.push_str(&format!(
-                "- `{} {}`{} ({})\n",
+                "| `{}` | `{}` | {} | {} |\n",
                 ep.method.as_str(),
                 ep.path,
                 doc,
@@ -27,9 +27,11 @@ pub fn format_diff_body(diff: &VersionDiff) -> String {
 
     if !diff.endpoints.removed.is_empty() {
         out.push_str("### Removed endpoints\n\n");
+        out.push_str("| Method | Path | Tag |\n");
+        out.push_str("|--------|------|-----|\n");
         for ep in &diff.endpoints.removed {
             out.push_str(&format!(
-                "- `{} {}` ({})\n",
+                "| `{}` | `{}` | {} |\n",
                 ep.method.as_str(),
                 ep.path,
                 ep.tag,
@@ -54,94 +56,48 @@ pub fn format_diff_body(diff: &VersionDiff) -> String {
 
     if !meaningful_changes.is_empty() {
         out.push_str("### Changed endpoints\n\n");
+        out.push_str("| Method | Path | Change |\n");
+        out.push_str("|--------|------|--------|\n");
         for ec in meaningful_changes {
-            let mut parts = Vec::new();
-            if !ec.added_params.is_empty() {
-                let descs: Vec<String> = ec
-                    .added_params
-                    .iter()
-                    .map(|p| {
-                        if p.required {
-                            format!("`{}` (required)", p.name)
-                        } else {
-                            format!("`{}`", p.name)
-                        }
-                    })
-                    .collect();
-                parts.push(format!("added params: {}", descs.join(", ")));
-            }
-            if !ec.removed_params.is_empty() {
-                parts.push(format!(
-                    "removed params: `{}`",
-                    ec.removed_params.join("`, `")
-                ));
-            }
-            for pc in &ec.changed_params {
-                if let Some((from_t, to_t)) = &pc.type_changed {
-                    parts.push(format!(
-                        "param `{}`: type changed `{}` → `{}`",
-                        pc.name, from_t, to_t
-                    ));
-                }
-                if !pc.added_enum_values.is_empty() {
-                    parts.push(format!(
-                        "param `{}`: +enum values (`{}`)",
-                        pc.name,
-                        pc.added_enum_values.join("`, `")
-                    ));
-                }
-                if !pc.removed_enum_values.is_empty() {
-                    parts.push(format!(
-                        "param `{}`: -enum values (`{}`)",
-                        pc.name,
-                        pc.removed_enum_values.join("`, `")
-                    ));
-                }
-            }
-            if !ec.added_path_params.is_empty() {
-                parts.push(format!(
-                    "added path params: `{}`",
-                    ec.added_path_params.join("`, `")
-                ));
-            }
-            if !ec.removed_path_params.is_empty() {
-                parts.push(format!(
-                    "removed path params: `{}`",
-                    ec.removed_path_params.join("`, `")
-                ));
-            }
-            for cc in &ec.contract_changes {
-                let aspect = match &cc.aspect {
-                    crate::diff::ContractAspect::RequestType => "request type",
-                    crate::diff::ContractAspect::ResponseType => "response type",
-                    crate::diff::ContractAspect::BodyKind => "body kind",
-                };
-                let from = cc.from.as_deref().unwrap_or("none");
-                let to = cc.to.as_deref().unwrap_or("none");
-                parts.push(format!("{aspect} changed: `{from}` → `{to}`"));
-            }
+            let change = format_endpoint_change(ec);
             out.push_str(&format!(
-                "- `{} {}` \u{2014} {}\n",
+                "| `{}` | `{}` | {} |\n",
                 ec.method.as_str(),
                 ec.path,
-                parts.join("; ")
+                change,
             ));
         }
         out.push('\n');
     }
 
+    // ── Types ────────────────────────────────────────────────────────────
+
     if !diff.types.added.is_empty() {
         out.push_str("### Added types\n\n");
+        out.push_str("| Type | Tag |\n");
+        out.push_str("|------|-----|\n");
         for t in &diff.types.added {
-            out.push_str(&format!("- `{t}`\n"));
+            let tags = if t.tags.is_empty() {
+                "\u{2014}".to_string()
+            } else {
+                t.tags.join(", ")
+            };
+            out.push_str(&format!("| `{}` | {} |\n", t.name, tags));
         }
         out.push('\n');
     }
 
     if !diff.types.removed.is_empty() {
         out.push_str("### Removed types\n\n");
+        out.push_str("| Type | Tag |\n");
+        out.push_str("|------|-----|\n");
         for t in &diff.types.removed {
-            out.push_str(&format!("- `{t}`\n"));
+            let tags = if t.tags.is_empty() {
+                "\u{2014}".to_string()
+            } else {
+                t.tags.join(", ")
+            };
+            out.push_str(&format!("| `{}` | {} |\n", t.name, tags));
         }
         out.push('\n');
     }
@@ -161,59 +117,11 @@ pub fn format_diff_body(diff: &VersionDiff) -> String {
 
     if !meaningful_types.is_empty() {
         out.push_str("### Changed types\n\n");
+        out.push_str("| Type | Change |\n");
+        out.push_str("|------|--------|\n");
         for tc in meaningful_types {
-            let mut parts = Vec::new();
-            if !tc.added_fields.is_empty() {
-                parts.push(format!("added fields: `{}`", tc.added_fields.join("`, `")));
-            }
-            if !tc.removed_fields.is_empty() {
-                parts.push(format!(
-                    "removed fields: `{}`",
-                    tc.removed_fields.join("`, `")
-                ));
-            }
-            for fc in &tc.changed_fields {
-                let desc = match &fc.kind {
-                    FieldChangeKind::BecameOptional => "became optional".to_string(),
-                    FieldChangeKind::BecameRequired => "became required".to_string(),
-                    FieldChangeKind::TypeChanged { from, to } => {
-                        format!("type changed: `{from}` → `{to}`")
-                    }
-                    FieldChangeKind::InlineEnumChanged { added, removed } => {
-                        let mut parts = Vec::new();
-                        if !added.is_empty() {
-                            parts.push(format!("+[`{}`]", added.join("`, `")));
-                        }
-                        if !removed.is_empty() {
-                            parts.push(format!("-[`{}`]", removed.join("`, `")));
-                        }
-                        format!("enum variants changed: {}", parts.join(" "))
-                    }
-                    FieldChangeKind::DeprecationChanged {
-                        now_deprecated: true,
-                    } => "newly deprecated".to_string(),
-                    FieldChangeKind::DeprecationChanged {
-                        now_deprecated: false,
-                    } => "deprecation removed".to_string(),
-                    FieldChangeKind::NarrowedToEnum { variants } => {
-                        format!("narrowed to enum: [`{}`]", variants.join("`, `"))
-                    }
-                };
-                parts.push(format!("`{}` {}", fc.name, desc));
-            }
-            if !tc.added_variants.is_empty() {
-                parts.push(format!(
-                    "added variants: `{}`",
-                    tc.added_variants.join("`, `")
-                ));
-            }
-            if !tc.removed_variants.is_empty() {
-                parts.push(format!(
-                    "removed variants: `{}`",
-                    tc.removed_variants.join("`, `")
-                ));
-            }
-            out.push_str(&format!("- `{}` \u{2014} {}\n", tc.name, parts.join("; ")));
+            let change = format_type_change(tc);
+            out.push_str(&format!("| `{}` | {} |\n", tc.name, change));
         }
         out.push('\n');
     }
@@ -223,6 +131,130 @@ pub fn format_diff_body(diff: &VersionDiff) -> String {
     }
 
     out
+}
+
+fn format_endpoint_change(ec: &crate::diff::EndpointChanges) -> String {
+    let mut parts = Vec::new();
+    if !ec.added_params.is_empty() {
+        let descs: Vec<String> = ec
+            .added_params
+            .iter()
+            .map(|p| {
+                if p.required {
+                    format!("`{}` (required)", p.name)
+                } else {
+                    format!("`{}`", p.name)
+                }
+            })
+            .collect();
+        parts.push(format!("added params: {}", descs.join(", ")));
+    }
+    if !ec.removed_params.is_empty() {
+        parts.push(format!(
+            "removed params: `{}`",
+            ec.removed_params.join("`, `")
+        ));
+    }
+    for pc in &ec.changed_params {
+        if let Some((from_t, to_t)) = &pc.type_changed {
+            parts.push(format!(
+                "param `{}`: type changed `{}` \u{2192} `{}`",
+                pc.name, from_t, to_t
+            ));
+        }
+        if !pc.added_enum_values.is_empty() {
+            parts.push(format!(
+                "param `{}`: +enum values (`{}`)",
+                pc.name,
+                pc.added_enum_values.join("`, `")
+            ));
+        }
+        if !pc.removed_enum_values.is_empty() {
+            parts.push(format!(
+                "param `{}`: -enum values (`{}`)",
+                pc.name,
+                pc.removed_enum_values.join("`, `")
+            ));
+        }
+    }
+    if !ec.added_path_params.is_empty() {
+        parts.push(format!(
+            "added path params: `{}`",
+            ec.added_path_params.join("`, `")
+        ));
+    }
+    if !ec.removed_path_params.is_empty() {
+        parts.push(format!(
+            "removed path params: `{}`",
+            ec.removed_path_params.join("`, `")
+        ));
+    }
+    for cc in &ec.contract_changes {
+        let aspect = match &cc.aspect {
+            crate::diff::ContractAspect::RequestType => "request type",
+            crate::diff::ContractAspect::ResponseType => "response type",
+            crate::diff::ContractAspect::BodyKind => "body kind",
+        };
+        let from = cc.from.as_deref().unwrap_or("none");
+        let to = cc.to.as_deref().unwrap_or("none");
+        parts.push(format!("{aspect} changed: `{from}` \u{2192} `{to}`"));
+    }
+    parts.join("; ")
+}
+
+fn format_type_change(tc: &crate::diff::TypeChanges) -> String {
+    let mut parts = Vec::new();
+    if !tc.added_fields.is_empty() {
+        parts.push(format!("added fields: `{}`", tc.added_fields.join("`, `")));
+    }
+    if !tc.removed_fields.is_empty() {
+        parts.push(format!(
+            "removed fields: `{}`",
+            tc.removed_fields.join("`, `")
+        ));
+    }
+    for fc in &tc.changed_fields {
+        let desc = match &fc.kind {
+            FieldChangeKind::BecameOptional => "became optional".to_string(),
+            FieldChangeKind::BecameRequired => "became required".to_string(),
+            FieldChangeKind::TypeChanged { from, to } => {
+                format!("type changed: `{from}` \u{2192} `{to}`")
+            }
+            FieldChangeKind::InlineEnumChanged { added, removed } => {
+                let mut parts = Vec::new();
+                if !added.is_empty() {
+                    parts.push(format!("+[`{}`]", added.join("`, `")));
+                }
+                if !removed.is_empty() {
+                    parts.push(format!("-[`{}`]", removed.join("`, `")));
+                }
+                format!("enum variants changed: {}", parts.join(" "))
+            }
+            FieldChangeKind::DeprecationChanged {
+                now_deprecated: true,
+            } => "newly deprecated".to_string(),
+            FieldChangeKind::DeprecationChanged {
+                now_deprecated: false,
+            } => "deprecation removed".to_string(),
+            FieldChangeKind::NarrowedToEnum { variants } => {
+                format!("narrowed to enum: [`{}`]", variants.join("`, `"))
+            }
+        };
+        parts.push(format!("`{}` {}", fc.name, desc));
+    }
+    if !tc.added_variants.is_empty() {
+        parts.push(format!(
+            "added variants: `{}`",
+            tc.added_variants.join("`, `")
+        ));
+    }
+    if !tc.removed_variants.is_empty() {
+        parts.push(format!(
+            "removed variants: `{}`",
+            tc.removed_variants.join("`, `")
+        ));
+    }
+    parts.join("; ")
 }
 
 /// Generates the full body of NIFI_API_CHANGES.md (content between the markers).

@@ -83,9 +83,16 @@ pub struct ParamChange {
 
 #[derive(Serialize)]
 pub struct TypesDiff {
-    pub added: Vec<String>,
-    pub removed: Vec<String>,
+    pub added: Vec<TypeEntry>,
+    pub removed: Vec<TypeEntry>,
     pub changed: Vec<TypeChanges>,
+}
+
+/// A type name with the API tag(s) it belongs to.
+#[derive(Serialize, Debug, Clone, PartialEq, Eq)]
+pub struct TypeEntry {
+    pub name: String,
+    pub tags: Vec<String>,
 }
 
 #[derive(Serialize)]
@@ -574,9 +581,83 @@ fn diff_contract(to_ep: &Endpoint, from_ep: &Endpoint) -> Vec<ContractChange> {
     changes
 }
 
+/// Build a mapping from type name to the sorted, deduplicated list of tags that use it.
+///
+/// Walks endpoint request/response types and their fields transitively to
+/// associate types with their API tags.
+fn type_tag_index(spec: &ApiSpec) -> HashMap<&str, Vec<String>> {
+    let type_map: HashMap<&str, &crate::parser::TypeDef> = spec
+        .all_types
+        .iter()
+        .map(|t| (t.name.as_str(), t))
+        .collect();
+    let mut index: HashMap<&str, Vec<String>> = HashMap::new();
+
+    for tag_group in &spec.tags {
+        // Collect direct endpoint types
+        let mut frontier: Vec<&str> = Vec::new();
+        let all_eps = tag_group.root_endpoints.iter().chain(
+            tag_group
+                .sub_groups
+                .iter()
+                .flat_map(|sg| sg.endpoints.iter()),
+        );
+        for ep in all_eps {
+            if let Some(t) = &ep.request_type {
+                frontier.push(t.as_str());
+            }
+            if let Some(t) = &ep.response_type {
+                frontier.push(t.as_str());
+            }
+            if let Some(t) = &ep.response_inner {
+                frontier.push(t.as_str());
+            }
+        }
+
+        // Walk fields transitively
+        let mut visited: std::collections::HashSet<&str> = std::collections::HashSet::new();
+        while let Some(name) = frontier.pop() {
+            if !visited.insert(name) {
+                continue;
+            }
+            if let Some(td) = type_map.get(name) {
+                for f in &td.fields {
+                    if let Some(ref_name) = field_type_ref_name(&f.ty) {
+                        frontier.push(ref_name);
+                    }
+                }
+            }
+        }
+
+        for name in visited {
+            index.entry(name).or_default().push(tag_group.tag.clone());
+        }
+    }
+    // Deduplicate and sort
+    for tags in index.values_mut() {
+        tags.sort();
+        tags.dedup();
+    }
+    index
+}
+
+/// Extract the type name from a field type if it's a named reference.
+fn field_type_ref_name(ty: &crate::parser::FieldType) -> Option<&str> {
+    use crate::parser::FieldType;
+    match ty {
+        FieldType::Ref(name) => Some(name.as_str()),
+        FieldType::List(inner) | FieldType::Opt(inner) | FieldType::Map(inner) => {
+            field_type_ref_name(inner)
+        }
+        _ => None,
+    }
+}
+
 fn diff_types(from: &ApiSpec, to: &ApiSpec) -> TypesDiff {
     let from_map = type_map(from);
     let to_map = type_map(to);
+    let to_tags = type_tag_index(to);
+    let from_tags = type_tag_index(from);
 
     let mut added = Vec::new();
     let mut removed = Vec::new();
@@ -584,7 +665,10 @@ fn diff_types(from: &ApiSpec, to: &ApiSpec) -> TypesDiff {
 
     for (name, to_type) in &to_map {
         if !from_map.contains_key(name) {
-            added.push(name.to_string());
+            added.push(TypeEntry {
+                name: name.to_string(),
+                tags: to_tags.get(name).cloned().unwrap_or_default(),
+            });
         } else {
             let from_type = from_map[name];
             let tc = diff_type_fields(name, from_type, to_type);
@@ -601,12 +685,15 @@ fn diff_types(from: &ApiSpec, to: &ApiSpec) -> TypesDiff {
 
     for name in from_map.keys() {
         if !to_map.contains_key(name) {
-            removed.push(name.to_string());
+            removed.push(TypeEntry {
+                name: name.to_string(),
+                tags: from_tags.get(name).cloned().unwrap_or_default(),
+            });
         }
     }
 
-    added.sort();
-    removed.sort();
+    added.sort_by(|a, b| a.name.cmp(&b.name));
+    removed.sort_by(|a, b| a.name.cmp(&b.name));
     changed.sort_by(|a, b| a.name.cmp(&b.name));
 
     TypesDiff {
@@ -1114,7 +1201,8 @@ mod tests {
             vec![make_dto("AboutDTO", vec![]), make_dto("MetricsDTO", vec![])],
         );
         let diff = compute_diff(&from, &to, "2.7.2", "2.8.0");
-        assert_eq!(diff.types.added, vec!["MetricsDTO"]);
+        assert_eq!(diff.types.added.len(), 1);
+        assert_eq!(diff.types.added[0].name, "MetricsDTO");
         assert!(diff.types.removed.is_empty());
     }
 
