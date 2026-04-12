@@ -124,10 +124,12 @@ pub mod client;
 pub mod config;
 /// Error type returned by all client operations.
 pub mod error;
+mod require;
 pub use builder::NifiClientBuilder;
 pub use client::NifiClient;
 pub use config::credentials::CredentialProvider;
 pub use error::NifiError;
+pub use require::RequireField;
 
 // Generated: version modules, re-exports, dynamic module
 include!(concat!(env!("OUT_DIR"), "/generated_lib.rs"));
