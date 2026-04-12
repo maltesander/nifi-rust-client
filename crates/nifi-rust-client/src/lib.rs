@@ -30,7 +30,7 @@
 //! <!-- LIB_STATIC_FEATURE_EXAMPLE_START -->
 //! ```toml
 //! [dependencies]
-//! nifi-rust-client = { version = "0.7", features = ["nifi-2-9-0"] }
+//! nifi-rust-client = { version = "0.9", features = ["nifi-2-9-0"] }
 //! ```
 //! <!-- LIB_STATIC_FEATURE_EXAMPLE_END -->
 //!
@@ -61,7 +61,7 @@
 //! <!-- LIB_DYNAMIC_FEATURE_EXAMPLE_START -->
 //! ```toml
 //! [dependencies]
-//! nifi-rust-client = { version = "0.7", features = ["dynamic"] }
+//! nifi-rust-client = { version = "0.9", features = ["dynamic"] }
 //! ```
 //! <!-- LIB_DYNAMIC_FEATURE_EXAMPLE_END -->
 //!

@@ -72,3 +72,11 @@ repos:
         stages: [pre-commit, pre-merge-commit]
         pass_filenames: false
         files: \.rs$|Cargo\.(toml|lock)
+
+      - id: nifi-generator-check
+        name: nifi-openapi-gen --check
+        language: system
+        entry: cargo run -p nifi-openapi-gen -- --check
+        stages: [pre-commit, pre-merge-commit]
+        pass_filenames: false
+        files: ^crates/nifi-openapi-gen/(specs/|src/)
