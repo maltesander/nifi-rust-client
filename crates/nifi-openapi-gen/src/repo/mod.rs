@@ -10,4 +10,4 @@ pub use cargo_features::{
 };
 pub use cleanup::{migrate_flat_layout, remove_stale_generated_files, remove_stale_version_dirs};
 pub use docker_compose::{emit_docker_compose_default, replace_image_tag_default, update_docker_compose_default};
-pub use lib_rs::{discover_versions, generate_lib_rs_content, update_lib_rs};
+pub use lib_rs::{discover_versions, emit_lib_rs_feature_flags, generate_lib_rs_content, update_lib_rs};

@@ -2,6 +2,8 @@ use std::path::Path;
 
 use semver::Version;
 
+use crate::layout::RepoLayout;
+use crate::plan::FileEdit;
 use crate::util::{sort_versions_semver, version_to_feature, version_to_mod_name};
 
 /// Returns version strings (e.g. ["2.7.2", "2.8.0"]) for all src/v*/ dirs,
@@ -107,6 +109,24 @@ pub fn generate_lib_rs_content(versions: &[&str]) -> String {
     out
 }
 
+/// Returns a `FileEdit::ReplaceBlock` for the feature flags doc table in `lib.rs`.
+pub fn emit_lib_rs_feature_flags(layout: &RepoLayout, versions: &[&str]) -> Vec<FileEdit> {
+    let features: Vec<String> = versions
+        .iter()
+        .map(|v| format!("`{}`", version_to_feature(v)))
+        .collect();
+    let features_list = features.join(", ");
+    let content = format!(
+        "//! | {features_list} | Compile against a specific NiFi version. The semver-latest is the default. |\n"
+    );
+    vec![FileEdit::ReplaceBlock {
+        path: layout.client_lib_rs.clone(),
+        start_marker: "<!-- NIFI_FEATURE_FLAGS_START -->".into(),
+        end_marker: "<!-- NIFI_FEATURE_FLAGS_END -->".into(),
+        content,
+    }]
+}
+
 /// Discover versions from `client_src` and write `lib.rs` if its content changed.
 pub fn update_lib_rs(client_src: &Path) {
     let versions = discover_versions(client_src);
@@ -123,6 +143,22 @@ pub fn update_lib_rs(client_src: &Path) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::layout::RepoLayout;
+    use crate::plan::FileEdit;
+    use std::path::Path;
+
+    #[test]
+    fn emit_lib_rs_feature_flags_returns_replace_block() {
+        let layout = RepoLayout::from_workspace_root(Path::new("/fake"));
+        let edits = emit_lib_rs_feature_flags(&layout, &["2.7.2", "2.8.0"]);
+        assert_eq!(edits.len(), 1);
+        assert!(matches!(&edits[0], FileEdit::ReplaceBlock { path, start_marker, content, .. }
+            if *path == Path::new("/fake/crates/nifi-rust-client/src/lib.rs")
+            && start_marker.contains("NIFI_FEATURE_FLAGS_START")
+            && content.contains("nifi-2-7-2")
+            && content.contains("nifi-2-8-0")
+        ));
+    }
 
     #[test]
     fn test_generate_lib_rs_single_version() {
