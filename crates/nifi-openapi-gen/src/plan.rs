@@ -70,6 +70,81 @@ pub struct ApplyReport {
     pub unchanged: usize,
 }
 
+/// One file that drifted from the plan.
+#[derive(Debug)]
+pub struct DriftEntry {
+    pub path: PathBuf,
+    pub diff_lines: Vec<String>,
+}
+
+/// Summary of what `check()` found.
+#[derive(Debug)]
+pub struct CheckReport {
+    pub drifted: Vec<DriftEntry>,
+    pub up_to_date: usize,
+}
+
+impl CheckReport {
+    pub fn has_drift(&self) -> bool {
+        !self.drifted.is_empty()
+    }
+}
+
+impl std::fmt::Display for CheckReport {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        const TRUNCATE_AT: usize = 5;
+
+        for entry in &self.drifted {
+            writeln!(f, "DRIFT {}", entry.path.display())?;
+            let total = entry.diff_lines.len();
+            let show = if f.alternate() { total } else { total.min(TRUNCATE_AT) };
+            for line in &entry.diff_lines[..show] {
+                writeln!(f, "  {line}")?;
+            }
+            if !f.alternate() && total > TRUNCATE_AT {
+                writeln!(
+                    f,
+                    "  ... ({} more lines, use --verbose for full diff)",
+                    total - TRUNCATE_AT
+                )?;
+            }
+        }
+        writeln!(
+            f,
+            "\n{} file(s) drifted, {} up to date",
+            self.drifted.len(),
+            self.up_to_date
+        )
+    }
+}
+
+/// Produce a minimal line-level diff.
+fn simple_diff(old: &str, new: &str) -> Vec<String> {
+    let old_lines: Vec<&str> = old.lines().collect();
+    let new_lines: Vec<&str> = new.lines().collect();
+    let mut diff = Vec::new();
+
+    let max_len = old_lines.len().max(new_lines.len());
+    for i in 0..max_len {
+        let old_line = old_lines.get(i).copied();
+        let new_line = new_lines.get(i).copied();
+        match (old_line, new_line) {
+            (Some(o), Some(n)) if o != n => {
+                diff.push(format!("-{o}"));
+                diff.push(format!("+{n}"));
+            }
+            (Some(o), None) => {
+                diff.push(format!("-{o}"));
+            }
+            (None, Some(n)) => {
+                diff.push(format!("+{n}"));
+            }
+            _ => {}
+        }
+    }
+    diff
+}
+
 /// Collects all `FileEdit`s and validates/applies them.
 pub struct MutationPlan {
     pub edits: Vec<FileEdit>,
@@ -150,6 +225,60 @@ impl MutationPlan {
         }
 
         if errors.is_empty() { Ok(()) } else { Err(errors) }
+    }
+
+    /// Validate, then diff the plan against disk without writing.
+    /// Use `format!("{report}")` for truncated output, `format!("{report:#}")` for full.
+    pub fn check(&self, _verbose: bool) -> Result<CheckReport, Vec<PlanError>> {
+        self.validate()?;
+        let mut report = CheckReport {
+            drifted: Vec::new(),
+            up_to_date: 0,
+        };
+
+        for edit in &self.edits {
+            let (on_disk, planned) = match edit {
+                FileEdit::Overwrite { path, content } => {
+                    let on_disk = std::fs::read_to_string(path).unwrap_or_default();
+                    (on_disk, content.clone())
+                }
+                FileEdit::ReplaceBlock { path, start_marker, end_marker, content } => {
+                    let on_disk = std::fs::read_to_string(path).map_err(|e| {
+                        vec![PlanError::IoError { path: path.clone(), source: e }]
+                    })?;
+                    let planned = crate::util::replace_between_markers(
+                        &on_disk, start_marker, end_marker, content,
+                    );
+                    (on_disk, planned)
+                }
+                FileEdit::CreateOrReplaceBlock { path, start_marker, end_marker, content, template } => {
+                    let on_disk = if path.exists() {
+                        std::fs::read_to_string(path).map_err(|e| {
+                            vec![PlanError::IoError { path: path.clone(), source: e }]
+                        })?
+                    } else {
+                        String::new()
+                    };
+                    let base = if path.exists() { &on_disk } else { template.as_str() };
+                    let planned = crate::util::replace_between_markers(
+                        base, start_marker, end_marker, content,
+                    );
+                    (on_disk, planned)
+                }
+            };
+
+            if on_disk == planned {
+                report.up_to_date += 1;
+            } else {
+                let diff_lines = simple_diff(&on_disk, &planned);
+                report.drifted.push(DriftEntry {
+                    path: edit.path().to_path_buf(),
+                    diff_lines,
+                });
+            }
+        }
+
+        Ok(report)
     }
 
     /// Validate, then apply all edits. Returns a report of what changed.
@@ -366,6 +495,74 @@ mod tests {
         let result = std::fs::read_to_string(&path).unwrap();
         assert!(result.contains("body"));
         assert!(result.contains("# Title"));
+    }
+
+    #[test]
+    fn check_reports_no_drift_when_up_to_date() {
+        let f = tmp_file("before\n<!-- START -->\nold\n<!-- END -->\nafter");
+        let plan = MutationPlan {
+            edits: vec![FileEdit::ReplaceBlock {
+                path: f.path().to_path_buf(),
+                start_marker: "<!-- START -->".into(),
+                end_marker: "<!-- END -->".into(),
+                content: "old".into(),
+            }],
+        };
+        let report = plan.check(false).unwrap();
+        assert!(!report.has_drift());
+        assert_eq!(report.up_to_date, 1);
+    }
+
+    #[test]
+    fn check_reports_drift_when_content_differs() {
+        let f = tmp_file("before\n<!-- START -->\nold\n<!-- END -->\nafter");
+        let plan = MutationPlan {
+            edits: vec![FileEdit::ReplaceBlock {
+                path: f.path().to_path_buf(),
+                start_marker: "<!-- START -->".into(),
+                end_marker: "<!-- END -->".into(),
+                content: "new content here".into(),
+            }],
+        };
+        let report = plan.check(false).unwrap();
+        assert!(report.has_drift());
+        assert_eq!(report.drifted.len(), 1);
+    }
+
+    #[test]
+    fn check_truncates_diff_when_not_verbose() {
+        let old_lines = (0..20).map(|i| format!("line{i}")).collect::<Vec<_>>().join("\n");
+        let new_lines = (0..20).map(|i| format!("changed{i}")).collect::<Vec<_>>().join("\n");
+        let file_content = format!("<!-- S -->\n{old_lines}\n<!-- E -->");
+        let f = tmp_file(&file_content);
+        let plan = MutationPlan {
+            edits: vec![FileEdit::ReplaceBlock {
+                path: f.path().to_path_buf(),
+                start_marker: "<!-- S -->".into(),
+                end_marker: "<!-- E -->".into(),
+                content: new_lines,
+            }],
+        };
+        let report = plan.check(false).unwrap();
+        let output = format!("{report}");
+        assert!(output.contains("..."));
+        assert!(output.contains("--verbose"));
+    }
+
+    #[test]
+    fn check_shows_full_diff_when_verbose() {
+        let f = tmp_file("<!-- S -->\nold1\nold2\nold3\nold4\nold5\nold6\nold7\n<!-- E -->");
+        let plan = MutationPlan {
+            edits: vec![FileEdit::ReplaceBlock {
+                path: f.path().to_path_buf(),
+                start_marker: "<!-- S -->".into(),
+                end_marker: "<!-- E -->".into(),
+                content: "new1\nnew2\nnew3\nnew4\nnew5\nnew6\nnew7".into(),
+            }],
+        };
+        let report = plan.check(true).unwrap();
+        let output = format!("{report:#}");
+        assert!(!output.contains("--verbose"));
     }
 
     #[test]
