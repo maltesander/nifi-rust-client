@@ -130,7 +130,6 @@ mod require;
 pub use builder::NifiClientBuilder;
 pub use client::NifiClient;
 pub use config::auth::AuthProvider;
-pub use config::credentials::CredentialProvider;
 pub use error::NifiError;
 pub use require::RequireField;
 
