@@ -131,3 +131,59 @@ fn apply_overrides_leaves_unmatched_names_alone() {
     let ep = &spec.tags[0].root_endpoints[0];
     assert_eq!(ep.fn_name, "get_foo");
 }
+
+#[test]
+#[should_panic(expected = "fn_name collision")]
+fn collision_same_tag_panics() {
+    let mut spec = make_spec(
+        "Foo",
+        vec![
+            make_endpoint(HttpMethod::Put, "/foo/a", "update", "updateFoo_1"),
+            make_endpoint(HttpMethod::Put, "/foo/b", "update", "updateFoo_2"),
+        ],
+    );
+    let overrides = std::collections::HashMap::new();
+    naming::apply_overrides_with_table(&mut spec, "2.9.0", &overrides);
+    naming::check_collisions(&spec, "2.9.0");
+}
+
+#[test]
+fn no_collision_when_fn_names_differ() {
+    let mut spec = make_spec(
+        "Foo",
+        vec![
+            make_endpoint(HttpMethod::Get, "/foo/a", "get_foo_a", "getFooA"),
+            make_endpoint(HttpMethod::Get, "/foo/b", "get_foo_b", "getFooB"),
+        ],
+    );
+    let overrides = std::collections::HashMap::new();
+    naming::apply_overrides_with_table(&mut spec, "2.9.0", &overrides);
+    naming::check_collisions(&spec, "2.9.0"); // must not panic
+}
+
+#[test]
+fn collision_message_is_actionable() {
+    let mut spec = make_spec(
+        "Foo",
+        vec![
+            make_endpoint(HttpMethod::Put, "/foo/a", "update", "updateFoo_1"),
+            make_endpoint(HttpMethod::Put, "/foo/b", "update", "updateFoo_2"),
+        ],
+    );
+    let overrides = std::collections::HashMap::new();
+    naming::apply_overrides_with_table(&mut spec, "2.9.0", &overrides);
+
+    let result = std::panic::catch_unwind(|| naming::check_collisions(&spec, "2.9.0"));
+    let err = result.expect_err("check_collisions must panic on collision");
+    let msg = err
+        .downcast_ref::<String>()
+        .map(String::as_str)
+        .or_else(|| err.downcast_ref::<&'static str>().copied())
+        .unwrap_or("<non-string panic>");
+    assert!(msg.contains("fn_name collision"), "got: {msg}");
+    assert!(msg.contains("2.9.0"), "got: {msg}");
+    assert!(msg.contains("Foo"), "got: {msg}");
+    assert!(msg.contains("updateFoo_1"), "got: {msg}");
+    assert!(msg.contains("updateFoo_2"), "got: {msg}");
+    assert!(msg.contains("naming_overrides.rs"), "got: {msg}");
+}

@@ -65,5 +65,86 @@ fn maybe_override(
     }
 }
 
-/// Placeholder — filled in by Task 5 with the same-tag collision check.
-pub fn check_collisions(_spec: &ApiSpec, _version: &str) {}
+/// One endpoint observation for the collision check:
+/// `(tag, fn_name, method, path, raw_operation_id)`.
+type EndpointEntry<'a> = (&'a str, &'a str, &'a str, &'a str, &'a str);
+
+/// One collision-group member: `(method, path, raw_operation_id)`.
+type CollisionMember<'a> = (&'a str, &'a str, &'a str);
+
+/// Panic if any two operations in the same tag would generate the same
+/// Rust method name. Each resource struct can only expose one method per
+/// name, so a collision here would be a compile error further downstream
+/// — this check surfaces it with a much better error message.
+pub fn check_collisions(spec: &ApiSpec, version: &str) {
+    // Flat list of (tag, fn_name, method, path, raw_op_id) for every
+    // endpoint (root + subgroups).
+    let mut entries: Vec<EndpointEntry<'_>> = Vec::new();
+    for tag in &spec.tags {
+        for ep in &tag.root_endpoints {
+            entries.push((
+                tag.tag.as_str(),
+                ep.fn_name.as_str(),
+                ep.method.as_str(),
+                ep.path.as_str(),
+                ep.raw_operation_id.as_str(),
+            ));
+        }
+        for sg in &tag.sub_groups {
+            for ep in &sg.endpoints {
+                entries.push((
+                    tag.tag.as_str(),
+                    ep.fn_name.as_str(),
+                    ep.method.as_str(),
+                    ep.path.as_str(),
+                    ep.raw_operation_id.as_str(),
+                ));
+            }
+        }
+    }
+
+    // Group by (tag, fn_name). Any group with len > 1 is a collision.
+    let mut groups: HashMap<(&str, &str), Vec<CollisionMember<'_>>> = HashMap::new();
+    for (tag, fn_name, method, path, op_id) in entries {
+        groups
+            .entry((tag, fn_name))
+            .or_default()
+            .push((method, path, op_id));
+    }
+
+    for ((tag, fn_name), members) in groups.iter() {
+        if members.len() > 1 {
+            panic!("{}", collision_message(version, tag, fn_name, members));
+        }
+    }
+}
+
+fn collision_message(
+    version: &str,
+    tag: &str,
+    fn_name: &str,
+    members: &[CollisionMember<'_>],
+) -> String {
+    let mut out = format!(
+        "nifi-openapi-gen: fn_name collision in NiFi {version}\n\n\
+         Two operations in tag \"{tag}\" would generate the same Rust method \
+         name `{fn_name}`:\n\n"
+    );
+    for (method, path, op_id) in members {
+        out.push_str(&format!(
+            "  {method} {path}           (operationId: {op_id})\n"
+        ));
+    }
+    out.push_str(&format!(
+        "\nEach resource struct can only expose one `{fn_name}` method. Resolve \
+         by adding an entry to crates/nifi-openapi-gen/src/naming_overrides.rs:\n\n\
+         \x20   m.insert(\n\
+         \x20       (\"{version}\", \"<raw_operationId>\"),\n\
+         \x20       \"<explicit_fn_name>\",\n\
+         \x20   );\n\n\
+         Pick a name that describes what the endpoint actually does. The \
+         override is keyed by (version, operationId) so older versions keep \
+         their existing names.\n"
+    ));
+    out
+}
