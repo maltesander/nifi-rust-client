@@ -127,18 +127,6 @@ pub fn emit_lib_rs_feature_flags(layout: &RepoLayout, versions: &[&str]) -> Vec<
     }]
 }
 
-/// Discover versions from `client_src` and write `lib.rs` if its content changed.
-pub fn update_lib_rs(client_src: &Path) {
-    let versions = discover_versions(client_src);
-    let version_strs: Vec<&str> = versions.iter().map(String::as_str).collect();
-    let content = generate_lib_rs_content(&version_strs);
-    let lib_path = client_src.join("lib.rs");
-    let on_disk = std::fs::read_to_string(&lib_path).unwrap_or_default();
-    if on_disk != content {
-        std::fs::write(&lib_path, &content).expect("write lib.rs");
-        println!("  wrote {}", lib_path.display());
-    }
-}
 
 #[cfg(test)]
 mod tests {

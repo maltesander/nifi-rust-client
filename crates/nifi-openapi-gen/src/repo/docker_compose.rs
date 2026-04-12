@@ -1,6 +1,5 @@
 use crate::layout::RepoLayout;
 use crate::plan::FileEdit;
-use std::path::Path;
 
 /// Returns a `FileEdit::Overwrite` for the docker-compose file.
 pub fn emit_docker_compose_default(
@@ -28,16 +27,6 @@ pub fn replace_image_tag_default(content: &str, latest: &str) -> String {
     content.to_string()
 }
 
-/// Read a docker-compose file, replace the default image tag, and write back if changed.
-pub fn update_docker_compose_default(path: &Path, latest: &str) {
-    let on_disk =
-        std::fs::read_to_string(path).unwrap_or_else(|_| panic!("read {}", path.display()));
-    let patched = replace_image_tag_default(&on_disk, latest);
-    if on_disk != patched {
-        std::fs::write(path, &patched).unwrap_or_else(|_| panic!("write {}", path.display()));
-        println!("  wrote {}", path.display());
-    }
-}
 
 #[cfg(test)]
 mod tests {

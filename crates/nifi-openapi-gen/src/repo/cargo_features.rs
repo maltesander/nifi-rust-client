@@ -1,5 +1,3 @@
-use std::path::Path;
-
 use crate::layout::RepoLayout;
 use crate::plan::FileEdit;
 use crate::util::version_to_feature;
@@ -106,33 +104,6 @@ pub fn emit_cargo_features_tests(
     }]
 }
 
-/// Discover versions from the bundled OpenAPI specs directory and patch the
-/// client crate's `Cargo.toml` features.
-pub fn update_cargo_features_client(client_crate: &Path) {
-    let versions = crate::util::discover_spec_versions(&crate::specs_dir());
-    let version_strs: Vec<&str> = versions.iter().map(String::as_str).collect();
-    let cargo_path = client_crate.join("Cargo.toml");
-    let on_disk = std::fs::read_to_string(&cargo_path).expect("read client Cargo.toml");
-    let patched = patch_client_cargo_features(&on_disk, &version_strs);
-    if on_disk != patched {
-        std::fs::write(&cargo_path, &patched).expect("write client Cargo.toml");
-        println!("  wrote {}", cargo_path.display());
-    }
-}
-
-/// Discover versions from the bundled OpenAPI specs directory and patch the
-/// tests crate's `Cargo.toml` features.
-pub fn update_cargo_features_tests(tests_crate: &Path) {
-    let versions = crate::util::discover_spec_versions(&crate::specs_dir());
-    let version_strs: Vec<&str> = versions.iter().map(String::as_str).collect();
-    let cargo_path = tests_crate.join("Cargo.toml");
-    let on_disk = std::fs::read_to_string(&cargo_path).expect("read tests Cargo.toml");
-    let patched = patch_tests_cargo_features(&on_disk, &version_strs);
-    if on_disk != patched {
-        std::fs::write(&cargo_path, &patched).expect("write tests Cargo.toml");
-        println!("  wrote {}", cargo_path.display());
-    }
-}
 
 #[cfg(test)]
 mod tests {
