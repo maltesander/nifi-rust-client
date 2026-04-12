@@ -285,6 +285,38 @@ papering over the panic.
 feature — it surfaces NiFi API evolution the moment a new shape
 lands, before it can silently corrupt generated code.
 
+### Method name stability
+
+Generated method names on resource structs (e.g. `ProcessorsApi::update_run_status`)
+are derived from the `operationId` with any trailing `_N` collision-counter
+suffix stripped. The raw `operationId` is preserved on `Endpoint::raw_operation_id`
+for override lookup and diagnostics.
+
+Two build-time checks guarantee stability:
+
+1. **Same-tag collision check** — if two operations in the same tag would
+   generate the same method name, the generator panics with an actionable
+   message pointing at `crates/nifi-openapi-gen/src/naming_overrides.rs`.
+2. **Cross-version drift check** — if the same `(tag, method, path)` triple
+   resolves to different method names across supported NiFi versions, the
+   generator panics with the same kind of actionable message.
+
+Both panics name the exact override entry the human should add. Overrides
+live in `NAMING_OVERRIDES` (`naming_overrides.rs`), keyed by
+`(spec_version, raw_operationId)`. The table ships empty and should stay
+empty unless one of the panics above fires.
+
+A committed golden file per version at
+`crates/nifi-openapi-gen/specs/<version>/fn_names.txt` lists every
+endpoint's resolved method name. `cargo test` reruns the table and
+asserts it matches the committed file. `cargo run -p nifi-openapi-gen --
+--check` (the existing check mode) also catches drift via the
+`MutationPlan` pipeline.
+
+**Do not bypass a panic by editing the golden file.** The golden is a
+follow-up artifact; the source of truth is the parser + overrides. Fix
+the root cause (add an override or accept the rename) and regenerate.
+
 ## Build & Test
 
 ### Commands
