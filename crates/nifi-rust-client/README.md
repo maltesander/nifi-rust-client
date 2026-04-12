@@ -174,7 +174,9 @@ client.login("admin", "password").await?;
 | `.https_proxy(url)` | `Url` | Proxy for HTTPS traffic only |
 | `.danger_accept_invalid_certs(b)` | `bool` | Skip TLS verification — dev only |
 | `.add_root_certificate(pem)` | `&[u8]` | Trust an additional PEM-encoded CA cert; call multiple times |
-| `.credential_provider(p)` | `impl CredentialProvider` | Enable auto token refresh on 401 |
+| `.auth_provider(p)` | `impl AuthProvider` | Enable auto token refresh on 401 |
+| `.client_identity_pem(pem)` | `&[u8]` | mTLS client certificate (PEM-encoded cert+key) |
+| `.proxied_entities_chain(s)` | `impl Into<String>` | Set `X-ProxiedEntitiesChain` header for proxy auth |
 | `.retry_policy(p)` | `RetryPolicy` | Enable transient error retry with backoff |
 | `.version_strategy(s)` | `VersionResolutionStrategy` | Version fallback for dynamic client: `Strict` (default), `Closest`, `Latest` |
 | `.build()` | — | Returns `Result<NifiClient, NifiError>` |
@@ -184,21 +186,21 @@ client.login("admin", "password").await?;
 
 `login()` posts credentials to `/nifi-api/access/token` and stores the returned JWT on the client. The token is sent as `Authorization: Bearer <token>` on every subsequent request.
 
-### Credential providers
+### Auth providers
 
-Instead of calling `login()` with hardcoded credentials, you can configure a credential provider.
+Instead of calling `login()` with hardcoded credentials, you can configure an auth provider.
 The client will automatically re-authenticate and retry when a token expires (401 response):
 
 ```rust,no_run
 use nifi_rust_client::NifiClientBuilder;
-use nifi_rust_client::credentials::StaticCredentials;
+use nifi_rust_client::config::auth::PasswordAuth;
 
 let client = NifiClientBuilder::new("https://nifi:8443")?
-    .credential_provider(StaticCredentials::new("admin", "password"))
+    .auth_provider(PasswordAuth::new("admin", "password"))
     .build()?;
 
-// Initial login
-client.login_with_provider().await?;
+// Initial authentication
+client.authenticate().await?;
 
 // If a token expires mid-session, the client automatically
 // re-authenticates and retries the request.
@@ -208,11 +210,23 @@ let about = client.flow_api().get_about_info().await?;
 Read credentials from environment variables (`NIFI_USERNAME`, `NIFI_PASSWORD`):
 
 ```rust,no_run
-use nifi_rust_client::credentials::EnvCredentials;
+use nifi_rust_client::config::auth::EnvPasswordAuth;
 
 let client = NifiClientBuilder::new("https://nifi:8443")?
-    .credential_provider(EnvCredentials::new()) // reads NIFI_USERNAME, NIFI_PASSWORD
+    .auth_provider(EnvPasswordAuth::new()) // reads NIFI_USERNAME, NIFI_PASSWORD
     .build()?;
+```
+
+Use a pre-obtained JWT token (e.g. from an OIDC flow or vault):
+
+```rust,no_run
+use nifi_rust_client::config::auth::StaticTokenAuth;
+
+let client = NifiClientBuilder::new("https://nifi:8443")?
+    .auth_provider(StaticTokenAuth::new("my-jwt-token"))
+    .build()?;
+
+client.authenticate().await?; // installs the token without contacting the server
 ```
 
 ### Token management
@@ -232,7 +246,7 @@ client.set_token(token).await;
 
 NiFi JWTs expire after **12 hours** by default (configurable server-side via
 `nifi.security.user.login.identity.provider.expiration`). An expired token causes any API call to
-return `NifiError::Unauthorized { .. }`. If a credential provider is configured, the client handles
+return `NifiError::Unauthorized { .. }`. If an auth provider is configured, the client handles
 this automatically. Otherwise, re-call `login()` to obtain a fresh token:
 
 ```rust,no_run
@@ -261,14 +275,14 @@ client.logout().await?;
 | Method | Description |
 |--------|-------------|
 | `client.login(user, pass)` | `POST /access/token` — authenticate and store the JWT |
-| `client.login_with_provider()` | Authenticate using the configured credential provider |
+| `client.authenticate()` | Authenticate using the configured auth provider |
 | `client.logout()` | `DELETE /access/logout` — invalidate server-side and clear local token |
 | `client.token()` | Return the current bearer token as `Option<String>` (async) |
 | `client.set_token(token)` | Restore a previously obtained token (async) |
 
 ## Retry policy
 
-By default, failed requests are not retried (except for automatic token refresh when a credential
+By default, failed requests are not retried (except for automatic token refresh when an auth
 provider is configured). Enable transient error retry with exponential backoff:
 
 ```rust,no_run

@@ -36,7 +36,7 @@ crates/
       builder.rs          # Hand-written: NifiClientBuilder
       error.rs            # Hand-written: NifiError via snafu
       config/
-        credentials.rs    # Hand-written: CredentialProvider
+        auth.rs           # Hand-written: AuthProvider trait and impls
         retry.rs          # Hand-written: retry logic
       dynamic/
         strategy.rs       # Hand-written: VersionResolutionStrategy
@@ -167,14 +167,34 @@ For endpoints that return a JSON envelope wrapping the real payload (e.g. `{ "ab
 
 ### Authentication
 
-NiFi 2.x uses JWT tokens obtained via single-user credentials:
+NiFi 2.x uses JWT tokens. The client supports multiple authentication strategies
+via the `AuthProvider` trait:
 
-1. POST `/nifi-api/access/token` with form fields `username` and `password`
-2. Response body is the raw JWT token string
-3. Token is stored on `NifiClient` and sent as `Authorization: Bearer <token>` on every request
+| Provider | Use case |
+|---|---|
+| `PasswordAuth` | Username/password login (single-user, LDAP) |
+| `EnvPasswordAuth` | Reads `NIFI_USERNAME`/`NIFI_PASSWORD` from environment |
+| `StaticTokenAuth` | Pre-obtained JWT (OIDC, vault, previous session) |
+| Custom `AuthProvider` impl | Any JWT-producing mechanism (OIDC exchange, Kerberos, etc.) |
 
-`NifiClient::login(username, password)` performs this flow and stores the token.
+The login flow:
+1. `AuthProvider::authenticate(&self, client)` obtains a JWT and calls `client.set_token(jwt)`
+2. The token is sent as `Authorization: Bearer <token>` on every request
+3. On 401, the client calls `authenticate()` again and retries the request once
+
+Direct `client.login(username, password)` and `client.set_token(jwt)` remain
+available as low-level primitives.
+
 For integration tests, credentials are read from `NIFI_USERNAME` / `NIFI_PASSWORD` env vars.
+
+#### mTLS and proxy authentication
+
+`NifiClientBuilder` supports two transport-level auth mechanisms orthogonal to
+`AuthProvider`:
+
+- `.client_identity_pem(pem)` — mutual TLS client certificate (PEM-encoded cert+key).
+- `.proxied_entities_chain("<user1><user2>")` — sets the `X-ProxiedEntitiesChain`
+  header on every request, used behind trusted proxies (Knox, nginx with mTLS).
 
 ### Error Handling
 
