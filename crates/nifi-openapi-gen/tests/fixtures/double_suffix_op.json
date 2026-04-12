@@ -1,0 +1,17 @@
+{
+  "openapi": "3.0.1",
+  "info": { "title": "test", "version": "0.0.0" },
+  "paths": {
+    "/foo/bar": {
+      "get": {
+        "tags": ["Foo"],
+        "operationId": "getFoo_1_2",
+        "summary": "Foo",
+        "responses": {
+          "200": { "description": "OK", "content": { "application/json": { "schema": { "type": "string" } } } }
+        }
+      }
+    }
+  },
+  "components": { "schemas": {} }
+}
