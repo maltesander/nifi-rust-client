@@ -365,29 +365,45 @@ Helper methods:
 Dynamic-mode DTOs carry every field as `Option<T>` because the union of
 fields across supported NiFi versions includes values that not every
 server populates. The crate provides a `RequireField` trait and a
-`require!` macro to replace `.ok_or_else()` ladders with a single call
-per field:
+`require!` macro to collapse chains of `.ok_or_else()` calls into a
+single expression:
 
 ```rust
 use nifi_rust_client::{require, NifiClientBuilder, NifiError, RequireField};
+use nifi_rust_client::dynamic::traits::ProcessGroupsApi;
 
-let client = NifiClientBuilder::new("https://nifi.example.com:8443")?
-    .build_dynamic()?;
-client.login("admin", "adminpassword123").await?;
-let resp = client.flow_api().get_about_info().await?;
+async fn example() -> Result<(), NifiError> {
+    let client = NifiClientBuilder::new("https://nifi.example.com:8443")?
+        .build_dynamic()?;
+    client.login("admin", "adminpassword123").await?;
 
-// Nested: errors carry a dotted path like "about.version"
-let version: &String = require!(resp.about.version);
+    let pg = client.process_groups_api().get_process_group("root").await?;
 
-// Or the trait directly, when the macro doesn't fit:
-let title = resp.about.require("about")?.title.require("title")?;
+    // Macro: walks the chain and stamps a dotted path into the error.
+    // On failure you get NifiError::MissingField { path: "component.name" }.
+    let name: &String = require!(pg.component.name);
+    println!("root process group: {name}");
+
+    // Trait form: the same thing written out. When calling `.require()`
+    // directly, pass the full dotted path yourself — the macro does it
+    // for you.
+    let component = pg.component.require("component")?;
+    let _name_again: &String = component.name.require("component.name")?;
+
+    Ok(())
+}
 ```
 
-On a missing field, these helpers return
+The macro returns a borrow (`&T`) and expands to code that uses `?`, so
+call it from a function returning `Result<_, NifiError>`. Clone the
+result if you need an owned value.
+
+On a missing field, both helpers return
 `NifiError::MissingField { path }` with `path` set to the dotted
-identifier chain. That variant is *not* retryable and is distinct from
-`NifiError::MissingRequiredField`, which is emitted by the generated
-conversion layer.
+identifier chain. That variant is not retryable (`err.is_retryable()`
+returns `false`) and is distinct from `NifiError::MissingRequiredField`,
+which is emitted only by the generated dynamic-mode conversion layer
+and carries runtime type/version context.
 
 The same helpers work on static-mode `Option<T>` fields — the module
 is not mode-gated.
