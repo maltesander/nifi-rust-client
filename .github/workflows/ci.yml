@@ -59,6 +59,16 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - run: cargo test ${{ matrix.args }}
 
+  generator-check:
+    name: Verify generated artifacts are up to date
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - uses: Swatinem/rust-cache@v2
+      - name: Run generator in check mode
+        run: cargo run -p nifi-openapi-gen --bin generate -- --check
+
   doc:
     name: Documentation
     runs-on: ubuntu-latest
