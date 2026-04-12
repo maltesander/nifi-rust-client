@@ -56,3 +56,78 @@ fn only_trailing_group_stripped() {
     assert_eq!(ep.fn_name, "get_foo_1");
     assert_eq!(ep.raw_operation_id, "getFoo_1_2");
 }
+
+use nifi_openapi_gen::content_type::ResponseBodyKind;
+use nifi_openapi_gen::naming;
+use nifi_openapi_gen::parser::{ApiSpec, Endpoint, HttpMethod, TagGroup};
+
+fn make_endpoint(method: HttpMethod, path: &str, fn_name: &str, raw_op_id: &str) -> Endpoint {
+    Endpoint {
+        method,
+        path: path.to_string(),
+        fn_name: fn_name.to_string(),
+        raw_operation_id: raw_op_id.to_string(),
+        doc: None,
+        description: None,
+        path_params: vec![],
+        request_type: None,
+        body_kind: None,
+        body_doc: None,
+        response_type: None,
+        response_inner: None,
+        response_field: None,
+        response_kind: ResponseBodyKind::Empty,
+        query_params: vec![],
+        success_responses: vec![],
+        error_responses: vec![],
+        security: None,
+    }
+}
+
+fn make_spec(tag: &str, endpoints: Vec<Endpoint>) -> ApiSpec {
+    ApiSpec {
+        tags: vec![TagGroup {
+            tag: tag.to_string(),
+            struct_name: format!("{}Api", tag),
+            module_name: tag.to_lowercase(),
+            accessor_fn: format!("{}_api", tag.to_lowercase()),
+            types: vec![],
+            root_endpoints: endpoints,
+            sub_groups: vec![],
+        }],
+        all_types: vec![],
+    }
+}
+
+#[test]
+fn apply_overrides_rewrites_matching_fn_name() {
+    let mut overrides = std::collections::HashMap::new();
+    overrides.insert(
+        ("test-1.0".to_string(), "getFoo_5".to_string()),
+        "get_foo_special".to_string(),
+    );
+
+    let mut spec = make_spec(
+        "Foo",
+        vec![make_endpoint(HttpMethod::Get, "/foo", "get_foo", "getFoo_5")],
+    );
+
+    naming::apply_overrides_with_table(&mut spec, "test-1.0", &overrides);
+
+    let ep = &spec.tags[0].root_endpoints[0];
+    assert_eq!(ep.fn_name, "get_foo_special");
+}
+
+#[test]
+fn apply_overrides_leaves_unmatched_names_alone() {
+    let overrides = std::collections::HashMap::new();
+    let mut spec = make_spec(
+        "Foo",
+        vec![make_endpoint(HttpMethod::Get, "/foo", "get_foo", "getFoo")],
+    );
+
+    naming::apply_overrides_with_table(&mut spec, "test-1.0", &overrides);
+
+    let ep = &spec.tags[0].root_endpoints[0];
+    assert_eq!(ep.fn_name, "get_foo");
+}
