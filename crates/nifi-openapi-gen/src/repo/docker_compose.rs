@@ -1,4 +1,19 @@
+use crate::layout::RepoLayout;
+use crate::plan::FileEdit;
 use std::path::Path;
+
+/// Returns a `FileEdit::Overwrite` for the docker-compose file.
+pub fn emit_docker_compose_default(
+    layout: &RepoLayout,
+    current_content: &str,
+    latest: &str,
+) -> Vec<FileEdit> {
+    let patched = replace_image_tag_default(current_content, latest);
+    vec![FileEdit::Overwrite {
+        path: layout.docker_compose.clone(),
+        content: patched,
+    }]
+}
 
 /// Replaces the `${NIFI_IMAGE_TAG:-<old>}` default tag in a docker-compose file content.
 pub fn replace_image_tag_default(content: &str, latest: &str) -> String {
@@ -27,6 +42,21 @@ pub fn update_docker_compose_default(path: &Path, latest: &str) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::layout::RepoLayout;
+    use crate::plan::FileEdit;
+    use std::path::Path;
+
+    #[test]
+    fn emit_docker_compose_default_returns_overwrite() {
+        let layout = RepoLayout::from_workspace_root(Path::new("/fake"));
+        let content = "image: apache/nifi:${NIFI_IMAGE_TAG:-2.7.2}\n";
+        let edits = super::emit_docker_compose_default(&layout, content, "2.8.0");
+        assert_eq!(edits.len(), 1);
+        assert!(matches!(&edits[0], FileEdit::Overwrite { path, content }
+            if *path == Path::new("/fake/tests/docker-compose.yml")
+            && content.contains("2.8.0")
+        ));
+    }
 
     #[test]
     fn test_replace_image_tag_default_updates_version() {
