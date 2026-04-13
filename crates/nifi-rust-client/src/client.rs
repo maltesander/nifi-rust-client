@@ -322,6 +322,25 @@ impl NifiClient {
         .await
     }
 
+    /// POST with no request body; ignores the response body.
+    ///
+    /// Used by the dynamic emitter for void no-body POST endpoints.
+    #[tracing::instrument(skip(self))]
+    pub(crate) async fn post_void_no_body(&self, path: &str) -> Result<(), NifiError> {
+        self.with_retry(|| async {
+            tracing::debug!(method = "POST", path, "NiFi API request");
+            let url = self.api_url(path);
+            let resp = self
+                .authenticated(self.http.post(url))
+                .await
+                .send()
+                .await
+                .context(HttpSnafu)?;
+            Self::check_void("POST", path, resp).await
+        })
+        .await
+    }
+
     /// PUT with no request body; deserializes the JSON response.
     #[tracing::instrument(skip(self))]
     pub(crate) async fn put_no_body<T: DeserializeOwned>(
@@ -415,6 +434,29 @@ impl NifiClient {
             let url = self.api_url(path);
             let resp = self
                 .authenticated(self.http.get(url))
+                .await
+                .send()
+                .await
+                .context(HttpSnafu)?;
+            Self::check_void_with_redirect("GET", path, resp).await
+        })
+        .await
+    }
+
+    /// GET with query parameters; ignores the response body.
+    ///
+    /// Used by the dynamic emitter for void GET endpoints with query params.
+    #[tracing::instrument(skip(self, query))]
+    pub(crate) async fn get_void_with_query(
+        &self,
+        path: &str,
+        query: &[(&str, String)],
+    ) -> Result<(), NifiError> {
+        self.with_retry(|| async {
+            tracing::debug!(method = "GET", path, "NiFi API request");
+            let url = self.api_url(path);
+            let resp = self
+                .authenticated(self.http.get(url).query(query))
                 .await
                 .send()
                 .await
