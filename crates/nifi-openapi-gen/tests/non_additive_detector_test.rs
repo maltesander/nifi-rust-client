@@ -1,4 +1,4 @@
-use nifi_openapi_gen::canonical::{canonicalize, CanonicalSpec};
+use nifi_openapi_gen::canonical::{canonicalize, canonicalize_or_panic, CanonicalSpec};
 use nifi_openapi_gen::content_type::ResponseBodyKind;
 use nifi_openapi_gen::non_additive_detector::{check, NonAdditiveChange};
 use nifi_openapi_gen::non_additive_overrides::{NonAdditiveOverride, NonAdditiveOverrides};
@@ -346,4 +346,106 @@ fn overrides_do_not_match_different_location() {
         reason: "unrelated".to_string(),
     });
     assert!(!overrides.allows(&change));
+}
+
+#[test]
+fn panic_message_for_field_removed_mentions_rule_and_location() {
+    let change = NonAdditiveChange::FieldRemoved {
+        type_name: "AboutDto".to_string(),
+        field: "build_tag".to_string(),
+        previous_versions: vec!["2.6.0".to_string(), "2.7.2".to_string()],
+        missing_in: "2.8.0".to_string(),
+    };
+    let msg = change.panic_message("specs/2.8.0/nifi-api.json");
+    assert!(msg.contains("FieldRemoved"));
+    assert!(msg.contains("AboutDto.build_tag"));
+    assert!(msg.contains("2.6.0, 2.7.2"));
+    assert!(msg.contains("2.8.0"));
+    assert!(msg.contains("specs/2.8.0/nifi-api.json"));
+    assert!(msg.contains("non_additive_overrides.rs"));
+}
+
+#[test]
+fn canonicalize_or_panic_passes_on_additive_chain() {
+    let spec_a = make_spec_with_types(vec![make_type(
+        "AboutDto",
+        vec![make_field("title", FieldType::Str)],
+    )]);
+    let spec_b = make_spec_with_types(vec![make_type(
+        "AboutDto",
+        vec![
+            make_field("title", FieldType::Str),
+            make_field("version", FieldType::Str),
+        ],
+    )]);
+    let canonical = canonicalize_or_panic(
+        &[
+            ("2.6.0".to_string(), spec_a),
+            ("2.7.2".to_string(), spec_b),
+        ],
+        |_| "<test>".to_string(),
+        &NonAdditiveOverrides::empty(),
+    );
+    assert_eq!(canonical.types.get("AboutDto").unwrap().fields.len(), 2);
+}
+
+#[test]
+#[should_panic(expected = "FieldRemoved")]
+fn canonicalize_or_panic_panics_on_non_additive_change() {
+    let spec_a = make_spec_with_types(vec![make_type(
+        "AboutDto",
+        vec![
+            make_field("title", FieldType::Str),
+            make_field("build_tag", FieldType::Str),
+        ],
+    )]);
+    let spec_b = make_spec_with_types(vec![make_type(
+        "AboutDto",
+        vec![make_field("title", FieldType::Str)],
+    )]);
+    canonicalize_or_panic(
+        &[
+            ("2.6.0".to_string(), spec_a),
+            ("2.7.2".to_string(), spec_b),
+        ],
+        |_| "<test>".to_string(),
+        &NonAdditiveOverrides::empty(),
+    );
+}
+
+#[test]
+fn canonicalize_or_panic_respects_overrides() {
+    let spec_a = make_spec_with_types(vec![make_type(
+        "AboutDto",
+        vec![
+            make_field("title", FieldType::Str),
+            make_field("build_tag", FieldType::Str),
+        ],
+    )]);
+    let spec_b = make_spec_with_types(vec![make_type(
+        "AboutDto",
+        vec![make_field("title", FieldType::Str)],
+    )]);
+    let mut overrides = NonAdditiveOverrides::empty();
+    overrides.allow(NonAdditiveOverride::FieldRemoved {
+        type_name: "AboutDto".to_string(),
+        field: "build_tag".to_string(),
+        reason: "deprecated, dropped server-side in 2.7".to_string(),
+    });
+    let canonical = canonicalize_or_panic(
+        &[
+            ("2.6.0".to_string(), spec_a),
+            ("2.7.2".to_string(), spec_b),
+        ],
+        |_| "<test>".to_string(),
+        &overrides,
+    );
+    // build_tag is still in canonical (it got merged in 2.6.0); the override
+    // silences the detector but does not rewrite history.
+    assert!(canonical
+        .types
+        .get("AboutDto")
+        .unwrap()
+        .fields
+        .contains_key("build_tag"));
 }

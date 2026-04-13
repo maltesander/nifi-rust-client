@@ -162,6 +162,113 @@ fn check_enum_variant_removed(
     }
 }
 
+impl NonAdditiveChange {
+    pub fn rule_name(&self) -> &'static str {
+        match self {
+            NonAdditiveChange::EndpointRemoved { .. } => "EndpointRemoved",
+            NonAdditiveChange::TypeRemoved { .. } => "TypeRemoved",
+            NonAdditiveChange::FieldRemoved { .. } => "FieldRemoved",
+            NonAdditiveChange::FieldTypeChanged { .. } => "FieldTypeChanged",
+            NonAdditiveChange::EnumVariantRemoved { .. } => "EnumVariantRemoved",
+        }
+    }
+
+    pub fn panic_message(&self, spec_path: &str) -> String {
+        let rule = self.rule_name();
+        let (location, from, to, override_hint) = match self {
+            NonAdditiveChange::EndpointRemoved {
+                method,
+                path,
+                previous_versions,
+                missing_in,
+            } => (
+                format!("{} {}", method.as_str(), path),
+                format!("present in {}", previous_versions.join(", ")),
+                format!("absent in {} ({})", missing_in, spec_path),
+                format!(
+                    "EndpointRemoved {{\n               method: \"{}\",\n               path:   \"{}\",\n               reason: \"<why this is safe>\",\n           }}",
+                    method.as_str(),
+                    path,
+                ),
+            ),
+            NonAdditiveChange::TypeRemoved {
+                type_name,
+                previous_versions,
+                missing_in,
+            } => (
+                type_name.clone(),
+                format!("present in {}", previous_versions.join(", ")),
+                format!("absent in {} ({})", missing_in, spec_path),
+                format!(
+                    "TypeRemoved {{\n               type_name: \"{}\",\n               reason:    \"<why this is safe>\",\n           }}",
+                    type_name,
+                ),
+            ),
+            NonAdditiveChange::FieldRemoved {
+                type_name,
+                field,
+                previous_versions,
+                missing_in,
+            } => (
+                format!("{}.{}", type_name, field),
+                format!("present in {}", previous_versions.join(", ")),
+                format!("absent in {} ({})", missing_in, spec_path),
+                format!(
+                    "FieldRemoved {{\n               type_name: \"{}\",\n               field:     \"{}\",\n               reason:    \"<why this is safe>\",\n           }}",
+                    type_name, field,
+                ),
+            ),
+            NonAdditiveChange::FieldTypeChanged {
+                type_name,
+                field,
+                from,
+                to,
+                previous_versions,
+                changed_in,
+            } => (
+                format!("{}.{}", type_name, field),
+                format!("{:?} in {}", from, previous_versions.join(", ")),
+                format!("{:?} in {} ({})", to, changed_in, spec_path),
+                format!(
+                    "FieldTypeChanged {{\n               type_name: \"{}\",\n               field:     \"{}\",\n               reason:    \"<why this is safe>\",\n           }}",
+                    type_name, field,
+                ),
+            ),
+            NonAdditiveChange::EnumVariantRemoved {
+                enum_name,
+                variant,
+                previous_versions,
+                missing_in,
+            } => (
+                format!("{}::{}", enum_name, variant),
+                format!("present in {}", previous_versions.join(", ")),
+                format!("absent in {} ({})", missing_in, spec_path),
+                format!(
+                    "EnumVariantRemoved {{\n               enum_name: \"{}\",\n               variant:   \"{}\",\n               reason:    \"<why this is safe>\",\n           }}",
+                    enum_name, variant,
+                ),
+            ),
+        };
+
+        format!(
+            "nifi-openapi-gen: non-additive change detected\n  \
+             rule:     {rule}\n  \
+             location: {location}\n  \
+             from:     {from}\n  \
+             to:       {to}\n\n  \
+             The canonical superset codegen assumes NiFi's API evolves monotonically.\n  \
+             This change is not additive and needs a human decision.\n\n  \
+             How to proceed:\n    \
+             1. If this is intentional and the canonical union should keep the old shape,\n       \
+                add an override to crates/nifi-openapi-gen/src/non_additive_overrides.rs:\n           \
+                    {override_hint}\n    \
+             2. If the change is truly breaking and requires per-version dispatch for this\n       \
+                endpoint or type, open an issue before proceeding — the canonical model\n       \
+                cannot represent it."
+        )
+    }
+}
+
 fn collect_spec_endpoint_keys(spec: &ApiSpec) -> BTreeSet<EndpointKey> {
     let mut keys = BTreeSet::new();
     for tag in &spec.tags {

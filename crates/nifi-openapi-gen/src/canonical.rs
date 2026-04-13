@@ -8,6 +8,8 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
+use crate::non_additive_detector::check;
+use crate::non_additive_overrides::NonAdditiveOverrides;
 use crate::parser::{ApiSpec, Endpoint, FieldType, HttpMethod, TagGroup, TypeDef, TypeKind};
 
 /// Set of supported NiFi version strings (e.g. "2.8.0").
@@ -187,4 +189,38 @@ fn merge_type(canonical: &mut CanonicalSpec, version: &str, type_def: &TypeDef) 
                 });
         }
     }
+}
+
+/// Canonicalize with non-additive-change safety net.
+///
+/// Runs the detector between each merge step. If any non-overridden
+/// change is found, panics with a formatted message that names the
+/// exact override entry the human should add.
+///
+/// `spec_path_of` maps a version string to a human-readable path (used
+/// in panic messages). In production this is typically
+/// `|v| format!("crates/nifi-openapi-gen/specs/{v}/nifi-api.json")`.
+pub fn canonicalize_or_panic<F>(
+    all_parsed: &[(String, ApiSpec)],
+    spec_path_of: F,
+    overrides: &NonAdditiveOverrides,
+) -> CanonicalSpec
+where
+    F: Fn(&str) -> String,
+{
+    let mut canonical = CanonicalSpec::new();
+    for (version, spec) in all_parsed {
+        let residual: Vec<_> = check(&canonical, version, spec)
+            .into_iter()
+            .filter(|c| !overrides.allows(c))
+            .collect();
+        if !residual.is_empty() {
+            let spec_path = spec_path_of(version);
+            let msgs: Vec<String> =
+                residual.iter().map(|c| c.panic_message(&spec_path)).collect();
+            panic!("{}", msgs.join("\n\n"));
+        }
+        merge_spec(&mut canonical, version, spec);
+    }
+    canonical
 }
