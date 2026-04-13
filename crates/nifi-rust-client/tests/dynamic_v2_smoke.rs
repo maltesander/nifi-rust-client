@@ -95,3 +95,33 @@ async fn dynamic_v2_unsupported_endpoint_error() {
         other => panic!("expected UnsupportedEndpoint, got {other:?}"),
     }
 }
+
+#[tokio::test]
+async fn dynamic_v2_unsupported_query_param_error() {
+    use nifi_rust_client::dynamic_v2::availability::{QUERY_PARAM_AVAILABILITY, query_param_supported};
+
+    // Find any (endpoint, param) pair where 2.6.0 is NOT in the supported set.
+    let target = QUERY_PARAM_AVAILABILITY
+        .iter()
+        .find(|((_, _), versions)| !versions.iter().any(|v| *v == "2.6.0"))
+        .copied();
+    let Some(((endpoint, param), _versions)) = target else {
+        eprintln!("skipping: no version-skewed query param in current spec set");
+        return;
+    };
+
+    // Exercise the helper directly. The generated emit_method in Task 7
+    // already proves the guard is wired into method bodies at compile time.
+    let supported = query_param_supported(endpoint, param, "2.6.0");
+    assert!(
+        !supported,
+        "expected {param} unsupported on {endpoint:?} in 2.6.0"
+    );
+
+    // Sanity check: the same helper returns true for a version that supports it.
+    let supported_in_29 = query_param_supported(endpoint, param, "2.9.0");
+    assert!(
+        supported_in_29,
+        "expected {param} supported on {endpoint:?} in 2.9.0"
+    );
+}
