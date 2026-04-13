@@ -258,14 +258,10 @@ fn emit_dispatch_method(
         .any(|(qp, _)| qp.rust_name == "nodewise");
     if has_cluster_node_id_qp {
         if has_nodewise_qp {
-            out.push_str(
-                "        let cluster_node_id = if matches!(nodewise, Some(true)) {\n",
-            );
+            out.push_str("        let cluster_node_id = if matches!(nodewise, Some(true)) {\n");
             out.push_str("            cluster_node_id\n");
             out.push_str("        } else {\n");
-            out.push_str(
-                "            cluster_node_id.or(self.client.cluster_node_id())\n",
-            );
+            out.push_str("            cluster_node_id.or(self.client.cluster_node_id())\n");
             out.push_str("        };\n");
         } else {
             out.push_str(
@@ -421,14 +417,10 @@ fn emit_sub_dispatch_method(
         .any(|(qp, _)| qp.rust_name == "nodewise");
     if has_cluster_node_id_qp {
         if has_nodewise_qp {
-            out.push_str(
-                "        let cluster_node_id = if matches!(nodewise, Some(true)) {\n",
-            );
+            out.push_str("        let cluster_node_id = if matches!(nodewise, Some(true)) {\n");
             out.push_str("            cluster_node_id\n");
             out.push_str("        } else {\n");
-            out.push_str(
-                "            cluster_node_id.or(self.client.cluster_node_id())\n",
-            );
+            out.push_str("            cluster_node_id.or(self.client.cluster_node_id())\n");
             out.push_str("        };\n");
         } else {
             out.push_str(
