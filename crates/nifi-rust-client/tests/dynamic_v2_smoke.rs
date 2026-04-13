@@ -45,3 +45,53 @@ async fn dynamic_v2_get_about_info_happy_path() {
     assert_eq!(about.version.as_deref(), Some("2.8.0"));
     assert_eq!(about.title.as_deref(), Some("NiFi"));
 }
+
+#[tokio::test]
+async fn dynamic_v2_unsupported_endpoint_error() {
+    // Pick an endpoint that exists in newer spec(s) but not in 2.6.0. The exact
+    // endpoint depends on the supported spec set; walk the availability table
+    // to find one dynamically so the assertion is robust across spec bumps.
+    use nifi_rust_client::dynamic_v2::availability::{ENDPOINT_AVAILABILITY, Endpoint};
+
+    let target: Option<Endpoint> = ENDPOINT_AVAILABILITY
+        .iter()
+        .find(|(_, versions)| !versions.iter().any(|v| *v == "2.6.0"))
+        .map(|(e, _)| *e);
+    let Some(target) = target else {
+        // No version-skewed endpoint in the current spec set; nothing to assert.
+        eprintln!("skipping: no endpoint missing in 2.6.0");
+        return;
+    };
+
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/nifi-api/flow/about"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+            "about": { "version": "2.6.0" }
+        })))
+        .mount(&server)
+        .await;
+
+    let client = make_client(&server).await;
+    client.detect_version().await.expect("detect");
+
+    // Use the public supports() helper rather than calling the method
+    // directly — calling it would require enumerating every possible target
+    // endpoint signature. supports() exercises the same lookup path.
+    assert!(
+        !client.supports(target),
+        "expected {target:?} unsupported in 2.6.0"
+    );
+
+    // Manual require_endpoint round-trip: should produce UnsupportedEndpoint.
+    let err = client
+        .require_endpoint(target)
+        .await
+        .expect_err("expected UnsupportedEndpoint");
+    match err {
+        nifi_rust_client::NifiError::UnsupportedEndpoint { version, .. } => {
+            assert_eq!(version, "2.6.0");
+        }
+        other => panic!("expected UnsupportedEndpoint, got {other:?}"),
+    }
+}
