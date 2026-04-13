@@ -24,6 +24,8 @@ use nifi_openapi_gen::repo::{
     emit_fn_names_goldens, emit_lib_rs_feature_flags,
 };
 use nifi_openapi_gen::util::discover_spec_versions;
+use nifi_openapi_gen::canonical::canonicalize_or_panic;
+use nifi_openapi_gen::non_additive_overrides::NonAdditiveOverrides;
 use nifi_openapi_gen::{
     ApiSpec, VersionDiff, collect_endpoint_metadata, collect_enum_metadata,
     collect_query_param_metadata, compute_diff, load, tested_type_names,
@@ -97,6 +99,28 @@ fn main() {
     }
     // Cross-version drift check.
     nifi_openapi_gen::naming::check_drift(&all_parsed);
+
+    // Canonicalize all specs and run the non-additive-change detector.
+    // Panics with an actionable message if a newer spec breaks the
+    // monotonic-additive assumption that canonical superset codegen
+    // relies on.
+    let specs_dir_for_canonical = specs_dir.clone();
+    let canonical = canonicalize_or_panic(
+        &all_parsed,
+        |v| {
+            specs_dir_for_canonical
+                .join(v)
+                .join("nifi-api.json")
+                .display()
+                .to_string()
+        },
+        &NonAdditiveOverrides::empty(),
+    );
+    eprintln!(
+        "canonical: {} endpoints, {} types",
+        canonical.endpoints.len(),
+        canonical.types.len()
+    );
 
     // Read files that need patching (Overwrite edits need current content).
     let client_toml =
