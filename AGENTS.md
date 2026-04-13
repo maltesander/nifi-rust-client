@@ -450,6 +450,40 @@ Implementation split:
 
 Configure via `NifiClientBuilder::version_strategy(VersionResolutionStrategy)` before calling `.build_dynamic()`.
 
+### Canonical-superset dynamic mode (Phase 4a — parallel build)
+
+A second dynamic implementation is generated alongside the legacy dispatch
+layer when `--features dynamic` is active. It lives at:
+
+- `$OUT_DIR/dynamic_v2/` — generated code (availability.rs, api/, types/, mod.rs, client.rs)
+- `crates/nifi-rust-client/src/dynamic_v2/client.rs` — hand-written
+  `DynamicClientV2`, copied into `$OUT_DIR/dynamic_v2/` at build time by
+  `crates/nifi-rust-client/build.rs`
+- `nifi_rust_client::dynamic_v2::*` — `#[doc(hidden)]` public module reachable
+  from tests and downstream crates with the `dynamic` feature on
+
+The new code consumes `CanonicalSpec` (built by `canonicalize_or_panic`) and
+emits a single canonical `FlowApi`-style struct per tag with runtime
+`require_endpoint(Endpoint::FOO).await?` checks. Every canonical endpoint
+has an entry in the generated `Endpoint` enum and the `ENDPOINT_AVAILABILITY`
+table; query params whose version set differs from their endpoint's version
+set also have entries in `QUERY_PARAM_AVAILABILITY` and a runtime guard that
+returns `NifiError::UnsupportedQueryParam` when a caller sets a value against
+an unsupported server.
+
+**Phase 4a is a parallel build — not yet the default dispatch path.** Legacy
+`DynamicClient` (dispatch enums under `crate::dynamic`) and `DynamicClientV2`
+(canonical, doc-hidden) coexist. Phase 4b will delete the legacy dispatch
+emitter, rename `dynamic_v2` → `dynamic`, and promote the doc-hidden module
+to public. Phase 5 flattens the public API (strip `_api` suffix, collapse
+sub-resource builders).
+
+Smoke tests exercising `DynamicClientV2` live in
+`crates/nifi-rust-client/tests/dynamic_v2_smoke.rs` (happy path,
+`UnsupportedEndpoint`, and `query_param_supported` table walk).
+
+Emitter source: `crates/nifi-openapi-gen/src/emit/dynamic_v2/{mod,api,types,availability,index}.rs`.
+
 ### Adding or bumping a NiFi version
 
 ```bash

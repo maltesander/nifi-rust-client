@@ -806,6 +806,37 @@ impl NifiClient {
         .await
     }
 
+    /// PUT with JSON body and query parameters; deserializes the JSON response.
+    // Currently unused: no NiFi 2.x endpoint has the combination PUT + Json body + query params.
+    // Kept for forward compatibility with the emitter (canonical dynamic emitter emits this call
+    // for PUT endpoints that have both a body and query params).
+    #[allow(dead_code)]
+    #[tracing::instrument(skip(self, body, query))]
+    pub(crate) async fn put_with_query<B, T>(
+        &self,
+        path: &str,
+        body: &B,
+        query: &[(&str, String)],
+    ) -> Result<T, NifiError>
+    where
+        B: serde::Serialize,
+        T: DeserializeOwned,
+    {
+        self.with_retry(|| async {
+            tracing::debug!(method = "PUT", path, "NiFi API request");
+            let url = self.api_url(path);
+            let resp = self
+                .authenticated(self.http.put(url).query(query))
+                .await
+                .json(body)
+                .send()
+                .await
+                .context(HttpSnafu)?;
+            Self::deserialize("PUT", path, resp).await
+        })
+        .await
+    }
+
     #[tracing::instrument(skip(self))]
     pub(crate) async fn delete_returning<T: DeserializeOwned>(
         &self,
@@ -975,4 +1006,49 @@ pub fn extract_error_message(body: &str) -> String {
         .ok()
         .and_then(|v| v["message"].as_str().map(str::to_owned))
         .unwrap_or_else(|| body.to_owned())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use wiremock::matchers::{body_json, method, path, query_param};
+    use wiremock::{Mock, MockServer, ResponseTemplate};
+
+    /// Verify that `put_with_query` sends the JSON body, attaches the query
+    /// parameter, and deserializes the JSON response correctly.
+    #[tokio::test]
+    async fn put_with_query_sends_body_and_query_and_deserializes_response() {
+        let mock_server = MockServer::start().await;
+
+        Mock::given(method("PUT"))
+            .and(path("/nifi-api/processors/proc-id"))
+            .and(query_param("clientId", "test-client"))
+            .and(body_json(
+                serde_json::json!({ "revision": { "version": 1 } }),
+            ))
+            .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+                "id": "proc-id",
+                "component": { "id": "proc-id", "name": "TestProcessor" }
+            })))
+            .expect(1)
+            .mount(&mock_server)
+            .await;
+
+        let client = crate::NifiClientBuilder::new(&mock_server.uri())
+            .unwrap()
+            .build()
+            .unwrap();
+
+        let result: serde_json::Value = client
+            .put_with_query(
+                "/processors/proc-id",
+                &serde_json::json!({ "revision": { "version": 1 } }),
+                &[("clientId", "test-client".to_owned())],
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(result["id"].as_str(), Some("proc-id"));
+        assert_eq!(result["component"]["name"].as_str(), Some("TestProcessor"));
+    }
 }

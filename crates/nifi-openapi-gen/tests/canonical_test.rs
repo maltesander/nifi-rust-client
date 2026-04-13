@@ -1,12 +1,14 @@
 use std::path::Path;
 
 use nifi_openapi_gen::canonical::{
-    canonicalize, project, CanonicalEndpoint, CanonicalField, CanonicalSpec, CanonicalType,
-    EndpointKey, VersionSet,
+    CanonicalEndpoint, CanonicalField, CanonicalSpec, CanonicalType, EndpointKey, VersionSet,
+    canonicalize, project,
 };
 use nifi_openapi_gen::content_type::ResponseBodyKind;
 use nifi_openapi_gen::emit::{emit_api, emit_types};
-use nifi_openapi_gen::parser::{load, ApiSpec, Endpoint, Field, FieldType, HttpMethod, TagGroup, TypeDef, TypeKind};
+use nifi_openapi_gen::parser::{
+    ApiSpec, Endpoint, Field, FieldType, HttpMethod, TagGroup, TypeDef, TypeKind, load,
+};
 
 #[test]
 fn version_set_new_is_empty() {
@@ -61,9 +63,18 @@ fn canonical_spec_empty_construction() {
 
 #[test]
 fn endpoint_key_equality_on_method_and_path() {
-    let a = EndpointKey { method: HttpMethod::Get, path: "/flow/about".into() };
-    let b = EndpointKey { method: HttpMethod::Get, path: "/flow/about".into() };
-    let c = EndpointKey { method: HttpMethod::Post, path: "/flow/about".into() };
+    let a = EndpointKey {
+        method: HttpMethod::Get,
+        path: "/flow/about".into(),
+    };
+    let b = EndpointKey {
+        method: HttpMethod::Get,
+        path: "/flow/about".into(),
+    };
+    let c = EndpointKey {
+        method: HttpMethod::Post,
+        path: "/flow/about".into(),
+    };
     assert_eq!(a, b);
     assert_ne!(a, c);
 }
@@ -170,10 +181,7 @@ fn canonicalize_two_specs_unions_endpoint_versions() {
         "/flow/about",
         "getAboutInfo",
     )]);
-    let canonical = canonicalize(&[
-        ("2.8.0".to_string(), spec_a),
-        ("2.9.0".to_string(), spec_b),
-    ]);
+    let canonical = canonicalize(&[("2.8.0".to_string(), spec_a), ("2.9.0".to_string(), spec_b)]);
     assert_eq!(canonical.endpoints.len(), 1);
     let ep = canonical
         .endpoints
@@ -196,10 +204,7 @@ fn canonicalize_new_endpoint_in_later_version_only_has_later_version() {
         make_endpoint(HttpMethod::Get, "/flow/about", "getAboutInfo"),
         make_endpoint(HttpMethod::Get, "/connectors", "listConnectors"),
     ]);
-    let canonical = canonicalize(&[
-        ("2.8.0".to_string(), spec_a),
-        ("2.9.0".to_string(), spec_b),
-    ]);
+    let canonical = canonicalize(&[("2.8.0".to_string(), spec_a), ("2.9.0".to_string(), spec_b)]);
     assert_eq!(canonical.endpoints.len(), 2);
     let new_ep = canonical
         .endpoints
@@ -249,7 +254,10 @@ fn canonicalize_single_type_tracks_version() {
     let t = canonical.types.get("AboutDto").unwrap();
     assert_eq!(t.versions.to_vec(), vec!["2.8.0"]);
     assert_eq!(t.fields.len(), 1);
-    assert_eq!(t.fields.get("title").unwrap().versions.to_vec(), vec!["2.8.0"]);
+    assert_eq!(
+        t.fields.get("title").unwrap().versions.to_vec(),
+        vec!["2.8.0"]
+    );
 }
 
 #[test]
@@ -262,13 +270,13 @@ fn canonicalize_type_present_in_two_versions_unions_versions() {
         "AboutDto",
         vec![make_field("title", FieldType::Str)],
     )]);
-    let canonical = canonicalize(&[
-        ("2.8.0".to_string(), spec_a),
-        ("2.9.0".to_string(), spec_b),
-    ]);
+    let canonical = canonicalize(&[("2.8.0".to_string(), spec_a), ("2.9.0".to_string(), spec_b)]);
     let t = canonical.types.get("AboutDto").unwrap();
     assert_eq!(t.versions.to_vec(), vec!["2.8.0", "2.9.0"]);
-    assert_eq!(t.fields.get("title").unwrap().versions.to_vec(), vec!["2.8.0", "2.9.0"]);
+    assert_eq!(
+        t.fields.get("title").unwrap().versions.to_vec(),
+        vec!["2.8.0", "2.9.0"]
+    );
 }
 
 #[test]
@@ -284,14 +292,17 @@ fn canonicalize_new_field_in_later_version_has_later_version_only() {
             make_field("version", FieldType::Str),
         ],
     )]);
-    let canonical = canonicalize(&[
-        ("2.8.0".to_string(), spec_a),
-        ("2.9.0".to_string(), spec_b),
-    ]);
+    let canonical = canonicalize(&[("2.8.0".to_string(), spec_a), ("2.9.0".to_string(), spec_b)]);
     let t = canonical.types.get("AboutDto").unwrap();
     assert_eq!(t.fields.len(), 2);
-    assert_eq!(t.fields.get("title").unwrap().versions.to_vec(), vec!["2.8.0", "2.9.0"]);
-    assert_eq!(t.fields.get("version").unwrap().versions.to_vec(), vec!["2.9.0"]);
+    assert_eq!(
+        t.fields.get("title").unwrap().versions.to_vec(),
+        vec!["2.8.0", "2.9.0"]
+    );
+    assert_eq!(
+        t.fields.get("version").unwrap().versions.to_vec(),
+        vec!["2.9.0"]
+    );
 }
 
 fn make_enum_type(name: &str, variants: Vec<&str>) -> TypeDef {
@@ -313,10 +324,7 @@ fn canonicalize_enum_variants_union_across_versions() {
         "ComponentType",
         vec!["PROCESSOR", "CONTROLLER_SERVICE", "CONNECTOR"],
     )]);
-    let canonical = canonicalize(&[
-        ("2.8.0".to_string(), spec_a),
-        ("2.9.0".to_string(), spec_b),
-    ]);
+    let canonical = canonicalize(&[("2.8.0".to_string(), spec_a), ("2.9.0".to_string(), spec_b)]);
     let t = canonical.types.get("ComponentType").unwrap();
     assert_eq!(t.variants.len(), 3);
     assert_eq!(
@@ -360,7 +368,8 @@ fn canonicalize_real_spec_chain_monotonic_growth() {
         assert!(
             !ep.versions.is_empty(),
             "endpoint {:?} {} has empty version set",
-            key.method, key.path
+            key.method,
+            key.path
         );
     }
 
@@ -439,10 +448,7 @@ fn canonicalize_populates_per_version_specs() {
             make_field("version", FieldType::Str),
         ],
     )]);
-    let canonical = canonicalize(&[
-        ("2.6.0".to_string(), spec_a),
-        ("2.7.2".to_string(), spec_b),
-    ]);
+    let canonical = canonicalize(&[("2.6.0".to_string(), spec_a), ("2.7.2".to_string(), spec_b)]);
 
     assert_eq!(canonical.per_version_specs.len(), 2);
     assert!(canonical.per_version_specs.contains_key("2.6.0"));

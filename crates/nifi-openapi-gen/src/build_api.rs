@@ -315,6 +315,13 @@ fn generate_dynamic(out_dir: &Path, all_parsed: &[(String, ApiSpec)]) {
         &with_header(&crate::emit_dynamic(&dispatch_specs)),
     );
 
+    // ── dynamic_v2 (Phase 4a parallel build) ────────────────────────────
+    let canonical = crate::canonical::canonicalize(all_parsed);
+    let dynamic_v2_dir = out_dir.join("dynamic_v2");
+    for (rel_path, content) in crate::emit_dynamic_v2(&canonical) {
+        write_generated(&dynamic_v2_dir.join(&rel_path), &with_header(&content));
+    }
+
     // Strip the `#![cfg(feature = "dynamic")]` inner attribute from the test
     // output — the wrapper file provides its own cfg gate, and inner attributes
     // are not valid inside `include!()`.
@@ -414,6 +421,16 @@ fn generate_lib_rs_fragment(versions: &[String], out_dir: &Path, dynamic: bool) 
              #[path = \"{out_dir_str}/dynamic/mod.rs\"]\n\
              #[allow(missing_docs)]\n\
              pub mod dynamic;\n",
+        ));
+    }
+
+    // ── dynamic_v2 (4a parallel) — doc-hidden, gated on `dynamic` feature.
+    if dynamic && versions.len() > 1 {
+        out.push_str(&format!(
+            "#[cfg(feature = \"dynamic\")]\n\
+             #[path = \"{out_dir_str}/dynamic_v2/mod.rs\"]\n\
+             #[doc(hidden)]\n\
+             pub mod dynamic_v2;\n",
         ));
     }
 
