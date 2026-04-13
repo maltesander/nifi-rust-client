@@ -68,8 +68,7 @@ pub(crate) fn body_kind_signature(body_kind: Option<&RequestBodyKind>) -> &'stat
 
 /// Forward-args fragment for delegating a call from a wrapper to the underlying
 /// inherent method. Returns the `", a, b"` portion (including the leading `, `)
-/// or an empty string. For builders that need a `Vec<String>`, see
-/// [`body_kind_forward_arg_names`].
+/// or an empty string.
 ///
 /// - `Json`        → `", body"`
 /// - `OctetStream` → `", filename, data"`
@@ -80,22 +79,6 @@ pub(crate) fn body_kind_forward_args(body_kind: Option<&RequestBodyKind>) -> &'s
         Some(RequestBodyKind::Json) => ", body",
         Some(RequestBodyKind::OctetStream) | Some(RequestBodyKind::Multipart) => ", filename, data",
         Some(RequestBodyKind::Wildcard) | Some(RequestBodyKind::FormEncoded) | None => "",
-    }
-}
-
-/// Individual forward-arg names for a given `body_kind`. Used by call sites
-/// that build up a `Vec<String>` of arguments rather than a single fragment.
-/// Mirrors [`body_kind_forward_args`] but returns the names as a slice with
-/// no leading comma.
-pub(crate) fn body_kind_forward_arg_names(
-    body_kind: Option<&RequestBodyKind>,
-) -> &'static [&'static str] {
-    match body_kind {
-        Some(RequestBodyKind::Json) => &["body"],
-        Some(RequestBodyKind::OctetStream) | Some(RequestBodyKind::Multipart) => {
-            &["filename", "data"]
-        }
-        Some(RequestBodyKind::Wildcard) | Some(RequestBodyKind::FormEncoded) | None => &[],
     }
 }
 
@@ -360,22 +343,4 @@ mod tests {
         );
     }
 
-    #[test]
-    fn body_kind_forward_arg_names_variants() {
-        assert_eq!(
-            body_kind_forward_arg_names(Some(&RequestBodyKind::Json)),
-            &["body"]
-        );
-        assert_eq!(
-            body_kind_forward_arg_names(Some(&RequestBodyKind::OctetStream)),
-            &["filename", "data"]
-        );
-        assert_eq!(
-            body_kind_forward_arg_names(Some(&RequestBodyKind::Multipart)),
-            &["filename", "data"]
-        );
-        assert!(body_kind_forward_arg_names(None).is_empty());
-        assert!(body_kind_forward_arg_names(Some(&RequestBodyKind::Wildcard)).is_empty());
-        assert!(body_kind_forward_arg_names(Some(&RequestBodyKind::FormEncoded)).is_empty());
-    }
 }

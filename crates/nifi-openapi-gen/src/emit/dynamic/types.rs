@@ -252,45 +252,6 @@ fn emit_merged_type(out: &mut String, name: &str, mt: &MergedType) {
     }
 }
 
-/// Returns a map of type_name -> sorted field names (rust_name) for all merged types.
-/// Dto types get their field names; Entity and StringEnum types get empty field lists
-/// (their conversions are handled differently but they still need From impls).
-pub(crate) fn collect_merged_field_names(
-    specs: &[(&str, &ApiSpec)],
-) -> BTreeMap<String, Vec<String>> {
-    let merged = merge_all_types(specs);
-    let mut result = BTreeMap::new();
-    for (name, mt) in merged {
-        match mt {
-            MergedType::Dto { fields, .. } => {
-                result.insert(name, fields.keys().cloned().collect());
-            }
-            MergedType::Entity { .. } | MergedType::StringEnum { .. } => {
-                result.insert(name, vec![]);
-            }
-        }
-    }
-    result
-}
-
-/// Returns the set of field names that are "universal" for a given type:
-/// present in every version with the same Rust type string.
-pub(crate) fn collect_universal_fields(
-    specs: &[(&str, &ApiSpec)],
-) -> BTreeMap<String, BTreeSet<String>> {
-    let merged = merge_all_types(specs);
-    let mut result = BTreeMap::new();
-    for (name, mt) in merged {
-        if let MergedType::Dto {
-            universal_fields, ..
-        } = mt
-        {
-            result.insert(name, universal_fields);
-        }
-    }
-    result
-}
-
 fn merge_all_types(specs: &[(&str, &ApiSpec)]) -> BTreeMap<String, MergedType> {
     let mut merged: BTreeMap<String, MergedType> = BTreeMap::new();
 
@@ -561,32 +522,6 @@ mod tests {
         let output = all_content(&files);
         assert!(output.contains("pub struct NewInV2Dto"));
         assert!(output.contains("pub id: Option<String>"));
-    }
-
-    #[test]
-    fn test_collect_merged_field_names() {
-        let td_a = TypeDef {
-            name: "Dto".to_string(),
-            kind: TypeKind::Dto,
-            fields: vec![make_field("a", FieldType::Str)],
-            doc: None,
-        };
-        let td_b = TypeDef {
-            name: "Dto".to_string(),
-            kind: TypeKind::Dto,
-            fields: vec![
-                make_field("a", FieldType::Str),
-                make_field("b", FieldType::Bool),
-            ],
-            doc: None,
-        };
-        let spec_a = make_spec(vec![td_a]);
-        let spec_b = make_spec(vec![td_b]);
-        let result = collect_merged_field_names(&[("2.7.2", &spec_a), ("2.8.0", &spec_b)]);
-        assert_eq!(
-            result.get("Dto").unwrap(),
-            &vec!["a".to_string(), "b".to_string()]
-        );
     }
 
     fn make_field_with_doc(name: &str, ty: FieldType, doc: &str) -> Field {
