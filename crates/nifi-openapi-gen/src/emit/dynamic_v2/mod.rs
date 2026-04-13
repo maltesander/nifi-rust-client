@@ -5,10 +5,12 @@
 //! build with the `dynamic` Cargo feature active. Phase 4b deletes the legacy
 //! emitter and renames `dynamic_v2` → `dynamic`.
 
+mod api;
 mod availability;
 mod index;
 mod types;
 
+pub use api::emit_api;
 pub use availability::{emit_availability, endpoint_variant_name};
 pub use index::EndpointIndex;
 pub use types::emit_types;
