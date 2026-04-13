@@ -1,4 +1,6 @@
 use nifi_openapi_gen::canonical::VersionSet;
+use nifi_openapi_gen::canonical::{CanonicalSpec, EndpointKey, CanonicalEndpoint, CanonicalType, CanonicalField};
+use nifi_openapi_gen::parser::{HttpMethod, TypeKind, FieldType};
 
 #[test]
 fn version_set_new_is_empty() {
@@ -30,4 +32,56 @@ fn version_set_insert_duplicate_is_noop() {
     let mut vs = VersionSet::with("2.8.0");
     vs.insert("2.8.0");
     assert_eq!(vs.len(), 1);
+}
+
+#[test]
+fn canonical_spec_empty_construction() {
+    let canonical = CanonicalSpec::new();
+    assert!(canonical.endpoints.is_empty());
+    assert!(canonical.types.is_empty());
+}
+
+#[test]
+fn endpoint_key_equality_on_method_and_path() {
+    let a = EndpointKey { method: HttpMethod::Get, path: "/flow/about".into() };
+    let b = EndpointKey { method: HttpMethod::Get, path: "/flow/about".into() };
+    let c = EndpointKey { method: HttpMethod::Post, path: "/flow/about".into() };
+    assert_eq!(a, b);
+    assert_ne!(a, c);
+}
+
+#[test]
+fn canonical_endpoint_tracks_versions() {
+    let mut ep = CanonicalEndpoint {
+        method: HttpMethod::Get,
+        path: "/flow/about".into(),
+        tag: "Flow".into(),
+        raw_operation_id: "getAboutInfo".into(),
+        versions: nifi_openapi_gen::canonical::VersionSet::with("2.6.0"),
+    };
+    ep.versions.insert("2.7.2");
+    assert_eq!(ep.versions.len(), 2);
+}
+
+#[test]
+fn canonical_type_has_fields_and_variants_maps() {
+    let t = CanonicalType {
+        name: "AboutDto".into(),
+        kind: TypeKind::Dto,
+        fields: std::collections::BTreeMap::new(),
+        variants: std::collections::BTreeMap::new(),
+        versions: nifi_openapi_gen::canonical::VersionSet::new(),
+    };
+    assert_eq!(t.name, "AboutDto");
+    assert!(t.fields.is_empty());
+}
+
+#[test]
+fn canonical_field_stores_field_type_and_versions() {
+    let f = CanonicalField {
+        name: "title".into(),
+        ty: FieldType::Str,
+        versions: nifi_openapi_gen::canonical::VersionSet::with("2.6.0"),
+    };
+    assert_eq!(f.ty, FieldType::Str);
 }

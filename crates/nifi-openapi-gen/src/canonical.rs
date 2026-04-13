@@ -6,7 +6,7 @@
 //! generator-internal source of truth consumed by future code emitters
 //! (not yet wired up in this plan).
 
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 
 /// Set of supported NiFi version strings (e.g. "2.8.0").
 ///
@@ -49,5 +49,56 @@ impl VersionSet {
 
     pub fn to_vec(&self) -> Vec<String> {
         self.0.iter().cloned().collect()
+    }
+}
+
+use crate::parser::{FieldType, HttpMethod, TypeKind};
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub struct EndpointKey {
+    pub method: HttpMethod,
+    pub path: String,
+}
+
+#[derive(Debug, Clone)]
+pub struct CanonicalEndpoint {
+    pub method: HttpMethod,
+    pub path: String,
+    pub tag: String,
+    pub raw_operation_id: String,
+    pub versions: VersionSet,
+}
+
+#[derive(Debug, Clone)]
+pub struct CanonicalField {
+    pub name: String,
+    pub ty: FieldType,
+    pub versions: VersionSet,
+}
+
+#[derive(Debug, Clone)]
+pub struct CanonicalVariant {
+    pub wire_value: String,
+    pub versions: VersionSet,
+}
+
+#[derive(Debug, Clone)]
+pub struct CanonicalType {
+    pub name: String,
+    pub kind: TypeKind,
+    pub fields: BTreeMap<String, CanonicalField>,
+    pub variants: BTreeMap<String, CanonicalVariant>,
+    pub versions: VersionSet,
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct CanonicalSpec {
+    pub endpoints: BTreeMap<EndpointKey, CanonicalEndpoint>,
+    pub types: BTreeMap<String, CanonicalType>,
+}
+
+impl CanonicalSpec {
+    pub fn new() -> Self {
+        Self::default()
     }
 }

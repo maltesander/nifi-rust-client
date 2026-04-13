@@ -72,7 +72,7 @@ pub enum FieldType {
     Map(Box<FieldType>),
 }
 
-#[derive(Debug, Clone, PartialEq, serde::Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord, serde::Serialize)]
 pub enum HttpMethod {
     Get,
     Post,
