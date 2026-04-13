@@ -33,6 +33,18 @@ fn version_set_insert_and_iter_sorted() {
 }
 
 #[test]
+fn version_set_iter_is_semver_sorted_not_lexicographic() {
+    // 2.10.0 lexicographically sorts BEFORE 2.6.0 but in semver order
+    // it sorts AFTER 2.9.0. This test locks in semver ordering.
+    let mut vs = VersionSet::new();
+    vs.insert("2.6.0");
+    vs.insert("2.10.0");
+    vs.insert("2.9.0");
+    let collected: Vec<&str> = vs.iter().map(String::as_str).collect();
+    assert_eq!(collected, vec!["2.6.0", "2.9.0", "2.10.0"]);
+}
+
+#[test]
 fn version_set_insert_duplicate_is_noop() {
     let mut vs = VersionSet::with("2.8.0");
     vs.insert("2.8.0");

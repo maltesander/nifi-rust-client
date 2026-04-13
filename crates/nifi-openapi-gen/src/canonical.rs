@@ -14,9 +14,10 @@ use crate::parser::{ApiSpec, Endpoint, FieldType, HttpMethod, TagGroup, TypeDef,
 
 /// Set of supported NiFi version strings (e.g. "2.8.0").
 ///
-/// Kept as a sorted `BTreeSet<String>` so iteration order is stable
-/// and deterministic, matching the existing pipeline's string-based
-/// version keys (`generate.rs` uses `Vec<(String, ApiSpec)>`).
+/// Internally stored as a `BTreeSet<String>` for O(log n) membership
+/// checks, but iteration (`iter`, `to_vec`) returns versions in
+/// **semver order** via the `semver::Version` crate. This matters for
+/// NiFi 2.10+ where lexicographic and semver orders diverge.
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct VersionSet(BTreeSet<String>);
 
@@ -47,12 +48,22 @@ impl VersionSet {
         self.0.is_empty()
     }
 
-    pub fn iter(&self) -> impl Iterator<Item = &String> {
-        self.0.iter()
+    /// Iterate in **semver** order (not lexicographic).
+    ///
+    /// Sorts lazily on each call; set is small (≤ number of supported
+    /// NiFi versions) so the O(n log n) cost is negligible.
+    pub fn iter(&self) -> impl Iterator<Item = &String> + '_ {
+        let mut sorted: Vec<&String> = self.0.iter().collect();
+        sorted.sort_by(|a, b| {
+            let a_ver = semver::Version::parse(a).expect("valid semver");
+            let b_ver = semver::Version::parse(b).expect("valid semver");
+            a_ver.cmp(&b_ver)
+        });
+        sorted.into_iter()
     }
 
     pub fn to_vec(&self) -> Vec<String> {
-        self.0.iter().cloned().collect()
+        self.iter().cloned().collect()
     }
 }
 
