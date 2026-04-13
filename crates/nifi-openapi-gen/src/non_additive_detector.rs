@@ -288,19 +288,11 @@ impl NonAdditiveChange {
 fn collect_spec_endpoint_keys(spec: &ApiSpec) -> BTreeSet<EndpointKey> {
     let mut keys = BTreeSet::new();
     for tag in &spec.tags {
-        for endpoint in &tag.root_endpoints {
+        for endpoint in &tag.endpoints {
             keys.insert(EndpointKey {
                 method: endpoint.method.clone(),
                 path: endpoint.path.clone(),
             });
-        }
-        for sub in &tag.sub_groups {
-            for endpoint in &sub.endpoints {
-                keys.insert(EndpointKey {
-                    method: endpoint.method.clone(),
-                    path: endpoint.path.clone(),
-                });
-            }
         }
     }
     keys

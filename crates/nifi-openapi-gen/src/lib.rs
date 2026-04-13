@@ -67,8 +67,8 @@ pub use diff::{
 
 #[doc(hidden)]
 pub use parser::{
-    ApiSpec, Endpoint, Field, FieldType, HttpMethod, QueryParam, QueryParamType, SubGroup,
-    TagGroup, TypeDef, TypeKind, load,
+    ApiSpec, Endpoint, Field, FieldType, HttpMethod, QueryParam, QueryParamType, TagGroup, TypeDef,
+    TypeKind, load,
 };
 
 /// Absolute path to the bundled OpenAPI specs directory inside this crate.

@@ -1,4 +1,5 @@
-use crate::parser::{ApiSpec, Endpoint, HttpMethod, QueryParam, SubGroup, TagGroup};
+use crate::parser::compat::{self, SubGroup};
+use crate::parser::{ApiSpec, Endpoint, HttpMethod, QueryParam, TagGroup};
 
 pub fn emit_tests(spec: &ApiSpec) -> String {
     let mut out = String::new();
@@ -20,13 +21,14 @@ fn emit_tag_tests(tag: &TagGroup) -> String {
         "#[cfg(test)]\nmod {mod_name}_generated_tests {{\n"
     ));
     out.push_str("    use super::*;\n\n");
+    let (root_eps, sub_groups) = compat::regroup(tag);
     // Root endpoints
-    for ep in &tag.root_endpoints {
+    for ep in root_eps.iter().copied() {
         out.push_str(&emit_endpoint_test(ep, &tag.accessor_fn, None));
     }
     // Sub-group endpoints
-    for sg in &tag.sub_groups {
-        for ep in &sg.endpoints {
+    for sg in &sub_groups {
+        for ep in sg.endpoints.iter().copied() {
             out.push_str(&emit_endpoint_test(ep, &tag.accessor_fn, Some(sg)));
         }
     }
@@ -34,7 +36,7 @@ fn emit_tag_tests(tag: &TagGroup) -> String {
     out
 }
 
-fn emit_endpoint_test(ep: &Endpoint, accessor: &str, sub_group: Option<&SubGroup>) -> String {
+fn emit_endpoint_test(ep: &Endpoint, accessor: &str, sub_group: Option<&SubGroup<'_>>) -> String {
     // Skip form-encoded endpoints — they have no generated API method.
     if ep.body_kind == Some(crate::parser::RequestBodyKind::FormEncoded) {
         return String::new();

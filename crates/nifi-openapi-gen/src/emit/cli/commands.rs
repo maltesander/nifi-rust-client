@@ -2,7 +2,8 @@ use std::collections::HashMap;
 
 use crate::content_type::RequestBodyKind;
 use crate::emit::cli::verb_map;
-use crate::parser::{ApiSpec, Endpoint, HttpMethod, QueryParamType, SubGroup, TagGroup};
+use crate::parser::compat::{self, SubGroup};
+use crate::parser::{ApiSpec, Endpoint, HttpMethod, QueryParamType, TagGroup};
 use crate::util::format_source;
 
 /// Emit all generated CLI code.
@@ -69,11 +70,7 @@ fn build_canonical_fn_names(all_specs: &[(String, ApiSpec)]) -> HashMap<Canonica
     let mut map = HashMap::new();
     for (_ver, spec) in all_specs {
         for tag in &spec.tags {
-            let all_eps = tag
-                .root_endpoints
-                .iter()
-                .chain(tag.sub_groups.iter().flat_map(|sg| sg.endpoints.iter()));
-            for ep in all_eps {
+            for ep in &tag.endpoints {
                 let key = canonical_key(&tag.tag, &ep.path, &ep.method);
                 // First version wins (oldest)
                 map.entry(key).or_insert_with(|| ep.fn_name.clone());
@@ -85,13 +82,7 @@ fn build_canonical_fn_names(all_specs: &[(String, ApiSpec)]) -> HashMap<Canonica
 
 /// Returns true if the tag has any non-form-encoded endpoints.
 fn has_emittable_endpoints(tag: &TagGroup) -> bool {
-    tag.root_endpoints
-        .iter()
-        .any(|ep| !is_skipped_body_kind(ep))
-        || tag
-            .sub_groups
-            .iter()
-            .any(|sg| sg.endpoints.iter().any(|ep| !is_skipped_body_kind(ep)))
+    tag.endpoints.iter().any(|ep| !is_skipped_body_kind(ep))
 }
 
 fn is_skipped_body_kind(ep: &Endpoint) -> bool {
@@ -157,8 +148,10 @@ fn emit_tag_code(out: &mut String, tag: &TagGroup, canonical: &HashMap<Canonical
     // Collect all command entries: (command_name, variant_name, args_struct_name, is_subgroup, subgroup_ref)
     let mut commands: Vec<CommandEntry> = Vec::new();
 
+    let (root_eps, sub_groups) = compat::regroup(tag);
+
     // Root endpoints
-    for ep in &tag.root_endpoints {
+    for ep in root_eps.iter().copied() {
         if is_skipped_body_kind(ep) {
             continue;
         }
@@ -176,8 +169,8 @@ fn emit_tag_code(out: &mut String, tag: &TagGroup, canonical: &HashMap<Canonical
     }
 
     // Sub-group endpoints
-    for sg in &tag.sub_groups {
-        for ep in &sg.endpoints {
+    for sg in &sub_groups {
+        for ep in sg.endpoints.iter().copied() {
             if is_skipped_body_kind(ep) {
                 continue;
             }
@@ -250,7 +243,7 @@ struct CommandEntry<'a> {
     variant_name: String,
     args_name: String,
     endpoint: &'a Endpoint,
-    sub_group: Option<&'a SubGroup>,
+    sub_group: Option<&'a SubGroup<'a>>,
 }
 
 fn deduplicate_commands(commands: &mut Vec<CommandEntry<'_>>, variant_base: &str) {
@@ -579,8 +572,7 @@ mod tests {
             module_name: module_name.clone(),
             accessor_fn: format!("{module_name}_api"),
             types: vec![],
-            root_endpoints: endpoints,
-            sub_groups: vec![],
+            endpoints,
         }
     }
 

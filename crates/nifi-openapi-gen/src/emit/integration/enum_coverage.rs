@@ -5,7 +5,8 @@ use super::common::{
     find_endpoint, trait_use_stmt,
 };
 use crate::diff::VersionDiff;
-use crate::parser::{ApiSpec, Endpoint, SubGroup};
+use crate::parser::compat::SubGroup;
+use crate::parser::{ApiSpec, Endpoint};
 use crate::util::{version_to_feature, wire_to_pascal};
 
 /// Generates integration tests verifying enum query-param values are accepted
@@ -88,10 +89,11 @@ pub fn emit_enum_coverage_tests(
 
                 // Build accessor chain: e.g. "client.flow_api()" or
                 // "client.processgroups_api().process_groups(\"root\")"
-                let accessor = build_accessor(&tag_group.accessor_fn, sub_group);
+                let accessor = build_accessor(&tag_group.accessor_fn, sub_group.as_ref());
 
                 // Build the function call arguments.
-                let call_args = build_call_args(endpoint, sub_group, &qp.rust_name, "ENUM_VALUE");
+                let call_args =
+                    build_call_args(endpoint, sub_group.as_ref(), &qp.rust_name, "ENUM_VALUE");
 
                 for wire_value in &param_change.added_enum_values {
                     let variant = wire_to_pascal(wire_value);
@@ -99,7 +101,7 @@ pub fn emit_enum_coverage_tests(
                     let variant_lower = variant.to_lowercase();
                     let base_name = format!("enum_{type_lower}_{variant_lower}");
 
-                    let use_trait = trait_use_stmt(&tag_group.struct_name, sub_group);
+                    let use_trait = trait_use_stmt(&tag_group.struct_name, sub_group.as_ref());
                     let use_type =
                         format!("use nifi_rust_client::dynamic::types::{enum_type_name};");
                     let enum_arg = format!("Some({enum_type_name}::{variant})");
@@ -186,7 +188,7 @@ async fn {base_name}_unsupported() {{
 /// All other params get a default value.
 fn build_call_args(
     endpoint: &Endpoint,
-    sub_group: Option<&SubGroup>,
+    sub_group: Option<&SubGroup<'_>>,
     enum_param_rust_name: &str,
     enum_placeholder: &str,
 ) -> String {

@@ -48,8 +48,7 @@ fn make_spec_with_endpoints(eps: Vec<Endpoint>) -> ApiSpec {
             module_name: "flow".to_string(),
             accessor_fn: "flow_api".to_string(),
             types: vec![],
-            root_endpoints: eps,
-            sub_groups: vec![],
+            endpoints: eps,
         }],
         all_types: vec![],
     }

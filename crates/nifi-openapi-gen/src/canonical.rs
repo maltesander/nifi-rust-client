@@ -136,13 +136,8 @@ pub fn canonicalize(all_parsed: &[(String, ApiSpec)]) -> CanonicalSpec {
 
 fn merge_spec(canonical: &mut CanonicalSpec, version: &str, spec: &ApiSpec) {
     for tag in &spec.tags {
-        for endpoint in &tag.root_endpoints {
+        for endpoint in &tag.endpoints {
             merge_endpoint(canonical, version, tag, endpoint);
-        }
-        for sub in &tag.sub_groups {
-            for endpoint in &sub.endpoints {
-                merge_endpoint(canonical, version, tag, endpoint);
-            }
         }
     }
     for type_def in &spec.all_types {

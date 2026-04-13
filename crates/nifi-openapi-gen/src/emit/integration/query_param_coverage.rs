@@ -5,7 +5,8 @@ use super::common::{
     find_endpoint, trait_use_stmt,
 };
 use crate::diff::VersionDiff;
-use crate::parser::{ApiSpec, Endpoint, HttpMethod, QueryParamType, SubGroup};
+use crate::parser::compat::SubGroup;
+use crate::parser::{ApiSpec, Endpoint, HttpMethod, QueryParamType};
 use crate::util::{version_to_feature, wire_to_pascal};
 
 /// Generates integration tests verifying added query params are passed on
@@ -79,7 +80,7 @@ pub fn emit_query_param_coverage_tests(
                     None => continue,
                 };
 
-                let accessor = build_accessor(&tag_group.accessor_fn, sub_group);
+                let accessor = build_accessor(&tag_group.accessor_fn, sub_group.as_ref());
                 let tag = tag_group
                     .accessor_fn
                     .strip_suffix("_api")
@@ -90,7 +91,7 @@ pub fn emit_query_param_coverage_tests(
                     rust_name = qp.rust_name,
                 );
 
-                let use_trait = trait_use_stmt(&tag_group.struct_name, sub_group);
+                let use_trait = trait_use_stmt(&tag_group.struct_name, sub_group.as_ref());
 
                 // Build the argument expression for the target param.
                 let (param_arg, extra_use) = match &qp.ty {
@@ -111,7 +112,8 @@ pub fn emit_query_param_coverage_tests(
                     _ => ("Some(\"test-value\")".to_string(), None),
                 };
 
-                let call_args = build_call_args(endpoint, sub_group, &qp.rust_name, &param_arg);
+                let call_args =
+                    build_call_args(endpoint, sub_group.as_ref(), &qp.rust_name, &param_arg);
 
                 // Extra use statement line (if any).
                 let use_type_line = extra_use
@@ -208,7 +210,7 @@ fn query_param_key(method: &HttpMethod, path: &str, param: &str) -> String {
 /// All other params get defaults.
 fn build_call_args(
     endpoint: &Endpoint,
-    sub_group: Option<&SubGroup>,
+    sub_group: Option<&SubGroup<'_>>,
     target_param_rust_name: &str,
     target_param_arg: &str,
 ) -> String {

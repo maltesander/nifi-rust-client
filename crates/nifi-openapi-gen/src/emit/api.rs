@@ -1,4 +1,5 @@
-use crate::parser::{ApiSpec, Endpoint, HttpMethod, QueryParam, SubGroup, TagGroup};
+use crate::parser::compat::{self, SubGroup};
+use crate::parser::{ApiSpec, Endpoint, HttpMethod, QueryParam, TagGroup};
 use crate::util::escape_keyword;
 
 /// Returns a list of `(filename, content)` pairs to write into `src/api/`.
@@ -56,14 +57,15 @@ fn emit_tag(tag: &TagGroup, types_prefix: &str) -> String {
         "#[allow(private_interfaces, clippy::too_many_arguments, clippy::vec_init_then_push)]\n",
     );
     out.push_str(&format!("impl<'a> {}<'a> {{\n", tag.struct_name));
-    for ep in &tag.root_endpoints {
+    let (root_eps, sub_groups) = compat::regroup(tag);
+    for ep in root_eps.iter().copied() {
         out.push_str(&emit_method(ep));
     }
-    for sg in &tag.sub_groups {
+    for sg in &sub_groups {
         out.push_str(&emit_sub_group_accessor(sg));
     }
     out.push_str("}\n");
-    for sg in &tag.sub_groups {
+    for sg in &sub_groups {
         out.push_str(&emit_sub_struct(sg));
     }
     if types_prefix != "crate" {
@@ -72,7 +74,7 @@ fn emit_tag(tag: &TagGroup, types_prefix: &str) -> String {
     crate::util::format_source(&out)
 }
 
-fn emit_sub_group_accessor(sg: &SubGroup) -> String {
+fn emit_sub_group_accessor(sg: &SubGroup<'_>) -> String {
     let mut out = String::new();
     // Doc comment: describe the sub-resource scope and the id parameter.
     out.push_str(&format!(
@@ -173,8 +175,10 @@ fn emit_trait_impls(tag: &TagGroup, types_prefix: &str) -> String {
         struct_name = tag.struct_name,
     ));
 
+    let (root_eps, sub_groups) = compat::regroup(tag);
+
     // Accessor methods for sub-groups (RPITIT — no GAT bindings needed)
-    for sg in &tag.sub_groups {
+    for sg in &sub_groups {
         out.push_str(&format!(
             "    fn {accessor}<'b>(&'b self, {param}: &'b str) -> impl {types_prefix}::traits::{trait_name} + 'b {{\n        {struct_name} {{ client: self.client, {param} }}\n    }}\n\n",
             accessor = sg.accessor_fn,
@@ -185,20 +189,20 @@ fn emit_trait_impls(tag: &TagGroup, types_prefix: &str) -> String {
     }
 
     // Root-level endpoint methods delegate to inherent methods
-    for ep in &tag.root_endpoints {
+    for ep in root_eps.iter().copied() {
         emit_trait_impl_method(&mut out, ep, types_prefix, None);
     }
 
     out.push_str("}\n\n");
 
     // Sub-resource trait impls
-    for sg in &tag.sub_groups {
+    for sg in &sub_groups {
         out.push_str(&format!(
             "#[allow(clippy::too_many_arguments)]\nimpl {types_prefix}::traits::{trait_name} for {struct_name}<'_> {{\n",
             trait_name = sg.struct_name,
             struct_name = sg.struct_name,
         ));
-        for ep in &sg.endpoints {
+        for ep in sg.endpoints.iter().copied() {
             emit_trait_impl_method(&mut out, ep, types_prefix, Some(&sg.primary_param));
         }
         out.push_str("}\n\n");
@@ -302,7 +306,7 @@ fn trait_impl_query_param_type(qp: &QueryParam, types_prefix: &str) -> String {
     }
 }
 
-fn emit_sub_struct(sg: &SubGroup) -> String {
+fn emit_sub_struct(sg: &SubGroup<'_>) -> String {
     let mut out = String::new();
     out.push_str(&format!(
         "pub struct {}<'a> {{\n    pub(crate) client: &'a NifiClient,\n    pub(crate) {}: &'a str,\n}}\n\n",
@@ -312,7 +316,7 @@ fn emit_sub_struct(sg: &SubGroup) -> String {
         "#[allow(private_interfaces, clippy::too_many_arguments, clippy::vec_init_then_push)]\n",
     );
     out.push_str(&format!("impl<'a> {}<'a> {{\n", sg.struct_name));
-    for ep in &sg.endpoints {
+    for ep in sg.endpoints.iter().copied() {
         out.push_str(&emit_method_for_sub_group(ep, &sg.primary_param));
     }
     out.push_str("}\n\n");
@@ -860,15 +864,7 @@ mod tests {
                 module_name: "controller_services".to_string(),
                 accessor_fn: "controller_services_api".to_string(),
                 types: vec![],
-                root_endpoints: vec![ep_root],
-                sub_groups: vec![SubGroup {
-                    name: "config".to_string(),
-                    struct_name: "ControllerServicesConfigApi".to_string(),
-                    accessor_fn: "config".to_string(),
-                    primary_param: "id".to_string(),
-                    primary_param_doc: None,
-                    endpoints: vec![ep_sub],
-                }],
+                endpoints: vec![ep_root, ep_sub],
             }],
             all_types: vec![],
         }

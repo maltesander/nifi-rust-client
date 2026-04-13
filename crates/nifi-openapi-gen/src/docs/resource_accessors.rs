@@ -4,14 +4,9 @@ use crate::layout::RepoLayout;
 use crate::parser::{ApiSpec, TagGroup};
 use crate::plan::FileEdit;
 
-/// Counts the total number of endpoints in a tag group (root + sub-group endpoints).
+/// Counts the total number of endpoints in a tag group.
 fn tag_endpoint_count(tag: &TagGroup) -> usize {
-    tag.root_endpoints.len()
-        + tag
-            .sub_groups
-            .iter()
-            .map(|sg| sg.endpoints.len())
-            .sum::<usize>()
+    tag.endpoints.len()
 }
 
 /// Splits a PascalCase tag name into a human-readable description.
@@ -124,7 +119,7 @@ pub fn emit_resource_accessors(
 mod tests {
     use super::*;
     use crate::layout::RepoLayout;
-    use crate::parser::{Endpoint, HttpMethod, SubGroup, TagGroup};
+    use crate::parser::{Endpoint, HttpMethod, TagGroup};
     use crate::plan::FileEdit;
     use std::path::Path;
 
@@ -171,10 +166,9 @@ mod tests {
             module_name: accessor_fn.to_string(),
             accessor_fn: accessor_fn.to_string(),
             types: vec![],
-            root_endpoints: (0..endpoint_count)
+            endpoints: (0..endpoint_count)
                 .map(|i| make_endpoint(&format!("ep{i}")))
                 .collect(),
-            sub_groups: vec![],
         }
     }
 
@@ -280,25 +274,18 @@ mod tests {
     }
 
     #[test]
-    fn includes_sub_group_endpoints_in_count() {
+    fn counts_all_endpoints_in_tag() {
         let tag = TagGroup {
             tag: "Processors".to_string(),
             struct_name: "ProcessorsApi".to_string(),
             module_name: "processors".to_string(),
             accessor_fn: "processors_api".to_string(),
             types: vec![],
-            root_endpoints: vec![make_endpoint("get_processor")],
-            sub_groups: vec![SubGroup {
-                name: "run_status".to_string(),
-                struct_name: "ProcessorsRunStatus".to_string(),
-                accessor_fn: "run_status".to_string(),
-                primary_param: "id".to_string(),
-                primary_param_doc: None,
-                endpoints: vec![
-                    make_endpoint("get_run_status"),
-                    make_endpoint("set_run_status"),
-                ],
-            }],
+            endpoints: vec![
+                make_endpoint("get_processor"),
+                make_endpoint("get_run_status"),
+                make_endpoint("set_run_status"),
+            ],
         };
 
         assert_eq!(tag_endpoint_count(&tag), 3);

@@ -43,13 +43,8 @@ pub fn apply_overrides_with_table(
     overrides: &HashMap<(String, String), String>,
 ) {
     for tag in &mut spec.tags {
-        for ep in &mut tag.root_endpoints {
+        for ep in &mut tag.endpoints {
             maybe_override(ep, version, overrides);
-        }
-        for sg in &mut tag.sub_groups {
-            for ep in &mut sg.endpoints {
-                maybe_override(ep, version, overrides);
-            }
         }
     }
 }
@@ -74,10 +69,10 @@ type CollisionMember<'a> = (&'a str, &'a str, &'a str);
 /// — this check surfaces it with a much better error message.
 pub fn check_collisions(spec: &ApiSpec, version: &str) {
     // Flat list of (tag, fn_name, method, path, raw_op_id) for every
-    // endpoint (root + subgroups).
+    // endpoint.
     let mut entries: Vec<EndpointEntry<'_>> = Vec::new();
     for tag in &spec.tags {
-        for ep in &tag.root_endpoints {
+        for ep in &tag.endpoints {
             entries.push((
                 tag.tag.as_str(),
                 ep.fn_name.as_str(),
@@ -85,17 +80,6 @@ pub fn check_collisions(spec: &ApiSpec, version: &str) {
                 ep.path.as_str(),
                 ep.raw_operation_id.as_str(),
             ));
-        }
-        for sg in &tag.sub_groups {
-            for ep in &sg.endpoints {
-                entries.push((
-                    tag.tag.as_str(),
-                    ep.fn_name.as_str(),
-                    ep.method.as_str(),
-                    ep.path.as_str(),
-                    ep.raw_operation_id.as_str(),
-                ));
-            }
         }
     }
 
@@ -161,13 +145,8 @@ pub fn check_drift(all_parsed: &[(String, ApiSpec)]) {
 
     for (version, spec) in all_parsed {
         for tag in &spec.tags {
-            for ep in &tag.root_endpoints {
+            for ep in &tag.endpoints {
                 insert_drift_entry(&mut seen, version, &tag.tag, ep);
-            }
-            for sg in &tag.sub_groups {
-                for ep in &sg.endpoints {
-                    insert_drift_entry(&mut seen, version, &tag.tag, ep);
-                }
             }
         }
     }

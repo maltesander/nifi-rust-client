@@ -1,3 +1,4 @@
+use crate::parser::compat::{self, SubGroup};
 use crate::parser::{ApiSpec, Endpoint, HttpMethod, QueryParam, RequestBodyKind};
 use crate::util::{escape_keyword, format_source};
 
@@ -14,7 +15,8 @@ pub fn emit_static_traits(spec: &ApiSpec, types_prefix: &str) -> Vec<(String, St
             "pub use {}::{};\n",
             tag_group.module_name, tag_group.struct_name
         ));
-        for sg in &tag_group.sub_groups {
+        let (_root_eps, sub_groups) = compat::regroup(tag_group);
+        for sg in &sub_groups {
             mod_out.push_str(&format!(
                 "pub use {}::{};\n",
                 tag_group.module_name, sg.struct_name
@@ -40,8 +42,10 @@ fn emit_trait_file(tag_group: &crate::parser::TagGroup, types_prefix: &str) -> S
 
     out.push_str("use crate::NifiError;\n\n");
 
+    let (root_eps, sub_groups) = compat::regroup(tag_group);
+
     // Emit sub-resource traits first so the root trait can reference them
-    for sg in &tag_group.sub_groups {
+    for sg in &sub_groups {
         emit_sub_resource_trait(&mut out, sg, types_prefix);
     }
 
@@ -51,7 +55,7 @@ fn emit_trait_file(tag_group: &crate::parser::TagGroup, types_prefix: &str) -> S
     out.push_str(&format!("pub trait {} {{\n", tag_group.struct_name));
 
     // Accessor methods for sub-groups (RPITIT — no GAT declarations needed)
-    for sg in &tag_group.sub_groups {
+    for sg in &sub_groups {
         out.push_str(&format!(
             "    fn {}<'b>(&'b self, {}: &'b str) -> impl {} + 'b;\n\n",
             sg.accessor_fn,
@@ -61,7 +65,7 @@ fn emit_trait_file(tag_group: &crate::parser::TagGroup, types_prefix: &str) -> S
     }
 
     // Root-level endpoint methods
-    for ep in &tag_group.root_endpoints {
+    for ep in root_eps.iter().copied() {
         emit_endpoint_method(&mut out, ep, types_prefix, None);
     }
 
@@ -69,7 +73,7 @@ fn emit_trait_file(tag_group: &crate::parser::TagGroup, types_prefix: &str) -> S
     out
 }
 
-fn emit_sub_resource_trait(out: &mut String, sg: &crate::parser::SubGroup, types_prefix: &str) {
+fn emit_sub_resource_trait(out: &mut String, sg: &SubGroup<'_>, types_prefix: &str) {
     out.push_str(&format!(
         "/// Sub-resource trait for the `{}` sub-group.\n",
         sg.name
@@ -77,7 +81,7 @@ fn emit_sub_resource_trait(out: &mut String, sg: &crate::parser::SubGroup, types
     out.push_str("#[allow(unused_variables, async_fn_in_trait, clippy::too_many_arguments)]\n");
     out.push_str(&format!("pub trait {} {{\n", sg.struct_name));
 
-    for ep in &sg.endpoints {
+    for ep in sg.endpoints.iter().copied() {
         emit_endpoint_method(out, ep, types_prefix, Some(&sg.primary_param));
     }
 
@@ -226,15 +230,7 @@ mod tests {
                 module_name: "controller_services".to_string(),
                 accessor_fn: "controller_services_api".to_string(),
                 types: vec![],
-                root_endpoints: vec![ep_root],
-                sub_groups: vec![SubGroup {
-                    name: "config".to_string(),
-                    struct_name: "ControllerServicesConfigApi".to_string(),
-                    accessor_fn: "config".to_string(),
-                    primary_param: "id".to_string(),
-                    primary_param_doc: Some("The controller service id.".to_string()),
-                    endpoints: vec![ep_sub],
-                }],
+                endpoints: vec![ep_root, ep_sub],
             }],
             all_types: vec![],
         }

@@ -103,7 +103,7 @@ fn emit_tag_file(meta: &TagMeta<'_>, endpoints: &[&IndexedEndpoint<'_>]) -> Stri
     let mut roots: Vec<&IndexedEndpoint<'_>> = Vec::new();
     let mut by_subgroup: BTreeMap<&str, Vec<&IndexedEndpoint<'_>>> = BTreeMap::new();
     for ep in endpoints {
-        if let Some(sg) = ep.sub_group {
+        if let Some(sg) = &ep.sub_group {
             by_subgroup
                 .entry(sg.struct_name.as_str())
                 .or_default()
@@ -114,9 +114,9 @@ fn emit_tag_file(meta: &TagMeta<'_>, endpoints: &[&IndexedEndpoint<'_>]) -> Stri
     }
 
     // Collect one representative SubGroup metadata per sub-struct name.
-    let mut sg_meta: BTreeMap<&str, &crate::parser::SubGroup> = BTreeMap::new();
+    let mut sg_meta: BTreeMap<&str, &crate::parser::compat::SubGroup<'_>> = BTreeMap::new();
     for ep in endpoints {
-        if let Some(sg) = ep.sub_group {
+        if let Some(sg) = &ep.sub_group {
             sg_meta.entry(sg.struct_name.as_str()).or_insert(sg);
         }
     }
@@ -531,7 +531,7 @@ mod tests {
                 module_name: "flow".to_string(),
                 accessor_fn: "flow_api".to_string(),
                 types: vec![],
-                root_endpoints: vec![Endpoint {
+                endpoints: vec![Endpoint {
                     method: HttpMethod::Get,
                     path: "/flow/about".to_string(),
                     fn_name: "get_about_info".to_string(),
@@ -553,7 +553,6 @@ mod tests {
                     error_responses: vec![],
                     security: None,
                 }],
-                sub_groups: vec![],
             }],
             all_types: vec![],
         }
@@ -576,7 +575,7 @@ mod tests {
 
     #[test]
     fn emit_api_handles_path_params_query_params_and_sub_groups() {
-        use crate::parser::{PathParam, QueryParam, QueryParamType, SubGroup};
+        use crate::parser::{PathParam, QueryParam, QueryParamType};
         let mut spec = flow_about_spec();
         let processors_tag = TagGroup {
             tag: "Processors".to_string(),
@@ -584,45 +583,40 @@ mod tests {
             module_name: "processors".to_string(),
             accessor_fn: "processors_api".to_string(),
             types: vec![],
-            root_endpoints: vec![Endpoint {
-                method: HttpMethod::Get,
-                path: "/processors/{id}".to_string(),
-                fn_name: "get_processor".to_string(),
-                raw_operation_id: "getProcessor".to_string(),
-                doc: None,
-                description: None,
-                path_params: vec![PathParam {
-                    name: "id".to_string(),
+            endpoints: vec![
+                Endpoint {
+                    method: HttpMethod::Get,
+                    path: "/processors/{id}".to_string(),
+                    fn_name: "get_processor".to_string(),
+                    raw_operation_id: "getProcessor".to_string(),
                     doc: None,
-                }],
-                request_type: None,
-                body_kind: None,
-                body_doc: None,
-                response_type: Some("ProcessorEntity".to_string()),
-                response_inner: Some("ProcessorDto".to_string()),
-                response_field: Some("component".to_string()),
-                response_kind: crate::content_type::ResponseBodyKind::Json {
-                    schema_ref: "ProcessorEntity".to_string(),
+                    description: None,
+                    path_params: vec![PathParam {
+                        name: "id".to_string(),
+                        doc: None,
+                    }],
+                    request_type: None,
+                    body_kind: None,
+                    body_doc: None,
+                    response_type: Some("ProcessorEntity".to_string()),
+                    response_inner: Some("ProcessorDto".to_string()),
+                    response_field: Some("component".to_string()),
+                    response_kind: crate::content_type::ResponseBodyKind::Json {
+                        schema_ref: "ProcessorEntity".to_string(),
+                    },
+                    query_params: vec![QueryParam {
+                        name: "verbose".to_string(),
+                        rust_name: "verbose".to_string(),
+                        ty: QueryParamType::Bool,
+                        required: false,
+                        doc: None,
+                        enum_type_name: None,
+                    }],
+                    success_responses: vec![],
+                    error_responses: vec![],
+                    security: None,
                 },
-                query_params: vec![QueryParam {
-                    name: "verbose".to_string(),
-                    rust_name: "verbose".to_string(),
-                    ty: QueryParamType::Bool,
-                    required: false,
-                    doc: None,
-                    enum_type_name: None,
-                }],
-                success_responses: vec![],
-                error_responses: vec![],
-                security: None,
-            }],
-            sub_groups: vec![SubGroup {
-                name: "config".to_string(),
-                struct_name: "ProcessorsConfigApi".to_string(),
-                accessor_fn: "config".to_string(),
-                primary_param: "id".to_string(),
-                primary_param_doc: None,
-                endpoints: vec![Endpoint {
+                Endpoint {
                     method: HttpMethod::Get,
                     path: "/processors/{id}/config".to_string(),
                     fn_name: "get_config".to_string(),
@@ -644,8 +638,8 @@ mod tests {
                     success_responses: vec![],
                     error_responses: vec![],
                     security: None,
-                }],
-            }],
+                },
+            ],
         };
         spec.tags.push(processors_tag);
         let canonical = canonicalize(&[("2.8.0".to_string(), spec)]);

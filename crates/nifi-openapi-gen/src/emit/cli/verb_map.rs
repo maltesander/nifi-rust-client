@@ -353,15 +353,9 @@ mod tests {
         let mut verb_counts: std::collections::HashMap<String, usize> =
             std::collections::HashMap::new();
         for tag in &spec.tags {
-            for ep in &tag.root_endpoints {
+            for ep in &tag.endpoints {
                 let verb = classify(ep, &tag.module_name);
                 *verb_counts.entry(verb.command_name()).or_default() += 1;
-            }
-            for sg in &tag.sub_groups {
-                for ep in &sg.endpoints {
-                    let verb = classify(ep, &tag.module_name);
-                    *verb_counts.entry(verb.command_name()).or_default() += 1;
-                }
             }
         }
 

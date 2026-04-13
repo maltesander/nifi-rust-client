@@ -1,7 +1,6 @@
 use nifi_openapi_gen::emit::{emit_api, emit_tests};
 use nifi_openapi_gen::parser::{
-    ApiSpec, Endpoint, HttpMethod, PathParam, QueryParam, QueryParamType, RequestBodyKind,
-    SubGroup, TagGroup,
+    ApiSpec, Endpoint, HttpMethod, PathParam, QueryParam, QueryParamType, RequestBodyKind, TagGroup,
 };
 
 fn flow_spec() -> ApiSpec {
@@ -13,7 +12,7 @@ fn flow_spec() -> ApiSpec {
             module_name: "flow".into(),
             accessor_fn: "flow_api".into(),
             types: vec![],
-            root_endpoints: vec![
+            endpoints: vec![
                 Endpoint {
                     method: HttpMethod::Get,
                     path: "/flow/about".into(),
@@ -86,7 +85,6 @@ fn flow_spec() -> ApiSpec {
                     security: None,
                 },
             ],
-            sub_groups: vec![],
         }],
     }
 }
@@ -187,39 +185,34 @@ fn services_spec() -> ApiSpec {
             module_name: "services".into(),
             accessor_fn: "services_api".into(),
             types: vec![],
-            root_endpoints: vec![Endpoint {
-                method: HttpMethod::Get,
-                path: "/services/{id}".into(),
-                fn_name: "get_service".into(),
-                raw_operation_id: String::new(),
-                doc: None,
-                description: None,
-                path_params: vec![PathParam {
-                    name: "id".into(),
+            endpoints: vec![
+                Endpoint {
+                    method: HttpMethod::Get,
+                    path: "/services/{id}".into(),
+                    fn_name: "get_service".into(),
+                    raw_operation_id: String::new(),
                     doc: None,
-                }],
-                request_type: None,
-                body_doc: None,
+                    description: None,
+                    path_params: vec![PathParam {
+                        name: "id".into(),
+                        doc: None,
+                    }],
+                    request_type: None,
+                    body_doc: None,
 
-                body_kind: None,
-                response_type: Some("ServiceEntity".into()),
-                response_inner: Some("ServiceDto".into()),
-                response_field: Some("service".into()),
-                response_kind: nifi_openapi_gen::content_type::ResponseBodyKind::Json {
-                    schema_ref: "ServiceEntity".into(),
+                    body_kind: None,
+                    response_type: Some("ServiceEntity".into()),
+                    response_inner: Some("ServiceDto".into()),
+                    response_field: Some("service".into()),
+                    response_kind: nifi_openapi_gen::content_type::ResponseBodyKind::Json {
+                        schema_ref: "ServiceEntity".into(),
+                    },
+                    query_params: vec![],
+                    success_responses: vec![],
+                    error_responses: vec![],
+                    security: None,
                 },
-                query_params: vec![],
-                success_responses: vec![],
-                error_responses: vec![],
-                security: None,
-            }],
-            sub_groups: vec![SubGroup {
-                name: "config".into(),
-                struct_name: "ServicesConfigApi".into(),
-                accessor_fn: "config".into(),
-                primary_param: "id".into(),
-                primary_param_doc: None,
-                endpoints: vec![Endpoint {
+                Endpoint {
                     method: HttpMethod::Get,
                     path: "/services/{id}/config/verification-requests/{request_id}".into(),
                     fn_name: "get_verification".into(),
@@ -250,8 +243,8 @@ fn services_spec() -> ApiSpec {
                     success_responses: vec![],
                     error_responses: vec![],
                     security: None,
-                }],
-            }],
+                },
+            ],
         }],
     }
 }
@@ -318,7 +311,7 @@ fn spec_with_enum_query_param() -> ApiSpec {
             module_name: "processgroups".into(),
             accessor_fn: "processgroups_api".into(),
             types: vec![],
-            root_endpoints: vec![Endpoint {
+            endpoints: vec![Endpoint {
                 method: HttpMethod::Post,
                 path: "/process-groups/{id}/process-groups".into(),
                 fn_name: "create_process_group".into(),
@@ -350,7 +343,6 @@ fn spec_with_enum_query_param() -> ApiSpec {
                 error_responses: vec![],
                 security: None,
             }],
-            sub_groups: vec![],
         }],
     }
 }
@@ -384,7 +376,7 @@ fn spec_with_query_params() -> ApiSpec {
             module_name: "flow".into(),
             accessor_fn: "flow_api".into(),
             types: vec![],
-            root_endpoints: vec![
+            endpoints: vec![
                 // Optional string query param
                 Endpoint {
                     method: HttpMethod::Get,
@@ -502,7 +494,6 @@ fn spec_with_query_params() -> ApiSpec {
                     security: None,
                 },
             ],
-            sub_groups: vec![],
         }],
     }
 }
@@ -580,7 +571,7 @@ fn spec_with_errors_and_security() -> ApiSpec {
             module_name: "flow".into(),
             accessor_fn: "flow_api".into(),
             types: vec![],
-            root_endpoints: vec![Endpoint {
+            endpoints: vec![Endpoint {
                 method: HttpMethod::Get,
                 path: "/flow/about".into(),
                 fn_name: "get_about_info".into(),
@@ -606,7 +597,6 @@ fn spec_with_errors_and_security() -> ApiSpec {
                 ],
                 security: Some(vec!["Read - /flow".into()]),
             }],
-            sub_groups: vec![],
         }],
     }
 }
@@ -620,7 +610,7 @@ fn spec_with_multi_security() -> ApiSpec {
             module_name: "processors".into(),
             accessor_fn: "processors_api".into(),
             types: vec![],
-            root_endpoints: vec![Endpoint {
+            endpoints: vec![Endpoint {
                 method: HttpMethod::Delete,
                 path: "/processors/{id}".into(),
                 fn_name: "delete_processor".into(),
@@ -646,7 +636,6 @@ fn spec_with_multi_security() -> ApiSpec {
                     "Write - Parent Process Group - /process-groups/{uuid}".into(),
                 ]),
             }],
-            sub_groups: vec![],
         }],
     }
 }
@@ -660,7 +649,7 @@ fn spec_with_no_auth() -> ApiSpec {
             module_name: "access".into(),
             accessor_fn: "access_api".into(),
             types: vec![],
-            root_endpoints: vec![Endpoint {
+            endpoints: vec![Endpoint {
                 method: HttpMethod::Post,
                 path: "/access/token".into(),
                 fn_name: "create_access_token".into(),
@@ -680,7 +669,6 @@ fn spec_with_no_auth() -> ApiSpec {
                 error_responses: vec![],
                 security: Some(vec![]),
             }],
-            sub_groups: vec![],
         }],
     }
 }
@@ -757,7 +745,7 @@ fn no_permissions_section_when_security_absent() {
             module_name: "flow".into(),
             accessor_fn: "flow_api".into(),
             types: vec![],
-            root_endpoints: vec![Endpoint {
+            endpoints: vec![Endpoint {
                 method: HttpMethod::Get,
                 path: "/flow/about".into(),
                 fn_name: "get_about_info".into(),
@@ -777,7 +765,6 @@ fn no_permissions_section_when_security_absent() {
                 error_responses: vec![],
                 security: None,
             }],
-            sub_groups: vec![],
         }],
     };
     let out = all_output(&spec);

@@ -1,4 +1,5 @@
-use crate::parser::{ApiSpec, Endpoint, HttpMethod, QueryParamType, SubGroup, TagGroup};
+use crate::parser::compat::{self, SubGroup};
+use crate::parser::{ApiSpec, Endpoint, HttpMethod, QueryParamType, TagGroup};
 
 /// Find an endpoint in the spec by HTTP method and path.
 /// Returns `(Endpoint, TagGroup, Option<SubGroup>)`.
@@ -6,15 +7,16 @@ pub(super) fn find_endpoint<'a>(
     spec: &'a ApiSpec,
     method: &HttpMethod,
     path: &str,
-) -> Option<(&'a Endpoint, &'a TagGroup, Option<&'a SubGroup>)> {
+) -> Option<(&'a Endpoint, &'a TagGroup, Option<SubGroup<'a>>)> {
     for tag in &spec.tags {
-        for ep in &tag.root_endpoints {
+        let (root_eps, sub_groups) = compat::regroup(tag);
+        for ep in root_eps.iter().copied() {
             if &ep.method == method && ep.path == path {
                 return Some((ep, tag, None));
             }
         }
-        for sg in &tag.sub_groups {
-            for ep in &sg.endpoints {
+        for sg in sub_groups {
+            for ep in sg.endpoints.iter().copied() {
                 if &ep.method == method && ep.path == path {
                     return Some((ep, tag, Some(sg)));
                 }
@@ -26,7 +28,7 @@ pub(super) fn find_endpoint<'a>(
 
 /// Build the accessor for calling the API in dynamic mode.
 /// For sub-group endpoints, chains the sub-group accessor with the primary param.
-pub(super) fn build_accessor(tag_accessor_fn: &str, sub_group: Option<&SubGroup>) -> String {
+pub(super) fn build_accessor(tag_accessor_fn: &str, sub_group: Option<&SubGroup<'_>>) -> String {
     match sub_group {
         Some(sg) => {
             let val = default_path_param_value(&sg.primary_param);
@@ -56,7 +58,7 @@ pub(super) fn default_path_param_value(param_name: &str) -> String {
 /// struct needs to be imported. This function returns an empty string;
 /// it exists so call sites stay consistent with the legacy expectation
 /// that an import line precedes the call.
-pub(super) fn trait_use_stmt(_struct_name: &str, _sub_group: Option<&SubGroup>) -> String {
+pub(super) fn trait_use_stmt(_struct_name: &str, _sub_group: Option<&SubGroup<'_>>) -> String {
     String::new()
 }
 
@@ -83,7 +85,7 @@ pub(super) fn default_required_query_param_value(ty: &QueryParamType) -> String 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::parser::SubGroup;
+    use crate::parser::compat::SubGroup;
 
     #[test]
     fn capitalize_first_works() {

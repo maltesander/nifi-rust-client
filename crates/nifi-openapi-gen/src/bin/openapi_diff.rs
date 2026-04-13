@@ -86,17 +86,7 @@ fn main() {
         }
         Commands::Summary { spec, format } => {
             let parsed = nifi_openapi_gen::parser::load(spec.to_str().expect("UTF-8 path"));
-            let endpoint_count: usize = parsed
-                .tags
-                .iter()
-                .map(|t| {
-                    t.root_endpoints.len()
-                        + t.sub_groups
-                            .iter()
-                            .map(|sg| sg.endpoints.len())
-                            .sum::<usize>()
-                })
-                .sum();
+            let endpoint_count: usize = parsed.tags.iter().map(|t| t.endpoints.len()).sum();
             let type_count = parsed.all_types.len();
             let tags: Vec<&str> = parsed.tags.iter().map(|t| t.tag.as_str()).collect();
 

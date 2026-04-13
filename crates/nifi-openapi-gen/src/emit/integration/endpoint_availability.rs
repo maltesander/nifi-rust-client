@@ -6,7 +6,8 @@ use super::common::{
 };
 use super::overrides::{EndpointBehavior, lookup_endpoint_override};
 use crate::diff::{EndpointSummary, VersionDiff};
-use crate::parser::{ApiSpec, Endpoint, HttpMethod, SubGroup};
+use crate::parser::compat::SubGroup;
+use crate::parser::{ApiSpec, Endpoint, HttpMethod};
 use crate::util::version_to_feature;
 
 /// Generates integration tests verifying endpoints added in a version work on that
@@ -69,9 +70,9 @@ pub fn emit_endpoint_availability_tests(
             };
 
             let base_name = test_base_name(&tag_group.accessor_fn, &endpoint.fn_name);
-            let use_trait = trait_use_stmt(&tag_group.struct_name, sub_group);
-            let accessor = build_accessor(&tag_group.accessor_fn, sub_group);
-            let call_args = build_call_args(endpoint, sub_group);
+            let use_trait = trait_use_stmt(&tag_group.struct_name, sub_group.as_ref());
+            let accessor = build_accessor(&tag_group.accessor_fn, sub_group.as_ref());
+            let call_args = build_call_args(endpoint, sub_group.as_ref());
 
             // Track that this endpoint has at least one test (the negative test
             // is always generated below, so every endpoint that reaches here is tested).
@@ -198,7 +199,7 @@ fn is_safe_endpoint(summary: &EndpointSummary, endpoint: &Endpoint) -> bool {
 
 /// Build the argument list for the function call.
 /// For sub-group endpoints, the primary path param is excluded (it's on the accessor).
-fn build_call_args(endpoint: &Endpoint, sub_group: Option<&SubGroup>) -> String {
+fn build_call_args(endpoint: &Endpoint, sub_group: Option<&SubGroup<'_>>) -> String {
     let mut args: Vec<String> = Vec::new();
     let primary_param = sub_group.map(|sg| sg.primary_param.as_str());
 
@@ -304,8 +305,7 @@ mod tests {
                 module_name: tag.to_lowercase(),
                 accessor_fn: format!("{}_api", tag.to_lowercase()),
                 types: vec![],
-                root_endpoints: vec![endpoint],
-                sub_groups: vec![],
+                endpoints: vec![endpoint],
             }],
             all_types: vec![],
         }

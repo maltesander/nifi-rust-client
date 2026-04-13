@@ -10,6 +10,7 @@
 use std::collections::BTreeMap;
 
 use crate::canonical::{CanonicalSpec, EndpointKey, VersionSet};
+use crate::parser::compat::{self, SubGroup};
 use crate::parser::{ApiSpec, Endpoint};
 
 /// One canonical endpoint with the data needed to emit a method body.
@@ -21,7 +22,11 @@ pub struct IndexedEndpoint<'a> {
     /// Endpoint struct from the latest version that defines this endpoint.
     pub endpoint: &'a Endpoint,
     /// `None` for root endpoints; `Some(...)` for sub-group endpoints.
-    pub sub_group: Option<&'a crate::parser::SubGroup>,
+    ///
+    /// Owned compat::SubGroup (reconstructed by [`compat::regroup`] from the
+    /// flat `TagGroup::endpoints` list). Cloning is cheap because the
+    /// `endpoints` field is just `Vec<&Endpoint>`.
+    pub sub_group: Option<SubGroup<'a>>,
     /// Versions that declare this endpoint.
     pub versions: VersionSet,
     /// Per-query-param `VersionSet` (only populated for params present in
@@ -58,7 +63,7 @@ impl<'a> EndpointIndex<'a> {
 fn find_latest_endpoint<'a>(
     canonical: &'a CanonicalSpec,
     key: &EndpointKey,
-) -> Option<(&'a Endpoint, Option<&'a crate::parser::SubGroup>)> {
+) -> Option<(&'a Endpoint, Option<SubGroup<'a>>)> {
     let canon = canonical.endpoints.get(key)?;
     let versions: Vec<String> = canon.versions.to_vec();
     for version in versions.iter().rev() {
@@ -73,15 +78,16 @@ fn find_latest_endpoint<'a>(
 fn scan_spec<'a>(
     spec: &'a ApiSpec,
     key: &EndpointKey,
-) -> Option<(&'a Endpoint, Option<&'a crate::parser::SubGroup>)> {
+) -> Option<(&'a Endpoint, Option<SubGroup<'a>>)> {
     for tag in &spec.tags {
-        for ep in &tag.root_endpoints {
+        let (root_eps, sub_groups) = compat::regroup(tag);
+        for ep in root_eps.iter().copied() {
             if ep.method == key.method && ep.path == key.path {
                 return Some((ep, None));
             }
         }
-        for sg in &tag.sub_groups {
-            for ep in &sg.endpoints {
+        for sg in sub_groups {
+            for ep in sg.endpoints.iter().copied() {
                 if ep.method == key.method && ep.path == key.path {
                     return Some((ep, Some(sg)));
                 }
@@ -153,8 +159,7 @@ mod tests {
                 module_name: "flow".to_string(),
                 accessor_fn: "flow_api".to_string(),
                 types: vec![],
-                root_endpoints: eps,
-                sub_groups: vec![],
+                endpoints: eps,
             }],
             all_types: vec![],
         }

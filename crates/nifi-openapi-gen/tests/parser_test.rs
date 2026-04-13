@@ -162,9 +162,9 @@ fn parse_endpoints_grouped_by_tag() {
     assert_eq!(flow.struct_name, "FlowApi");
     assert_eq!(flow.module_name, "flow");
     assert_eq!(flow.accessor_fn, "flow_api");
-    assert_eq!(flow.root_endpoints.len(), 1);
+    assert_eq!(flow.endpoints.len(), 1);
 
-    let about = &flow.root_endpoints[0];
+    let about = &flow.endpoints[0];
     assert_eq!(about.fn_name, "get_about_info");
     assert!(matches!(about.method, parser::HttpMethod::Get));
     assert_eq!(about.path, "/flow/about");
@@ -178,7 +178,7 @@ fn parse_endpoints_grouped_by_tag() {
         .iter()
         .find(|t| t.tag == "Processors")
         .expect("Processors tag");
-    let del = &proc_tag.root_endpoints[0];
+    let del = &proc_tag.endpoints[0];
     assert_eq!(del.fn_name, "delete_processor");
     assert!(matches!(del.method, parser::HttpMethod::Delete));
     assert_eq!(
@@ -243,9 +243,8 @@ fn load_full_nifi_spec() {
         .expect("Flow tag missing");
     assert_eq!(flow.struct_name, "FlowApi");
     let about = flow
-        .root_endpoints
+        .endpoints
         .iter()
-        .chain(flow.sub_groups.iter().flat_map(|sg| sg.endpoints.iter()))
         .find(|e| e.fn_name == "get_about_info");
     assert!(
         about.is_some(),
@@ -255,6 +254,7 @@ fn load_full_nifi_spec() {
 
 #[test]
 fn parse_sub_path_grouping() {
+    use nifi_openapi_gen::parser::compat;
     let spec = load(&fixture("sub_paths.json"));
     let services = spec
         .tags
@@ -262,20 +262,21 @@ fn parse_sub_path_grouping() {
         .find(|t| t.tag == "Services")
         .expect("Services");
 
+    let (root_eps, sub_groups) = compat::regroup(services);
+
     // /services/{id} → root
-    assert_eq!(services.root_endpoints.len(), 1);
-    assert_eq!(services.root_endpoints[0].fn_name, "get_service");
+    assert_eq!(root_eps.len(), 1);
+    assert_eq!(root_eps[0].fn_name, "get_service");
 
     // /services/{id}/config/* → sub-group "config"
     // /services/{id}/run-status → sub-group "run_status"
     assert_eq!(
-        services.sub_groups.len(),
+        sub_groups.len(),
         2,
         "expected config + run_status sub-groups"
     );
 
-    let config = services
-        .sub_groups
+    let config = sub_groups
         .iter()
         .find(|sg| sg.accessor_fn == "config")
         .expect("config");
@@ -287,8 +288,7 @@ fn parse_sub_path_grouping() {
         "expected analyze_config + get_verification"
     );
 
-    let run_status = services
-        .sub_groups
+    let run_status = sub_groups
         .iter()
         .find(|sg| sg.accessor_fn == "run_status")
         .expect("run_status");
@@ -303,7 +303,7 @@ fn parse_query_params() {
 
     // Optional string query param
     let search = flow
-        .root_endpoints
+        .endpoints
         .iter()
         .find(|e| e.fn_name == "search_flow")
         .expect("search_flow");
@@ -315,7 +315,7 @@ fn parse_query_params() {
 
     // Required string query param
     let cluster = flow
-        .root_endpoints
+        .endpoints
         .iter()
         .find(|e| e.fn_name == "search_cluster")
         .expect("search_cluster");
@@ -325,7 +325,7 @@ fn parse_query_params() {
 
     // Two required integer query params
     let history = flow
-        .root_endpoints
+        .endpoints
         .iter()
         .find(|e| e.fn_name == "query_history")
         .expect("query_history");
@@ -354,10 +354,8 @@ fn query_param_enum_produces_typedef_and_type_name() {
 
     // Find the create_process_group endpoint
     let ep = pg
-        .sub_groups
+        .endpoints
         .iter()
-        .flat_map(|sg| sg.endpoints.iter())
-        .chain(pg.root_endpoints.iter())
         .find(|ep| ep.fn_name == "create_process_group")
         .expect("create_process_group endpoint");
 
@@ -390,7 +388,7 @@ fn parse_error_responses() {
     let tags = &spec.tags;
     let processors = tags.iter().find(|t| t.tag == "Processors").unwrap();
     let delete_ep = processors
-        .root_endpoints
+        .endpoints
         .iter()
         .find(|e| e.fn_name == "delete_processor")
         .unwrap();
@@ -423,7 +421,7 @@ fn parse_security_single() {
     let spec = load(&fixture("endpoints.json"));
     let flow = spec.tags.iter().find(|t| t.tag == "Flow").unwrap();
     let about_ep = flow
-        .root_endpoints
+        .endpoints
         .iter()
         .find(|e| e.fn_name == "get_about_info")
         .unwrap();
@@ -437,7 +435,7 @@ fn parse_security_multiple() {
     let spec = load(&fixture("endpoints.json"));
     let processors = spec.tags.iter().find(|t| t.tag == "Processors").unwrap();
     let delete_ep = processors
-        .root_endpoints
+        .endpoints
         .iter()
         .find(|e| e.fn_name == "delete_processor")
         .unwrap();
@@ -462,7 +460,7 @@ fn parse_security_no_auth_required() {
     let spec = load(&fixture("endpoints.json"));
     let access = spec.tags.iter().find(|t| t.tag == "Access").unwrap();
     let token_ep = access
-        .root_endpoints
+        .endpoints
         .iter()
         .find(|e| e.fn_name == "create_access_token")
         .unwrap();
