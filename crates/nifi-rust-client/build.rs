@@ -24,8 +24,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     if config.versions.is_empty() {
         return Err(
             "No NiFi version feature enabled. Enable one of `nifi-2-6-0`, \
-             `nifi-2-7-2`, `nifi-2-8-0`, or the `dynamic` feature in your \
-             Cargo.toml."
+             `nifi-2-7-2`, `nifi-2-8-0`, `nifi-2-9-0`, or the `dynamic` \
+             feature in your Cargo.toml."
                 .into(),
         );
     }

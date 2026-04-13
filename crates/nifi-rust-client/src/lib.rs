@@ -115,9 +115,9 @@
 // check in build.rs itself; this is defence in depth.
 #[cfg(not(has_any_version))]
 compile_error!(
-    "nifi-rust-client requires at least one version feature to be enabled. \
-     Enable one of `nifi-2-6-0`, `nifi-2-7-2`, `nifi-2-8-0`, or the `dynamic` \
-     feature in your Cargo.toml."
+    "nifi-rust-client requires at least one NiFi version feature \
+     to be enabled. Enable one of: `nifi-2-6-0`, `nifi-2-7-2`, \
+     `nifi-2-8-0`, `nifi-2-9-0`."
 );
 
 /// Client builder: configure timeouts, TLS, credentials, and retry before connecting.
