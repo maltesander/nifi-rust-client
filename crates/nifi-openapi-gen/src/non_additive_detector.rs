@@ -9,7 +9,7 @@
 use std::collections::BTreeSet;
 
 use crate::canonical::{CanonicalSpec, EndpointKey};
-use crate::parser::{ApiSpec, Field, FieldType, HttpMethod, TypeDef};
+use crate::parser::{ApiSpec, Field, FieldType, HttpMethod, TypeDef, TypeKind};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum NonAdditiveChange {
@@ -61,6 +61,7 @@ pub fn check(
     check_endpoint_removed(canonical, version, spec, &mut out);
     check_type_removed(canonical, version, spec, &mut out);
     check_field_removed_or_retyped(canonical, version, spec, &mut out);
+    check_enum_variant_removed(canonical, version, spec, &mut out);
     out
 }
 
@@ -121,6 +122,41 @@ fn check_field_removed_or_retyped(
                     });
                 }
                 _ => {}
+            }
+        }
+    }
+}
+
+fn check_enum_variant_removed(
+    canonical: &CanonicalSpec,
+    version: &str,
+    spec: &ApiSpec,
+    out: &mut Vec<NonAdditiveChange>,
+) {
+    let spec_types: std::collections::BTreeMap<&str, &TypeDef> = spec
+        .all_types
+        .iter()
+        .map(|t| (t.name.as_str(), t))
+        .collect();
+
+    for (type_name, canonical_type) in &canonical.types {
+        let Some(spec_type) = spec_types.get(type_name.as_str()) else {
+            continue;
+        };
+        let TypeKind::StringEnum(spec_variants) = &spec_type.kind else {
+            continue;
+        };
+        let spec_variant_set: BTreeSet<&str> =
+            spec_variants.iter().map(String::as_str).collect();
+
+        for (variant_name, canonical_variant) in &canonical_type.variants {
+            if !spec_variant_set.contains(variant_name.as_str()) {
+                out.push(NonAdditiveChange::EnumVariantRemoved {
+                    enum_name: type_name.clone(),
+                    variant: variant_name.clone(),
+                    previous_versions: canonical_variant.versions.to_vec(),
+                    missing_in: version.to_string(),
+                });
             }
         }
     }

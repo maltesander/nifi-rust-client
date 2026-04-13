@@ -251,3 +251,59 @@ fn same_field_type_is_not_reported() {
     let changes = check(&canonical, "2.7.2", &spec_b);
     assert!(changes.is_empty());
 }
+
+fn make_enum_type(name: &str, variants: Vec<&str>) -> TypeDef {
+    TypeDef {
+        name: name.to_string(),
+        kind: TypeKind::StringEnum(variants.into_iter().map(String::from).collect()),
+        fields: vec![],
+        doc: None,
+    }
+}
+
+#[test]
+fn detects_enum_variant_removed() {
+    let spec_a = make_spec_with_types(vec![make_enum_type(
+        "ComponentType",
+        vec!["PROCESSOR", "CONTROLLER_SERVICE"],
+    )]);
+    let canonical = canonicalize(&[("2.6.0".to_string(), spec_a)]);
+
+    let spec_b = make_spec_with_types(vec![make_enum_type(
+        "ComponentType",
+        vec!["PROCESSOR"],
+    )]);
+    let changes = check(&canonical, "2.7.2", &spec_b);
+
+    assert_eq!(changes.len(), 1);
+    match &changes[0] {
+        NonAdditiveChange::EnumVariantRemoved {
+            enum_name,
+            variant,
+            previous_versions,
+            missing_in,
+        } => {
+            assert_eq!(enum_name, "ComponentType");
+            assert_eq!(variant, "CONTROLLER_SERVICE");
+            assert_eq!(previous_versions, &vec!["2.6.0".to_string()]);
+            assert_eq!(missing_in, "2.7.2");
+        }
+        other => panic!("expected EnumVariantRemoved, got {other:?}"),
+    }
+}
+
+#[test]
+fn added_enum_variant_is_not_reported() {
+    let spec_a = make_spec_with_types(vec![make_enum_type(
+        "ComponentType",
+        vec!["PROCESSOR"],
+    )]);
+    let canonical = canonicalize(&[("2.6.0".to_string(), spec_a)]);
+
+    let spec_b = make_spec_with_types(vec![make_enum_type(
+        "ComponentType",
+        vec!["PROCESSOR", "CONNECTOR"],
+    )]);
+    let changes = check(&canonical, "2.9.0", &spec_b);
+    assert!(changes.is_empty());
+}
