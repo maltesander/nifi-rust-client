@@ -2,7 +2,7 @@ use nifi_openapi_gen::canonical::{canonicalize, canonicalize_or_panic, Canonical
 use nifi_openapi_gen::content_type::ResponseBodyKind;
 use nifi_openapi_gen::non_additive_detector::{check, NonAdditiveChange};
 use nifi_openapi_gen::non_additive_overrides::{NonAdditiveOverride, NonAdditiveOverrides};
-use nifi_openapi_gen::parser::{ApiSpec, Endpoint, Field, FieldType, HttpMethod, TagGroup, TypeDef, TypeKind};
+use nifi_openapi_gen::parser::{load, ApiSpec, Endpoint, Field, FieldType, HttpMethod, TagGroup, TypeDef, TypeKind};
 
 #[test]
 fn detector_on_empty_canonical_returns_empty() {
@@ -414,43 +414,6 @@ fn canonicalize_or_panic_panics_on_non_additive_change() {
 }
 
 #[test]
-fn canonicalize_or_panic_respects_overrides() {
-    let spec_a = make_spec_with_types(vec![make_type(
-        "AboutDto",
-        vec![
-            make_field("title", FieldType::Str),
-            make_field("build_tag", FieldType::Str),
-        ],
-    )]);
-    let spec_b = make_spec_with_types(vec![make_type(
-        "AboutDto",
-        vec![make_field("title", FieldType::Str)],
-    )]);
-    let mut overrides = NonAdditiveOverrides::empty();
-    overrides.allow(NonAdditiveOverride::FieldRemoved {
-        type_name: "AboutDto".to_string(),
-        field: "build_tag".to_string(),
-        reason: "deprecated, dropped server-side in 2.7".to_string(),
-    });
-    let canonical = canonicalize_or_panic(
-        &[
-            ("2.6.0".to_string(), spec_a),
-            ("2.7.2".to_string(), spec_b),
-        ],
-        |_| "<test>".to_string(),
-        &overrides,
-    );
-    // build_tag is still in canonical (it got merged in 2.6.0); the override
-    // silences the detector but does not rewrite history.
-    assert!(canonical
-        .types
-        .get("AboutDto")
-        .unwrap()
-        .fields
-        .contains_key("build_tag"));
-}
-
-#[test]
 fn inline_enum_variant_addition_is_additive() {
     let spec_a = make_spec_with_types(vec![make_type(
         "ProcessorDto",
@@ -500,4 +463,65 @@ fn inline_enum_variant_removal_still_reports_field_type_changed() {
     let changes = check(&canonical, "2.7.2", &spec_b);
     assert_eq!(changes.len(), 1);
     assert!(matches!(changes[0], NonAdditiveChange::FieldTypeChanged { .. }));
+}
+
+#[test]
+fn real_spec_chain_passes_non_additive_detector() {
+    let specs_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("specs");
+    let versions = ["2.6.0", "2.7.2", "2.8.0", "2.9.0"];
+    let all_parsed: Vec<(String, ApiSpec)> = versions
+        .iter()
+        .map(|v| {
+            let p = specs_dir.join(v).join("nifi-api.json");
+            (v.to_string(), load(p.to_str().unwrap()))
+        })
+        .collect();
+
+    // This MUST pass. If it starts failing, a real non-additive change
+    // landed in one of the shipped specs and needs a human decision.
+    let canonical = canonicalize_or_panic(
+        &all_parsed,
+        |v| format!("crates/nifi-openapi-gen/specs/{v}/nifi-api.json"),
+        &NonAdditiveOverrides::empty(),
+    );
+
+    // Sanity check — at least as many endpoints as the largest single spec.
+    assert!(canonical.endpoints.len() >= 237);
+}
+
+#[test]
+fn canonicalize_or_panic_respects_overrides() {
+    let spec_a = make_spec_with_types(vec![make_type(
+        "AboutDto",
+        vec![
+            make_field("title", FieldType::Str),
+            make_field("build_tag", FieldType::Str),
+        ],
+    )]);
+    let spec_b = make_spec_with_types(vec![make_type(
+        "AboutDto",
+        vec![make_field("title", FieldType::Str)],
+    )]);
+    let mut overrides = NonAdditiveOverrides::empty();
+    overrides.allow(NonAdditiveOverride::FieldRemoved {
+        type_name: "AboutDto".to_string(),
+        field: "build_tag".to_string(),
+        reason: "deprecated, dropped server-side in 2.7".to_string(),
+    });
+    let canonical = canonicalize_or_panic(
+        &[
+            ("2.6.0".to_string(), spec_a),
+            ("2.7.2".to_string(), spec_b),
+        ],
+        |_| "<test>".to_string(),
+        &overrides,
+    );
+    // build_tag is still in canonical (it got merged in 2.6.0); the override
+    // silences the detector but does not rewrite history.
+    assert!(canonical
+        .types
+        .get("AboutDto")
+        .unwrap()
+        .fields
+        .contains_key("build_tag"));
 }
