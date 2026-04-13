@@ -67,7 +67,6 @@ nifi-rust-client = { version = "0.9", features = ["dynamic"] }
 
 ```rust
 use nifi_rust_client::NifiClientBuilder;
-use nifi_rust_client::dynamic::traits::SystemDiagnosticsApi;
 use nifi_rust_client::dynamic::types::DiagnosticLevel;
 use nifi_rust_client::dynamic::VersionResolutionStrategy;
 

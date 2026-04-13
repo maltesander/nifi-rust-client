@@ -62,7 +62,6 @@ nifi-rust-client = { version = "0.9", features = ["dynamic"] }
 <!-- DYNAMIC_FEATURE_EXAMPLE_END -->
 
 ```rust
-use nifi_rust_client::dynamic::traits::SystemDiagnosticsApi;
 use nifi_rust_client::dynamic::types::DiagnosticLevel;
 
 let client = NifiClientBuilder::new("https://nifi:8443")?
@@ -88,17 +87,10 @@ let diag = client.systemdiagnostics_api()
 
 This switches rust-analyzer to analyze dynamic-mode code paths. To switch back to static mode, replace with `["nifi-2-8-0"]` (or your target version).
 
-All API groups have corresponding traits in `dynamic::traits` (e.g., `FlowApi`, `ProcessorsApi`), plus sub-resource traits for endpoints with path parameters (e.g., `ControllerServicesConfigApi`, `ProcessorsRunStatusApi`). Import the trait to call methods on a dispatch enum, or use traits for generic code:
+API groups are reached via per-tag accessors on `DynamicClient` that return concrete resource structs (no traits — method dispatch is inherent):
 
 ```rust
-use nifi_rust_client::dynamic::traits::{FlowApi, ControllerServicesApi, ControllerServicesConfigApi};
 use nifi_rust_client::NifiError;
-
-async fn check_version(api: &impl FlowApi) -> Result<(), NifiError> {
-    let about = api.get_about_info().await?;
-    println!("NiFi {}", about.nifi_version.unwrap_or_default());
-    Ok(())
-}
 
 // Sub-resource builder chain — same pattern as static mode
 let analysis = client.controller_services_api()
@@ -109,7 +101,7 @@ let analysis = client.controller_services_api()
 
 Dynamic types use `#[non_exhaustive]` for forward compatibility — match arms should include a `..` fallback when destructuring fields.
 
-Fields present in all supported versions use their natural type (e.g., `String`); fields that only exist in some versions are `Option<T>`. Endpoints that don't exist in the connected version return `NifiError::UnsupportedEndpoint`. Enum query params and request bodies are fully typed.
+Every canonical endpoint method begins with a runtime `require_endpoint(Endpoint::FOO).await?` availability check, so calls against a server that doesn't support the endpoint return `NifiError::UnsupportedEndpoint`. Query parameters that exist only in some versions are guarded the same way: setting a value against a server that doesn't support it returns `NifiError::UnsupportedQueryParam`. Fields present in all supported versions use their natural type (e.g., `String`); fields that only exist in some versions are `Option<T>`. Enum query params and request bodies are fully typed.
 
 ### Version resolution strategies
 
@@ -430,9 +422,11 @@ All methods return `Result<T, NifiError>`. Variants:
 - `NifiError::InvalidBaseUrl { source }` — bad base URL
 - `NifiError::InvalidCertificate { source }` — invalid CA certificate
 - `NifiError::UnsupportedVersion { detected }` — dynamic mode: unsupported NiFi version
-- `NifiError::UnsupportedEndpoint { endpoint, version }` — dynamic mode: endpoint not available
-- `NifiError::UnsupportedEnumVariant { variant, type_name, version }` — dynamic mode: enum variant not in target version
-- `NifiError::MissingRequiredField { field, type_name, version }` — dynamic mode: required field is `None` in request body
+- `NifiError::UnsupportedEndpoint { endpoint, version }` — dynamic mode: endpoint not available on the detected server version
+- `NifiError::UnsupportedQueryParam { endpoint, param, detected_version, supported_in }` — dynamic mode: query param set to a non-`None` value on a server that does not support it
+- `NifiError::UnsupportedBodyField { endpoint, field, detected_version, supported_in }` — dynamic mode: request-body field set to a non-`None` value on a server that does not support it (reserved; not yet emitted)
+- `NifiError::UnsupportedEnumVariant { variant, type_name, version }` — response enum variant not recognized by this client build
+- `NifiError::MissingField { path }` — end-user code asked for an `Option<T>` that turned out to be `None` (via `RequireField::require` / `require!` macro)
 
 Helper methods:
 
@@ -449,7 +443,6 @@ single expression:
 
 ```rust
 use nifi_rust_client::{require, NifiClientBuilder, NifiError, RequireField};
-use nifi_rust_client::dynamic::traits::ProcessGroupsApi;
 
 async fn example() -> Result<(), NifiError> {
     let client = NifiClientBuilder::new("https://nifi.example.com:8443")?
@@ -480,9 +473,7 @@ result if you need an owned value.
 On a missing field, both helpers return
 `NifiError::MissingField { path }` with `path` set to the dotted
 identifier chain. That variant is not retryable (`err.is_retryable()`
-returns `false`) and is distinct from `NifiError::MissingRequiredField`,
-which is emitted only by the generated dynamic-mode conversion layer
-and carries runtime type/version context.
+returns `false`).
 
 The same helpers work on static-mode `Option<T>` fields — the module
 is not mode-gated.
