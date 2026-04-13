@@ -168,7 +168,6 @@ pub async fn stop_processor(client: &NifiClient, proc_id: &str, version: i64) ->
 
 #[cfg(feature = "dynamic")]
 pub async fn dynamic_logged_in_client() -> nifi_rust_client::dynamic::DynamicClient {
-    use nifi_rust_client::dynamic::traits::FlowApi;
 
     let client = NifiClientBuilder::new(&nifi_url())
         .expect("failed to parse NiFi URL")
@@ -246,10 +245,6 @@ static TEST_FLOW: tokio::sync::OnceCell<TestFlowIds> = tokio::sync::OnceCell::co
 pub async fn ensure_test_flow(
     client: &nifi_rust_client::dynamic::DynamicClient,
 ) -> &'static TestFlowIds {
-    use nifi_rust_client::dynamic::traits::{
-        FlowApi, ProcessGroupsApi, ProcessGroupsConnectionsApi, ProcessGroupsProcessGroupsApi,
-        ProcessGroupsProcessorsApi,
-    };
     use nifi_rust_client::dynamic::types::{
         PositionDto, ProcessGroupDto, ProcessGroupEntity, RevisionDto,
     };
@@ -450,7 +445,6 @@ async fn start_if_not_running(
     proc_id: &str,
     fallback_rev: i64,
 ) {
-    use nifi_rust_client::dynamic::traits::{ProcessorsApi, ProcessorsRunStatusApi};
 
     let proc = client
         .processors_api()
@@ -565,7 +559,6 @@ fn make_connection_entity(
 pub async fn get_test_processor_entity(
     client: &nifi_rust_client::dynamic::DynamicClient,
 ) -> nifi_rust_client::dynamic::types::ProcessorEntity {
-    use nifi_rust_client::dynamic::traits::ProcessorsApi;
 
     let ids = ensure_test_flow(client).await;
     client
@@ -582,7 +575,6 @@ pub async fn get_test_processor_entity(
 pub async fn get_test_provenance_event(
     client: &nifi_rust_client::dynamic::DynamicClient,
 ) -> nifi_rust_client::dynamic::types::ProvenanceEventDto {
-    use nifi_rust_client::dynamic::traits::ProvenanceApi;
     use nifi_rust_client::dynamic::types::{ProvenanceDto, ProvenanceEntity, ProvenanceRequestDto};
 
     let _ids = ensure_test_flow(client).await;
