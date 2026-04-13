@@ -53,12 +53,10 @@ pub mod util;
 pub use emit::dynamic_v2::{EndpointIndex, emit_dynamic_v2};
 #[doc(hidden)]
 pub use emit::{
-    collect_endpoint_metadata, collect_enum_metadata, collect_merged_field_names,
-    collect_query_param_metadata, collect_universal_fields, emit_api, emit_api_with_prefix,
-    emit_cli, emit_dynamic, emit_dynamic_conversions, emit_dynamic_dispatch, emit_dynamic_impls,
-    emit_dynamic_tests, emit_dynamic_traits, emit_dynamic_types, emit_endpoint_availability_tests,
-    emit_enum_coverage_tests, emit_field_presence_tests, emit_query_param_coverage_tests,
-    emit_static_traits, emit_tests, emit_types, tested_type_names,
+    collect_endpoint_metadata, collect_enum_metadata, collect_query_param_metadata, emit_api,
+    emit_api_with_prefix, emit_cli, emit_endpoint_availability_tests, emit_enum_coverage_tests,
+    emit_field_presence_tests, emit_query_param_coverage_tests, emit_static_traits, emit_tests,
+    emit_types, tested_type_names,
 };
 
 #[doc(hidden)]
