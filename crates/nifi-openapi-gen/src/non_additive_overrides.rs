@@ -67,7 +67,11 @@ impl NonAdditiveOverrides {
 fn matches_change(override_entry: &NonAdditiveOverride, change: &NonAdditiveChange) -> bool {
     match (override_entry, change) {
         (
-            NonAdditiveOverride::EndpointRemoved { method: om, path: op, .. },
+            NonAdditiveOverride::EndpointRemoved {
+                method: om,
+                path: op,
+                ..
+            },
             NonAdditiveChange::EndpointRemoved { method, path, .. },
         ) => om == method && op == path,
         (
@@ -75,16 +79,34 @@ fn matches_change(override_entry: &NonAdditiveOverride, change: &NonAdditiveChan
             NonAdditiveChange::TypeRemoved { type_name, .. },
         ) => ot == type_name,
         (
-            NonAdditiveOverride::FieldRemoved { type_name: ot, field: of, .. },
-            NonAdditiveChange::FieldRemoved { type_name, field, .. },
+            NonAdditiveOverride::FieldRemoved {
+                type_name: ot,
+                field: of,
+                ..
+            },
+            NonAdditiveChange::FieldRemoved {
+                type_name, field, ..
+            },
         ) => ot == type_name && of == field,
         (
-            NonAdditiveOverride::FieldTypeChanged { type_name: ot, field: of, .. },
-            NonAdditiveChange::FieldTypeChanged { type_name, field, .. },
+            NonAdditiveOverride::FieldTypeChanged {
+                type_name: ot,
+                field: of,
+                ..
+            },
+            NonAdditiveChange::FieldTypeChanged {
+                type_name, field, ..
+            },
         ) => ot == type_name && of == field,
         (
-            NonAdditiveOverride::EnumVariantRemoved { enum_name: oe, variant: ov, .. },
-            NonAdditiveChange::EnumVariantRemoved { enum_name, variant, .. },
+            NonAdditiveOverride::EnumVariantRemoved {
+                enum_name: oe,
+                variant: ov,
+                ..
+            },
+            NonAdditiveChange::EnumVariantRemoved {
+                enum_name, variant, ..
+            },
         ) => oe == enum_name && ov == variant,
         _ => false,
     }

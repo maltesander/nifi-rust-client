@@ -75,11 +75,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             {
                 let dst = dynamic_v2_dst_dir.join(entry.file_name());
                 std::fs::copy(&src, &dst).map_err(|e| {
-                    format!(
-                        "failed to copy {} to {}: {e}",
-                        src.display(),
-                        dst.display()
-                    )
+                    format!("failed to copy {} to {}: {e}", src.display(), dst.display())
                 })?;
             }
         }

@@ -50,6 +50,8 @@ pub mod util;
 // and `specs_dir()`.
 
 #[doc(hidden)]
+pub use emit::dynamic_v2::{EndpointIndex, emit_dynamic_v2};
+#[doc(hidden)]
 pub use emit::{
     collect_endpoint_metadata, collect_enum_metadata, collect_merged_field_names,
     collect_query_param_metadata, collect_universal_fields, emit_api, emit_api_with_prefix,
@@ -58,8 +60,6 @@ pub use emit::{
     emit_enum_coverage_tests, emit_field_presence_tests, emit_query_param_coverage_tests,
     emit_static_traits, emit_tests, emit_types, tested_type_names,
 };
-#[doc(hidden)]
-pub use emit::dynamic_v2::{emit_dynamic_v2, EndpointIndex};
 
 #[doc(hidden)]
 pub use diff::{

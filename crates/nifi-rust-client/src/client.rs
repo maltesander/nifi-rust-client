@@ -1023,7 +1023,9 @@ mod tests {
         Mock::given(method("PUT"))
             .and(path("/nifi-api/processors/proc-id"))
             .and(query_param("clientId", "test-client"))
-            .and(body_json(serde_json::json!({ "revision": { "version": 1 } })))
+            .and(body_json(
+                serde_json::json!({ "revision": { "version": 1 } }),
+            ))
             .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
                 "id": "proc-id",
                 "component": { "id": "proc-id", "name": "TestProcessor" }
@@ -1047,9 +1049,6 @@ mod tests {
             .unwrap();
 
         assert_eq!(result["id"].as_str(), Some("proc-id"));
-        assert_eq!(
-            result["component"]["name"].as_str(),
-            Some("TestProcessor")
-        );
+        assert_eq!(result["component"]["name"].as_str(), Some("TestProcessor"));
     }
 }

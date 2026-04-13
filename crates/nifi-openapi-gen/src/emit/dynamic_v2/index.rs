@@ -99,9 +99,7 @@ fn collect_query_param_versions(
     for (version, spec) in &canonical.per_version_specs {
         if let Some((ep, _)) = scan_spec(spec, key) {
             for qp in &ep.query_params {
-                out.entry(qp.name.clone())
-                    .or_default()
-                    .insert(version);
+                out.entry(qp.name.clone()).or_default().insert(version);
             }
         }
     }
@@ -112,9 +110,7 @@ fn collect_query_param_versions(
 mod tests {
     use super::*;
     use crate::canonical::canonicalize;
-    use crate::parser::{
-        ApiSpec, Endpoint, HttpMethod, QueryParam, QueryParamType, TagGroup,
-    };
+    use crate::parser::{ApiSpec, Endpoint, HttpMethod, QueryParam, QueryParamType, TagGroup};
 
     fn ep(method: HttpMethod, path: &str, qps: Vec<&str>) -> Endpoint {
         Endpoint {
@@ -167,15 +163,8 @@ mod tests {
     #[test]
     fn index_picks_latest_version_endpoint_and_collects_query_param_versions() {
         let v26 = spec_with(vec![ep(HttpMethod::Get, "/flow/about", vec![])]);
-        let v29 = spec_with(vec![ep(
-            HttpMethod::Get,
-            "/flow/about",
-            vec!["registries"],
-        )]);
-        let canonical = canonicalize(&[
-            ("2.6.0".to_string(), v26),
-            ("2.9.0".to_string(), v29),
-        ]);
+        let v29 = spec_with(vec![ep(HttpMethod::Get, "/flow/about", vec!["registries"])]);
+        let canonical = canonicalize(&[("2.6.0".to_string(), v26), ("2.9.0".to_string(), v29)]);
         let index = EndpointIndex::build(&canonical);
         assert_eq!(index.endpoints.len(), 1);
         let ep = &index.endpoints[0];

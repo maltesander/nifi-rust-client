@@ -38,9 +38,7 @@ pub fn emit_availability(canonical: &CanonicalSpec, index: &EndpointIndex<'_>) -
     out.push_str("}\n\n");
 
     // Per-endpoint version set.
-    out.push_str(
-        "/// `(Endpoint, supported versions)` for every canonical endpoint.\n",
-    );
+    out.push_str("/// `(Endpoint, supported versions)` for every canonical endpoint.\n");
     out.push_str("/// The string slices are static — they live in the binary.\n");
     out.push_str("pub const ENDPOINT_AVAILABILITY: &[(Endpoint, &[&str])] = &[\n");
     for ep in &index.endpoints {
@@ -65,9 +63,7 @@ pub fn emit_availability(canonical: &CanonicalSpec, index: &EndpointIndex<'_>) -
          /// generated URL builder to emit `UnsupportedQueryParam` when a caller sets\n\
          /// a value the detected server cannot understand.\n",
     );
-    out.push_str(
-        "pub const QUERY_PARAM_AVAILABILITY: &[((Endpoint, &str), &[&str])] = &[\n",
-    );
+    out.push_str("pub const QUERY_PARAM_AVAILABILITY: &[((Endpoint, &str), &[&str])] = &[\n");
     for ep in &index.endpoints {
         if ep.query_param_versions.is_empty() {
             continue;

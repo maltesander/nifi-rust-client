@@ -1,8 +1,10 @@
-use nifi_openapi_gen::canonical::{canonicalize, canonicalize_or_panic, CanonicalSpec};
+use nifi_openapi_gen::canonical::{CanonicalSpec, canonicalize, canonicalize_or_panic};
 use nifi_openapi_gen::content_type::ResponseBodyKind;
-use nifi_openapi_gen::non_additive_detector::{check, NonAdditiveChange};
+use nifi_openapi_gen::non_additive_detector::{NonAdditiveChange, check};
 use nifi_openapi_gen::non_additive_overrides::{NonAdditiveOverride, NonAdditiveOverrides};
-use nifi_openapi_gen::parser::{load, ApiSpec, Endpoint, Field, FieldType, HttpMethod, TagGroup, TypeDef, TypeKind};
+use nifi_openapi_gen::parser::{
+    ApiSpec, Endpoint, Field, FieldType, HttpMethod, TagGroup, TypeDef, TypeKind, load,
+};
 
 #[test]
 fn detector_on_empty_canonical_returns_empty() {
@@ -270,10 +272,7 @@ fn detects_enum_variant_removed() {
     )]);
     let canonical = canonicalize(&[("2.6.0".to_string(), spec_a)]);
 
-    let spec_b = make_spec_with_types(vec![make_enum_type(
-        "ComponentType",
-        vec!["PROCESSOR"],
-    )]);
+    let spec_b = make_spec_with_types(vec![make_enum_type("ComponentType", vec!["PROCESSOR"])]);
     let changes = check(&canonical, "2.7.2", &spec_b);
 
     assert_eq!(changes.len(), 1);
@@ -295,10 +294,7 @@ fn detects_enum_variant_removed() {
 
 #[test]
 fn added_enum_variant_is_not_reported() {
-    let spec_a = make_spec_with_types(vec![make_enum_type(
-        "ComponentType",
-        vec!["PROCESSOR"],
-    )]);
+    let spec_a = make_spec_with_types(vec![make_enum_type("ComponentType", vec!["PROCESSOR"])]);
     let canonical = canonicalize(&[("2.6.0".to_string(), spec_a)]);
 
     let spec_b = make_spec_with_types(vec![make_enum_type(
@@ -379,10 +375,7 @@ fn canonicalize_or_panic_passes_on_additive_chain() {
         ],
     )]);
     let canonical = canonicalize_or_panic(
-        &[
-            ("2.6.0".to_string(), spec_a),
-            ("2.7.2".to_string(), spec_b),
-        ],
+        &[("2.6.0".to_string(), spec_a), ("2.7.2".to_string(), spec_b)],
         |_| "<test>".to_string(),
         &NonAdditiveOverrides::empty(),
     );
@@ -404,10 +397,7 @@ fn canonicalize_or_panic_panics_on_non_additive_change() {
         vec![make_field("title", FieldType::Str)],
     )]);
     canonicalize_or_panic(
-        &[
-            ("2.6.0".to_string(), spec_a),
-            ("2.7.2".to_string(), spec_b),
-        ],
+        &[("2.6.0".to_string(), spec_a), ("2.7.2".to_string(), spec_b)],
         |_| "<test>".to_string(),
         &NonAdditiveOverrides::empty(),
     );
@@ -439,7 +429,10 @@ fn inline_enum_variant_addition_is_additive() {
         )],
     )]);
     let changes = check(&canonical, "2.8.0", &spec_b);
-    assert!(changes.is_empty(), "inline enum growth should be additive, got: {changes:?}");
+    assert!(
+        changes.is_empty(),
+        "inline enum growth should be additive, got: {changes:?}"
+    );
 }
 
 #[test]
@@ -462,7 +455,10 @@ fn inline_enum_variant_removal_still_reports_field_type_changed() {
     )]);
     let changes = check(&canonical, "2.7.2", &spec_b);
     assert_eq!(changes.len(), 1);
-    assert!(matches!(changes[0], NonAdditiveChange::FieldTypeChanged { .. }));
+    assert!(matches!(
+        changes[0],
+        NonAdditiveChange::FieldTypeChanged { .. }
+    ));
 }
 
 #[test]
@@ -509,21 +505,20 @@ fn canonicalize_or_panic_respects_overrides() {
         reason: "deprecated, dropped server-side in 2.7".to_string(),
     });
     let canonical = canonicalize_or_panic(
-        &[
-            ("2.6.0".to_string(), spec_a),
-            ("2.7.2".to_string(), spec_b),
-        ],
+        &[("2.6.0".to_string(), spec_a), ("2.7.2".to_string(), spec_b)],
         |_| "<test>".to_string(),
         &overrides,
     );
     // build_tag is still in canonical (it got merged in 2.6.0); the override
     // silences the detector but does not rewrite history.
-    assert!(canonical
-        .types
-        .get("AboutDto")
-        .unwrap()
-        .fields
-        .contains_key("build_tag"));
+    assert!(
+        canonical
+            .types
+            .get("AboutDto")
+            .unwrap()
+            .fields
+            .contains_key("build_tag")
+    );
 }
 
 #[test]
@@ -544,10 +539,7 @@ fn canonicalize_or_panic_populates_per_version_specs() {
     )]);
 
     let canonical = canonicalize_or_panic(
-        &[
-            ("2.6.0".to_string(), spec_a),
-            ("2.7.2".to_string(), spec_b),
-        ],
+        &[("2.6.0".to_string(), spec_a), ("2.7.2".to_string(), spec_b)],
         |v| format!("specs/{v}/nifi-api.json"),
         &NonAdditiveOverrides::empty(),
     );
@@ -558,11 +550,15 @@ fn canonicalize_or_panic_populates_per_version_specs() {
 
     // Per-version field counts confirm the stored specs are distinct, not shared.
     assert_eq!(
-        project(&canonical, "2.6.0").unwrap().all_types[0].fields.len(),
+        project(&canonical, "2.6.0").unwrap().all_types[0]
+            .fields
+            .len(),
         1
     );
     assert_eq!(
-        project(&canonical, "2.7.2").unwrap().all_types[0].fields.len(),
+        project(&canonical, "2.7.2").unwrap().all_types[0]
+            .fields
+            .len(),
         2
     );
 }

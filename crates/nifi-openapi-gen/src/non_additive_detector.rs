@@ -69,11 +69,7 @@ pub enum NonAdditiveChange {
 /// previously-merged versions. `version` is the spec being evaluated.
 /// Returns every rule hit as a `NonAdditiveChange`. Caller is responsible
 /// for consulting the override table and panicking on residual changes.
-pub fn check(
-    canonical: &CanonicalSpec,
-    version: &str,
-    spec: &ApiSpec,
-) -> Vec<NonAdditiveChange> {
+pub fn check(canonical: &CanonicalSpec, version: &str, spec: &ApiSpec) -> Vec<NonAdditiveChange> {
     let mut out = Vec::new();
     check_endpoint_removed(canonical, version, spec, &mut out);
     check_type_removed(canonical, version, spec, &mut out);
@@ -88,8 +84,7 @@ fn check_type_removed(
     spec: &ApiSpec,
     out: &mut Vec<NonAdditiveChange>,
 ) {
-    let spec_type_names: BTreeSet<&str> =
-        spec.all_types.iter().map(|t| t.name.as_str()).collect();
+    let spec_type_names: BTreeSet<&str> = spec.all_types.iter().map(|t| t.name.as_str()).collect();
     for (name, canonical_type) in &canonical.types {
         if !spec_type_names.contains(name.as_str()) {
             out.push(NonAdditiveChange::TypeRemoved {
@@ -117,8 +112,11 @@ fn check_field_removed_or_retyped(
         let Some(spec_type) = spec_types.get(type_name.as_str()) else {
             continue;
         };
-        let spec_fields: std::collections::BTreeMap<&str, &Field> =
-            spec_type.fields.iter().map(|f| (f.rust_name.as_str(), f)).collect();
+        let spec_fields: std::collections::BTreeMap<&str, &Field> = spec_type
+            .fields
+            .iter()
+            .map(|f| (f.rust_name.as_str(), f))
+            .collect();
 
         for (field_name, canonical_field) in &canonical_type.fields {
             match spec_fields.get(field_name.as_str()) {
@@ -128,7 +126,9 @@ fn check_field_removed_or_retyped(
                     previous_versions: canonical_field.versions.to_vec(),
                     missing_in: version.to_string(),
                 }),
-                Some(spec_field) if !field_types_compatible(&canonical_field.ty, &spec_field.ty) => {
+                Some(spec_field)
+                    if !field_types_compatible(&canonical_field.ty, &spec_field.ty) =>
+                {
                     out.push(NonAdditiveChange::FieldTypeChanged {
                         type_name: type_name.clone(),
                         field: field_name.clone(),
@@ -163,8 +163,7 @@ fn check_enum_variant_removed(
         let TypeKind::StringEnum(spec_variants) = &spec_type.kind else {
             continue;
         };
-        let spec_variant_set: BTreeSet<&str> =
-            spec_variants.iter().map(String::as_str).collect();
+        let spec_variant_set: BTreeSet<&str> = spec_variants.iter().map(String::as_str).collect();
 
         for (variant_name, canonical_variant) in &canonical_type.variants {
             if !spec_variant_set.contains(variant_name.as_str()) {

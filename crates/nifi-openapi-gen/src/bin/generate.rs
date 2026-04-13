@@ -13,19 +13,19 @@
 
 use std::path::{Path, PathBuf};
 
+use nifi_openapi_gen::canonical::canonicalize_or_panic;
 use nifi_openapi_gen::docs::{
     emit_api_changes, emit_client_readme_examples, emit_integration_coverage, emit_lib_rs_examples,
     emit_resource_accessors, emit_versions_table,
 };
 use nifi_openapi_gen::layout::RepoLayout;
+use nifi_openapi_gen::non_additive_overrides::NonAdditiveOverrides;
 use nifi_openapi_gen::plan::{FileEdit, MutationPlan};
 use nifi_openapi_gen::repo::{
     emit_cargo_features_client, emit_cargo_features_tests, emit_docker_compose_default,
     emit_fn_names_goldens, emit_lib_rs_feature_flags,
 };
 use nifi_openapi_gen::util::discover_spec_versions;
-use nifi_openapi_gen::canonical::canonicalize_or_panic;
-use nifi_openapi_gen::non_additive_overrides::NonAdditiveOverrides;
 use nifi_openapi_gen::{
     ApiSpec, VersionDiff, collect_endpoint_metadata, collect_enum_metadata,
     collect_query_param_metadata, compute_diff, load, tested_type_names,

@@ -104,7 +104,10 @@ fn emit_tag_file(meta: &TagMeta<'_>, endpoints: &[&IndexedEndpoint<'_>]) -> Stri
     let mut by_subgroup: BTreeMap<&str, Vec<&IndexedEndpoint<'_>>> = BTreeMap::new();
     for ep in endpoints {
         if let Some(sg) = ep.sub_group {
-            by_subgroup.entry(sg.struct_name.as_str()).or_default().push(ep);
+            by_subgroup
+                .entry(sg.struct_name.as_str())
+                .or_default()
+                .push(ep);
         } else {
             roots.push(ep);
         }
@@ -363,8 +366,10 @@ fn emit_dispatch(out: &mut String, ep: &IndexedEndpoint<'_>, has_query: bool) {
     let request_kind = &ep.endpoint.body_kind;
     let returns_unit = matches!(return_kind, ResponseBodyKind::Empty);
     let returns_text = matches!(return_kind, ResponseBodyKind::Text | ResponseBodyKind::Xml);
-    let returns_bytes =
-        matches!(return_kind, ResponseBodyKind::OctetStream | ResponseBodyKind::Wildcard);
+    let returns_bytes = matches!(
+        return_kind,
+        ResponseBodyKind::OctetStream | ResponseBodyKind::Wildcard
+    );
 
     let path_arg = "&path";
     let use_query = has_query;
@@ -490,7 +495,9 @@ fn emit_dispatch(out: &mut String, ep: &IndexedEndpoint<'_>, has_query: bool) {
             out.push_str(&format!(
                 "        let wrapper: crate::dynamic_v2::types::{entity} = {call_expr};\n"
             ));
-            out.push_str(&format!("        Ok(wrapper.{field}.unwrap_or_default())\n"));
+            out.push_str(&format!(
+                "        Ok(wrapper.{field}.unwrap_or_default())\n"
+            ));
         }
         _ => {
             if let Some(_rt) = ep.endpoint.response_type.as_deref() {
@@ -584,7 +591,10 @@ mod tests {
                 raw_operation_id: "getProcessor".to_string(),
                 doc: None,
                 description: None,
-                path_params: vec![PathParam { name: "id".to_string(), doc: None }],
+                path_params: vec![PathParam {
+                    name: "id".to_string(),
+                    doc: None,
+                }],
                 request_type: None,
                 body_kind: None,
                 body_doc: None,
@@ -619,7 +629,10 @@ mod tests {
                     raw_operation_id: "getConfig".to_string(),
                     doc: None,
                     description: None,
-                    path_params: vec![PathParam { name: "id".to_string(), doc: None }],
+                    path_params: vec![PathParam {
+                        name: "id".to_string(),
+                        doc: None,
+                    }],
                     request_type: None,
                     body_kind: None,
                     body_doc: None,

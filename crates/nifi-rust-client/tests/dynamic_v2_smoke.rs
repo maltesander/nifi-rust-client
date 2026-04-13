@@ -5,8 +5,8 @@
 
 #![cfg(feature = "dynamic")]
 
-use nifi_rust_client::dynamic_v2::DynamicClientV2;
 use nifi_rust_client::NifiClientBuilder;
+use nifi_rust_client::dynamic_v2::DynamicClientV2;
 use wiremock::matchers::{method, path};
 use wiremock::{Mock, MockServer, ResponseTemplate};
 
@@ -98,7 +98,9 @@ async fn dynamic_v2_unsupported_endpoint_error() {
 
 #[tokio::test]
 async fn dynamic_v2_unsupported_query_param_error() {
-    use nifi_rust_client::dynamic_v2::availability::{QUERY_PARAM_AVAILABILITY, query_param_supported};
+    use nifi_rust_client::dynamic_v2::availability::{
+        QUERY_PARAM_AVAILABILITY, query_param_supported,
+    };
 
     // Find any (endpoint, param) pair where 2.6.0 is NOT in the supported set.
     let target = QUERY_PARAM_AVAILABILITY

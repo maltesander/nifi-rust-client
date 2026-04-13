@@ -235,8 +235,10 @@ where
             .collect();
         if !residual.is_empty() {
             let spec_path = spec_path_of(version);
-            let msgs: Vec<String> =
-                residual.iter().map(|c| c.panic_message(&spec_path)).collect();
+            let msgs: Vec<String> = residual
+                .iter()
+                .map(|c| c.panic_message(&spec_path))
+                .collect();
             panic!("{}", msgs.join("\n\n"));
         }
         merge_spec(&mut canonical, version, spec);

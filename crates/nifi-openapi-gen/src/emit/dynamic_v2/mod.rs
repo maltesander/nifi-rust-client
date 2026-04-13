@@ -94,10 +94,7 @@ mod tests {
     fn emit_dynamic_v2_produces_expected_layout() {
         let canonical = canonicalize(&[("2.8.0".to_string(), minimal())]);
         let files = emit_dynamic_v2(&canonical);
-        let names: Vec<String> = files
-            .iter()
-            .map(|(p, _)| p.display().to_string())
-            .collect();
+        let names: Vec<String> = files.iter().map(|(p, _)| p.display().to_string()).collect();
         assert!(names.contains(&"availability.rs".to_string()));
         assert!(names.iter().any(|n| n.starts_with("types/")));
         assert!(names.iter().any(|n| n.starts_with("api/")));
