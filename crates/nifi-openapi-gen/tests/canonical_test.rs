@@ -1,6 +1,7 @@
-use nifi_openapi_gen::canonical::VersionSet;
-use nifi_openapi_gen::canonical::{CanonicalSpec, EndpointKey, CanonicalEndpoint, CanonicalType, CanonicalField};
-use nifi_openapi_gen::parser::{HttpMethod, TypeKind, FieldType};
+use nifi_openapi_gen::canonical::{
+    CanonicalEndpoint, CanonicalField, CanonicalSpec, CanonicalType, EndpointKey, VersionSet,
+};
+use nifi_openapi_gen::parser::{FieldType, HttpMethod, TypeKind};
 
 #[test]
 fn version_set_new_is_empty() {
@@ -53,8 +54,6 @@ fn endpoint_key_equality_on_method_and_path() {
 #[test]
 fn canonical_endpoint_tracks_versions() {
     let mut ep = CanonicalEndpoint {
-        method: HttpMethod::Get,
-        path: "/flow/about".into(),
         tag: "Flow".into(),
         raw_operation_id: "getAboutInfo".into(),
         versions: nifi_openapi_gen::canonical::VersionSet::with("2.6.0"),

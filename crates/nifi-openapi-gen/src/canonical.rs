@@ -8,6 +8,8 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
+use crate::parser::{FieldType, HttpMethod, TypeKind};
+
 /// Set of supported NiFi version strings (e.g. "2.8.0").
 ///
 /// Kept as a sorted `BTreeSet<String>` so iteration order is stable
@@ -52,8 +54,6 @@ impl VersionSet {
     }
 }
 
-use crate::parser::{FieldType, HttpMethod, TypeKind};
-
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct EndpointKey {
     pub method: HttpMethod,
@@ -62,8 +62,6 @@ pub struct EndpointKey {
 
 #[derive(Debug, Clone)]
 pub struct CanonicalEndpoint {
-    pub method: HttpMethod,
-    pub path: String,
     pub tag: String,
     pub raw_operation_id: String,
     pub versions: VersionSet,
