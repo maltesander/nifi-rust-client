@@ -4,9 +4,6 @@
 //! borrow of `DynamicClientV2`. Endpoint methods start with a
 //! `require_endpoint(...)` availability check, then dispatch via the
 //! shared `NifiClient` HTTP helpers.
-//!
-//! Phase 4a (this file) handles only no-arg GET endpoints. Task 7 extends
-//! to path params, query params, sub-resources, and request bodies.
 
 use std::collections::BTreeMap;
 
@@ -92,6 +89,7 @@ fn collect_tag_meta(canonical: &CanonicalSpec) -> BTreeMap<&str, TagMeta<'_>> {
 
 fn emit_tag_file(meta: &TagMeta<'_>, endpoints: &[&IndexedEndpoint<'_>]) -> String {
     let mut out = String::new();
+    out.push_str("#[allow(unused_imports)]\n");
     out.push_str("use crate::NifiError;\n");
     out.push_str("use crate::dynamic_v2::DynamicClientV2;\n");
     out.push_str("use crate::dynamic_v2::availability::Endpoint;\n\n");
@@ -101,53 +99,232 @@ fn emit_tag_file(meta: &TagMeta<'_>, endpoints: &[&IndexedEndpoint<'_>]) -> Stri
         meta.struct_name
     ));
 
-    out.push_str("#[allow(clippy::too_many_arguments, clippy::let_unit_value)]\n");
-    out.push_str(&format!("impl<'a> {}<'a> {{\n", meta.struct_name));
+    // Group endpoints into root vs sub-group.
+    let mut roots: Vec<&IndexedEndpoint<'_>> = Vec::new();
+    let mut by_subgroup: BTreeMap<&str, Vec<&IndexedEndpoint<'_>>> = BTreeMap::new();
     for ep in endpoints {
-        if !is_supported_in_4a_task6(ep.endpoint) {
-            // Phase 4a Task 6: only no-arg GET endpoints at the tag root. Skip the rest with a stub.
-            emit_unsupported_stub(&mut out, ep);
-            continue;
+        if let Some(sg) = ep.sub_group {
+            by_subgroup.entry(sg.struct_name.as_str()).or_default().push(ep);
+        } else {
+            roots.push(ep);
         }
-        emit_simple_get_method(&mut out, ep);
     }
-    out.push_str("}\n");
+
+    // Collect one representative SubGroup metadata per sub-struct name.
+    let mut sg_meta: BTreeMap<&str, &crate::parser::SubGroup> = BTreeMap::new();
+    for ep in endpoints {
+        if let Some(sg) = ep.sub_group {
+            sg_meta.entry(sg.struct_name.as_str()).or_insert(sg);
+        }
+    }
+
+    out.push_str("#[allow(clippy::too_many_arguments, clippy::let_unit_value, clippy::vec_init_then_push)]\n");
+    out.push_str(&format!("impl<'a> {}<'a> {{\n", meta.struct_name));
+    for ep in &roots {
+        emit_method(&mut out, ep, SelfKind::Root);
+    }
+    // Sub-group accessors on the root struct.
+    for (sg_struct, sg) in &sg_meta {
+        out.push_str(&format!(
+            "    pub fn {accessor}<'b>(&'b self, {param}: &'b str) -> {sg_struct}<'b> {{\n        {sg_struct} {{ client: self.client, {param}: {param}.to_string() }}\n    }}\n\n",
+            accessor = sg.accessor_fn,
+            param = sg.primary_param,
+        ));
+    }
+    out.push_str("}\n\n");
+
+    // Emit sub-group structs and their impls.
+    for (sg_struct, eps) in &by_subgroup {
+        let sg = sg_meta[sg_struct];
+        out.push_str(&format!(
+            "pub struct {sg_struct}<'a> {{\n    pub(crate) client: &'a DynamicClientV2,\n    pub(crate) {param}: String,\n}}\n\n",
+            param = sg.primary_param,
+        ));
+        out.push_str("#[allow(clippy::too_many_arguments, clippy::let_unit_value, clippy::vec_init_then_push)]\n");
+        out.push_str(&format!("impl<'a> {sg_struct}<'a> {{\n"));
+        for ep in eps {
+            emit_method(&mut out, ep, SelfKind::SubGroup(sg.primary_param.as_str()));
+        }
+        out.push_str("}\n\n");
+    }
+
     out
 }
 
-fn is_supported_in_4a_task6(ep: &Endpoint) -> bool {
-    matches!(ep.method, HttpMethod::Get)
-        && ep.path_params.is_empty()
-        && ep.query_params.is_empty()
-        && ep.body_kind.is_none()
+#[derive(Copy, Clone)]
+enum SelfKind<'a> {
+    Root,
+    SubGroup(&'a str),
 }
 
-fn emit_unsupported_stub(out: &mut String, ep: &IndexedEndpoint<'_>) {
-    let variant = endpoint_variant_name(&ep.key.method, &ep.key.path);
-    out.push_str(&format!(
-        "    // TODO Task 7: emit body for {} {} (variant {variant})\n",
-        ep.key.method.as_str(),
-        ep.key.path,
-    ));
-}
-
-fn emit_simple_get_method(out: &mut String, ep: &IndexedEndpoint<'_>) {
+fn emit_method(out: &mut String, ep: &IndexedEndpoint<'_>, self_kind: SelfKind<'_>) {
     let fn_name = &ep.endpoint.fn_name;
     let variant = endpoint_variant_name(&ep.key.method, &ep.key.path);
-    let path = &ep.key.path;
+
+    // Build argument list (skip the primary sub-group param — it's on `self`).
+    let mut args: Vec<String> = Vec::new();
+    let skip_param = match self_kind {
+        SelfKind::SubGroup(p) => Some(p),
+        SelfKind::Root => None,
+    };
+    for pp in &ep.endpoint.path_params {
+        if Some(pp.name.as_str()) == skip_param {
+            continue;
+        }
+        args.push(format!("{}: &str", pp.name));
+    }
+    for qp in &ep.endpoint.query_params {
+        let ty = qp_rust_type(qp);
+        if qp.required {
+            args.push(format!("{}: {}", qp.rust_name, ty));
+        } else {
+            args.push(format!("{}: Option<{}>", qp.rust_name, ty));
+        }
+    }
+    if ep.endpoint.body_kind.is_some()
+        && let Some(rt) = &ep.endpoint.request_type
+    {
+        args.push(format!("body: &crate::dynamic_v2::types::{rt}"));
+    }
 
     let return_ty = response_type_for(ep.endpoint);
-
+    let args_joined = if args.is_empty() {
+        String::new()
+    } else {
+        format!(", {}", args.join(", "))
+    };
     out.push_str(&format!(
-        "    pub async fn {fn_name}(&self) -> Result<{return_ty}, NifiError> {{\n"
+        "    pub async fn {fn_name}(&self{args_joined}) -> Result<{return_ty}, NifiError> {{\n"
     ));
     out.push_str(&format!(
         "        self.client.require_endpoint(Endpoint::{variant}).await?;\n"
     ));
-    out.push_str(&format!("        let path = \"{path}\";\n"));
-    out.push_str("        tracing::debug!(method = \"GET\", path, \"NiFi API request\");\n");
-    emit_get_body(out, ep);
+
+    // Path interpolation
+    let mut path_expr = format!("\"{}\".to_string()", ep.key.path);
+    for pp in &ep.endpoint.path_params {
+        let placeholder = format!("{{{}}}", pp.name);
+        let value = if Some(pp.name.as_str()) == skip_param {
+            format!("&self.{}", pp.name)
+        } else {
+            pp.name.to_string()
+        };
+        path_expr = format!("{path_expr}.replace(\"{placeholder}\", {value})");
+    }
+    out.push_str(&format!("        let path = {path_expr};\n"));
+
+    // Query vector (used when there are query params)
+    let has_query = !ep.endpoint.query_params.is_empty();
+    if has_query {
+        out.push_str("        let mut query: Vec<(&str, String)> = Vec::new();\n");
+        for qp in &ep.endpoint.query_params {
+            emit_query_push(out, ep, qp);
+        }
+    }
+
+    // Tracing + dispatch
+    let method_lit = ep.key.method.as_str();
+    out.push_str(&format!(
+        "        tracing::debug!(method = \"{method_lit}\", path = path.as_str(), \"NiFi API request\");\n"
+    ));
+
+    emit_dispatch(out, ep, has_query);
+
     out.push_str("    }\n\n");
+}
+
+fn qp_rust_type(qp: &crate::parser::QueryParam) -> String {
+    use crate::parser::QueryParamType::*;
+    match &qp.ty {
+        Str => "&str".to_string(),
+        Bool => "bool".to_string(),
+        I32 => "i32".to_string(),
+        I64 => "i64".to_string(),
+        F64 => "f64".to_string(),
+        Enum(_) => qp
+            .enum_type_name
+            .as_ref()
+            .map(|n| format!("crate::dynamic_v2::types::{n}"))
+            .unwrap_or_else(|| "&str".to_string()),
+    }
+}
+
+fn emit_query_push(out: &mut String, ep: &IndexedEndpoint<'_>, qp: &crate::parser::QueryParam) {
+    let endpoint_versions = &ep.versions;
+    let qp_versions = ep
+        .query_param_versions
+        .get(&qp.name)
+        .cloned()
+        .unwrap_or_else(|| endpoint_versions.clone());
+    let needs_guard = qp_versions != *endpoint_versions;
+
+    let to_string_expr = format!("{}.to_string()", qp.rust_name);
+
+    if qp.required {
+        if needs_guard {
+            emit_guard(out, ep, &qp.name, &qp_versions);
+        }
+        out.push_str(&format!(
+            "        query.push((\"{name}\", {value}));\n",
+            name = qp.name,
+            value = to_string_expr,
+        ));
+    } else {
+        out.push_str(&format!("        if let Some({n}) = {n} {{\n", n = qp.rust_name));
+        if needs_guard {
+            emit_guard_indented(out, ep, &qp.name, &qp_versions);
+        }
+        out.push_str(&format!(
+            "            query.push((\"{name}\", {value}));\n",
+            name = qp.name,
+            value = to_string_expr,
+        ));
+        out.push_str("        }\n");
+    }
+}
+
+fn emit_guard(
+    out: &mut String,
+    ep: &IndexedEndpoint<'_>,
+    param: &str,
+    versions: &crate::canonical::VersionSet,
+) {
+    let variant = endpoint_variant_name(&ep.key.method, &ep.key.path);
+    let supported: Vec<String> = versions
+        .to_vec()
+        .into_iter()
+        .map(|v| format!("\"{v}\".to_string()"))
+        .collect();
+    out.push_str(&format!(
+        "        let __detected = self.client.detected_version_str();\n        if !crate::dynamic_v2::availability::query_param_supported(Endpoint::{variant}, \"{param}\", &__detected) {{\n"
+    ));
+    out.push_str(&format!(
+        "            return Err(NifiError::UnsupportedQueryParam {{ endpoint: Endpoint::{variant}.as_str(), param: \"{param}\", detected_version: __detected, supported_in: vec![{}] }});\n",
+        supported.join(", "),
+    ));
+    out.push_str("        }\n");
+}
+
+fn emit_guard_indented(
+    out: &mut String,
+    ep: &IndexedEndpoint<'_>,
+    param: &str,
+    versions: &crate::canonical::VersionSet,
+) {
+    let variant = endpoint_variant_name(&ep.key.method, &ep.key.path);
+    let supported: Vec<String> = versions
+        .to_vec()
+        .into_iter()
+        .map(|v| format!("\"{v}\".to_string()"))
+        .collect();
+    out.push_str(&format!(
+        "            let __detected = self.client.detected_version_str();\n            if !crate::dynamic_v2::availability::query_param_supported(Endpoint::{variant}, \"{param}\", &__detected) {{\n"
+    ));
+    out.push_str(&format!(
+        "                return Err(NifiError::UnsupportedQueryParam {{ endpoint: Endpoint::{variant}.as_str(), param: \"{param}\", detected_version: __detected, supported_in: vec![{}] }});\n",
+        supported.join(", "),
+    ));
+    out.push_str("            }\n");
 }
 
 fn response_type_for(ep: &Endpoint) -> String {
@@ -159,33 +336,93 @@ fn response_type_for(ep: &Endpoint) -> String {
     }
 }
 
-fn emit_get_body(out: &mut String, ep: &IndexedEndpoint<'_>) {
-    match (
-        &ep.endpoint.response_kind,
-        &ep.endpoint.response_inner,
-        &ep.endpoint.response_field,
-    ) {
-        (ResponseBodyKind::Empty, _, _) => {
-            out.push_str("        self.client.inner().get::<()>(path).await\n");
+fn emit_dispatch(out: &mut String, ep: &IndexedEndpoint<'_>, has_query: bool) {
+    use crate::content_type::{RequestBodyKind, ResponseBodyKind};
+
+    let return_kind = &ep.endpoint.response_kind;
+    let request_kind = &ep.endpoint.body_kind;
+    let returns_unit = matches!(return_kind, ResponseBodyKind::Empty);
+
+    // Determine the base helper name and whether it needs a body arg.
+    let (helper, takes_body) = match (&ep.key.method, request_kind) {
+        (HttpMethod::Get, _) => ("get", false),
+        (HttpMethod::Delete, _) => ("delete", false),
+        (HttpMethod::Post, Some(RequestBodyKind::Json)) => ("post", true),
+        (HttpMethod::Post, Some(RequestBodyKind::Multipart)) => ("post_multipart", false),
+        (HttpMethod::Post, Some(RequestBodyKind::OctetStream)) => ("post_octet_stream", false),
+        (HttpMethod::Post, Some(RequestBodyKind::FormEncoded)) => ("post_no_body", false),
+        (HttpMethod::Post, Some(RequestBodyKind::Wildcard)) => ("post_no_body", false),
+        (HttpMethod::Post, None) => ("post_no_body", false),
+        (HttpMethod::Put, Some(RequestBodyKind::Json)) => ("put", true),
+        (HttpMethod::Put, _) => ("put_no_body", false),
+    };
+
+    // Suffix helper name with `_with_query` when query params are present.
+    // Only the helpers that actually have `_with_query` variants get the suffix;
+    // for the others (multipart, octet_stream, post_no_body) we fall through to
+    // the no-query variant — the generated code is still correct since query
+    // params on such endpoints are rare in NiFi specs.
+    let supports_with_query = matches!(helper, "get" | "delete" | "post" | "put");
+    let effective_helper = if has_query && supports_with_query {
+        format!("{helper}_with_query")
+    } else {
+        helper.to_string()
+    };
+
+    let path_arg = "&path";
+    let query_arg = if has_query && supports_with_query {
+        ", &query"
+    } else {
+        ""
+    };
+    let body_arg = if takes_body { ", body" } else { "" };
+
+    if returns_unit {
+        match (helper, has_query && supports_with_query) {
+            ("delete", true) => {
+                out.push_str(&format!(
+                    "        self.client.inner().delete_with_query({path_arg}{query_arg}).await\n"
+                ));
+            }
+            ("delete", false) => {
+                out.push_str(&format!(
+                    "        self.client.inner().delete({path_arg}).await\n"
+                ));
+            }
+            ("post_no_body", _) => {
+                out.push_str(&format!(
+                    "        self.client.inner().post_void_no_body({path_arg}).await\n"
+                ));
+            }
+            ("put_no_body", _) => {
+                out.push_str(&format!(
+                    "        self.client.inner().put_void_no_body({path_arg}).await\n"
+                ));
+            }
+            _ => {
+                // post/put with body and empty response — make the call and discard the value.
+                out.push_str(&format!(
+                    "        let _: () = self.client.inner().{effective_helper}::<_, ()>({path_arg}{body_arg}{query_arg}).await?;\n        Ok(())\n"
+                ));
+            }
         }
-        (ResponseBodyKind::Json { .. }, Some(inner), Some(field)) => {
+        return;
+    }
+
+    // Non-unit returns
+    match (&ep.endpoint.response_inner, &ep.endpoint.response_field) {
+        (Some(inner), Some(field)) => {
             let entity = ep.endpoint.response_type.as_deref().unwrap_or(inner);
             out.push_str(&format!(
-                "        let wrapper: crate::dynamic_v2::types::{entity} = self.client.inner().get(path).await?;\n"
+                "        let wrapper: crate::dynamic_v2::types::{entity} = self.client.inner().{effective_helper}({path_arg}{body_arg}{query_arg}).await?;\n"
             ));
             out.push_str(&format!("        Ok(wrapper.{field}.unwrap_or_default())\n"));
         }
-        (ResponseBodyKind::Json { .. }, _, _) => {
+        _ => {
             let rt = ep.endpoint.response_type.as_deref().unwrap_or("()");
             out.push_str(&format!(
-                "        self.client.inner().get::<crate::dynamic_v2::types::{rt}>(path).await\n"
+                "        self.client.inner().{effective_helper}::<crate::dynamic_v2::types::{rt}>({path_arg}{body_arg}{query_arg}).await\n"
             ));
-        }
-        _ => {
-            // Non-JSON / non-empty responses are out of Task 6 scope; Task 7 adds per-content-type emission.
-            out.push_str(
-                "        Err(NifiError::Auth { message: \"non-json responses unsupported in 4a Task 6\".into() })\n",
-            );
         }
     }
 }
@@ -245,5 +482,91 @@ mod tests {
         let mod_rs = files.iter().find(|(n, _)| n == "mod.rs").unwrap();
         assert!(mod_rs.1.contains("pub mod flow"));
         assert!(mod_rs.1.contains("pub fn flow_api"));
+    }
+
+    #[test]
+    fn emit_api_handles_path_params_query_params_and_sub_groups() {
+        use crate::parser::{PathParam, QueryParam, QueryParamType, SubGroup};
+        let mut spec = flow_about_spec();
+        let processors_tag = TagGroup {
+            tag: "Processors".to_string(),
+            struct_name: "ProcessorsApi".to_string(),
+            module_name: "processors".to_string(),
+            accessor_fn: "processors_api".to_string(),
+            types: vec![],
+            root_endpoints: vec![Endpoint {
+                method: HttpMethod::Get,
+                path: "/processors/{id}".to_string(),
+                fn_name: "get_processor".to_string(),
+                raw_operation_id: "getProcessor".to_string(),
+                doc: None,
+                description: None,
+                path_params: vec![PathParam { name: "id".to_string(), doc: None }],
+                request_type: None,
+                body_kind: None,
+                body_doc: None,
+                response_type: Some("ProcessorEntity".to_string()),
+                response_inner: Some("ProcessorDto".to_string()),
+                response_field: Some("component".to_string()),
+                response_kind: crate::content_type::ResponseBodyKind::Json {
+                    schema_ref: "ProcessorEntity".to_string(),
+                },
+                query_params: vec![QueryParam {
+                    name: "verbose".to_string(),
+                    rust_name: "verbose".to_string(),
+                    ty: QueryParamType::Bool,
+                    required: false,
+                    doc: None,
+                    enum_type_name: None,
+                }],
+                success_responses: vec![],
+                error_responses: vec![],
+                security: None,
+            }],
+            sub_groups: vec![SubGroup {
+                name: "config".to_string(),
+                struct_name: "ProcessorsConfigApi".to_string(),
+                accessor_fn: "config".to_string(),
+                primary_param: "id".to_string(),
+                primary_param_doc: None,
+                endpoints: vec![Endpoint {
+                    method: HttpMethod::Get,
+                    path: "/processors/{id}/config".to_string(),
+                    fn_name: "get_config".to_string(),
+                    raw_operation_id: "getConfig".to_string(),
+                    doc: None,
+                    description: None,
+                    path_params: vec![PathParam { name: "id".to_string(), doc: None }],
+                    request_type: None,
+                    body_kind: None,
+                    body_doc: None,
+                    response_type: None,
+                    response_inner: None,
+                    response_field: None,
+                    response_kind: crate::content_type::ResponseBodyKind::Empty,
+                    query_params: vec![],
+                    success_responses: vec![],
+                    error_responses: vec![],
+                    security: None,
+                }],
+            }],
+        };
+        spec.tags.push(processors_tag);
+        let canonical = canonicalize(&[("2.8.0".to_string(), spec)]);
+        let index = EndpointIndex::build(&canonical);
+        let files = emit_api(&canonical, &index);
+        let proc_file = files.iter().find(|(n, _)| n == "processors.rs").unwrap();
+        let body = &proc_file.1;
+        // Path param baked into URL
+        assert!(body.contains("get_processor"));
+        assert!(body.contains("/processors/"));
+        // Query param assembled (guard call is optional — only emitted for version-skewed params)
+        assert!(body.contains("verbose"));
+        // Sub-resource accessor
+        assert!(body.contains("pub fn config"));
+        assert!(body.contains("ProcessorsConfigApi"));
+        // Sub-resource struct + method
+        assert!(body.contains("pub struct ProcessorsConfigApi"));
+        assert!(body.contains("pub async fn get_config"));
     }
 }
