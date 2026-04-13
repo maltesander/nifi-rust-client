@@ -42,7 +42,7 @@ pub fn emit_dynamic(canonical: &CanonicalSpec) -> Vec<(PathBuf, String)> {
 
     // mod.rs that ties it all together. Declares the hand-written `client`
     // submodule that build.rs copies from src/dynamic/client.rs.
-    let mod_src = "pub mod api;\npub mod availability;\npub mod client;\npub mod strategy;\npub mod types;\n\npub use availability::{DetectedVersion, Endpoint};\npub use client::DynamicClient;\npub use strategy::VersionResolutionStrategy;\n";
+    let mod_src = "pub mod api;\npub mod availability;\npub mod client;\npub mod strategy;\npub mod types;\n\npub use availability::{DetectedVersion, Endpoint, LATEST_NIFI_VERSION};\npub use client::DynamicClient;\npub use strategy::VersionResolutionStrategy;\n";
     files.push((PathBuf::from("mod.rs"), mod_src.to_string()));
 
     files

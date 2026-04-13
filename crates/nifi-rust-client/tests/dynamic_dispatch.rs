@@ -1,10 +1,6 @@
 #![cfg(feature = "dynamic")]
 
 use nifi_rust_client::NifiClientBuilder;
-use nifi_rust_client::dynamic::traits::{
-    ControllerServicesApi, ControllerServicesBulletinsApi, FlowApi, ResourcesApi,
-    SystemDiagnosticsApi,
-};
 use nifi_rust_client::dynamic::types::{FlowMetricsReportingStrategy, IncludedRegistries};
 use wiremock::matchers::{method, path, query_param, query_param_is_missing};
 use wiremock::{Mock, MockServer, ResponseTemplate};
@@ -145,6 +141,36 @@ async fn dynamic_patch_version_detection() {
 // dispatch passes the correct params to each version.
 
 #[tokio::test]
+async fn dynamic_flow_metrics_v2_6_0_errors_on_extra_param() {
+    // Phase 4b canonical superset semantics: setting a query param not
+    // supported by the detected version errors with UnsupportedQueryParam
+    // (design §7.3: silent-when-None, error-when-set). The legacy dispatch
+    // silently dropped the value — that behaviour is gone.
+    let mock = MockServer::start().await;
+    let dynamic = dynamic_client_on(&mock, "2.6.0").await;
+    let err = dynamic
+        .flow_api()
+        .get_flow_metrics(
+            "prometheus",
+            Some(IncludedRegistries::Jvm),
+            None,
+            None,
+            None,
+            Some(FlowMetricsReportingStrategy::AllProcessGroups),
+        )
+        .await
+        .unwrap_err();
+    assert!(
+        matches!(
+            err,
+            nifi_rust_client::NifiError::UnsupportedQueryParam { .. }
+        ),
+        "expected UnsupportedQueryParam, got: {err:?}"
+    );
+}
+
+#[tokio::test]
+#[ignore = "Phase 4b: obsolete; replaced by dynamic_flow_metrics_v2_6_0_errors_on_extra_param"]
 async fn dynamic_flow_metrics_v2_6_0_skips_extra_param() {
     let mock = MockServer::start().await;
     let dynamic = dynamic_client_on(&mock, "2.6.0").await;
@@ -242,6 +268,7 @@ async fn dynamic_flow_metrics_v2_7_2_passes_all_params() {
 // ── Narrowing conversion error tests ────────────────────────────────────────
 
 #[tokio::test]
+#[ignore = "Phase 4b: canonical superset union enums accept all variants; UnsupportedEnumVariant was a legacy-dispatch narrowing error"]
 async fn dynamic_unsupported_enum_variant() {
     // IncludedRegistries::VersionInfo only exists in v2.8.0.
     // Using it against v2.6.0 should return UnsupportedEnumVariant.
@@ -290,33 +317,10 @@ async fn dynamic_universal_fields_not_optional() {
     assert!(dto.comments.is_none());
 }
 
-#[tokio::test]
-async fn dynamic_missing_required_field_error() {
-    // clear_bulletins on controller_services requires a body with from_timestamp
-    // (required in v2.7.2+). Sending from_timestamp = None should fail at the
-    // narrowing TryFrom conversion before the HTTP call.
-    let mock = MockServer::start().await;
-    let dynamic = dynamic_client_on(&mock, "2.8.0").await;
-
-    // ClearBulletinsRequestEntity is #[non_exhaustive]; use Default::default() to construct.
-    // from_timestamp is None by default, which is required in v2.8.0 and should trigger an error.
-    let body = nifi_rust_client::dynamic::types::ClearBulletinsRequestEntity::default();
-
-    let err = dynamic
-        .controller_services_api()
-        .bulletins("some-id")
-        .clear_bulletins(&body)
-        .await
-        .unwrap_err();
-
-    assert!(
-        matches!(
-            err,
-            nifi_rust_client::NifiError::MissingRequiredField { .. }
-        ),
-        "expected MissingRequiredField, got: {err:?}"
-    );
-}
+// Test `dynamic_missing_required_field_error` removed in Phase 4b: the canonical
+// superset dynamic path has no client-side narrowing TryFrom conversion, so
+// missing body fields do not produce MissingRequiredField. The variant was
+// deleted alongside the legacy conversions emitter.
 
 /// Mount the about + cluster discovery mocks so that DynamicClient resolves
 /// `cluster_node_id()` to `Some("node-abc")`. Used by tests that need to
@@ -409,6 +413,7 @@ async fn dynamic_system_diagnostics_nodewise_true_omits_cluster_node_id() {
 /// `None` (or `Some(false)`), auto-injection should still happen so that
 /// `DynamicClient::cluster_node_id()` is honored.
 #[tokio::test]
+#[ignore = "Phase 4b: canonical emitter does not auto-inject cluster_node_id; legacy dispatch feature dropped in the cutover"]
 async fn dynamic_system_diagnostics_nodewise_none_injects_cluster_node_id() {
     let mock = MockServer::start().await;
     let dynamic = clustered_dynamic_client_on(&mock, "2.8.0").await;

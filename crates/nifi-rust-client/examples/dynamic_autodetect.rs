@@ -13,7 +13,6 @@
 
 use nifi_rust_client::NifiClientBuilder;
 use nifi_rust_client::dynamic::VersionResolutionStrategy;
-use nifi_rust_client::dynamic::traits::FlowApi;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
