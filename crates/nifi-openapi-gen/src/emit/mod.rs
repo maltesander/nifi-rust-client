@@ -2,6 +2,7 @@ mod api;
 pub mod cli;
 pub(crate) mod common;
 pub mod dynamic;
+pub mod dynamic_v2;
 pub mod integration;
 mod tests;
 mod traits;
