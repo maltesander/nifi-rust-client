@@ -1010,7 +1010,6 @@ pub fn extract_error_message(body: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use wiremock::matchers::{body_json, method, path, query_param};
     use wiremock::{Mock, MockServer, ResponseTemplate};
 
