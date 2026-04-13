@@ -499,6 +499,51 @@ fn project_single_version_round_trip_byte_identical_emit_api() {
 }
 
 #[test]
+fn project_multi_version_round_trip_byte_identical_all_specs() {
+    let specs_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("specs");
+    let versions = ["2.6.0", "2.7.2", "2.8.0", "2.9.0"];
+
+    // Load each spec twice: once for the "original" baseline and once
+    // for the canonicalize input. Avoids mutating a single parse and
+    // comparing against itself.
+    let baselines: Vec<(String, ApiSpec)> = versions
+        .iter()
+        .map(|v| {
+            let path = specs_dir.join(v).join("nifi-api.json");
+            (v.to_string(), load(path.to_str().unwrap()))
+        })
+        .collect();
+    let inputs: Vec<(String, ApiSpec)> = versions
+        .iter()
+        .map(|v| {
+            let path = specs_dir.join(v).join("nifi-api.json");
+            (v.to_string(), load(path.to_str().unwrap()))
+        })
+        .collect();
+
+    let canonical = canonicalize(&inputs);
+
+    for (version, original) in &baselines {
+        let projected = project(&canonical, version)
+            .unwrap_or_else(|| panic!("project returned None for {version}"));
+
+        let original_api = emit_api(original);
+        let projected_api = emit_api(projected);
+        assert_eq!(
+            original_api, projected_api,
+            "multi-version emit_api diverged for {version}"
+        );
+
+        let original_types = emit_types(original);
+        let projected_types = emit_types(projected);
+        assert_eq!(
+            original_types, projected_types,
+            "multi-version emit_types diverged for {version}"
+        );
+    }
+}
+
+#[test]
 fn project_single_version_round_trip_byte_identical_emit_types() {
     let specs_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("specs");
     let versions = ["2.6.0", "2.7.2", "2.8.0", "2.9.0"];
