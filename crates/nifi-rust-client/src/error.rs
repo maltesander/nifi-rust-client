@@ -119,6 +119,24 @@ pub enum NifiError {
         version: String,
     },
 
+    /// A query parameter the caller set is not supported by the detected NiFi
+    /// server version. Emitted by dynamic mode (canonical superset codegen)
+    /// when a non-`None` query param exists only in newer versions than the
+    /// server reports via `/flow/about`.
+    #[snafu(display(
+        "Query parameter '{param}' on endpoint '{endpoint}' is not supported in NiFi {detected_version} (supported in: {supported_in:?})"
+    ))]
+    UnsupportedQueryParam {
+        /// `"METHOD /path"` form, e.g. `"GET /flow/metrics/{producer}"`.
+        endpoint: &'static str,
+        /// Wire name of the query parameter.
+        param: &'static str,
+        /// Version the server reported.
+        detected_version: String,
+        /// Versions in which this parameter is supported.
+        supported_in: Vec<String>,
+    },
+
     /// A required `Option<T>` field was absent when an end-user called
     /// [`RequireField::require`](crate::RequireField::require) or the
     /// [`require!`](crate::require) macro.
@@ -189,5 +207,20 @@ mod tests {
             err.to_string(),
             "required field `about.version` was not populated"
         );
+    }
+
+    #[test]
+    fn unsupported_query_param_variant_renders() {
+        let err = NifiError::UnsupportedQueryParam {
+            endpoint: "GET /flow/metrics/{producer}",
+            param: "registries",
+            detected_version: "2.6.0".to_string(),
+            supported_in: vec!["2.8.0".to_string(), "2.9.0".to_string()],
+        };
+        assert!(!err.is_retryable());
+        assert_eq!(err.status_code(), None);
+        let msg = err.to_string();
+        assert!(msg.contains("registries"));
+        assert!(msg.contains("2.6.0"));
     }
 }
