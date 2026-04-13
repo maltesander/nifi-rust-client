@@ -1,8 +1,8 @@
 use std::path::Path;
 
 use nifi_openapi_gen::canonical::{
-    canonicalize, CanonicalEndpoint, CanonicalField, CanonicalSpec, CanonicalType, EndpointKey,
-    VersionSet,
+    canonicalize, project, CanonicalEndpoint, CanonicalField, CanonicalSpec, CanonicalType,
+    EndpointKey, VersionSet,
 };
 use nifi_openapi_gen::content_type::ResponseBodyKind;
 use nifi_openapi_gen::parser::{load, ApiSpec, Endpoint, Field, FieldType, HttpMethod, TagGroup, TypeDef, TypeKind};
@@ -451,4 +451,25 @@ fn canonicalize_populates_per_version_specs() {
     assert_eq!(stored_26.all_types[0].fields.len(), 1);
     let stored_27 = canonical.per_version_specs.get("2.7.2").unwrap();
     assert_eq!(stored_27.all_types[0].fields.len(), 2);
+}
+
+#[test]
+fn project_returns_spec_for_known_version() {
+    let spec = make_spec_with_types(vec![make_type(
+        "AboutDto",
+        vec![make_field("title", FieldType::Str)],
+    )]);
+    let canonical = canonicalize(&[("2.8.0".to_string(), spec)]);
+
+    let projected = project(&canonical, "2.8.0").expect("version 2.8.0 present");
+    assert_eq!(projected.all_types.len(), 1);
+    assert_eq!(projected.all_types[0].name, "AboutDto");
+}
+
+#[test]
+fn project_returns_none_for_unknown_version() {
+    let spec = make_spec_with_types(vec![]);
+    let canonical = canonicalize(&[("2.8.0".to_string(), spec)]);
+
+    assert!(project(&canonical, "99.0.0").is_none());
 }

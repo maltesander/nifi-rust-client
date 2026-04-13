@@ -246,3 +246,20 @@ where
     }
     canonical
 }
+
+/// Project the canonical spec back to a single-version `ApiSpec`.
+///
+/// Returns a borrow of the `ApiSpec` stored at canonicalize time for the
+/// given version, or `None` if the version was not merged into this
+/// canonical spec. Callers feed the returned reference into the
+/// existing static emitters (`emit_api`, `emit_types`, `emit_static_traits`)
+/// and get the same output they'd get from loading the spec directly.
+///
+/// This function is the minimal viable single source of truth: the
+/// canonical spec holds the full per-version `ApiSpec` values verbatim,
+/// and projection is a map lookup. Future refinement may reconstruct
+/// the `ApiSpec` from fine-grained canonical data, but this version is
+/// enough to prove the round-trip is sound.
+pub fn project<'a>(canonical: &'a CanonicalSpec, version: &str) -> Option<&'a ApiSpec> {
+    canonical.per_version_specs.get(version)
+}
