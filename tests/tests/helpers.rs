@@ -168,7 +168,6 @@ pub async fn stop_processor(client: &NifiClient, proc_id: &str, version: i64) ->
 
 #[cfg(feature = "dynamic")]
 pub async fn dynamic_logged_in_client() -> nifi_rust_client::dynamic::DynamicClient {
-
     let client = NifiClientBuilder::new(&nifi_url())
         .expect("failed to parse NiFi URL")
         .danger_accept_invalid_certs(true)
@@ -445,7 +444,6 @@ async fn start_if_not_running(
     proc_id: &str,
     fallback_rev: i64,
 ) {
-
     let proc = client
         .processors_api()
         .get_processor(proc_id)
@@ -559,7 +557,6 @@ fn make_connection_entity(
 pub async fn get_test_processor_entity(
     client: &nifi_rust_client::dynamic::DynamicClient,
 ) -> nifi_rust_client::dynamic::types::ProcessorEntity {
-
     let ids = ensure_test_flow(client).await;
     client
         .processors_api()

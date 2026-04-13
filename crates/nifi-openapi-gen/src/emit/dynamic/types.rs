@@ -365,7 +365,9 @@ fn wrap_in_option(ty: &FieldType, rust_str: &str) -> String {
 mod tests {
     use super::*;
     use crate::canonical::canonicalize;
-    use crate::parser::{ApiSpec, Endpoint, Field, FieldType, HttpMethod, TagGroup, TypeDef, TypeKind};
+    use crate::parser::{
+        ApiSpec, Endpoint, Field, FieldType, HttpMethod, TagGroup, TypeDef, TypeKind,
+    };
 
     fn make_spec(types: Vec<TypeDef>) -> ApiSpec {
         ApiSpec {
