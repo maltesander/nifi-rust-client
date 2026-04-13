@@ -1,6 +1,7 @@
 use nifi_openapi_gen::canonical::{canonicalize, CanonicalSpec};
 use nifi_openapi_gen::content_type::ResponseBodyKind;
 use nifi_openapi_gen::non_additive_detector::{check, NonAdditiveChange};
+use nifi_openapi_gen::non_additive_overrides::{NonAdditiveOverride, NonAdditiveOverrides};
 use nifi_openapi_gen::parser::{ApiSpec, Endpoint, Field, FieldType, HttpMethod, TagGroup, TypeDef, TypeKind};
 
 #[test]
@@ -306,4 +307,43 @@ fn added_enum_variant_is_not_reported() {
     )]);
     let changes = check(&canonical, "2.9.0", &spec_b);
     assert!(changes.is_empty());
+}
+
+#[test]
+fn overrides_silence_matching_change() {
+    let change = NonAdditiveChange::FieldRemoved {
+        type_name: "AboutDto".to_string(),
+        field: "build_tag".to_string(),
+        previous_versions: vec!["2.6.0".to_string()],
+        missing_in: "2.7.2".to_string(),
+    };
+
+    let empty = NonAdditiveOverrides::empty();
+    assert!(!empty.allows(&change));
+
+    let mut overrides = NonAdditiveOverrides::empty();
+    overrides.allow(NonAdditiveOverride::FieldRemoved {
+        type_name: "AboutDto".to_string(),
+        field: "build_tag".to_string(),
+        reason: "field was deprecated in 2.7 and server stopped sending it".to_string(),
+    });
+    assert!(overrides.allows(&change));
+}
+
+#[test]
+fn overrides_do_not_match_different_location() {
+    let change = NonAdditiveChange::FieldRemoved {
+        type_name: "AboutDto".to_string(),
+        field: "build_tag".to_string(),
+        previous_versions: vec!["2.6.0".to_string()],
+        missing_in: "2.7.2".to_string(),
+    };
+
+    let mut overrides = NonAdditiveOverrides::empty();
+    overrides.allow(NonAdditiveOverride::FieldRemoved {
+        type_name: "AboutDto".to_string(),
+        field: "some_other_field".to_string(),
+        reason: "unrelated".to_string(),
+    });
+    assert!(!overrides.allows(&change));
 }
