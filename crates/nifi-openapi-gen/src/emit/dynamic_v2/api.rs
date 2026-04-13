@@ -8,7 +8,6 @@
 use std::collections::BTreeMap;
 
 use crate::canonical::CanonicalSpec;
-use crate::content_type::ResponseBodyKind;
 use crate::parser::{Endpoint, HttpMethod};
 use crate::util::escape_keyword;
 

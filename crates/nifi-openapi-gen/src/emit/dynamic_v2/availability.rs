@@ -100,7 +100,7 @@ pub fn emit_availability(canonical: &CanonicalSpec, index: &EndpointIndex<'_>) -
          pub fn query_param_supported(endpoint: Endpoint, param: &str, version: &str) -> bool {\n\
              for ((ep, p), versions) in QUERY_PARAM_AVAILABILITY {\n\
                  if *ep == endpoint && *p == param {\n\
-                     return versions.iter().any(|v| *v == version);\n\
+                     return versions.contains(&version);\n\
                  }\n\
              }\n\
              true\n\

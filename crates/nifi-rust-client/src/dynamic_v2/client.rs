@@ -101,7 +101,7 @@ impl DynamicClientV2 {
         super::availability::ENDPOINT_AVAILABILITY
             .iter()
             .find(|(e, _)| *e == endpoint)
-            .map(|(_, versions)| versions.iter().any(|v| *v == version))
+            .map(|(_, versions)| versions.contains(&version))
             .unwrap_or(false)
     }
 }
