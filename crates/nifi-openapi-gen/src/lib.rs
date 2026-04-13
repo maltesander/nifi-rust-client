@@ -29,6 +29,8 @@ pub mod naming;
 #[doc(hidden)]
 pub mod naming_overrides;
 #[doc(hidden)]
+pub mod non_additive_detector;
+#[doc(hidden)]
 pub mod parser;
 #[doc(hidden)]
 pub mod parser_strict;
