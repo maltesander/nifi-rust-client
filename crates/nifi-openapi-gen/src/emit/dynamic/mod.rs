@@ -1,9 +1,7 @@
-//! Canonical-superset dynamic-mode emitter (Phase 4a parallel build).
+//! Canonical-superset dynamic-mode emitter.
 //!
-//! Produces the new dispatch-free dynamic surface into `$OUT_DIR/dynamic_v2/`.
-//! Runs alongside the legacy dispatch emitter — both are written on every
-//! build with the `dynamic` Cargo feature active. Phase 4b deletes the legacy
-//! emitter and renames `dynamic_v2` → `dynamic`.
+//! Produces the dispatch-free dynamic surface into `$OUT_DIR/dynamic/`.
+//! This is the canonical emitter after Phase 4b renamed `dynamic` → `dynamic`.
 
 mod api;
 mod availability;
@@ -19,12 +17,12 @@ use std::path::PathBuf;
 
 use crate::canonical::CanonicalSpec;
 
-/// Emit every file that lives under `$OUT_DIR/dynamic_v2/`.
+/// Emit every file that lives under `$OUT_DIR/dynamic/`.
 ///
-/// Returns relative paths under `dynamic_v2/` and their contents. The caller
-/// (build_api.rs) is responsible for prepending `$OUT_DIR/dynamic_v2/` and
+/// Returns relative paths under `dynamic/` and their contents. The caller
+/// (build_api.rs) is responsible for prepending `$OUT_DIR/dynamic/` and
 /// writing the bytes.
-pub fn emit_dynamic_v2(canonical: &CanonicalSpec) -> Vec<(PathBuf, String)> {
+pub fn emit_dynamic(canonical: &CanonicalSpec) -> Vec<(PathBuf, String)> {
     let index = index::EndpointIndex::build(canonical);
     let mut files: Vec<(PathBuf, String)> = Vec::new();
 
@@ -43,8 +41,8 @@ pub fn emit_dynamic_v2(canonical: &CanonicalSpec) -> Vec<(PathBuf, String)> {
     }
 
     // mod.rs that ties it all together. Declares the hand-written `client`
-    // submodule that build.rs copies from src/dynamic_v2/client.rs.
-    let mod_src = "pub mod api;\npub mod types;\npub mod availability;\npub mod client;\n\npub use client::DynamicClientV2;\npub use availability::Endpoint;\n";
+    // submodule that build.rs copies from src/dynamic/client.rs.
+    let mod_src = "pub mod api;\npub mod availability;\npub mod client;\npub mod strategy;\npub mod types;\n\npub use availability::{DetectedVersion, Endpoint};\npub use client::DynamicClient;\npub use strategy::VersionResolutionStrategy;\n";
     files.push((PathBuf::from("mod.rs"), mod_src.to_string()));
 
     files
@@ -91,9 +89,9 @@ mod tests {
     }
 
     #[test]
-    fn emit_dynamic_v2_produces_expected_layout() {
+    fn emit_dynamic_produces_expected_layout() {
         let canonical = canonicalize(&[("2.8.0".to_string(), minimal())]);
-        let files = emit_dynamic_v2(&canonical);
+        let files = emit_dynamic(&canonical);
         let names: Vec<String> = files.iter().map(|(p, _)| p.display().to_string()).collect();
         assert!(names.contains(&"availability.rs".to_string()));
         assert!(names.iter().any(|n| n.starts_with("types/")));

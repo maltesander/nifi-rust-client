@@ -1,4 +1,4 @@
-//! Emitter for `dynamic_v2/availability.rs`.
+//! Emitter for `dynamic/availability.rs`.
 
 use crate::canonical::CanonicalSpec;
 

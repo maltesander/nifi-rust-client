@@ -243,9 +243,9 @@ fn parse_specs(specs_dir: &Path, versions: &[String]) -> Vec<(String, ApiSpec)> 
 /// Generate the dynamic module via the canonical emitter.
 fn generate_dynamic(out_dir: &Path, all_parsed: &[(String, ApiSpec)]) {
     let canonical = crate::canonical::canonicalize(all_parsed);
-    let dynamic_v2_dir = out_dir.join("dynamic_v2");
-    for (rel_path, content) in crate::emit_dynamic_v2(&canonical) {
-        write_generated(&dynamic_v2_dir.join(&rel_path), &with_header(&content));
+    let dynamic_dir = out_dir.join("dynamic");
+    for (rel_path, content) in crate::emit_dynamic(&canonical) {
+        write_generated(&dynamic_dir.join(&rel_path), &with_header(&content));
     }
 }
 
@@ -326,27 +326,13 @@ fn generate_lib_rs_fragment(versions: &[String], out_dir: &Path, dynamic: bool) 
         ));
     }
 
-    // ── dynamic stub — mounts `crate::dynamic::strategy` so that the locked
-    // hand-written `src/dynamic_v2/client.rs` can reference it by path.
-    // Task 6 will eliminate this stub when it renames dynamic_v2 → dynamic
-    // and moves strategy.rs into the canonical module.
+    // ── dynamic (canonical) — public, gated on `dynamic` feature.
     if dynamic && versions.len() > 1 {
         out.push_str(&format!(
             "#[cfg(feature = \"dynamic\")]\n\
              #[path = \"{out_dir_str}/dynamic/mod.rs\"]\n\
              #[allow(missing_docs)]\n\
              pub mod dynamic;\n",
-        ));
-    }
-
-    // ── dynamic_v2 (canonical) — doc-hidden, gated on `dynamic` feature.
-    // Task 6 will rename this to `dynamic` and make it public.
-    if dynamic && versions.len() > 1 {
-        out.push_str(&format!(
-            "#[cfg(feature = \"dynamic\")]\n\
-             #[path = \"{out_dir_str}/dynamic_v2/mod.rs\"]\n\
-             #[doc(hidden)]\n\
-             pub mod dynamic_v2;\n",
         ));
     }
 
@@ -439,14 +425,11 @@ mod tests {
 
         assert!(fragment.contains("pub mod v2_6_0;"));
         assert!(fragment.contains("pub mod v2_8_0;"));
-        // A minimal `pub mod dynamic;` stub is kept so that the locked
-        // `src/dynamic_v2/client.rs` can reference `crate::dynamic::strategy`.
-        // Task 6 will eliminate it when dynamic_v2 is renamed to dynamic.
+        // The canonical emitter output is under dynamic/.
         assert!(fragment.contains("pub mod dynamic;"));
         assert!(fragment.contains("#[path = \"/tmp/test_out/dynamic/mod.rs\"]"));
-        // The canonical emitter output is under dynamic_v2.
-        assert!(fragment.contains("pub mod dynamic_v2;"));
-        assert!(fragment.contains("#[path = \"/tmp/test_out/dynamic_v2/mod.rs\"]"));
+        // dynamic_v2 no longer exists after Task 6 rename.
+        assert!(!fragment.contains("dynamic_v2"));
     }
 
     #[test]

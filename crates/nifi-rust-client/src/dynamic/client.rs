@@ -1,4 +1,4 @@
-//! `DynamicClientV2` — canonical-superset dynamic client.
+//! `DynamicClient` — canonical-superset dynamic client.
 //!
 //! Holds a `NifiClient`, a `VersionResolutionStrategy`, and a once-detected
 //! version. Every endpoint method on the generated API structs starts with
@@ -7,18 +7,18 @@
 
 use crate::{NifiClient, NifiError};
 
-/// `DynamicClientV2` — the new canonical dispatch path. Reachable only via
-/// the `#[doc(hidden)]` `dynamic_v2` re-export in Phase 4a.
-pub struct DynamicClientV2 {
+/// `DynamicClient` — the new canonical dispatch path. Reachable only via
+/// the `#[doc(hidden)]` `dynamic` re-export in Phase 4a.
+pub struct DynamicClient {
     client: NifiClient,
     version: tokio::sync::OnceCell<super::availability::DetectedVersion>,
     strategy: crate::dynamic::strategy::VersionResolutionStrategy,
     cluster_node_id: tokio::sync::OnceCell<Option<String>>,
 }
 
-impl std::fmt::Debug for DynamicClientV2 {
+impl std::fmt::Debug for DynamicClient {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("DynamicClientV2")
+        f.debug_struct("DynamicClient")
             .field("version", &self.version.get())
             .field("strategy", &self.strategy)
             .field("cluster_node_id", &self.cluster_node_id.get())
@@ -69,7 +69,7 @@ struct ClusterNode {
     status: Option<String>,
 }
 
-impl DynamicClientV2 {
+impl DynamicClient {
     /// Wrap a `NifiClient`. Uses the default `VersionResolutionStrategy`.
     /// Version detection happens lazily on the first call to a method that
     /// consults `require_endpoint`.
@@ -129,22 +129,21 @@ impl DynamicClientV2 {
     }
 
     /// Detect the NiFi server version via `GET /flow/about`. Idempotent —
-    /// subsequent calls return the cached result.
-    ///
-    /// # TODO(phase-4b-task-6)
-    /// After the `dynamic_v2` → `dynamic` rename, wire this to
-    /// `crate::dynamic::strategy::resolve_version` so all three resolution
-    /// strategies (Strict/Closest/Latest) work. For now, Strict-only because
-    /// `strategy::resolve_version` internally uses `super::DetectedVersion`
-    /// which resolves to the LEGACY generated enum, not the canonical one here.
-    /// Task 6 replaces this body once the type paths are compatible.
+    /// subsequent calls return the cached result. Honors the configured
+    /// [`VersionResolutionStrategy`](crate::dynamic::strategy::VersionResolutionStrategy).
     pub async fn detect_version(
         &self,
     ) -> Result<super::availability::DetectedVersion, NifiError> {
+        let strategy = self.strategy;
         self.version
             .get_or_try_init(|| async {
                 let resp: AboutResponse = self.client.get("/flow/about").await?;
-                super::availability::version_from_str(&resp.about.version)
+                crate::dynamic::strategy::resolve_version(
+                    &resp.about.version,
+                    strategy,
+                    super::availability::version_from_str,
+                    super::availability::SUPPORTED_VERSIONS,
+                )
             })
             .await
             .copied()
@@ -236,7 +235,7 @@ impl DynamicClientV2 {
     }
 }
 
-impl std::ops::Deref for DynamicClientV2 {
+impl std::ops::Deref for DynamicClient {
     type Target = NifiClient;
 
     fn deref(&self) -> &NifiClient {

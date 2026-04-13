@@ -50,7 +50,7 @@ pub mod util;
 // and `specs_dir()`.
 
 #[doc(hidden)]
-pub use emit::dynamic_v2::{EndpointIndex, emit_dynamic_v2};
+pub use emit::dynamic::{EndpointIndex, emit_dynamic};
 #[doc(hidden)]
 pub use emit::{
     collect_endpoint_metadata, collect_enum_metadata, collect_query_param_metadata, emit_api,

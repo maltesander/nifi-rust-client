@@ -1,4 +1,4 @@
-//! Dynamic types emitter for `dynamic_v2/types/*.rs`.
+//! Dynamic types emitter for `dynamic/types/*.rs`.
 //!
 //! Inlined from the legacy `emit/dynamic/types.rs` as part of Phase 4b, making
 //! this module fully self-contained. The public entry point `emit_types` accepts
