@@ -418,3 +418,9 @@ fn api_spec_is_cloneable() {
     assert_eq!(cloned.all_types.len(), 0);
     assert_eq!(cloned.tags[0].tag, "Flow");
 }
+
+#[test]
+fn canonical_spec_new_has_empty_per_version_specs() {
+    let canonical = CanonicalSpec::new();
+    assert!(canonical.per_version_specs.is_empty());
+}

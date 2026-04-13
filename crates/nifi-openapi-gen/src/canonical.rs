@@ -106,6 +106,11 @@ pub struct CanonicalType {
 pub struct CanonicalSpec {
     pub endpoints: BTreeMap<EndpointKey, CanonicalEndpoint>,
     pub types: BTreeMap<String, CanonicalType>,
+    /// Per-version full `ApiSpec` values, stored by cloning each input
+    /// passed to [`canonicalize`]. Consumed by [`project`] to reconstruct
+    /// the exact per-version view needed by the static emitters. Not
+    /// used by the non-additive detector.
+    pub per_version_specs: BTreeMap<String, ApiSpec>,
 }
 
 impl CanonicalSpec {
