@@ -525,3 +525,44 @@ fn canonicalize_or_panic_respects_overrides() {
         .fields
         .contains_key("build_tag"));
 }
+
+#[test]
+fn canonicalize_or_panic_populates_per_version_specs() {
+    use nifi_openapi_gen::canonical::{canonicalize_or_panic, project};
+    use nifi_openapi_gen::non_additive_overrides::NonAdditiveOverrides;
+
+    let spec_a = make_spec_with_types(vec![make_type(
+        "AboutDto",
+        vec![make_field("title", FieldType::Str)],
+    )]);
+    let spec_b = make_spec_with_types(vec![make_type(
+        "AboutDto",
+        vec![
+            make_field("title", FieldType::Str),
+            make_field("version", FieldType::Str),
+        ],
+    )]);
+
+    let canonical = canonicalize_or_panic(
+        &[
+            ("2.6.0".to_string(), spec_a),
+            ("2.7.2".to_string(), spec_b),
+        ],
+        |v| format!("specs/{v}/nifi-api.json"),
+        &NonAdditiveOverrides::empty(),
+    );
+
+    assert_eq!(canonical.per_version_specs.len(), 2);
+    assert!(project(&canonical, "2.6.0").is_some());
+    assert!(project(&canonical, "2.7.2").is_some());
+
+    // Per-version field counts confirm the stored specs are distinct, not shared.
+    assert_eq!(
+        project(&canonical, "2.6.0").unwrap().all_types[0].fields.len(),
+        1
+    );
+    assert_eq!(
+        project(&canonical, "2.7.2").unwrap().all_types[0].fields.len(),
+        2
+    );
+}
