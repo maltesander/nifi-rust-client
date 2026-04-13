@@ -85,7 +85,7 @@ let diag = client.systemdiagnostics()
 { "rust-analyzer.cargo.features": ["dynamic"] }
 ```
 
-This switches rust-analyzer to analyze dynamic-mode code paths. To switch back to static mode, replace with `["nifi-2-8-0"]` (or your target version).
+This switches rust-analyzer to analyze dynamic-mode code paths. To switch back to static mode, replace with `["nifi-2-9-0"]` (or your target version).
 
 API groups are reached via per-tag accessors on `DynamicClient` that return concrete resource structs (no traits — method dispatch is inherent):
 
