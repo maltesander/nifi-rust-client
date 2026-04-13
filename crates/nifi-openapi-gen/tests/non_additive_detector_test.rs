@@ -200,3 +200,54 @@ fn type_removed_suppresses_field_removed_for_same_type() {
     assert_eq!(changes.len(), 1);
     assert!(matches!(changes[0], NonAdditiveChange::TypeRemoved { .. }));
 }
+
+#[test]
+fn detects_field_type_changed_in_next_version() {
+    let spec_a = make_spec_with_types(vec![make_type(
+        "AboutDto",
+        vec![make_field("build_revision", FieldType::Str)],
+    )]);
+    let canonical = canonicalize(&[("2.6.0".to_string(), spec_a)]);
+
+    let spec_b = make_spec_with_types(vec![make_type(
+        "AboutDto",
+        vec![make_field("build_revision", FieldType::I64)],
+    )]);
+    let changes = check(&canonical, "2.7.2", &spec_b);
+
+    assert_eq!(changes.len(), 1);
+    match &changes[0] {
+        NonAdditiveChange::FieldTypeChanged {
+            type_name,
+            field,
+            from,
+            to,
+            previous_versions,
+            changed_in,
+        } => {
+            assert_eq!(type_name, "AboutDto");
+            assert_eq!(field, "build_revision");
+            assert_eq!(*from, FieldType::Str);
+            assert_eq!(*to, FieldType::I64);
+            assert_eq!(previous_versions, &vec!["2.6.0".to_string()]);
+            assert_eq!(changed_in, "2.7.2");
+        }
+        other => panic!("expected FieldTypeChanged, got {other:?}"),
+    }
+}
+
+#[test]
+fn same_field_type_is_not_reported() {
+    let spec_a = make_spec_with_types(vec![make_type(
+        "AboutDto",
+        vec![make_field("title", FieldType::Str)],
+    )]);
+    let canonical = canonicalize(&[("2.6.0".to_string(), spec_a)]);
+
+    let spec_b = make_spec_with_types(vec![make_type(
+        "AboutDto",
+        vec![make_field("title", FieldType::Str)],
+    )]);
+    let changes = check(&canonical, "2.7.2", &spec_b);
+    assert!(changes.is_empty());
+}
