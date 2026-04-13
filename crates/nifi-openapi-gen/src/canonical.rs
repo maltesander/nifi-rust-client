@@ -174,4 +174,17 @@ fn merge_type(canonical: &mut CanonicalSpec, version: &str, type_def: &TypeDef) 
                 versions: VersionSet::with(version),
             });
     }
+
+    if let TypeKind::StringEnum(variants) = &type_def.kind {
+        for variant in variants {
+            entry
+                .variants
+                .entry(variant.clone())
+                .and_modify(|v| v.versions.insert(version))
+                .or_insert_with(|| CanonicalVariant {
+                    wire_value: variant.clone(),
+                    versions: VersionSet::with(version),
+                });
+        }
+    }
 }

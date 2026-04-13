@@ -278,3 +278,38 @@ fn canonicalize_new_field_in_later_version_has_later_version_only() {
     assert_eq!(t.fields.get("title").unwrap().versions.to_vec(), vec!["2.8.0", "2.9.0"]);
     assert_eq!(t.fields.get("version").unwrap().versions.to_vec(), vec!["2.9.0"]);
 }
+
+fn make_enum_type(name: &str, variants: Vec<&str>) -> TypeDef {
+    TypeDef {
+        name: name.to_string(),
+        kind: TypeKind::StringEnum(variants.into_iter().map(String::from).collect()),
+        fields: vec![],
+        doc: None,
+    }
+}
+
+#[test]
+fn canonicalize_enum_variants_union_across_versions() {
+    let spec_a = make_spec_with_types(vec![make_enum_type(
+        "ComponentType",
+        vec!["PROCESSOR", "CONTROLLER_SERVICE"],
+    )]);
+    let spec_b = make_spec_with_types(vec![make_enum_type(
+        "ComponentType",
+        vec!["PROCESSOR", "CONTROLLER_SERVICE", "CONNECTOR"],
+    )]);
+    let canonical = canonicalize(&[
+        ("2.8.0".to_string(), spec_a),
+        ("2.9.0".to_string(), spec_b),
+    ]);
+    let t = canonical.types.get("ComponentType").unwrap();
+    assert_eq!(t.variants.len(), 3);
+    assert_eq!(
+        t.variants.get("PROCESSOR").unwrap().versions.to_vec(),
+        vec!["2.8.0", "2.9.0"]
+    );
+    assert_eq!(
+        t.variants.get("CONNECTOR").unwrap().versions.to_vec(),
+        vec!["2.9.0"]
+    );
+}
