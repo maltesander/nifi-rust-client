@@ -398,3 +398,23 @@ fn canonicalize_real_spec_chain_monotonic_growth() {
         assert!(!connectors_ep.versions.contains("2.6.0"));
     }
 }
+
+#[test]
+fn api_spec_is_cloneable() {
+    let original = ApiSpec {
+        tags: vec![TagGroup {
+            tag: "Flow".to_string(),
+            struct_name: "FlowApi".to_string(),
+            module_name: "flow".to_string(),
+            accessor_fn: "flow_api".to_string(),
+            types: vec![],
+            root_endpoints: vec![],
+            sub_groups: vec![],
+        }],
+        all_types: vec![],
+    };
+    let cloned = original.clone();
+    assert_eq!(cloned.tags.len(), 1);
+    assert_eq!(cloned.all_types.len(), 0);
+    assert_eq!(cloned.tags[0].tag, "Flow");
+}

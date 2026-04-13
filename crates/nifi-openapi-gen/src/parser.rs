@@ -3,12 +3,16 @@ use std::collections::HashMap;
 
 pub use crate::content_type::RequestBodyKind;
 
+
+#[derive(Debug, Clone)]
 pub struct ApiSpec {
     pub tags: Vec<TagGroup>,
     /// Flat map of ALL schema definitions by name (for $ref resolution).
     pub all_types: Vec<TypeDef>,
 }
 
+
+#[derive(Debug, Clone)]
 pub struct TagGroup {
     pub tag: String,
     pub struct_name: String, // e.g. "FlowApi"
