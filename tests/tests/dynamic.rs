@@ -2,10 +2,6 @@
 
 mod helpers;
 
-use nifi_rust_client::dynamic::traits::{
-    FlowApi, ProcessGroupsApi, ResourcesApi, SystemDiagnosticsApi,
-};
-
 use helpers::dynamic_logged_in_client;
 
 #[tokio::test]

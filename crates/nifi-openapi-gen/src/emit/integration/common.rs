@@ -48,17 +48,16 @@ pub(super) fn default_path_param_value(param_name: &str) -> String {
     }
 }
 
-/// Produce use statements for the traits needed to call the given struct's methods.
-/// For sub-group endpoints, imports both the root trait (for the accessor) and the
-/// sub-resource trait (for the leaf method).
-pub(super) fn trait_use_stmt(struct_name: &str, sub_group: Option<&SubGroup>) -> String {
-    match sub_group {
-        Some(sg) => format!(
-            "use nifi_rust_client::dynamic::traits::{{{struct_name}, {sub_trait}}};",
-            sub_trait = sg.struct_name
-        ),
-        None => format!("use nifi_rust_client::dynamic::traits::{struct_name};"),
-    }
+/// Produce `use` statements needed to call the given struct's methods.
+///
+/// The canonical dynamic path (Phase 4b+) has no traits — the concrete
+/// struct is returned directly by `client.{accessor}()` and its methods
+/// are inherent, not trait methods. So neither the root nor sub-group
+/// struct needs to be imported. This function returns an empty string;
+/// it exists so call sites stay consistent with the legacy expectation
+/// that an import line precedes the call.
+pub(super) fn trait_use_stmt(_struct_name: &str, _sub_group: Option<&SubGroup>) -> String {
+    String::new()
 }
 
 /// Capitalize the first character of a string.
@@ -107,15 +106,8 @@ mod tests {
     }
 
     #[test]
-    fn trait_use_stmt_root() {
-        assert_eq!(
-            trait_use_stmt("FlowApi", None),
-            "use nifi_rust_client::dynamic::traits::FlowApi;"
-        );
-    }
-
-    #[test]
-    fn trait_use_stmt_sub_group() {
+    fn trait_use_stmt_canonical_emits_nothing() {
+        assert_eq!(trait_use_stmt("FlowApi", None), "");
         let sg = SubGroup {
             name: "metrics".to_string(),
             struct_name: "FlowMetricsApi".to_string(),
@@ -124,10 +116,7 @@ mod tests {
             primary_param_doc: None,
             endpoints: vec![],
         };
-        assert_eq!(
-            trait_use_stmt("FlowApi", Some(&sg)),
-            "use nifi_rust_client::dynamic::traits::{FlowApi, FlowMetricsApi};"
-        );
+        assert_eq!(trait_use_stmt("FlowApi", Some(&sg)), "");
     }
 
     #[test]

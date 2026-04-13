@@ -39,10 +39,11 @@ crates/
         auth.rs           # Hand-written: AuthProvider trait and impls
         retry.rs          # Hand-written: retry logic
       dynamic/
-        strategy.rs       # Hand-written: VersionResolutionStrategy
+        strategy.rs       # Hand-written: VersionResolutionStrategy + resolve_version
+        client.rs         # Hand-written: DynamicClient (copied into $OUT_DIR/dynamic/ at build time)
       # Generated at build time into $OUT_DIR (not tracked in git):
       # vx_y_z/           — per-version api/, types/, traits/
-      # dynamic/          — dispatch, conversions, impls, traits, types
+      # dynamic/          — canonical api/, types/, availability.rs, client.rs, mod.rs
     tests/
       *.rs                        # Hand-written wiremock tests per API group
 tests/                    # Integration test crate (not published, needs Docker)
@@ -214,17 +215,13 @@ Errors use `snafu`. All variants are in `crate::error::NifiError`.
 Use `#[snafu(display(...))]` and `.context(SomeSnafu)` at call sites.
 Do not use `unwrap` or `expect` in non-test code — clippy denies it.
 
-Two distinct "missing field" variants exist:
+Only one "missing field" variant exists:
 
-- `NifiError::MissingRequiredField { field, type_name, version }` — emitted
-  by generated dynamic-mode conversion code when the server response omits
-  a field the target type requires. Carries version/type context.
 - `NifiError::MissingField { path }` — emitted by end-user code calling
   `RequireField::require` or the `require!` macro on an `Option<T>` that
   turned out to be `None`. Carries only a dotted path string.
 
-Neither variant is retryable. Do not merge or rename either; they serve
-different layers.
+This variant is not retryable.
 
 ### Strict parsing & content-type allow-list
 
@@ -386,23 +383,35 @@ The `dynamic` feature compiles all supported versions and enables runtime versio
 nifi-rust-client = { version = "...", features = ["dynamic"] }
 ```
 
-The `DynamicClient` lazily detects the NiFi version via the `/flow/about` endpoint and dispatches
-API calls to the correct version's generated code. Version detection happens automatically
-on `login()`, or can be triggered explicitly via `detect_version()`. Returns common union
-types with all fields as `Option<T>`.
+The `DynamicClient` lazily detects the NiFi version via the `/flow/about` endpoint. Unlike the
+legacy dispatch model that routed to per-version generated code, the canonical-superset model
+emits a single set of types (one struct per DTO, fields `Option<T>` where any version omits them)
+and a single set of API methods that start with a runtime `require_endpoint(Endpoint::FOO).await?`
+availability check. Version detection happens automatically on `login()`, or can be triggered
+explicitly via `detect_version()`.
 
-The dispatch layer is trait-based with a hierarchical sub-resource pattern matching the static client:
+The canonical dynamic emitter lives at
+`crates/nifi-openapi-gen/src/emit/dynamic/{mod,api,types,availability,index}.rs`. It consumes
+`CanonicalSpec` (built by `canonicalize_or_panic` over all spec versions) and emits:
 
-- **`dynamic::traits`** — public traits (e.g., `FlowApi`, `ProcessorsApi`) plus sub-resource traits (e.g., `ControllerServicesConfigApi`, `ProcessorsRunStatusApi`) that callers import to use dispatch enum methods or write generic code
-- **`dynamic::dispatch`** — dispatch enums (e.g., `FlowApiDispatch`, `ControllerServicesConfigApiDispatch`) that implement the traits and route to per-version code
-- **`dynamic::impls`** — per-version implementations generated from each spec
-- **`vx_y_z::traits`** — per-version static traits mirroring the same hierarchy, enabling mockability and generic code for static-mode users
+- `$OUT_DIR/dynamic/api/<tag>.rs` — one `FlowApi`-style concrete struct per tag, with inherent
+  methods that route through `DynamicClient::inner()` (no traits, no dispatch enums).
+- `$OUT_DIR/dynamic/types/<tag>.rs` — union DTOs. Fields present in every supporting version
+  stay at their natural type (String, i32, etc.); fields that only exist in some versions are
+  `Option<T>`. String enums emit the union of all versions' variants.
+- `$OUT_DIR/dynamic/availability.rs` — `pub enum Endpoint` (one variant per canonical endpoint)
+  plus `ENDPOINT_AVAILABILITY` and `QUERY_PARAM_AVAILABILITY` const tables consulted at runtime.
+- `$OUT_DIR/dynamic/mod.rs` — orchestrator that declares `api`, `types`, `availability`,
+  `strategy` (hand-written), and `client` (hand-written), and re-exports `DynamicClient`,
+  `VersionResolutionStrategy`, `Endpoint`, `DetectedVersion`, and `LATEST_NIFI_VERSION`.
+
+The hand-written `DynamicClient` lives at `crates/nifi-rust-client/src/dynamic/client.rs`.
+`build.rs` copies it (alongside `strategy.rs`) into `$OUT_DIR/dynamic/` so the generated
+`mod.rs` can declare it via `pub mod client;`.
 
 Both static and dynamic modes use the same sub-resource builder pattern for path parameters:
 
 ```rust
-use nifi_rust_client::dynamic::traits::{FlowApi, ControllerServicesApi, ControllerServicesConfigApi};
-
 let client = NifiClientBuilder::new("https://nifi:8443")?
     .build_dynamic()?;
 // login() authenticates AND auto-detects the NiFi version.
@@ -418,7 +427,10 @@ let analysis = client.controller_services_api()
     .await?;
 ```
 
-**Forward compatibility:** All dynamic structs and enums carry `#[non_exhaustive]`. All fields are `Option<T>`. Trait methods for endpoints that don't exist in a given version have default impls returning `NifiError::UnsupportedEndpoint`.
+**Forward compatibility:** All dynamic structs and enums carry `#[non_exhaustive]`. Fields in
+some versions only are `Option<T>`. Endpoints not available on the detected version return
+`NifiError::UnsupportedEndpoint`; query parameters set to a non-`None` value on an unsupporting
+version return `NifiError::UnsupportedQueryParam` (design §7.3 "silent-when-None / error-when-set").
 
 To extract values from dynamic-mode `Option<T>` fields, use
 `RequireField::require` or the `require!` macro from the crate root
@@ -449,40 +461,6 @@ Implementation split:
 - `DynamicClient` integration — generated; `detect_version()` calls `strategy.resolve()` after fetching `/flow/about`.
 
 Configure via `NifiClientBuilder::version_strategy(VersionResolutionStrategy)` before calling `.build_dynamic()`.
-
-### Canonical-superset dynamic mode (Phase 4a — parallel build)
-
-A second dynamic implementation is generated alongside the legacy dispatch
-layer when `--features dynamic` is active. It lives at:
-
-- `$OUT_DIR/dynamic_v2/` — generated code (availability.rs, api/, types/, mod.rs, client.rs)
-- `crates/nifi-rust-client/src/dynamic_v2/client.rs` — hand-written
-  `DynamicClientV2`, copied into `$OUT_DIR/dynamic_v2/` at build time by
-  `crates/nifi-rust-client/build.rs`
-- `nifi_rust_client::dynamic_v2::*` — `#[doc(hidden)]` public module reachable
-  from tests and downstream crates with the `dynamic` feature on
-
-The new code consumes `CanonicalSpec` (built by `canonicalize_or_panic`) and
-emits a single canonical `FlowApi`-style struct per tag with runtime
-`require_endpoint(Endpoint::FOO).await?` checks. Every canonical endpoint
-has an entry in the generated `Endpoint` enum and the `ENDPOINT_AVAILABILITY`
-table; query params whose version set differs from their endpoint's version
-set also have entries in `QUERY_PARAM_AVAILABILITY` and a runtime guard that
-returns `NifiError::UnsupportedQueryParam` when a caller sets a value against
-an unsupported server.
-
-**Phase 4a is a parallel build — not yet the default dispatch path.** Legacy
-`DynamicClient` (dispatch enums under `crate::dynamic`) and `DynamicClientV2`
-(canonical, doc-hidden) coexist. Phase 4b will delete the legacy dispatch
-emitter, rename `dynamic_v2` → `dynamic`, and promote the doc-hidden module
-to public. Phase 5 flattens the public API (strip `_api` suffix, collapse
-sub-resource builders).
-
-Smoke tests exercising `DynamicClientV2` live in
-`crates/nifi-rust-client/tests/dynamic_v2_smoke.rs` (happy path,
-`UnsupportedEndpoint`, and `query_param_supported` table walk).
-
-Emitter source: `crates/nifi-openapi-gen/src/emit/dynamic_v2/{mod,api,types,availability,index}.rs`.
 
 ### Adding or bumping a NiFi version
 

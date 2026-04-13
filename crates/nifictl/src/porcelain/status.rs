@@ -3,7 +3,6 @@ use crate::output::CliOutput;
 use nifi_rust_client::dynamic::DynamicClient;
 
 pub async fn status(client: &DynamicClient) -> Result<CliOutput, CliError> {
-    use nifi_rust_client::dynamic::traits::FlowApi;
     let about = client.flow_api().get_about_info().await?;
     let value = serde_json::to_value(&about)
         .map_err(|e| CliError::User(format!("serialization error: {e}")))?;

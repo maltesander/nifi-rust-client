@@ -216,7 +216,6 @@ pub fn flow_history_dynamic<'a>(
     filter: HistoryFilter,
     page_size: u32,
 ) -> HistoryPaginator<impl FnMut(u32, u32) -> BoxedFetchFuture<'a> + 'a> {
-    use crate::dynamic::traits::FlowApi as _;
     use crate::require;
     let fetch = move |offset: u32, count: u32| -> BoxedFetchFuture<'a> {
         let filter = filter.clone();

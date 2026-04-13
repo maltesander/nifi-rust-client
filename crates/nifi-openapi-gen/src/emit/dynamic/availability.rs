@@ -1,4 +1,4 @@
-//! Emitter for `dynamic_v2/availability.rs`.
+//! Emitter for `dynamic/availability.rs`.
 
 use crate::canonical::CanonicalSpec;
 
@@ -7,6 +7,11 @@ use super::index::EndpointIndex;
 pub fn emit_availability(canonical: &CanonicalSpec, index: &EndpointIndex<'_>) -> String {
     let mut out = String::new();
     out.push_str("//! Generated endpoint availability table for canonical dynamic dispatch.\n\n");
+
+    let versions = canonical_versions(canonical);
+    emit_detected_version(&mut out, &versions);
+    emit_version_from_str(&mut out, &versions);
+    emit_supported_versions(&mut out, &versions);
 
     // Endpoint enum
     out.push_str("/// One variant per canonical endpoint. Public so callers can write\n");
@@ -103,8 +108,93 @@ pub fn emit_availability(canonical: &CanonicalSpec, index: &EndpointIndex<'_>) -
          }\n",
     );
 
-    let _ = canonical; // canonical reserved for future per-type tables
     crate::util::format_source(&out)
+}
+
+/// Versions discovered in the canonical spec, in semver order.
+fn canonical_versions(canonical: &CanonicalSpec) -> Vec<String> {
+    canonical.per_version_specs.keys().cloned().collect()
+}
+
+/// Rust variant name for a version string, e.g. `"2.9.0"` → `"V2_9_0"`.
+fn version_to_variant(version: &str) -> String {
+    format!("V{}", version.replace('.', "_"))
+}
+
+fn emit_detected_version(out: &mut String, versions: &[String]) {
+    out.push_str("/// Represents a detected NiFi server version.\n");
+    out.push_str("#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]\n");
+    out.push_str("pub enum DetectedVersion {\n");
+    for ver in versions {
+        out.push_str(&format!("    {},\n", version_to_variant(ver)));
+    }
+    out.push_str("}\n\n");
+
+    out.push_str("impl std::fmt::Display for DetectedVersion {\n");
+    out.push_str("    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {\n");
+    out.push_str("        match self {\n");
+    for ver in versions {
+        out.push_str(&format!(
+            "            DetectedVersion::{} => write!(f, \"{}\"),\n",
+            version_to_variant(ver),
+            ver,
+        ));
+    }
+    out.push_str("        }\n");
+    out.push_str("    }\n");
+    out.push_str("}\n\n");
+}
+
+fn emit_version_from_str(out: &mut String, versions: &[String]) {
+    use std::collections::BTreeMap;
+    out.push_str("/// Match a version string by major.minor (ignoring patch).\n");
+    out.push_str("pub(crate) fn version_from_str(version: &str) -> Result<DetectedVersion, crate::NifiError> {\n");
+    out.push_str("    let parts: Vec<&str> = version.split('.').collect();\n");
+    out.push_str("    if parts.len() < 2 {\n");
+    out.push_str("        return Err(crate::NifiError::UnsupportedVersion { detected: version.to_string() });\n");
+    out.push_str("    }\n");
+    out.push_str("    let major_minor = format!(\"{}.{}\", parts[0], parts[1]);\n");
+    out.push_str("    match major_minor.as_str() {\n");
+
+    // Group versions by major.minor, pick the lowest patch per major.minor.
+    let mut major_minor_map: BTreeMap<String, &String> = BTreeMap::new();
+    for ver in versions {
+        let parts: Vec<&str> = ver.split('.').collect();
+        if parts.len() >= 2 {
+            let mm = format!("{}.{}", parts[0], parts[1]);
+            major_minor_map.entry(mm).or_insert(ver);
+        }
+    }
+    for (mm, ver) in &major_minor_map {
+        out.push_str(&format!(
+            "        \"{}\" => Ok(DetectedVersion::{}),\n",
+            mm,
+            version_to_variant(ver),
+        ));
+    }
+    out.push_str("        _ => Err(crate::NifiError::UnsupportedVersion { detected: version.to_string() }),\n");
+    out.push_str("    }\n");
+    out.push_str("}\n\n");
+}
+
+fn emit_supported_versions(out: &mut String, versions: &[String]) {
+    out.push_str("/// All supported versions compiled into this build, used by version resolution strategies.\n");
+    out.push_str("pub(crate) const SUPPORTED_VERSIONS: &[(&str, DetectedVersion)] = &[\n");
+    for ver in versions {
+        out.push_str(&format!(
+            "    (\"{}\", DetectedVersion::{}),\n",
+            ver,
+            version_to_variant(ver),
+        ));
+    }
+    out.push_str("];\n\n");
+
+    if let Some(latest) = versions.last() {
+        out.push_str("/// The semver-latest NiFi version supported by this build.\n");
+        out.push_str(&format!(
+            "pub const LATEST_NIFI_VERSION: &str = \"{latest}\";\n\n"
+        ));
+    }
 }
 
 /// Build the upper-snake variant name for an endpoint, e.g.
@@ -178,5 +268,22 @@ mod tests {
     fn endpoint_variant_uppercases_path_params() {
         let v = endpoint_variant_name(&HttpMethod::Post, "/processors/{id}/run-status");
         assert_eq!(v, "POST_PROCESSORS_ID_RUN_STATUS");
+    }
+
+    #[test]
+    fn emit_availability_includes_detected_version_enum_and_helpers() {
+        use crate::canonical::canonicalize;
+        let canonical = canonicalize(&[
+            ("2.6.0".to_string(), minimal_spec()),
+            ("2.9.0".to_string(), minimal_spec()),
+        ]);
+        let index = EndpointIndex::build(&canonical);
+        let src = emit_availability(&canonical, &index);
+        assert!(src.contains("pub enum DetectedVersion"));
+        assert!(src.contains("V2_6_0"));
+        assert!(src.contains("V2_9_0"));
+        assert!(src.contains("fn version_from_str"));
+        assert!(src.contains("SUPPORTED_VERSIONS"));
+        assert!(src.contains("pub const LATEST_NIFI_VERSION"));
     }
 }

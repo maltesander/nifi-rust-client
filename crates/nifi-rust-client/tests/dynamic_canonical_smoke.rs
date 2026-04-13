@@ -1,25 +1,25 @@
 //! Phase 4a smoke tests for the parallel canonical dynamic client.
 //!
-//! Reaches `DynamicClientV2` via the `#[doc(hidden)]` `dynamic_v2` module.
+//! Reaches `DynamicClient` via the `#[doc(hidden)]` `dynamic` module.
 //! Verifies end-to-end: build → link → call → response decode.
 
 #![cfg(feature = "dynamic")]
 
 use nifi_rust_client::NifiClientBuilder;
-use nifi_rust_client::dynamic_v2::DynamicClientV2;
+use nifi_rust_client::dynamic::DynamicClient;
 use wiremock::matchers::{method, path};
 use wiremock::{Mock, MockServer, ResponseTemplate};
 
-async fn make_client(server: &MockServer) -> DynamicClientV2 {
+async fn make_client(server: &MockServer) -> DynamicClient {
     let inner = NifiClientBuilder::new(&server.uri())
         .expect("builder")
         .build()
         .expect("client");
-    DynamicClientV2::new(inner)
+    DynamicClient::new(inner)
 }
 
 #[tokio::test]
-async fn dynamic_v2_get_about_info_happy_path() {
+async fn dynamic_get_about_info_happy_path() {
     let server = MockServer::start().await;
     Mock::given(method("GET"))
         .and(path("/nifi-api/flow/about"))
@@ -32,7 +32,7 @@ async fn dynamic_v2_get_about_info_happy_path() {
     let client = make_client(&server).await;
     // detect_version primes the version cache via GET /flow/about.
     let v = client.detect_version().await.expect("detect");
-    assert_eq!(v, "2.8.0");
+    assert_eq!(v.to_string(), "2.8.0");
 
     // get_about_info re-uses the cached version (require_endpoint) and
     // issues GET /flow/about, returning the canonical AboutDto.
@@ -47,11 +47,11 @@ async fn dynamic_v2_get_about_info_happy_path() {
 }
 
 #[tokio::test]
-async fn dynamic_v2_unsupported_endpoint_error() {
+async fn dynamic_unsupported_endpoint_error() {
     // Pick an endpoint that exists in newer spec(s) but not in 2.6.0. The exact
     // endpoint depends on the supported spec set; walk the availability table
     // to find one dynamically so the assertion is robust across spec bumps.
-    use nifi_rust_client::dynamic_v2::availability::{ENDPOINT_AVAILABILITY, Endpoint};
+    use nifi_rust_client::dynamic::availability::{ENDPOINT_AVAILABILITY, Endpoint};
 
     let target: Option<Endpoint> = ENDPOINT_AVAILABILITY
         .iter()
@@ -97,8 +97,8 @@ async fn dynamic_v2_unsupported_endpoint_error() {
 }
 
 #[tokio::test]
-async fn dynamic_v2_unsupported_query_param_error() {
-    use nifi_rust_client::dynamic_v2::availability::{
+async fn dynamic_unsupported_query_param_error() {
+    use nifi_rust_client::dynamic::availability::{
         QUERY_PARAM_AVAILABILITY, query_param_supported,
     };
 

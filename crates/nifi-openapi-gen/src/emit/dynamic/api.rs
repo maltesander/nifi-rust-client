@@ -1,7 +1,7 @@
-//! Emitter for `dynamic_v2/api/*.rs`.
+//! Emitter for `dynamic/api/*.rs`.
 //!
 //! Generates one canonical struct per tag (e.g. `FlowApi<'a>`) holding a
-//! borrow of `DynamicClientV2`. Endpoint methods start with a
+//! borrow of `DynamicClient`. Endpoint methods start with a
 //! `require_endpoint(...)` availability check, then dispatch via the
 //! shared `NifiClient` HTTP helpers.
 
@@ -35,7 +35,7 @@ pub fn emit_api(canonical: &CanonicalSpec, index: &EndpointIndex<'_>) -> Vec<(St
         }
     }
     mod_out.push('\n');
-    mod_out.push_str("impl crate::dynamic_v2::DynamicClientV2 {\n");
+    mod_out.push_str("impl crate::dynamic::DynamicClient {\n");
     for tag in by_tag.keys() {
         if let Some(meta) = tag_meta.get(*tag) {
             mod_out.push_str(&format!(
@@ -91,11 +91,11 @@ fn emit_tag_file(meta: &TagMeta<'_>, endpoints: &[&IndexedEndpoint<'_>]) -> Stri
     let mut out = String::new();
     out.push_str("#[allow(unused_imports)]\n");
     out.push_str("use crate::NifiError;\n");
-    out.push_str("use crate::dynamic_v2::DynamicClientV2;\n");
-    out.push_str("use crate::dynamic_v2::availability::Endpoint;\n\n");
+    out.push_str("use crate::dynamic::DynamicClient;\n");
+    out.push_str("use crate::dynamic::availability::Endpoint;\n\n");
 
     out.push_str(&format!(
-        "pub struct {}<'a> {{\n    pub(crate) client: &'a DynamicClientV2,\n}}\n\n",
+        "pub struct {}<'a> {{\n    pub(crate) client: &'a DynamicClient,\n}}\n\n",
         meta.struct_name
     ));
 
@@ -141,7 +141,7 @@ fn emit_tag_file(meta: &TagMeta<'_>, endpoints: &[&IndexedEndpoint<'_>]) -> Stri
     for (sg_struct, eps) in &by_subgroup {
         let sg = sg_meta[sg_struct];
         out.push_str(&format!(
-            "pub struct {sg_struct}<'a> {{\n    pub(crate) client: &'a DynamicClientV2,\n    pub(crate) {param}: String,\n}}\n\n",
+            "pub struct {sg_struct}<'a> {{\n    pub(crate) client: &'a DynamicClient,\n    pub(crate) {param}: String,\n}}\n\n",
             param = sg.primary_param,
         ));
         out.push_str("#[allow(clippy::too_many_arguments, clippy::let_unit_value, clippy::vec_init_then_push, unused_variables)]\n");
@@ -189,7 +189,7 @@ fn emit_method(out: &mut String, ep: &IndexedEndpoint<'_>, self_kind: SelfKind<'
     match &ep.endpoint.body_kind {
         Some(RequestBodyKind::Json) => {
             if let Some(rt) = &ep.endpoint.request_type {
-                args.push(format!("body: &crate::dynamic_v2::types::{rt}"));
+                args.push(format!("body: &crate::dynamic::types::{rt}"));
             }
         }
         Some(RequestBodyKind::OctetStream) => {
@@ -260,7 +260,7 @@ fn qp_rust_type(qp: &crate::parser::QueryParam) -> String {
         Enum(_) => qp
             .enum_type_name
             .as_ref()
-            .map(|n| format!("crate::dynamic_v2::types::{n}"))
+            .map(|n| format!("crate::dynamic::types::{n}"))
             .unwrap_or_else(|| "&str".to_string()),
     }
 }
@@ -316,7 +316,7 @@ fn emit_guard(
         .map(|v| format!("\"{v}\".to_string()"))
         .collect();
     out.push_str(&format!(
-        "        let __detected = self.client.detected_version_str();\n        if !crate::dynamic_v2::availability::query_param_supported(Endpoint::{variant}, \"{param}\", &__detected) {{\n"
+        "        let __detected = self.client.detected_version_str();\n        if !crate::dynamic::availability::query_param_supported(Endpoint::{variant}, \"{param}\", &__detected) {{\n"
     ));
     out.push_str(&format!(
         "            return Err(NifiError::UnsupportedQueryParam {{ endpoint: Endpoint::{variant}.as_str(), param: \"{param}\", detected_version: __detected, supported_in: vec![{}] }});\n",
@@ -338,7 +338,7 @@ fn emit_guard_indented(
         .map(|v| format!("\"{v}\".to_string()"))
         .collect();
     out.push_str(&format!(
-        "            let __detected = self.client.detected_version_str();\n            if !crate::dynamic_v2::availability::query_param_supported(Endpoint::{variant}, \"{param}\", &__detected) {{\n"
+        "            let __detected = self.client.detected_version_str();\n            if !crate::dynamic::availability::query_param_supported(Endpoint::{variant}, \"{param}\", &__detected) {{\n"
     ));
     out.push_str(&format!(
         "                return Err(NifiError::UnsupportedQueryParam {{ endpoint: Endpoint::{variant}.as_str(), param: \"{param}\", detected_version: __detected, supported_in: vec![{}] }});\n",
@@ -353,8 +353,8 @@ fn response_type_for(ep: &Endpoint) -> String {
         (ResponseBodyKind::Empty, _, _) => "()".to_string(),
         (ResponseBodyKind::Text | ResponseBodyKind::Xml, _, _) => "String".to_string(),
         (ResponseBodyKind::OctetStream | ResponseBodyKind::Wildcard, _, _) => "Vec<u8>".to_string(),
-        (_, Some(inner), _) => format!("crate::dynamic_v2::types::{inner}"),
-        (_, _, Some(rt)) => format!("crate::dynamic_v2::types::{rt}"),
+        (_, Some(inner), _) => format!("crate::dynamic::types::{inner}"),
+        (_, _, Some(rt)) => format!("crate::dynamic::types::{rt}"),
         _ => "()".to_string(),
     }
 }
@@ -425,7 +425,7 @@ fn emit_dispatch(out: &mut String, ep: &IndexedEndpoint<'_>, has_query: bool) {
     if returns_text {
         if use_query {
             out.push_str(
-                "        todo!(\"text GET with query params not implemented in dynamic_v2\")\n",
+                "        todo!(\"text GET with query params not implemented in dynamic\")\n",
             );
         } else {
             out.push_str(&format!(
@@ -493,7 +493,7 @@ fn emit_dispatch(out: &mut String, ep: &IndexedEndpoint<'_>, has_query: bool) {
             let entity = ep.endpoint.response_type.as_deref().unwrap_or(inner);
             let call_expr = call_for_entity(base_helper, body_args, &query_args);
             out.push_str(&format!(
-                "        let wrapper: crate::dynamic_v2::types::{entity} = {call_expr};\n"
+                "        let wrapper: crate::dynamic::types::{entity} = {call_expr};\n"
             ));
             out.push_str(&format!(
                 "        Ok(wrapper.{field}.unwrap_or_default())\n"

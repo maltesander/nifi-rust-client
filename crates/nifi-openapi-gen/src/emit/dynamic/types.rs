@@ -1,5 +1,16 @@
+//! Dynamic types emitter for `dynamic/types/*.rs`.
+//!
+//! Inlined from the legacy `emit/dynamic/types.rs` as part of Phase 4b, making
+//! this module fully self-contained. The public entry point `emit_types` accepts
+//! a `&CanonicalSpec` and delegates to `emit_types_from_specs` (the renamed body
+//! of the legacy `emit_dynamic_types`). Semantics are preserved exactly.
+//!
+//! Phase 4b Task 4 will delete `emit/dynamic/types.rs`; this module is the
+//! canonical replacement.
+
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 
+use crate::canonical::CanonicalSpec;
 use crate::emit::common::{InlineEnumMode, field_type_to_rust};
 use crate::parser::{ApiSpec, Field, FieldType, TagGroup, TypeKind};
 use crate::util::{escape_keyword, wire_to_pascal};
@@ -24,6 +35,22 @@ enum MergedType {
     },
 }
 
+/// Entry point: merge type definitions from all API versions in the canonical spec
+/// and emit per-tag Rust source files containing union types.
+///
+/// Returns a list of `(filename, content)` pairs to write into `src/dynamic/types/`:
+/// - `"mod.rs"` — module declarations + glob re-exports
+/// - `"common.rs"` — types referenced by 0 or 2+ tags (across all versions)
+/// - `"<tag>.rs"` — one file per tag for types used exclusively by that tag
+pub fn emit_types(canonical: &CanonicalSpec) -> Vec<(String, String)> {
+    let specs: Vec<(&str, &ApiSpec)> = canonical
+        .per_version_specs
+        .iter()
+        .map(|(v, s)| (v.as_str(), s))
+        .collect();
+    emit_types_from_specs(&specs)
+}
+
 /// Merge type definitions from all API versions and emit per-tag Rust source files
 /// containing union types where all fields are `Option<T>`.
 ///
@@ -31,7 +58,7 @@ enum MergedType {
 /// - `"mod.rs"` — module declarations + glob re-exports
 /// - `"common.rs"` — types referenced by 0 or 2+ tags (across all versions)
 /// - `"<tag>.rs"` — one file per tag for types used exclusively by that tag
-pub fn emit_dynamic_types(specs: &[(&str, &ApiSpec)]) -> Vec<(String, String)> {
+fn emit_types_from_specs(specs: &[(&str, &ApiSpec)]) -> Vec<(String, String)> {
     let merged = merge_all_types(specs);
 
     // Build type_name -> set of tag module_names across ALL versions.
@@ -225,41 +252,6 @@ fn emit_merged_type(out: &mut String, name: &str, mt: &MergedType) {
     }
 }
 
-/// Returns a map of type_name -> sorted field names (rust_name) for all merged types.
-/// Dto types get their field names; Entity and StringEnum types get empty field lists
-/// (their conversions are handled differently but they still need From impls).
-pub fn collect_merged_field_names(specs: &[(&str, &ApiSpec)]) -> BTreeMap<String, Vec<String>> {
-    let merged = merge_all_types(specs);
-    let mut result = BTreeMap::new();
-    for (name, mt) in merged {
-        match mt {
-            MergedType::Dto { fields, .. } => {
-                result.insert(name, fields.keys().cloned().collect());
-            }
-            MergedType::Entity { .. } | MergedType::StringEnum { .. } => {
-                result.insert(name, vec![]);
-            }
-        }
-    }
-    result
-}
-
-/// Returns the set of field names that are "universal" for a given type:
-/// present in every version with the same Rust type string.
-pub fn collect_universal_fields(specs: &[(&str, &ApiSpec)]) -> BTreeMap<String, BTreeSet<String>> {
-    let merged = merge_all_types(specs);
-    let mut result = BTreeMap::new();
-    for (name, mt) in merged {
-        if let MergedType::Dto {
-            universal_fields, ..
-        } = mt
-        {
-            result.insert(name, universal_fields);
-        }
-    }
-    result
-}
-
 fn merge_all_types(specs: &[(&str, &ApiSpec)]) -> BTreeMap<String, MergedType> {
     let mut merged: BTreeMap<String, MergedType> = BTreeMap::new();
 
@@ -372,7 +364,10 @@ fn wrap_in_option(ty: &FieldType, rust_str: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::parser::{ApiSpec, Endpoint, Field, FieldType, TagGroup, TypeDef, TypeKind};
+    use crate::canonical::canonicalize;
+    use crate::parser::{
+        ApiSpec, Endpoint, Field, FieldType, HttpMethod, TagGroup, TypeDef, TypeKind,
+    };
 
     fn make_spec(types: Vec<TypeDef>) -> ApiSpec {
         ApiSpec {
@@ -389,7 +384,6 @@ mod tests {
     }
 
     fn make_tag(module_name: &str, response_types: Vec<&str>) -> TagGroup {
-        use crate::parser::HttpMethod;
         let endpoints = response_types
             .into_iter()
             .map(|t| Endpoint {
@@ -437,7 +431,7 @@ mod tests {
         }
     }
 
-    /// Concatenate all file contents from emit_dynamic_types output.
+    /// Concatenate all file contents from emit_types_from_specs output.
     fn all_content(files: &[(String, String)]) -> String {
         files
             .iter()
@@ -459,7 +453,7 @@ mod tests {
         };
         let spec_a = make_spec(vec![td.clone()]);
         let spec_b = make_spec(vec![td]);
-        let files = emit_dynamic_types(&[("2.7.2", &spec_a), ("2.8.0", &spec_b)]);
+        let files = emit_types_from_specs(&[("2.7.2", &spec_a), ("2.8.0", &spec_b)]);
         let output = all_content(&files);
         assert!(output.contains("pub struct AboutDto"));
         assert!(output.contains("pub title: Option<String>"));
@@ -485,7 +479,7 @@ mod tests {
         };
         let spec_a = make_spec(vec![td_old]);
         let spec_b = make_spec(vec![td_new]);
-        let files = emit_dynamic_types(&[("2.7.2", &spec_a), ("2.8.0", &spec_b)]);
+        let files = emit_types_from_specs(&[("2.7.2", &spec_a), ("2.8.0", &spec_b)]);
         let output = all_content(&files);
         assert!(output.contains("pub struct ProcessorDto"));
         assert!(output.contains("pub name: Option<String>"));
@@ -508,7 +502,7 @@ mod tests {
         };
         let spec_a = make_spec(vec![td_old]);
         let spec_b = make_spec(vec![td_new]);
-        let files = emit_dynamic_types(&[("2.7.2", &spec_a), ("2.8.0", &spec_b)]);
+        let files = emit_types_from_specs(&[("2.7.2", &spec_a), ("2.8.0", &spec_b)]);
         let output = all_content(&files);
         assert!(output.contains("pub enum IncludedRegistries"));
         assert!(output.contains("Nifi"));
@@ -526,36 +520,10 @@ mod tests {
         };
         let spec_a = make_spec(vec![]);
         let spec_b = make_spec(vec![td]);
-        let files = emit_dynamic_types(&[("2.7.2", &spec_a), ("2.8.0", &spec_b)]);
+        let files = emit_types_from_specs(&[("2.7.2", &spec_a), ("2.8.0", &spec_b)]);
         let output = all_content(&files);
         assert!(output.contains("pub struct NewInV2Dto"));
         assert!(output.contains("pub id: Option<String>"));
-    }
-
-    #[test]
-    fn test_collect_merged_field_names() {
-        let td_a = TypeDef {
-            name: "Dto".to_string(),
-            kind: TypeKind::Dto,
-            fields: vec![make_field("a", FieldType::Str)],
-            doc: None,
-        };
-        let td_b = TypeDef {
-            name: "Dto".to_string(),
-            kind: TypeKind::Dto,
-            fields: vec![
-                make_field("a", FieldType::Str),
-                make_field("b", FieldType::Bool),
-            ],
-            doc: None,
-        };
-        let spec_a = make_spec(vec![td_a]);
-        let spec_b = make_spec(vec![td_b]);
-        let result = collect_merged_field_names(&[("2.7.2", &spec_a), ("2.8.0", &spec_b)]);
-        assert_eq!(
-            result.get("Dto").unwrap(),
-            &vec!["a".to_string(), "b".to_string()]
-        );
     }
 
     fn make_field_with_doc(name: &str, ty: FieldType, doc: &str) -> Field {
@@ -585,7 +553,7 @@ mod tests {
             doc: Some("Information about the NiFi instance".to_string()),
         };
         let spec = make_spec(vec![td]);
-        let files = emit_dynamic_types(&[("2.8.0", &spec)]);
+        let files = emit_types_from_specs(&[("2.8.0", &spec)]);
         let output = all_content(&files);
         // non_exhaustive attribute on struct
         assert!(
@@ -618,7 +586,7 @@ mod tests {
             doc: None,
         };
         let spec = make_spec(vec![td]);
-        let files = emit_dynamic_types(&[("2.8.0", &spec)]);
+        let files = emit_types_from_specs(&[("2.8.0", &spec)]);
         let output = all_content(&files);
         assert!(
             output.contains("pub enum DiagnosticLevel"),
@@ -662,7 +630,7 @@ mod tests {
         let flow_tag = make_tag("flow", vec!["AboutEntity"]);
         let spec = make_spec_with_tags(vec![about_dto, about_entity, position_dto], vec![flow_tag]);
 
-        let files = emit_dynamic_types(&[("2.8.0", &spec)]);
+        let files = emit_types_from_specs(&[("2.8.0", &spec)]);
         let filenames: Vec<&str> = files.iter().map(|(n, _)| n.as_str()).collect();
 
         // Must contain mod.rs, flow.rs, and common.rs
@@ -707,5 +675,78 @@ mod tests {
             common_content.contains("AboutDto"),
             "common.rs should contain AboutDto"
         );
+    }
+
+    // --- Phase 4a canonical entry point test ---
+
+    fn spec_with_about() -> ApiSpec {
+        ApiSpec {
+            tags: vec![TagGroup {
+                tag: "Flow".to_string(),
+                struct_name: "FlowApi".to_string(),
+                module_name: "flow".to_string(),
+                accessor_fn: "flow_api".to_string(),
+                types: vec![],
+                root_endpoints: vec![Endpoint {
+                    method: HttpMethod::Get,
+                    path: "/flow/about".to_string(),
+                    fn_name: "get_about_info".to_string(),
+                    raw_operation_id: "getAboutInfo".to_string(),
+                    doc: None,
+                    description: None,
+                    path_params: vec![],
+                    request_type: None,
+                    body_kind: None,
+                    body_doc: None,
+                    response_type: Some("AboutEntity".to_string()),
+                    response_inner: Some("AboutDto".to_string()),
+                    response_field: Some("about".to_string()),
+                    response_kind: crate::content_type::ResponseBodyKind::Json {
+                        schema_ref: "AboutEntity".to_string(),
+                    },
+                    query_params: vec![],
+                    success_responses: vec![],
+                    error_responses: vec![],
+                    security: None,
+                }],
+                sub_groups: vec![],
+            }],
+            all_types: vec![
+                TypeDef {
+                    name: "AboutEntity".to_string(),
+                    kind: TypeKind::Entity {
+                        field: "about".to_string(),
+                        inner: "AboutDto".to_string(),
+                    },
+                    fields: vec![],
+                    doc: None,
+                },
+                TypeDef {
+                    name: "AboutDto".to_string(),
+                    kind: TypeKind::Dto,
+                    fields: vec![Field {
+                        rust_name: "version".to_string(),
+                        serde_name: "version".to_string(),
+                        ty: FieldType::Opt(Box::new(FieldType::Str)),
+                        doc: None,
+                        read_only: false,
+                        deprecated: false,
+                    }],
+                    doc: None,
+                },
+            ],
+        }
+    }
+
+    #[test]
+    fn emit_types_produces_per_tag_files() {
+        let canonical = canonicalize(&[("2.8.0".to_string(), spec_with_about())]);
+        let files = emit_types(&canonical);
+        let names: Vec<&str> = files.iter().map(|(n, _)| n.as_str()).collect();
+        assert!(names.contains(&"mod.rs"));
+        assert!(names.contains(&"common.rs") || names.iter().any(|n| n.starts_with("flow")));
+        let all_content: String = files.iter().map(|(_, c)| c.as_str()).collect();
+        assert!(all_content.contains("AboutDto"));
+        assert!(all_content.contains("version"));
     }
 }

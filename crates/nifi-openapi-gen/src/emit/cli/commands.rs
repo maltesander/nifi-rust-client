@@ -366,19 +366,10 @@ fn emit_handler(
     out.push_str("    client: &nifi_rust_client::dynamic::DynamicClient,\n");
     out.push_str(") -> Result<crate::output::CliOutput, crate::error::CliError> {\n");
 
-    // Import the trait(s) — for sub-groups, import both parent and sub-resource trait
-    if let Some(sg) = cmd.sub_group {
-        let parent_trait = &tag.struct_name;
-        let sub_trait = &sg.struct_name;
-        out.push_str(&format!(
-            "    use nifi_rust_client::dynamic::traits::{{{parent_trait}, {sub_trait}}};\n"
-        ));
-    } else {
-        let trait_name = &tag.struct_name;
-        out.push_str(&format!(
-            "    use nifi_rust_client::dynamic::traits::{trait_name};\n"
-        ));
-    }
+    // Canonical dynamic path has no traits — the concrete resource struct is
+    // returned directly and its methods are inherent. No import needed.
+    let _ = cmd;
+    let _ = tag;
 
     // Build the API accessor chain
     let api_access = if let Some(sg) = cmd.sub_group {

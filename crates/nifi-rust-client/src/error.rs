@@ -106,19 +106,6 @@ pub enum NifiError {
         version: String,
     },
 
-    /// A required field was absent when converting a dynamic response to a typed struct.
-    #[snafu(display(
-        "Required field '{field}' of type '{type_name}' is missing for NiFi {version}"
-    ))]
-    MissingRequiredField {
-        /// The name of the missing field.
-        field: String,
-        /// The Rust type that expected the field.
-        type_name: String,
-        /// The NiFi version involved.
-        version: String,
-    },
-
     /// A query parameter the caller set is not supported by the detected NiFi
     /// server version. Emitted by dynamic mode (canonical superset codegen)
     /// when a non-`None` query param exists only in newer versions than the
@@ -158,10 +145,7 @@ pub enum NifiError {
     /// [`RequireField::require`](crate::RequireField::require) or the
     /// [`require!`](crate::require) macro.
     ///
-    /// This variant is distinct from [`Self::MissingRequiredField`], which
-    /// is emitted by generated dynamic-mode conversion code and carries
-    /// runtime version/type info. `MissingField` is a user-facing error
-    /// produced when a caller asks for a value that the server did not
+    /// Emitted when a caller asks for a value that the server did not
     /// populate (e.g. because the NiFi version predates the field, or the
     /// field is conditional-by-design).
     ///

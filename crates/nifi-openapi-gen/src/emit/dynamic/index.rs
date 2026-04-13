@@ -1,4 +1,4 @@
-//! Build-time index over `CanonicalSpec` for dynamic_v2 emission.
+//! Build-time index over `CanonicalSpec` for dynamic emission.
 //!
 //! Each `CanonicalEndpoint` carries only `(tag, raw_operation_id, versions)`.
 //! The emitters need the full per-version `Endpoint` struct (params, return
