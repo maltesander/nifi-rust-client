@@ -5,6 +5,7 @@ use nifi_openapi_gen::canonical::{
     EndpointKey, VersionSet,
 };
 use nifi_openapi_gen::content_type::ResponseBodyKind;
+use nifi_openapi_gen::emit::{emit_api, emit_types};
 use nifi_openapi_gen::parser::{load, ApiSpec, Endpoint, Field, FieldType, HttpMethod, TagGroup, TypeDef, TypeKind};
 
 #[test]
@@ -472,4 +473,50 @@ fn project_returns_none_for_unknown_version() {
     let canonical = canonicalize(&[("2.8.0".to_string(), spec)]);
 
     assert!(project(&canonical, "99.0.0").is_none());
+}
+
+#[test]
+fn project_single_version_round_trip_byte_identical_emit_api() {
+    let specs_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("specs");
+    let versions = ["2.6.0", "2.7.2", "2.8.0", "2.9.0"];
+
+    for version in versions {
+        let spec_path = specs_dir.join(version).join("nifi-api.json");
+        let original = load(spec_path.to_str().unwrap());
+
+        let canonical = canonicalize(&[(version.to_string(), original.clone())]);
+        let projected = project(&canonical, version)
+            .unwrap_or_else(|| panic!("project returned None for {version}"));
+
+        let original_emit = emit_api(&original);
+        let projected_emit = emit_api(projected);
+
+        assert_eq!(
+            original_emit, projected_emit,
+            "emit_api output diverged for {version}"
+        );
+    }
+}
+
+#[test]
+fn project_single_version_round_trip_byte_identical_emit_types() {
+    let specs_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("specs");
+    let versions = ["2.6.0", "2.7.2", "2.8.0", "2.9.0"];
+
+    for version in versions {
+        let spec_path = specs_dir.join(version).join("nifi-api.json");
+        let original = load(spec_path.to_str().unwrap());
+
+        let canonical = canonicalize(&[(version.to_string(), original.clone())]);
+        let projected = project(&canonical, version)
+            .unwrap_or_else(|| panic!("project returned None for {version}"));
+
+        let original_emit = emit_types(&original);
+        let projected_emit = emit_types(projected);
+
+        assert_eq!(
+            original_emit, projected_emit,
+            "emit_types output diverged for {version}"
+        );
+    }
 }
