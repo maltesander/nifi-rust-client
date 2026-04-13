@@ -8,7 +8,7 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
-use crate::parser::{FieldType, HttpMethod, TypeKind};
+use crate::parser::{ApiSpec, Endpoint, FieldType, HttpMethod, TagGroup, TypeKind};
 
 /// Set of supported NiFi version strings (e.g. "2.8.0").
 ///
@@ -99,4 +99,50 @@ impl CanonicalSpec {
     pub fn new() -> Self {
         Self::default()
     }
+}
+
+/// Merge all supported specs into a single canonical superset.
+///
+/// Input is pre-ordered by caller (typically semver-sorted via
+/// `util::discover_spec_versions`).
+pub fn canonicalize(all_parsed: &[(String, ApiSpec)]) -> CanonicalSpec {
+    let mut canonical = CanonicalSpec::new();
+    for (version, spec) in all_parsed {
+        merge_spec(&mut canonical, version, spec);
+    }
+    canonical
+}
+
+fn merge_spec(canonical: &mut CanonicalSpec, version: &str, spec: &ApiSpec) {
+    for tag in &spec.tags {
+        for endpoint in &tag.root_endpoints {
+            merge_endpoint(canonical, version, tag, endpoint);
+        }
+        for sub in &tag.sub_groups {
+            for endpoint in &sub.endpoints {
+                merge_endpoint(canonical, version, tag, endpoint);
+            }
+        }
+    }
+}
+
+fn merge_endpoint(
+    canonical: &mut CanonicalSpec,
+    version: &str,
+    tag: &TagGroup,
+    endpoint: &Endpoint,
+) {
+    let key = EndpointKey {
+        method: endpoint.method.clone(),
+        path: endpoint.path.clone(),
+    };
+    canonical
+        .endpoints
+        .entry(key)
+        .and_modify(|e| e.versions.insert(version))
+        .or_insert_with(|| CanonicalEndpoint {
+            tag: tag.tag.clone(),
+            raw_operation_id: endpoint.raw_operation_id.clone(),
+            versions: VersionSet::with(version),
+        });
 }
