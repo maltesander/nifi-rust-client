@@ -449,3 +449,55 @@ fn canonicalize_or_panic_respects_overrides() {
         .fields
         .contains_key("build_tag"));
 }
+
+#[test]
+fn inline_enum_variant_addition_is_additive() {
+    let spec_a = make_spec_with_types(vec![make_type(
+        "ProcessorDto",
+        vec![make_field(
+            "state",
+            FieldType::Opt(Box::new(FieldType::Enum(vec![
+                "RUNNING".to_string(),
+                "STOPPED".to_string(),
+            ]))),
+        )],
+    )]);
+    let canonical = canonicalize(&[("2.6.0".to_string(), spec_a)]);
+
+    let spec_b = make_spec_with_types(vec![make_type(
+        "ProcessorDto",
+        vec![make_field(
+            "state",
+            FieldType::Opt(Box::new(FieldType::Enum(vec![
+                "RUNNING".to_string(),
+                "STOPPED".to_string(),
+                "RUN_ONCE".to_string(),
+            ]))),
+        )],
+    )]);
+    let changes = check(&canonical, "2.8.0", &spec_b);
+    assert!(changes.is_empty(), "inline enum growth should be additive, got: {changes:?}");
+}
+
+#[test]
+fn inline_enum_variant_removal_still_reports_field_type_changed() {
+    let spec_a = make_spec_with_types(vec![make_type(
+        "ProcessorDto",
+        vec![make_field(
+            "state",
+            FieldType::Enum(vec!["RUNNING".to_string(), "STOPPED".to_string()]),
+        )],
+    )]);
+    let canonical = canonicalize(&[("2.6.0".to_string(), spec_a)]);
+
+    let spec_b = make_spec_with_types(vec![make_type(
+        "ProcessorDto",
+        vec![make_field(
+            "state",
+            FieldType::Enum(vec!["RUNNING".to_string()]),
+        )],
+    )]);
+    let changes = check(&canonical, "2.7.2", &spec_b);
+    assert_eq!(changes.len(), 1);
+    assert!(matches!(changes[0], NonAdditiveChange::FieldTypeChanged { .. }));
+}

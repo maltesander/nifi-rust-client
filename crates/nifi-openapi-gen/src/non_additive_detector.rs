@@ -11,6 +11,23 @@ use std::collections::BTreeSet;
 use crate::canonical::{CanonicalSpec, EndpointKey};
 use crate::parser::{ApiSpec, Field, FieldType, HttpMethod, TypeDef, TypeKind};
 
+/// Returns `true` if the `spec` field type is a compatible evolution
+/// of the `canonical` field type. Compatible means:
+/// - Identical, or
+/// - Both inline `Enum(a)` and `Enum(b)` where every variant in `a` is still
+///   present in `b` (variant additions are additive, removals/renames are not), or
+/// - Both `Opt<T>`, `List<T>`, or `Map<T>` and their inner types are compatible.
+fn field_types_compatible(canonical: &FieldType, spec: &FieldType) -> bool {
+    use FieldType::*;
+    match (canonical, spec) {
+        (Enum(a), Enum(b)) => a.iter().all(|v| b.contains(v)),
+        (Opt(a), Opt(b)) => field_types_compatible(a, b),
+        (List(a), List(b)) => field_types_compatible(a, b),
+        (Map(a), Map(b)) => field_types_compatible(a, b),
+        _ => canonical == spec,
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum NonAdditiveChange {
     EndpointRemoved {
@@ -111,7 +128,7 @@ fn check_field_removed_or_retyped(
                     previous_versions: canonical_field.versions.to_vec(),
                     missing_in: version.to_string(),
                 }),
-                Some(spec_field) if spec_field.ty != canonical_field.ty => {
+                Some(spec_field) if !field_types_compatible(&canonical_field.ty, &spec_field.ty) => {
                     out.push(NonAdditiveChange::FieldTypeChanged {
                         type_name: type_name.clone(),
                         field: field_name.clone(),
