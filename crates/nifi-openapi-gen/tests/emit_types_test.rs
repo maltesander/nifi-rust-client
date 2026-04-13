@@ -180,9 +180,9 @@ fn mod_rs_reexports_all_modules() {
         tags: vec![
             TagGroup {
                 tag: "Flow".into(),
-                struct_name: "FlowApi".into(),
+                struct_name: "Flow".into(),
                 module_name: "flow".into(),
-                accessor_fn: "flow_api".into(),
+                accessor_fn: "flow".into(),
                 types: vec![],
                 endpoints: vec![
                     Endpoint {
@@ -235,9 +235,9 @@ fn mod_rs_reexports_all_modules() {
             },
             TagGroup {
                 tag: "Processors".into(),
-                struct_name: "ProcessorsApi".into(),
+                struct_name: "Processors".into(),
                 module_name: "processors".into(),
-                accessor_fn: "processors_api".into(),
+                accessor_fn: "processors".into(),
                 types: vec![],
                 endpoints: vec![
                     Endpoint {

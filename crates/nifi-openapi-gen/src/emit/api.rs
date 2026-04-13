@@ -529,7 +529,7 @@ mod tests {
     use super::*;
     use crate::parser::*;
 
-    fn make_spec_with_sub_group() -> ApiSpec {
+    fn make_controller_services_spec() -> ApiSpec {
         let ep_root = Endpoint {
             method: HttpMethod::Get,
             path: "/controller-services/{id}".to_string(),
@@ -597,7 +597,7 @@ mod tests {
 
     #[test]
     fn emit_api_emits_flat_inherent_methods() {
-        let spec = make_spec_with_sub_group();
+        let spec = make_controller_services_spec();
         let files = emit_api_with_prefix(&spec, "crate");
         let (_, content) = files
             .iter()

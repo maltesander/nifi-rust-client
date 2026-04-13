@@ -249,8 +249,8 @@ where
 /// Returns a borrow of the `ApiSpec` stored at canonicalize time for the
 /// given version, or `None` if the version was not merged into this
 /// canonical spec. Callers feed the returned reference into the
-/// existing static emitters (`emit_api`, `emit_types`, `emit_static_traits`)
-/// and get the same output they'd get from loading the spec directly.
+/// existing static emitters (`emit_api`, `emit_types`) and get the same
+/// output they'd get from loading the spec directly.
 ///
 /// This function is the minimal viable single source of truth: the
 /// canonical spec holds the full per-version `ApiSpec` values verbatim,

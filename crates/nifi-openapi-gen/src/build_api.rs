@@ -10,8 +10,8 @@
 //! - The top-level [`crate::specs_dir`] helper
 //! - The generated file layout written under the caller-supplied `out_dir`:
 //!   - `generated_lib.rs` — the entry point to `include!()` from `lib.rs`
-//!   - `vX_Y_Z/{api,types,traits}/*.rs` — per-version generated modules
-//!   - `dynamic/*` — dispatch layer, present when `config.dynamic` is true
+//!   - `vX_Y_Z/{api,types}/*.rs` — per-version generated modules
+//!   - `dynamic/*` — canonical superset emitter output, present when `config.dynamic` is true
 //!
 //! All other modules in `nifi-openapi-gen` (`parser`, `emit`, `diff`,
 //! `docs`, `repo`, `util`) are implementation details. They remain `pub`
@@ -295,7 +295,7 @@ fn generate_lib_rs_fragment(versions: &[String], out_dir: &Path, dynamic: bool) 
 
     // ── Single-version re-exports ───────────────────────────────────────
     // When exactly one version feature is active (no dynamic), re-export
-    // its api/types/traits at the crate root for ergonomic access.
+    // its api/types at the crate root for ergonomic access.
     for version in versions {
         let mod_name = version_to_mod_name(version);
         let feature = version_to_feature(version);

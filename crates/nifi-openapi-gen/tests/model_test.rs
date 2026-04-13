@@ -7,9 +7,9 @@ fn can_construct_internal_model() {
     let spec = ApiSpec {
         tags: vec![TagGroup {
             tag: "Flow".into(),
-            struct_name: "FlowApi".into(),
+            struct_name: "Flow".into(),
             module_name: "flow".into(),
-            accessor_fn: "flow_api".into(),
+            accessor_fn: "flow".into(),
             types: vec![TypeDef {
                 name: "AboutDto".into(),
                 kind: TypeKind::Dto,

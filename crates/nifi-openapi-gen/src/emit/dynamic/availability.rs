@@ -223,9 +223,9 @@ mod tests {
         ApiSpec {
             tags: vec![TagGroup {
                 tag: "Flow".to_string(),
-                struct_name: "FlowApi".to_string(),
+                struct_name: "Flow".to_string(),
                 module_name: "flow".to_string(),
-                accessor_fn: "flow_api".to_string(),
+                accessor_fn: "flow".to_string(),
                 types: vec![],
                 endpoints: vec![Endpoint {
                     method: HttpMethod::Get,

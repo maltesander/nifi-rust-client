@@ -135,9 +135,9 @@ mod tests {
             ApiSpec {
                 tags: vec![TagGroup {
                     tag: "flow".to_string(),
-                    struct_name: "FlowApi".to_string(),
+                    struct_name: "Flow".to_string(),
                     module_name: "flow".to_string(),
-                    accessor_fn: "flow_api".to_string(),
+                    accessor_fn: "flow".to_string(),
                     types: vec![],
                     endpoints: (0..endpoint_count)
                         .map(|i| Endpoint {
@@ -212,9 +212,9 @@ mod tests {
             ApiSpec {
                 tags: vec![TagGroup {
                     tag: "flow".to_string(),
-                    struct_name: "FlowApi".to_string(),
+                    struct_name: "Flow".to_string(),
                     module_name: "flow".to_string(),
-                    accessor_fn: "flow_api".to_string(),
+                    accessor_fn: "flow".to_string(),
                     types: vec![],
                     endpoints: paths
                         .iter()

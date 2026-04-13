@@ -8,12 +8,12 @@ use crate::util::pascal_case;
 ///
 /// - For per-version inherent impls, pass `"crate"` so references resolve to
 ///   `crate::types::{Name}`.
-/// - For trait/dispatch signatures that refer to types under a different crate
+/// - For per-version emit that references types under a different crate
 ///   path (e.g. `crate::v2_8_0`), pass that prefix so references expand to
 ///   `crate::v2_8_0::types::{Name}`.
-/// - For dynamic trait/dispatch/impl sigs that already live in a module whose
-///   `use super::types;` brings the local types into scope, pass `""` so
-///   references expand to `types::{Name}`.
+/// - For dynamic emit that already lives in a module whose `use super::types;`
+///   brings the local types into scope, pass `""` so references expand to
+///   `types::{Name}`.
 ///
 /// Non-JSON responses map to primitive Rust types with no prefix:
 /// `Text`/`Xml` → `String`, `OctetStream`/`Wildcard` → `Vec<u8>`, `Empty` → `()`.

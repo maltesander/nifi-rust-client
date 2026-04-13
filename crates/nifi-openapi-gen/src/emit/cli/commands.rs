@@ -18,8 +18,9 @@ pub fn emit_cli(all_specs: &[(String, ApiSpec)]) -> Vec<(String, String)> {
         .last()
         .expect("at least one NiFi version must be present");
 
-    // Build canonical fn_name map: (tag, path, method) → canonical fn_name
-    // The first (oldest) version's fn_name wins, matching collect_tag_sub_groups.
+    // Build canonical fn_name map: (tag, path, method) → canonical fn_name.
+    // The first (oldest) version's fn_name wins so a command name stays
+    // stable when newer specs rename an operation.
     let canonical = build_canonical_fn_names(all_specs);
 
     let mut out = String::new();

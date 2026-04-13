@@ -140,9 +140,9 @@ fn make_spec_with_endpoints(eps: Vec<Endpoint>) -> ApiSpec {
     ApiSpec {
         tags: vec![TagGroup {
             tag: "Flow".to_string(),
-            struct_name: "FlowApi".to_string(),
+            struct_name: "Flow".to_string(),
             module_name: "flow".to_string(),
-            accessor_fn: "flow_api".to_string(),
+            accessor_fn: "flow".to_string(),
             types: vec![],
             endpoints: eps,
         }],
@@ -413,9 +413,9 @@ fn api_spec_is_cloneable() {
     let original = ApiSpec {
         tags: vec![TagGroup {
             tag: "Flow".to_string(),
-            struct_name: "FlowApi".to_string(),
+            struct_name: "Flow".to_string(),
             module_name: "flow".to_string(),
-            accessor_fn: "flow_api".to_string(),
+            accessor_fn: "flow".to_string(),
             types: vec![],
             endpoints: vec![],
         }],

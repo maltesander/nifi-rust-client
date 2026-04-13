@@ -179,8 +179,8 @@ mod tests {
                 "2.6.0".to_string(),
                 ApiSpec {
                     tags: vec![
-                        make_tag("Flow", "flow_api", 15),
-                        make_tag("Processors", "processors_api", 8),
+                        make_tag("Flow", "flow", 15),
+                        make_tag("Processors", "processors", 8),
                     ],
                     all_types: vec![],
                 },
@@ -189,9 +189,9 @@ mod tests {
                 "2.7.0".to_string(),
                 ApiSpec {
                     tags: vec![
-                        make_tag("Flow", "flow_api", 15),
-                        make_tag("Processors", "processors_api", 9),
-                        make_tag("AiServices", "ai_services_api", 3),
+                        make_tag("Flow", "flow", 15),
+                        make_tag("Processors", "processors", 9),
+                        make_tag("AiServices", "ai_services", 3),
                     ],
                     all_types: vec![],
                 },
@@ -206,19 +206,19 @@ mod tests {
 
         // Flow row has correct counts in both versions
         assert!(
-            table.contains("| `client.flow_api()` | Flow | 15 | 15 |"),
+            table.contains("| `client.flow()` | Flow | 15 | 15 |"),
             "flow should show 15 in both versions, got:\n{table}"
         );
 
         // Processors row shows 8 then 9
         assert!(
-            table.contains("| `client.processors_api()` | Processors | 8 | 9 |"),
+            table.contains("| `client.processors()` | Processors | 8 | 9 |"),
             "processors should show 8 then 9, got:\n{table}"
         );
 
         // AiServices only in 2.7.0, so 2.6.0 cell should be em dash
         assert!(
-            table.contains("| `client.ai_services_api()` | Ai services | \u{2014} | 3 |"),
+            table.contains("| `client.ai_services()` | Ai services | \u{2014} | 3 |"),
             "ai_services should show dash then 3, got:\n{table}"
         );
     }
@@ -230,7 +230,7 @@ mod tests {
                 (
                     format!("2.{i}.0"),
                     ApiSpec {
-                        tags: vec![make_tag("Flow", "flow_api", 10 + i)],
+                        tags: vec![make_tag("Flow", "flow", 10 + i)],
                         all_types: vec![],
                     },
                 )
@@ -277,9 +277,9 @@ mod tests {
     fn counts_all_endpoints_in_tag() {
         let tag = TagGroup {
             tag: "Processors".to_string(),
-            struct_name: "ProcessorsApi".to_string(),
+            struct_name: "Processors".to_string(),
             module_name: "processors".to_string(),
-            accessor_fn: "processors_api".to_string(),
+            accessor_fn: "processors".to_string(),
             types: vec![],
             endpoints: vec![
                 make_endpoint("get_processor"),

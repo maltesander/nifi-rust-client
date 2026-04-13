@@ -1,6 +1,6 @@
 //! Emitter for `dynamic/api/*.rs`.
 //!
-//! Generates one canonical struct per tag (e.g. `FlowApi<'a>`) holding a
+//! Generates one canonical struct per tag (e.g. `Flow<'a>`) holding a
 //! borrow of `DynamicClient`. Endpoint methods start with a
 //! `require_endpoint(...)` availability check, then dispatch via the
 //! shared `NifiClient` HTTP helpers.
