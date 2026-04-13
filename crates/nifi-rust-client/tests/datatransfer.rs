@@ -26,7 +26,7 @@ async fn create_port_transaction_returns_response_code() {
         .unwrap();
     let result = client
         .datatransfer()
-        .create_port_transaction("port-id", "input-ports")
+        .create_port_transaction("input-ports", "port-id")
         .await
         .unwrap();
 
