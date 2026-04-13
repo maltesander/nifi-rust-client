@@ -5,8 +5,10 @@
 //! build with the `dynamic` Cargo feature active. Phase 4b deletes the legacy
 //! emitter and renames `dynamic_v2` → `dynamic`.
 
+mod availability;
 mod index;
 
+pub use availability::{emit_availability, endpoint_variant_name};
 pub use index::EndpointIndex;
 
 use std::path::PathBuf;
