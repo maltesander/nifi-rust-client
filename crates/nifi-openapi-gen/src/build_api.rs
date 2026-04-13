@@ -240,101 +240,13 @@ fn parse_specs(specs_dir: &Path, versions: &[String]) -> Vec<(String, ApiSpec)> 
     all_parsed
 }
 
-/// Generate the dynamic module (types, conversions, dispatch, impls, traits, mod.rs, tests).
+/// Generate the dynamic module via the canonical emitter.
 fn generate_dynamic(out_dir: &Path, all_parsed: &[(String, ApiSpec)]) {
-    let dynamic_dir = out_dir.join("dynamic");
-
-    // Type specs: (version_str, &ApiSpec)
-    let type_specs: Vec<(&str, &ApiSpec)> =
-        all_parsed.iter().map(|(v, s)| (v.as_str(), s)).collect();
-
-    for (filename, content) in crate::emit_dynamic_types(&type_specs) {
-        write_generated(
-            &dynamic_dir.join("types").join(&filename),
-            &with_header(&content),
-        );
-    }
-
-    let merged_field_names = crate::collect_merged_field_names(&type_specs);
-    let universal_fields = crate::collect_universal_fields(&type_specs);
-
-    // Conv specs: (version_str, mod_name, &ApiSpec)
-    let mod_names: Vec<String> = all_parsed
-        .iter()
-        .map(|(v, _)| version_to_mod_name(v))
-        .collect();
-    let conv_specs: Vec<(&str, &str, &ApiSpec)> = all_parsed
-        .iter()
-        .zip(mod_names.iter())
-        .map(|((v, s), m)| (v.as_str(), m.as_str(), s))
-        .collect();
-
-    for (filename, content) in
-        crate::emit_dynamic_conversions(&conv_specs, &merged_field_names, &universal_fields)
-    {
-        write_generated(
-            &dynamic_dir.join("conversions").join(&filename),
-            &with_header(&content),
-        );
-    }
-
-    // Dispatch specs: (version_str, mod_name, feature_name, &ApiSpec)
-    let feature_names: Vec<String> = all_parsed
-        .iter()
-        .map(|(v, _)| version_to_feature(v))
-        .collect();
-    let dispatch_specs: Vec<(&str, &str, &str, &ApiSpec)> = all_parsed
-        .iter()
-        .zip(mod_names.iter().zip(feature_names.iter()))
-        .map(|((v, s), (m, f))| (v.as_str(), m.as_str(), f.as_str(), s))
-        .collect();
-
-    for (filename, content) in crate::emit_dynamic_traits(&dispatch_specs) {
-        write_generated(
-            &dynamic_dir.join("traits").join(&filename),
-            &with_header(&content),
-        );
-    }
-
-    for (filename, content) in crate::emit_dynamic_dispatch(&dispatch_specs) {
-        write_generated(
-            &dynamic_dir.join("dispatch").join(&filename),
-            &with_header(&content),
-        );
-    }
-
-    for (filename, content) in crate::emit_dynamic_impls(&dispatch_specs) {
-        write_generated(
-            &dynamic_dir.join("impls").join(&filename),
-            &with_header(&content),
-        );
-    }
-
-    write_generated(
-        &dynamic_dir.join("mod.rs"),
-        &with_header(&crate::emit_dynamic(&dispatch_specs)),
-    );
-
-    // ── dynamic_v2 (Phase 4a parallel build) ────────────────────────────
     let canonical = crate::canonical::canonicalize(all_parsed);
     let dynamic_v2_dir = out_dir.join("dynamic_v2");
     for (rel_path, content) in crate::emit_dynamic_v2(&canonical) {
         write_generated(&dynamic_v2_dir.join(&rel_path), &with_header(&content));
     }
-
-    // Strip the `#![cfg(feature = "dynamic")]` inner attribute from the test
-    // output — the wrapper file provides its own cfg gate, and inner attributes
-    // are not valid inside `include!()`.
-    let tests_content = crate::emit_dynamic_tests(&conv_specs);
-    let tests_content = tests_content
-        .lines()
-        .filter(|line| !line.starts_with("#![cfg(feature = \"dynamic\")]"))
-        .collect::<Vec<_>>()
-        .join("\n");
-    write_generated(
-        &out_dir.join("dynamic_tests.rs"),
-        &with_header(&tests_content),
-    );
 }
 
 /// Generate the content for `generated_lib.rs`.
@@ -414,7 +326,10 @@ fn generate_lib_rs_fragment(versions: &[String], out_dir: &Path, dynamic: bool) 
         ));
     }
 
-    // ── Dynamic module ──────────────────────────────────────────────────
+    // ── dynamic stub — mounts `crate::dynamic::strategy` so that the locked
+    // hand-written `src/dynamic_v2/client.rs` can reference it by path.
+    // Task 6 will eliminate this stub when it renames dynamic_v2 → dynamic
+    // and moves strategy.rs into the canonical module.
     if dynamic && versions.len() > 1 {
         out.push_str(&format!(
             "#[cfg(feature = \"dynamic\")]\n\
@@ -424,7 +339,8 @@ fn generate_lib_rs_fragment(versions: &[String], out_dir: &Path, dynamic: bool) 
         ));
     }
 
-    // ── dynamic_v2 (4a parallel) — doc-hidden, gated on `dynamic` feature.
+    // ── dynamic_v2 (canonical) — doc-hidden, gated on `dynamic` feature.
+    // Task 6 will rename this to `dynamic` and make it public.
     if dynamic && versions.len() > 1 {
         out.push_str(&format!(
             "#[cfg(feature = \"dynamic\")]\n\
@@ -523,8 +439,14 @@ mod tests {
 
         assert!(fragment.contains("pub mod v2_6_0;"));
         assert!(fragment.contains("pub mod v2_8_0;"));
+        // A minimal `pub mod dynamic;` stub is kept so that the locked
+        // `src/dynamic_v2/client.rs` can reference `crate::dynamic::strategy`.
+        // Task 6 will eliminate it when dynamic_v2 is renamed to dynamic.
         assert!(fragment.contains("pub mod dynamic;"));
         assert!(fragment.contains("#[path = \"/tmp/test_out/dynamic/mod.rs\"]"));
+        // The canonical emitter output is under dynamic_v2.
+        assert!(fragment.contains("pub mod dynamic_v2;"));
+        assert!(fragment.contains("#[path = \"/tmp/test_out/dynamic_v2/mod.rs\"]"));
     }
 
     #[test]
