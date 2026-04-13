@@ -214,17 +214,13 @@ Errors use `snafu`. All variants are in `crate::error::NifiError`.
 Use `#[snafu(display(...))]` and `.context(SomeSnafu)` at call sites.
 Do not use `unwrap` or `expect` in non-test code — clippy denies it.
 
-Two distinct "missing field" variants exist:
+Only one "missing field" variant exists:
 
-- `NifiError::MissingRequiredField { field, type_name, version }` — emitted
-  by generated dynamic-mode conversion code when the server response omits
-  a field the target type requires. Carries version/type context.
 - `NifiError::MissingField { path }` — emitted by end-user code calling
   `RequireField::require` or the `require!` macro on an `Option<T>` that
   turned out to be `None`. Carries only a dotted path string.
 
-Neither variant is retryable. Do not merge or rename either; they serve
-different layers.
+This variant is not retryable.
 
 ### Strict parsing & content-type allow-list
 
