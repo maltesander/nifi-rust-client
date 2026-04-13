@@ -59,7 +59,27 @@ pub fn check(
 ) -> Vec<NonAdditiveChange> {
     let mut out = Vec::new();
     check_endpoint_removed(canonical, version, spec, &mut out);
+    check_type_removed(canonical, version, spec, &mut out);
     out
+}
+
+fn check_type_removed(
+    canonical: &CanonicalSpec,
+    version: &str,
+    spec: &ApiSpec,
+    out: &mut Vec<NonAdditiveChange>,
+) {
+    let spec_type_names: BTreeSet<&str> =
+        spec.all_types.iter().map(|t| t.name.as_str()).collect();
+    for (name, canonical_type) in &canonical.types {
+        if !spec_type_names.contains(name.as_str()) {
+            out.push(NonAdditiveChange::TypeRemoved {
+                type_name: name.clone(),
+                previous_versions: canonical_type.versions.to_vec(),
+                missing_in: version.to_string(),
+            });
+        }
+    }
 }
 
 fn collect_spec_endpoint_keys(spec: &ApiSpec) -> BTreeSet<EndpointKey> {

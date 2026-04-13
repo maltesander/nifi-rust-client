@@ -1,7 +1,7 @@
 use nifi_openapi_gen::canonical::{canonicalize, CanonicalSpec};
 use nifi_openapi_gen::content_type::ResponseBodyKind;
 use nifi_openapi_gen::non_additive_detector::{check, NonAdditiveChange};
-use nifi_openapi_gen::parser::{ApiSpec, Endpoint, HttpMethod, TagGroup};
+use nifi_openapi_gen::parser::{ApiSpec, Endpoint, Field, FieldType, HttpMethod, TagGroup, TypeDef, TypeKind};
 
 #[test]
 fn detector_on_empty_canonical_returns_empty() {
@@ -81,6 +81,33 @@ fn detects_endpoint_removed_in_next_version() {
     }
 }
 
+fn make_field(name: &str, ty: FieldType) -> Field {
+    Field {
+        rust_name: name.to_string(),
+        serde_name: name.to_string(),
+        ty,
+        doc: None,
+        read_only: false,
+        deprecated: false,
+    }
+}
+
+fn make_type(name: &str, fields: Vec<Field>) -> TypeDef {
+    TypeDef {
+        name: name.to_string(),
+        kind: TypeKind::Dto,
+        fields,
+        doc: None,
+    }
+}
+
+fn make_spec_with_types(types: Vec<TypeDef>) -> ApiSpec {
+    ApiSpec {
+        tags: vec![],
+        all_types: types,
+    }
+}
+
 #[test]
 fn does_not_report_added_endpoint() {
     let spec_a = make_spec_with_endpoints(vec![make_endpoint(
@@ -96,4 +123,30 @@ fn does_not_report_added_endpoint() {
     ]);
     let changes = check(&canonical, "2.9.0", &spec_b);
     assert!(changes.is_empty());
+}
+
+#[test]
+fn detects_type_removed_in_next_version() {
+    let spec_a = make_spec_with_types(vec![make_type(
+        "AboutDto",
+        vec![make_field("title", FieldType::Str)],
+    )]);
+    let canonical = canonicalize(&[("2.6.0".to_string(), spec_a)]);
+
+    let spec_b = make_spec_with_types(vec![]);
+    let changes = check(&canonical, "2.7.2", &spec_b);
+
+    assert_eq!(changes.len(), 1);
+    match &changes[0] {
+        NonAdditiveChange::TypeRemoved {
+            type_name,
+            previous_versions,
+            missing_in,
+        } => {
+            assert_eq!(type_name, "AboutDto");
+            assert_eq!(previous_versions, &vec!["2.6.0".to_string()]);
+            assert_eq!(missing_in, "2.7.2");
+        }
+        other => panic!("expected TypeRemoved, got {other:?}"),
+    }
 }
