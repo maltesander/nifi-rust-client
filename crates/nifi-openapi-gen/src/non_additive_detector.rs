@@ -9,7 +9,7 @@
 use std::collections::BTreeSet;
 
 use crate::canonical::{CanonicalSpec, EndpointKey};
-use crate::parser::{ApiSpec, FieldType, HttpMethod};
+use crate::parser::{ApiSpec, FieldType, HttpMethod, TypeDef};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum NonAdditiveChange {
@@ -60,6 +60,7 @@ pub fn check(
     let mut out = Vec::new();
     check_endpoint_removed(canonical, version, spec, &mut out);
     check_type_removed(canonical, version, spec, &mut out);
+    check_field_removed(canonical, version, spec, &mut out);
     out
 }
 
@@ -78,6 +79,39 @@ fn check_type_removed(
                 previous_versions: canonical_type.versions.to_vec(),
                 missing_in: version.to_string(),
             });
+        }
+    }
+}
+
+fn check_field_removed(
+    canonical: &CanonicalSpec,
+    version: &str,
+    spec: &ApiSpec,
+    out: &mut Vec<NonAdditiveChange>,
+) {
+    let spec_types: std::collections::BTreeMap<&str, &TypeDef> = spec
+        .all_types
+        .iter()
+        .map(|t| (t.name.as_str(), t))
+        .collect();
+
+    for (type_name, canonical_type) in &canonical.types {
+        // If the whole type was removed, TypeRemoved already covers it.
+        let Some(spec_type) = spec_types.get(type_name.as_str()) else {
+            continue;
+        };
+        let spec_field_names: BTreeSet<&str> =
+            spec_type.fields.iter().map(|f| f.rust_name.as_str()).collect();
+
+        for (field_name, canonical_field) in &canonical_type.fields {
+            if !spec_field_names.contains(field_name.as_str()) {
+                out.push(NonAdditiveChange::FieldRemoved {
+                    type_name: type_name.clone(),
+                    field: field_name.clone(),
+                    previous_versions: canonical_field.versions.to_vec(),
+                    missing_in: version.to_string(),
+                });
+            }
         }
     }
 }
