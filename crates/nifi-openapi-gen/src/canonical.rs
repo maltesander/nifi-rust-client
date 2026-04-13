@@ -13,7 +13,7 @@ use std::collections::BTreeSet;
 /// Kept as a sorted `BTreeSet<String>` so iteration order is stable
 /// and deterministic, matching the existing pipeline's string-based
 /// version keys (`generate.rs` uses `Vec<(String, ApiSpec)>`).
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct VersionSet(BTreeSet<String>);
 
 impl VersionSet {
@@ -49,11 +49,5 @@ impl VersionSet {
 
     pub fn to_vec(&self) -> Vec<String> {
         self.0.iter().cloned().collect()
-    }
-}
-
-impl Default for VersionSet {
-    fn default() -> Self {
-        Self::new()
     }
 }
