@@ -32,7 +32,7 @@ async fn dynamic_v2_get_about_info_happy_path() {
     let client = make_client(&server).await;
     // detect_version primes the version cache via GET /flow/about.
     let v = client.detect_version().await.expect("detect");
-    assert_eq!(v, "2.8.0");
+    assert_eq!(v.to_string(), "2.8.0");
 
     // get_about_info re-uses the cached version (require_endpoint) and
     // issues GET /flow/about, returning the canonical AboutDto.
