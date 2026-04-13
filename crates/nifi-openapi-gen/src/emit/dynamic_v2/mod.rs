@@ -7,9 +7,11 @@
 
 mod availability;
 mod index;
+mod types;
 
 pub use availability::{emit_availability, endpoint_variant_name};
 pub use index::EndpointIndex;
+pub use types::emit_types;
 
 use std::path::PathBuf;
 
