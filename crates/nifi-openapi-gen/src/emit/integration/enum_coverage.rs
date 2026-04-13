@@ -9,7 +9,15 @@ use crate::parser::{ApiSpec, Endpoint};
 use crate::util::{version_to_feature, wire_to_pascal};
 
 /// Generates integration tests verifying enum query-param values are accepted
-/// on their origin version and rejected (`UnsupportedEnumVariant`) on older versions.
+/// on their origin version.
+///
+/// The canonical superset model unions every enum variant across all
+/// supported versions into a single client-side enum. There is no longer
+/// any client-side rejection when a caller passes a "new" variant to an
+/// "old" server — the variant is sent as-is and the server decides what
+/// to do with it (typically 400 or 404). `UnsupportedEnumVariant` only
+/// fires on inbound deserialization of server responses, which is covered
+/// by unit tests. We therefore only emit positive acceptance tests here.
 ///
 /// Returns `(generated_code, tested_keys)` where tested_keys contains
 /// `"{TypeName}::{Variant}"` strings for each enum value that got tests.
@@ -24,30 +32,8 @@ pub fn emit_enum_coverage_tests(
     let mut tests: Vec<String> = Vec::new();
     let mut tested: HashSet<String> = HashSet::new();
 
-    // Collect all version features for cumulative gating.
-    let all_features: Vec<String> = all_specs
-        .iter()
-        .map(|(v, _)| version_to_feature(v))
-        .collect();
-
     for diff in diffs {
         let to_feature = version_to_feature(&diff.to);
-
-        // Features for versions that have the new value (to + later).
-        let supporting_features: Vec<&str> = all_features
-            .iter()
-            .skip_while(|f| f.as_str() != to_feature)
-            .map(|f| f.as_str())
-            .collect();
-        let negative_cfg = if supporting_features.len() == 1 {
-            format!("not(feature = \"{}\")", supporting_features[0])
-        } else {
-            let any_list: Vec<String> = supporting_features
-                .iter()
-                .map(|f| format!("feature = \"{f}\""))
-                .collect();
-            format!("not(any({}))", any_list.join(", "))
-        };
 
         // Find the "to" spec so we can look up endpoint metadata.
         let to_spec = match all_specs.iter().find(|(v, _)| v == &diff.to) {
@@ -125,32 +111,7 @@ async fn {base_name}_accepted() {{
                         variant = variant,
                     );
 
-                    // Test: UnsupportedEnumVariant on versions that don't have this value.
-                    let unsupported_test = format!(
-                        r#"#[cfg({negative_cfg})]
-#[tokio::test]
-#[ignore = "requires a running NiFi instance (use tests/run.sh)"]
-async fn {base_name}_unsupported() {{
-    {use_type}
-
-    let client = helpers::dynamic_logged_in_client().await;
-    let result = client.{accessor}.{fn_name}({call_args_filled}).await;
-    let err = result.unwrap_err();
-    assert!(
-        matches!(err, nifi_rust_client::NifiError::UnsupportedEnumVariant {{ .. }}),
-        "expected UnsupportedEnumVariant, got: {{err:?}}"
-    );
-}}"#,
-                        negative_cfg = negative_cfg,
-                        use_type = use_type,
-                        base_name = base_name,
-                        accessor = accessor,
-                        fn_name = endpoint.fn_name,
-                        call_args_filled = call_args_filled,
-                    );
-
                     tests.push(accepted_test);
-                    tests.push(unsupported_test);
                     tested.insert(format!("{enum_type_name}::{variant}"));
                 }
             }

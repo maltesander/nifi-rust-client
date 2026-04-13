@@ -9,7 +9,11 @@ use crate::parser::{ApiSpec, Endpoint, HttpMethod, QueryParamType};
 use crate::util::{version_to_feature, wire_to_pascal};
 
 /// Generates integration tests verifying added query params are passed on
-/// supporting versions and silently skipped on older versions.
+/// supporting versions and rejected (`UnsupportedQueryParam`) on older
+/// versions. The canonical superset runtime enforces the "silent-when-None
+/// / error-when-set" contract: passing `Some(value)` on a version that
+/// does not have the param returns `NifiError::UnsupportedQueryParam`
+/// immediately, without hitting the server.
 ///
 /// Returns `(generated_code, tested_keys)` where tested_keys contains
 /// `"{METHOD} {path} {param_name}"` strings for each query param that got tests.
@@ -134,17 +138,22 @@ async fn {base_name}_accepted() {{
                     param_name = param_name,
                 );
 
-                // Negative test — param silently ignored on older versions.
-                let ignored_test = format!(
+                // Negative test — setting the param on an unsupporting
+                // version returns NifiError::UnsupportedQueryParam per
+                // design §7.3 ("silent-when-None / error-when-set").
+                let errors_test = format!(
                     r#"#[cfg({negative_cfg})]
 #[tokio::test]
 #[ignore = "requires a running NiFi instance (use tests/run.sh)"]
-async fn {base_name}_ignored_on_older() {{
+async fn {base_name}_errors_on_older() {{
 {use_type_line}
     let client = helpers::dynamic_logged_in_client().await;
     let result = client.{accessor}.{fn_name}({call_args}).await;
-    // Param should be silently skipped — no error expected
-    assert!(result.is_ok(), "expected param to be silently skipped, got: {{:?}}", result.unwrap_err());
+    let err = result.unwrap_err();
+    assert!(
+        matches!(err, nifi_rust_client::NifiError::UnsupportedQueryParam {{ .. }}),
+        "expected UnsupportedQueryParam for param '{param_name}' on older version, got: {{err:?}}"
+    );
 }}"#,
                     negative_cfg = negative_cfg,
                     base_name = base_name,
@@ -152,10 +161,11 @@ async fn {base_name}_ignored_on_older() {{
                     accessor = accessor,
                     fn_name = endpoint.fn_name,
                     call_args = call_args,
+                    param_name = param_name,
                 );
 
                 tests.push(accepted_test);
-                tests.push(ignored_test);
+                tests.push(errors_test);
                 tested.insert(query_param_key(
                     &ep_change.method,
                     &ep_change.path,

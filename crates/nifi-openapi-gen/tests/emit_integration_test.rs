@@ -51,9 +51,17 @@ fn enum_coverage_contains_version_info_test() {
         output.contains("cfg(feature"),
         "should have feature-gated tests"
     );
+    // Phase 4b: canonical superset unions all enum variants and sends them
+    // to the server as-is; there is no client-side UnsupportedEnumVariant
+    // check on outbound query params anymore. Only positive acceptance
+    // tests are emitted.
     assert!(
-        output.contains("UnsupportedEnumVariant"),
-        "should test UnsupportedEnumVariant on older versions"
+        output.contains("_accepted"),
+        "should emit positive acceptance tests"
+    );
+    assert!(
+        !output.contains("UnsupportedEnumVariant"),
+        "should not emit UnsupportedEnumVariant outbound tests post-phase-4b"
     );
 }
 
@@ -150,6 +158,17 @@ fn query_param_coverage_contains_flow_metrics_strategy() {
     assert!(
         output.contains("cfg(feature"),
         "should have feature-gated tests"
+    );
+    // Phase 4b canonical runtime returns UnsupportedQueryParam when a
+    // non-None query param value is passed on a version that does not
+    // support it (design §7.3 "silent-when-None / error-when-set").
+    assert!(
+        output.contains("UnsupportedQueryParam"),
+        "should assert UnsupportedQueryParam on older versions"
+    );
+    assert!(
+        !output.contains("silently skipped"),
+        "should not claim query params are silently skipped (that was pre-phase-4b behavior)"
     );
 }
 
