@@ -38,17 +38,15 @@ nifictl login
 # Check status
 nifictl status
 
-# List processors in root process group
-nifictl processors list
-
-# Get a specific processor
-nifictl processors get <processor-id>
+# Get a specific processor (subcommand names are derived from the generated
+# function names — the same names used in the nifi-rust-client Rust API)
+nifictl processors get-processor <processor-id>
 
 # Use JSON output
-nifictl processors get <id> -o json
+nifictl processors get-processor <id> -o json
 
 # Pipe to jq
-nifictl processors get <id> | jq '.name'
+nifictl processors get-processor <id> | jq '.name'
 ```
 
 ## Configuration
@@ -124,18 +122,24 @@ nifictl completions fish > ~/.config/fish/completions/nifictl.fish
 
 ## Generated commands
 
-Every NiFi API tag is a top-level subcommand with CRUD verbs:
+Every NiFi API tag is a top-level subcommand. Command names are derived
+directly from the generated Rust function names (kebab-cased), so the CLI
+surface is 1:1 with `nifi-rust-client`'s public API:
 
 ```bash
-nifictl processors get <id>
-nifictl processors delete <id>
-nifictl processors update <id> --body-file processor.json
-nifictl process-groups list
-nifictl flow search --q "my processor"
-nifictl controller-services get <id>
+nifictl processors get-processor <id>
+nifictl processors delete-processor <id>
+nifictl processors update-processor <id> --body-file processor.json
+nifictl processgroups get-process-groups <parent-id>
+nifictl flow search-cluster --q "my processor"
+nifictl controller_services get-controller-service <id>
 ```
 
-Use `nifictl <resource> --help` to see available commands.
+> **Phase 5 change:** subcommand names were previously CRUD verbs (`get`,
+> `list`, `config-get`, `run-status-put`, etc.). They are now the exact
+> flat-API function names with dashes, which lines up with the Rust API and
+> makes the NiFi REST docs trivially discoverable. Use `nifictl <resource>
+> --help` to list the available commands for any resource.
 
 ## Multi-version support
 

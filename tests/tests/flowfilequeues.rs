@@ -38,9 +38,8 @@ async fn flowfile_queue_listing_and_drop() {
         ..Default::default()
     };
     let src = client
-        .processgroups_api()
-        .processors(&pg_id)
-        .create_processor(&src_body)
+        .processgroups()
+        .create_processor(&pg_id, &src_body)
         .await
         .expect("failed to create source processor");
     let src_id = src.id.clone().expect("src has no id");
@@ -70,9 +69,8 @@ async fn flowfile_queue_listing_and_drop() {
         ..Default::default()
     };
     let dst = client
-        .processgroups_api()
-        .processors(&pg_id)
-        .create_processor(&dst_body)
+        .processgroups()
+        .create_processor(&pg_id, &dst_body)
         .await
         .expect("failed to create destination processor");
     let dst_id = dst.id.clone().expect("dst has no id");
@@ -104,9 +102,8 @@ async fn flowfile_queue_listing_and_drop() {
         ..Default::default()
     };
     let conn = client
-        .processgroups_api()
-        .connections(&pg_id)
-        .create_connection(&conn_body)
+        .processgroups()
+        .create_connection(&pg_id, &conn_body)
         .await
         .expect("failed to create connection");
     let conn_id = conn.id.clone().expect("connection has no id");
@@ -126,9 +123,8 @@ async fn flowfile_queue_listing_and_drop() {
 
     // ── listing request ───────────────────────────────────────────────────────
     let listing = client
-        .flowfilequeues_api()
-        .listing_requests(&conn_id)
-        .create_flow_file_listing()
+        .flowfilequeues()
+        .create_flow_file_listing(&conn_id)
         .await
         .expect("failed to create listing request");
     let listing_id = listing.id.clone().expect("listing request has no id");
@@ -136,9 +132,8 @@ async fn flowfile_queue_listing_and_drop() {
     // poll until finished
     loop {
         let l = client
-            .flowfilequeues_api()
-            .listing_requests(&conn_id)
-            .get_listing_request(&listing_id)
+            .flowfilequeues()
+            .get_listing_request(&conn_id, &listing_id)
             .await
             .expect("failed to poll listing request");
         if l.finished.unwrap_or(false) {
@@ -149,17 +144,15 @@ async fn flowfile_queue_listing_and_drop() {
 
     // clean up the listing request
     client
-        .flowfilequeues_api()
-        .listing_requests(&conn_id)
-        .delete_listing_request(&listing_id)
+        .flowfilequeues()
+        .delete_listing_request(&conn_id, &listing_id)
         .await
         .expect("failed to delete listing request");
 
     // ── drop request — empties the queue ─────────────────────────────────────
     let drop_req = client
-        .flowfilequeues_api()
-        .drop_requests(&conn_id)
-        .create_drop_request()
+        .flowfilequeues()
+        .create_drop_request(&conn_id)
         .await
         .expect("failed to create drop request");
     let drop_id = drop_req.id.clone().expect("drop request has no id");
@@ -167,9 +160,8 @@ async fn flowfile_queue_listing_and_drop() {
     // poll until finished
     loop {
         let d = client
-            .flowfilequeues_api()
-            .drop_requests(&conn_id)
-            .get_drop_request(&drop_id)
+            .flowfilequeues()
+            .get_drop_request(&conn_id, &drop_id)
             .await
             .expect("failed to poll drop request");
         if d.finished.unwrap_or(false) {
@@ -180,24 +172,23 @@ async fn flowfile_queue_listing_and_drop() {
 
     // clean up the drop request
     client
-        .flowfilequeues_api()
-        .drop_requests(&conn_id)
-        .remove_drop_request(&drop_id)
+        .flowfilequeues()
+        .remove_drop_request(&conn_id, &drop_id)
         .await
         .expect("failed to delete drop request");
 
     client
-        .connections_api()
+        .connections()
         .delete_connection(&conn_id, Some(&conn_version.to_string()), None, None)
         .await
         .expect("failed to delete connection");
     client
-        .processors_api()
+        .processors()
         .delete_processor(&src_id, Some(&src_final_version.to_string()), None, None)
         .await
         .expect("failed to delete source processor");
     client
-        .processors_api()
+        .processors()
         .delete_processor(&dst_id, Some(&dst_version.to_string()), None, None)
         .await
         .expect("failed to delete destination processor");

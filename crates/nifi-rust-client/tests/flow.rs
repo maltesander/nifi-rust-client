@@ -28,7 +28,7 @@ async fn about_returns_version_and_title() {
         .unwrap()
         .build()
         .unwrap();
-    let about = client.flow_api().get_about_info().await.unwrap();
+    let about = client.flow().get_about_info().await.unwrap();
 
     assert_eq!(about.version.as_deref(), Some("2.8.0"));
     assert_eq!(about.title.as_deref(), Some("NiFi"));
@@ -53,7 +53,7 @@ async fn current_user_returns_identity_and_anonymous_flag() {
         .unwrap()
         .build()
         .unwrap();
-    let user = client.flow_api().get_current_user().await.unwrap();
+    let user = client.flow().get_current_user().await.unwrap();
 
     assert_eq!(user.identity.as_deref(), Some("admin"));
     assert!(!user.anonymous.unwrap_or(false));
@@ -87,7 +87,7 @@ async fn flow_status_returns_component_counts() {
         .unwrap()
         .build()
         .unwrap();
-    let status = client.flow_api().get_controller_status().await.unwrap();
+    let status = client.flow().get_controller_status().await.unwrap();
 
     assert_eq!(status.active_thread_count, Some(2));
     assert_eq!(status.running_count, Some(3));
@@ -161,7 +161,7 @@ async fn get_flow_config_returns_supports_managed_authorizer() {
         .unwrap()
         .build()
         .unwrap();
-    let config = client.flow_api().get_flow_config().await.unwrap();
+    let config = client.flow().get_flow_config().await.unwrap();
 
     assert_eq!(config.supports_managed_authorizer, Some(true));
     assert_eq!(config.supports_configurable_users_and_groups, Some(true));
@@ -188,7 +188,7 @@ async fn get_cluster_summary_returns_connected_node_count() {
         .unwrap()
         .build()
         .unwrap();
-    let summary = client.flow_api().get_cluster_summary().await.unwrap();
+    let summary = client.flow().get_cluster_summary().await.unwrap();
 
     assert_eq!(summary.clustered, Some(false));
     assert_eq!(summary.connected_to_cluster, Some(false));
@@ -226,7 +226,7 @@ async fn get_flow_returns_process_group_id() {
         .unwrap()
         .build()
         .unwrap();
-    let entity = client.flow_api().get_flow("root", None).await.unwrap();
+    let entity = client.flow().get_flow("root", None).await.unwrap();
 
     assert_eq!(
         entity
@@ -268,7 +268,7 @@ async fn search_flow_returns_processor_results() {
         .build()
         .unwrap();
     let results = client
-        .flow_api()
+        .flow()
         .search_flow(Some("GenerateFlowFile"), None)
         .await
         .unwrap();
@@ -304,11 +304,7 @@ async fn clear_process_group_bulletins_returns_cleared_count() {
         .build()
         .unwrap();
     let body = nifi_rust_client::types::ClearBulletinsForGroupRequestEntity::default();
-    let result = client
-        .flow_api()
-        .bulletins("some-id")
-        .clear_bulletins(&body)
-        .await;
+    let result = client.flow().clear_bulletins("some-id", &body).await;
 
     assert!(
         result.is_ok(),
@@ -353,7 +349,7 @@ async fn get_listen_ports_returns_port_list() {
         .unwrap()
         .build()
         .unwrap();
-    let result = client.flow_api().get_listen_ports().await.unwrap();
+    let result = client.flow().get_listen_ports().await.unwrap();
 
     let ports = result.listen_ports.unwrap_or_default();
     assert_eq!(ports.len(), 1);
@@ -389,7 +385,7 @@ async fn get_flow_registry_client_definition_returns_artifact_info() {
         .build()
         .unwrap();
     let result = client
-        .flow_api()
+        .flow()
         .get_flow_registry_client_definition(
             "org.apache.nifi",
             "nifi-flow-registry-client-nar",

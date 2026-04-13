@@ -1,23 +1,16 @@
-use crate::parser::{ApiSpec, Endpoint, HttpMethod, QueryParamType, SubGroup, TagGroup};
+use crate::parser::{ApiSpec, Endpoint, HttpMethod, QueryParamType, TagGroup};
 
 /// Find an endpoint in the spec by HTTP method and path.
-/// Returns `(Endpoint, TagGroup, Option<SubGroup>)`.
+/// Returns `(Endpoint, TagGroup)`.
 pub(super) fn find_endpoint<'a>(
     spec: &'a ApiSpec,
     method: &HttpMethod,
     path: &str,
-) -> Option<(&'a Endpoint, &'a TagGroup, Option<&'a SubGroup>)> {
+) -> Option<(&'a Endpoint, &'a TagGroup)> {
     for tag in &spec.tags {
-        for ep in &tag.root_endpoints {
+        for ep in &tag.endpoints {
             if &ep.method == method && ep.path == path {
-                return Some((ep, tag, None));
-            }
-        }
-        for sg in &tag.sub_groups {
-            for ep in &sg.endpoints {
-                if &ep.method == method && ep.path == path {
-                    return Some((ep, tag, Some(sg)));
-                }
+                return Some((ep, tag));
             }
         }
     }
@@ -25,18 +18,12 @@ pub(super) fn find_endpoint<'a>(
 }
 
 /// Build the accessor for calling the API in dynamic mode.
-/// For sub-group endpoints, chains the sub-group accessor with the primary param.
-pub(super) fn build_accessor(tag_accessor_fn: &str, sub_group: Option<&SubGroup>) -> String {
-    match sub_group {
-        Some(sg) => {
-            let val = default_path_param_value(&sg.primary_param);
-            format!(
-                "{tag_accessor_fn}().{accessor}(\"{val}\")",
-                accessor = sg.accessor_fn
-            )
-        }
-        None => format!("{tag_accessor_fn}()"),
-    }
+///
+/// With the Phase 5 flat API, every endpoint lives as an inherent method
+/// on the single per-tag struct, so the accessor is just
+/// `{tag_accessor_fn}()`.
+pub(super) fn build_accessor(tag_accessor_fn: &str) -> String {
+    format!("{tag_accessor_fn}()")
 }
 
 /// Return a sensible placeholder value for a path parameter.
@@ -46,18 +33,6 @@ pub(super) fn default_path_param_value(param_name: &str) -> String {
         "id" | "process_group_id" | "parent_group_id" => "root".to_string(),
         other => format!("test-{other}"),
     }
-}
-
-/// Produce `use` statements needed to call the given struct's methods.
-///
-/// The canonical dynamic path (Phase 4b+) has no traits — the concrete
-/// struct is returned directly by `client.{accessor}()` and its methods
-/// are inherent, not trait methods. So neither the root nor sub-group
-/// struct needs to be imported. This function returns an empty string;
-/// it exists so call sites stay consistent with the legacy expectation
-/// that an import line precedes the call.
-pub(super) fn trait_use_stmt(_struct_name: &str, _sub_group: Option<&SubGroup>) -> String {
-    String::new()
 }
 
 /// Capitalize the first character of a string.
@@ -83,7 +58,6 @@ pub(super) fn default_required_query_param_value(ty: &QueryParamType) -> String 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::parser::SubGroup;
 
     #[test]
     fn capitalize_first_works() {
@@ -106,38 +80,8 @@ mod tests {
     }
 
     #[test]
-    fn trait_use_stmt_canonical_emits_nothing() {
-        assert_eq!(trait_use_stmt("FlowApi", None), "");
-        let sg = SubGroup {
-            name: "metrics".to_string(),
-            struct_name: "FlowMetricsApi".to_string(),
-            accessor_fn: "metrics".to_string(),
-            primary_param: "producer".to_string(),
-            primary_param_doc: None,
-            endpoints: vec![],
-        };
-        assert_eq!(trait_use_stmt("FlowApi", Some(&sg)), "");
-    }
-
-    #[test]
-    fn build_accessor_root_endpoint() {
-        assert_eq!(build_accessor("flow_api", None), "flow_api()");
-    }
-
-    #[test]
-    fn build_accessor_sub_group_chains() {
-        let sg = SubGroup {
-            name: "metrics".to_string(),
-            struct_name: "FlowMetricsApi".to_string(),
-            accessor_fn: "metrics".to_string(),
-            primary_param: "producer".to_string(),
-            primary_param_doc: None,
-            endpoints: vec![],
-        };
-        assert_eq!(
-            build_accessor("flow_api", Some(&sg)),
-            "flow_api().metrics(\"prometheus\")"
-        );
+    fn build_accessor_flat() {
+        assert_eq!(build_accessor("flow"), "flow()");
     }
 
     #[test]

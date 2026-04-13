@@ -23,11 +23,7 @@ async fn get_counters_returns_aggregate_snapshot() {
         .unwrap()
         .build()
         .unwrap();
-    let counters = client
-        .counters_api()
-        .get_counters(None, None)
-        .await
-        .unwrap();
+    let counters = client.counters().get_counters(None, None).await.unwrap();
 
     assert!(counters.aggregate_snapshot.is_some());
 }

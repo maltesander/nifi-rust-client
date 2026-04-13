@@ -23,7 +23,7 @@ fn can_construct_internal_model() {
                 }],
                 doc: None,
             }],
-            root_endpoints: vec![Endpoint {
+            endpoints: vec![Endpoint {
                 method: HttpMethod::Get,
                 path: "/flow/about".into(),
                 fn_name: "get_about_info".into(),
@@ -46,11 +46,10 @@ fn can_construct_internal_model() {
                 error_responses: vec![],
                 security: None,
             }],
-            sub_groups: vec![],
         }],
         all_types: vec![],
     };
     assert_eq!(spec.tags[0].tag, "Flow");
     assert_eq!(spec.tags[0].types[0].name, "AboutDto");
-    assert_eq!(spec.tags[0].root_endpoints[0].fn_name, "get_about_info");
+    assert_eq!(spec.tags[0].endpoints[0].fn_name, "get_about_info");
 }

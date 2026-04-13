@@ -5,7 +5,7 @@ use crate::plan::FileEdit;
 /// Build one `FileEdit::Overwrite` per version, writing
 /// `<specs_dir>/<version>/fn_names.txt` with the sorted, column-padded
 /// table of `(tag, method, path) -> fn_name` for every endpoint in the
-/// parsed spec (root + sub-group endpoints).
+/// parsed spec.
 pub fn emit_fn_names_goldens(
     layout: &RepoLayout,
     all_parsed: &[(String, ApiSpec)],
@@ -28,23 +28,13 @@ pub fn emit_fn_names_goldens(
 pub fn format_fn_names_table(spec: &ApiSpec) -> String {
     let mut rows: Vec<(String, String, String, String)> = Vec::new();
     for tag in &spec.tags {
-        for ep in &tag.root_endpoints {
+        for ep in &tag.endpoints {
             rows.push((
                 tag.tag.clone(),
                 ep.method.as_str().to_string(),
                 ep.path.clone(),
                 ep.fn_name.clone(),
             ));
-        }
-        for sg in &tag.sub_groups {
-            for ep in &sg.endpoints {
-                rows.push((
-                    tag.tag.clone(),
-                    ep.method.as_str().to_string(),
-                    ep.path.clone(),
-                    ep.fn_name.clone(),
-                ));
-            }
         }
     }
     rows.sort_by(|a, b| (&a.0, &a.1, &a.2).cmp(&(&b.0, &b.1, &b.2)));
@@ -99,8 +89,7 @@ mod tests {
                 module_name: "flow".to_string(),
                 accessor_fn: "flow_api".to_string(),
                 types: vec![],
-                root_endpoints: eps,
-                sub_groups: vec![],
+                endpoints: eps,
             }],
             all_types: vec![],
         }

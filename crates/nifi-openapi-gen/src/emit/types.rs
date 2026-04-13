@@ -66,11 +66,7 @@ pub fn emit_types(spec: &ApiSpec) -> Vec<(String, String)> {
 /// Collect all type names directly referenced by a tag's endpoints (shallow — no transitive follow).
 fn types_referenced_by_tag(tag: &TagGroup) -> HashSet<String> {
     let mut names = HashSet::new();
-    let all_eps = tag
-        .root_endpoints
-        .iter()
-        .chain(tag.sub_groups.iter().flat_map(|sg| sg.endpoints.iter()));
-    for ep in all_eps {
+    for ep in tag.endpoints.iter() {
         if let Some(t) = &ep.request_type {
             names.insert(t.clone());
         }

@@ -27,7 +27,7 @@ async fn get_controller_service_returns_name_and_type() {
         .build()
         .unwrap();
     let svc = client
-        .controller_services_api()
+        .controller_services()
         .get_controller_service("svc-id", None)
         .await
         .unwrap();
@@ -63,9 +63,8 @@ async fn update_run_status_sends_request_to_correct_path() {
         .unwrap();
     let body = nifi_rust_client::types::ControllerServiceRunStatusEntity::default();
     let result = client
-        .controller_services_api()
-        .run_status("svc-id")
-        .update_run_status(&body)
+        .controller_services()
+        .update_run_status("svc-id", &body)
         .await;
 
     assert!(result.is_ok(), "{:?}", result);
@@ -96,9 +95,8 @@ async fn clear_controller_service_bulletins_returns_cleared_count() {
         .unwrap();
     let body = nifi_rust_client::types::ClearBulletinsRequestEntity::default();
     let result = client
-        .controller_services_api()
-        .bulletins("some-id")
-        .clear_bulletins(&body)
+        .controller_services()
+        .clear_bulletins("some-id", &body)
         .await;
 
     assert!(

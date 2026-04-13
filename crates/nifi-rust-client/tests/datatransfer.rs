@@ -25,9 +25,8 @@ async fn create_port_transaction_returns_response_code() {
         .build()
         .unwrap();
     let result = client
-        .datatransfer_api()
-        .transactions("port-id")
-        .create_port_transaction("input-ports")
+        .datatransfer()
+        .create_port_transaction("input-ports", "port-id")
         .await
         .unwrap();
 
@@ -56,9 +55,8 @@ async fn extend_input_port_transaction_ttl_returns_response_code() {
         .build()
         .unwrap();
     let result = client
-        .datatransfer_api()
-        .transactions("port-id")
-        .extend_input_port_transaction_t_t_l("tx-id")
+        .datatransfer()
+        .extend_input_port_transaction_t_t_l("port-id", "tx-id")
         .await
         .unwrap();
 
@@ -88,9 +86,8 @@ async fn commit_input_port_transaction_returns_result() {
         .build()
         .unwrap();
     let result = client
-        .datatransfer_api()
-        .transactions("port-id")
-        .commit_input_port_transaction("tx-id", 12)
+        .datatransfer()
+        .commit_input_port_transaction("port-id", "tx-id", 12)
         .await
         .unwrap();
 
@@ -117,9 +114,8 @@ async fn receive_flow_files_sends_octet_stream_and_succeeds() {
         .build()
         .unwrap();
     let result = client
-        .datatransfer_api()
-        .transactions("port-id")
-        .receive_flow_files("tx-id", Some("flowfile.bin"), b"hello".to_vec())
+        .datatransfer()
+        .receive_flow_files("port-id", "tx-id", Some("flowfile.bin"), b"hello".to_vec())
         .await;
 
     assert!(result.is_ok());
@@ -147,9 +143,8 @@ async fn extend_output_port_transaction_ttl_returns_response_code() {
         .build()
         .unwrap();
     let result = client
-        .datatransfer_api()
-        .transactions("port-id")
-        .extend_output_port_transaction_t_t_l("tx-id")
+        .datatransfer()
+        .extend_output_port_transaction_t_t_l("port-id", "tx-id")
         .await
         .unwrap();
 
@@ -179,9 +174,8 @@ async fn commit_output_port_transaction_returns_result() {
         .build()
         .unwrap();
     let result = client
-        .datatransfer_api()
-        .transactions("port-id")
-        .commit_output_port_transaction("tx-id", 12, "abc123checksum")
+        .datatransfer()
+        .commit_output_port_transaction("port-id", "tx-id", 12, "abc123checksum")
         .await
         .unwrap();
 
@@ -208,9 +202,8 @@ async fn transfer_flow_files_succeeds_on_200() {
         .build()
         .unwrap();
     let result = client
-        .datatransfer_api()
-        .transactions("port-id")
-        .transfer_flow_files("tx-id")
+        .datatransfer()
+        .transfer_flow_files("port-id", "tx-id")
         .await;
 
     assert!(result.is_ok());

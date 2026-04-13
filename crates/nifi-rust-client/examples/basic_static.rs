@@ -45,7 +45,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     client.login(&user, &pass).await?;
 
-    let about = client.flow_api().get_about_info().await?;
+    let about = client.flow().get_about_info().await?;
     println!("Connected to NiFi:");
     println!("  version:  {:?}", about.version);
     println!("  title:    {:?}", about.title);

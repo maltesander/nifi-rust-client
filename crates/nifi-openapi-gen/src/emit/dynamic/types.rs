@@ -125,11 +125,7 @@ fn emit_types_from_specs(specs: &[(&str, &ApiSpec)]) -> Vec<(String, String)> {
 /// Collect all type names directly referenced by a tag's endpoints (shallow — no transitive follow).
 fn types_referenced_by_tag(tag: &TagGroup) -> HashSet<String> {
     let mut names = HashSet::new();
-    let all_eps = tag
-        .root_endpoints
-        .iter()
-        .chain(tag.sub_groups.iter().flat_map(|sg| sg.endpoints.iter()));
-    for ep in all_eps {
+    for ep in tag.endpoints.iter() {
         if let Some(t) = &ep.request_type {
             names.insert(t.clone());
         }
@@ -415,8 +411,7 @@ mod tests {
             module_name: module_name.to_string(),
             accessor_fn: format!("{module_name}_api"),
             types: vec![],
-            root_endpoints: endpoints,
-            sub_groups: vec![],
+            endpoints,
         }
     }
 
@@ -687,7 +682,7 @@ mod tests {
                 module_name: "flow".to_string(),
                 accessor_fn: "flow_api".to_string(),
                 types: vec![],
-                root_endpoints: vec![Endpoint {
+                endpoints: vec![Endpoint {
                     method: HttpMethod::Get,
                     path: "/flow/about".to_string(),
                     fn_name: "get_about_info".to_string(),
@@ -709,7 +704,6 @@ mod tests {
                     error_responses: vec![],
                     security: None,
                 }],
-                sub_groups: vec![],
             }],
             all_types: vec![
                 TypeDef {

@@ -29,7 +29,7 @@ async fn get_remote_process_group_returns_target_uri() {
         .build()
         .unwrap();
     let rpg = client
-        .remoteprocessgroups_api()
+        .remoteprocessgroups()
         .get_remote_process_group("rpg-id")
         .await
         .unwrap();
@@ -66,9 +66,8 @@ async fn clear_remote_process_group_bulletins_returns_cleared_count() {
         .unwrap();
     let body = nifi_rust_client::types::ClearBulletinsRequestEntity::default();
     let result = client
-        .remoteprocessgroups_api()
-        .bulletins("some-id")
-        .clear_bulletins(&body)
+        .remoteprocessgroups()
+        .clear_bulletins("some-id", &body)
         .await;
 
     assert!(

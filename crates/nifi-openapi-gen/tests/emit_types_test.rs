@@ -184,7 +184,7 @@ fn mod_rs_reexports_all_modules() {
                 module_name: "flow".into(),
                 accessor_fn: "flow_api".into(),
                 types: vec![],
-                root_endpoints: vec![
+                endpoints: vec![
                     Endpoint {
                         method: HttpMethod::Get,
                         path: "/flow".into(),
@@ -232,7 +232,6 @@ fn mod_rs_reexports_all_modules() {
                         security: None,
                     },
                 ],
-                sub_groups: vec![],
             },
             TagGroup {
                 tag: "Processors".into(),
@@ -240,7 +239,7 @@ fn mod_rs_reexports_all_modules() {
                 module_name: "processors".into(),
                 accessor_fn: "processors_api".into(),
                 types: vec![],
-                root_endpoints: vec![
+                endpoints: vec![
                     Endpoint {
                         method: HttpMethod::Get,
                         path: "/processors/{id}".into(),
@@ -291,7 +290,6 @@ fn mod_rs_reexports_all_modules() {
                         security: None,
                     },
                 ],
-                sub_groups: vec![],
             },
         ],
     };

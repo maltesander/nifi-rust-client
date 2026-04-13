@@ -108,16 +108,9 @@ pub fn generate_client(specs_dir: &Path, out_dir: &Path, config: &GenerateConfig
             );
         }
 
-        for (filename, content) in crate::emit_static_traits(spec, &types_prefix) {
-            write_generated(
-                &versioned_dir.join("traits").join(&filename),
-                &with_header(&content),
-            );
-        }
-
         write_generated(
             &versioned_dir.join("mod.rs"),
-            &with_header("pub mod api;\npub mod traits;\npub mod types;\n"),
+            &with_header("pub mod api;\npub mod types;\n"),
         );
     }
 

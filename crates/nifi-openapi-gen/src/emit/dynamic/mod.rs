@@ -62,7 +62,7 @@ mod tests {
                 module_name: "flow".to_string(),
                 accessor_fn: "flow_api".to_string(),
                 types: vec![],
-                root_endpoints: vec![Endpoint {
+                endpoints: vec![Endpoint {
                     method: HttpMethod::Get,
                     path: "/flow/about".to_string(),
                     fn_name: "get_about_info".to_string(),
@@ -82,7 +82,6 @@ mod tests {
                     error_responses: vec![],
                     security: None,
                 }],
-                sub_groups: vec![],
             }],
             all_types: vec![],
         }

@@ -28,7 +28,7 @@ async fn create_parameter_context_returns_id_and_name() {
         .unwrap();
     let body = nifi_rust_client::types::ParameterContextEntity::default();
     let ctx = client
-        .parametercontexts_api()
+        .parametercontexts()
         .create_parameter_context(&body)
         .await
         .unwrap();
@@ -64,7 +64,7 @@ async fn get_parameter_context_returns_name_and_description() {
         .build()
         .unwrap();
     let ctx = client
-        .parametercontexts_api()
+        .parametercontexts()
         .get_parameter_context("ctx-id", None)
         .await
         .unwrap();

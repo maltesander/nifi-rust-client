@@ -19,11 +19,7 @@ async fn get_input_port_returns_name() {
         .unwrap()
         .build()
         .unwrap();
-    let port = client
-        .inputports_api()
-        .get_input_port("port-id")
-        .await
-        .unwrap();
+    let port = client.inputports().get_input_port("port-id").await.unwrap();
 
     assert_eq!(port.id.as_deref(), Some("port-id"));
     assert_eq!(
@@ -50,9 +46,8 @@ async fn create_input_port_returns_id() {
         .unwrap();
     let body = nifi_rust_client::types::PortEntity::default();
     let port = client
-        .processgroups_api()
-        .input_ports("pg-id")
-        .create_input_port(&body)
+        .processgroups()
+        .create_input_port("pg-id", &body)
         .await
         .unwrap();
 
@@ -83,11 +78,7 @@ async fn clear_input_port_bulletins_returns_cleared_count() {
         .build()
         .unwrap();
     let body = nifi_rust_client::types::ClearBulletinsRequestEntity::default();
-    let result = client
-        .inputports_api()
-        .bulletins("some-id")
-        .clear_bulletins(&body)
-        .await;
+    let result = client.inputports().clear_bulletins("some-id", &body).await;
 
     assert!(
         result.is_ok(),

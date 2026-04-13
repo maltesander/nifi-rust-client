@@ -5,16 +5,7 @@ use crate::plan::FileEdit;
 use crate::util::version_to_feature;
 
 pub(crate) fn count_spec_endpoints(spec: &ApiSpec) -> usize {
-    spec.tags
-        .iter()
-        .map(|t| {
-            t.root_endpoints.len()
-                + t.sub_groups
-                    .iter()
-                    .map(|sg| sg.endpoints.len())
-                    .sum::<usize>()
-        })
-        .sum()
+    spec.tags.iter().map(|t| t.endpoints.len()).sum()
 }
 
 pub(crate) fn count_spec_types(spec: &ApiSpec) -> usize {
@@ -148,7 +139,7 @@ mod tests {
                     module_name: "flow".to_string(),
                     accessor_fn: "flow_api".to_string(),
                     types: vec![],
-                    root_endpoints: (0..endpoint_count)
+                    endpoints: (0..endpoint_count)
                         .map(|i| Endpoint {
                             method: HttpMethod::Get,
                             path: format!("/nifi-api/flow/ep{i}"),
@@ -170,7 +161,6 @@ mod tests {
                             security: None,
                         })
                         .collect(),
-                    sub_groups: vec![],
                 }],
                 all_types: vec![],
             }
@@ -226,7 +216,7 @@ mod tests {
                     module_name: "flow".to_string(),
                     accessor_fn: "flow_api".to_string(),
                     types: vec![],
-                    root_endpoints: paths
+                    endpoints: paths
                         .iter()
                         .map(|p| Endpoint {
                             method: HttpMethod::Get,
@@ -249,7 +239,6 @@ mod tests {
                             security: None,
                         })
                         .collect(),
-                    sub_groups: vec![],
                 }],
                 all_types: vec![],
             }

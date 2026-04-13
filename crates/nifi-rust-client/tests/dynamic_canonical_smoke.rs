@@ -37,7 +37,7 @@ async fn dynamic_get_about_info_happy_path() {
     // get_about_info re-uses the cached version (require_endpoint) and
     // issues GET /flow/about, returning the canonical AboutDto.
     let about = client
-        .flow_api()
+        .flow()
         .get_about_info()
         .await
         .expect("get_about_info");

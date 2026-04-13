@@ -10,7 +10,7 @@ fn suffix_stripped_from_fn_name_and_raw_id_preserved() {
     let ep = spec
         .tags
         .iter()
-        .flat_map(|t| t.root_endpoints.iter())
+        .flat_map(|t| t.endpoints.iter())
         .find(|e| e.path == "/foo/bar")
         .expect("endpoint /foo/bar not found");
     assert_eq!(ep.fn_name, "get_foo");
@@ -23,7 +23,7 @@ fn passthrough_without_suffix() {
     let ep = spec
         .tags
         .iter()
-        .flat_map(|t| t.root_endpoints.iter())
+        .flat_map(|t| t.endpoints.iter())
         .next()
         .expect("endpoint");
     assert_eq!(ep.fn_name, "get_about_info");
@@ -36,7 +36,7 @@ fn multi_digit_suffix_stripped() {
     let ep = spec
         .tags
         .iter()
-        .flat_map(|t| t.root_endpoints.iter())
+        .flat_map(|t| t.endpoints.iter())
         .next()
         .expect("endpoint");
     assert_eq!(ep.fn_name, "get_foo");
@@ -49,7 +49,7 @@ fn only_trailing_group_stripped() {
     let ep = spec
         .tags
         .iter()
-        .flat_map(|t| t.root_endpoints.iter())
+        .flat_map(|t| t.endpoints.iter())
         .next()
         .expect("endpoint");
     // "getFoo_1_2" strips only the trailing _2 -> "getFoo_1" -> "get_foo_1"
@@ -92,8 +92,7 @@ fn make_spec(tag: &str, endpoints: Vec<Endpoint>) -> ApiSpec {
             module_name: tag.to_lowercase(),
             accessor_fn: format!("{}_api", tag.to_lowercase()),
             types: vec![],
-            root_endpoints: endpoints,
-            sub_groups: vec![],
+            endpoints,
         }],
         all_types: vec![],
     }
@@ -119,7 +118,7 @@ fn apply_overrides_rewrites_matching_fn_name() {
 
     naming::apply_overrides_with_table(&mut spec, "test-1.0", &overrides);
 
-    let ep = &spec.tags[0].root_endpoints[0];
+    let ep = &spec.tags[0].endpoints[0];
     assert_eq!(ep.fn_name, "get_foo_special");
 }
 
@@ -133,7 +132,7 @@ fn apply_overrides_leaves_unmatched_names_alone() {
 
     naming::apply_overrides_with_table(&mut spec, "test-1.0", &overrides);
 
-    let ep = &spec.tags[0].root_endpoints[0];
+    let ep = &spec.tags[0].endpoints[0];
     assert_eq!(ep.fn_name, "get_foo");
 }
 

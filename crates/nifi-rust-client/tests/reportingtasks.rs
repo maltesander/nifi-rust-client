@@ -24,7 +24,7 @@ async fn get_reporting_task_returns_name_and_type() {
         .build()
         .unwrap();
     let task = client
-        .reportingtasks_api()
+        .reportingtasks()
         .get_reporting_task("task-id")
         .await
         .unwrap();
@@ -61,9 +61,8 @@ async fn clear_reporting_task_bulletins_returns_cleared_count() {
         .unwrap();
     let body = nifi_rust_client::types::ClearBulletinsRequestEntity::default();
     let result = client
-        .reportingtasks_api()
-        .bulletins("some-id")
-        .clear_bulletins(&body)
+        .reportingtasks()
+        .clear_bulletins("some-id", &body)
         .await;
 
     assert!(

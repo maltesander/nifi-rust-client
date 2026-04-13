@@ -26,7 +26,7 @@ async fn get_access_policy_returns_resource_and_action() {
         .build()
         .unwrap();
     let policy = client
-        .policies_api()
+        .policies()
         .get_access_policy("policy-id")
         .await
         .unwrap();

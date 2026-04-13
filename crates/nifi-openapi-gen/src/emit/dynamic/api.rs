@@ -99,82 +99,23 @@ fn emit_tag_file(meta: &TagMeta<'_>, endpoints: &[&IndexedEndpoint<'_>]) -> Stri
         meta.struct_name
     ));
 
-    // Group endpoints into root vs sub-group.
-    let mut roots: Vec<&IndexedEndpoint<'_>> = Vec::new();
-    let mut by_subgroup: BTreeMap<&str, Vec<&IndexedEndpoint<'_>>> = BTreeMap::new();
-    for ep in endpoints {
-        if let Some(sg) = ep.sub_group {
-            by_subgroup
-                .entry(sg.struct_name.as_str())
-                .or_default()
-                .push(ep);
-        } else {
-            roots.push(ep);
-        }
-    }
-
-    // Collect one representative SubGroup metadata per sub-struct name.
-    let mut sg_meta: BTreeMap<&str, &crate::parser::SubGroup> = BTreeMap::new();
-    for ep in endpoints {
-        if let Some(sg) = ep.sub_group {
-            sg_meta.entry(sg.struct_name.as_str()).or_insert(sg);
-        }
-    }
-
     out.push_str("#[allow(clippy::too_many_arguments, clippy::let_unit_value, clippy::vec_init_then_push, unused_variables)]\n");
     out.push_str(&format!("impl<'a> {}<'a> {{\n", meta.struct_name));
-    for ep in &roots {
-        emit_method(&mut out, ep, SelfKind::Root);
-    }
-    // Sub-group accessors on the root struct.
-    for (sg_struct, sg) in &sg_meta {
-        let esc_param = escape_keyword(&sg.primary_param);
-        out.push_str(&format!(
-            "    pub fn {accessor}<'b>(&'b self, {esc_param}: &'b str) -> {sg_struct}<'b> {{\n        {sg_struct} {{ client: self.client, {raw_param}: {esc_param}.to_string() }}\n    }}\n\n",
-            accessor = sg.accessor_fn,
-            raw_param = sg.primary_param,
-        ));
+    for ep in endpoints {
+        emit_method(&mut out, ep);
     }
     out.push_str("}\n\n");
-
-    // Emit sub-group structs and their impls.
-    for (sg_struct, eps) in &by_subgroup {
-        let sg = sg_meta[sg_struct];
-        out.push_str(&format!(
-            "pub struct {sg_struct}<'a> {{\n    pub(crate) client: &'a DynamicClient,\n    pub(crate) {param}: String,\n}}\n\n",
-            param = sg.primary_param,
-        ));
-        out.push_str("#[allow(clippy::too_many_arguments, clippy::let_unit_value, clippy::vec_init_then_push, unused_variables)]\n");
-        out.push_str(&format!("impl<'a> {sg_struct}<'a> {{\n"));
-        for ep in eps {
-            emit_method(&mut out, ep, SelfKind::SubGroup(sg.primary_param.as_str()));
-        }
-        out.push_str("}\n\n");
-    }
 
     out
 }
 
-#[derive(Copy, Clone)]
-enum SelfKind<'a> {
-    Root,
-    SubGroup(&'a str),
-}
-
-fn emit_method(out: &mut String, ep: &IndexedEndpoint<'_>, self_kind: SelfKind<'_>) {
+fn emit_method(out: &mut String, ep: &IndexedEndpoint<'_>) {
     let fn_name = &ep.endpoint.fn_name;
     let variant = endpoint_variant_name(&ep.key.method, &ep.key.path);
 
-    // Build argument list (skip the primary sub-group param — it's on `self`).
+    // Build argument list: every path param is a regular function argument.
     let mut args: Vec<String> = Vec::new();
-    let skip_param = match self_kind {
-        SelfKind::SubGroup(p) => Some(p),
-        SelfKind::Root => None,
-    };
     for pp in &ep.endpoint.path_params {
-        if Some(pp.name.as_str()) == skip_param {
-            continue;
-        }
         args.push(format!("{}: &str", escape_keyword(&pp.name)));
     }
     for qp in &ep.endpoint.query_params {
@@ -216,15 +157,11 @@ fn emit_method(out: &mut String, ep: &IndexedEndpoint<'_>, self_kind: SelfKind<'
         "        self.client.require_endpoint(Endpoint::{variant}).await?;\n"
     ));
 
-    // Path interpolation
+    // Path interpolation — every path param is passed as a function arg.
     let mut path_expr = format!("\"{}\".to_string()", ep.key.path);
     for pp in &ep.endpoint.path_params {
         let placeholder = format!("{{{}}}", pp.name);
-        let value = if Some(pp.name.as_str()) == skip_param {
-            format!("&self.{}", escape_keyword(&pp.name))
-        } else {
-            escape_keyword(&pp.name)
-        };
+        let value = escape_keyword(&pp.name);
         path_expr = format!("{path_expr}.replace(\"{placeholder}\", {value})");
     }
     out.push_str(&format!("        let path = {path_expr};\n"));
@@ -527,11 +464,11 @@ mod tests {
         ApiSpec {
             tags: vec![TagGroup {
                 tag: "Flow".to_string(),
-                struct_name: "FlowApi".to_string(),
+                struct_name: "Flow".to_string(),
                 module_name: "flow".to_string(),
-                accessor_fn: "flow_api".to_string(),
+                accessor_fn: "flow".to_string(),
                 types: vec![],
-                root_endpoints: vec![Endpoint {
+                endpoints: vec![Endpoint {
                     method: HttpMethod::Get,
                     path: "/flow/about".to_string(),
                     fn_name: "get_about_info".to_string(),
@@ -553,7 +490,6 @@ mod tests {
                     error_responses: vec![],
                     security: None,
                 }],
-                sub_groups: vec![],
             }],
             all_types: vec![],
         }
@@ -565,64 +501,59 @@ mod tests {
         let index = EndpointIndex::build(&canonical);
         let files = emit_api(&canonical, &index);
         let flow = files.iter().find(|(n, _)| n == "flow.rs").unwrap();
-        assert!(flow.1.contains("pub struct FlowApi"));
+        assert!(flow.1.contains("pub struct Flow"));
         assert!(flow.1.contains("pub async fn get_about_info"));
         assert!(flow.1.contains("Endpoint::GET_FLOW_ABOUT"));
         assert!(flow.1.contains("require_endpoint"));
         let mod_rs = files.iter().find(|(n, _)| n == "mod.rs").unwrap();
         assert!(mod_rs.1.contains("pub mod flow"));
-        assert!(mod_rs.1.contains("pub fn flow_api"));
+        assert!(mod_rs.1.contains("pub fn flow"));
     }
 
     #[test]
-    fn emit_api_handles_path_params_query_params_and_sub_groups() {
-        use crate::parser::{PathParam, QueryParam, QueryParamType, SubGroup};
+    fn emit_api_handles_path_params_and_query_params_flat() {
+        use crate::parser::{PathParam, QueryParam, QueryParamType};
         let mut spec = flow_about_spec();
         let processors_tag = TagGroup {
             tag: "Processors".to_string(),
-            struct_name: "ProcessorsApi".to_string(),
+            struct_name: "Processors".to_string(),
             module_name: "processors".to_string(),
-            accessor_fn: "processors_api".to_string(),
+            accessor_fn: "processors".to_string(),
             types: vec![],
-            root_endpoints: vec![Endpoint {
-                method: HttpMethod::Get,
-                path: "/processors/{id}".to_string(),
-                fn_name: "get_processor".to_string(),
-                raw_operation_id: "getProcessor".to_string(),
-                doc: None,
-                description: None,
-                path_params: vec![PathParam {
-                    name: "id".to_string(),
+            endpoints: vec![
+                Endpoint {
+                    method: HttpMethod::Get,
+                    path: "/processors/{id}".to_string(),
+                    fn_name: "get_processor".to_string(),
+                    raw_operation_id: "getProcessor".to_string(),
                     doc: None,
-                }],
-                request_type: None,
-                body_kind: None,
-                body_doc: None,
-                response_type: Some("ProcessorEntity".to_string()),
-                response_inner: Some("ProcessorDto".to_string()),
-                response_field: Some("component".to_string()),
-                response_kind: crate::content_type::ResponseBodyKind::Json {
-                    schema_ref: "ProcessorEntity".to_string(),
+                    description: None,
+                    path_params: vec![PathParam {
+                        name: "id".to_string(),
+                        doc: None,
+                    }],
+                    request_type: None,
+                    body_kind: None,
+                    body_doc: None,
+                    response_type: Some("ProcessorEntity".to_string()),
+                    response_inner: Some("ProcessorDto".to_string()),
+                    response_field: Some("component".to_string()),
+                    response_kind: crate::content_type::ResponseBodyKind::Json {
+                        schema_ref: "ProcessorEntity".to_string(),
+                    },
+                    query_params: vec![QueryParam {
+                        name: "verbose".to_string(),
+                        rust_name: "verbose".to_string(),
+                        ty: QueryParamType::Bool,
+                        required: false,
+                        doc: None,
+                        enum_type_name: None,
+                    }],
+                    success_responses: vec![],
+                    error_responses: vec![],
+                    security: None,
                 },
-                query_params: vec![QueryParam {
-                    name: "verbose".to_string(),
-                    rust_name: "verbose".to_string(),
-                    ty: QueryParamType::Bool,
-                    required: false,
-                    doc: None,
-                    enum_type_name: None,
-                }],
-                success_responses: vec![],
-                error_responses: vec![],
-                security: None,
-            }],
-            sub_groups: vec![SubGroup {
-                name: "config".to_string(),
-                struct_name: "ProcessorsConfigApi".to_string(),
-                accessor_fn: "config".to_string(),
-                primary_param: "id".to_string(),
-                primary_param_doc: None,
-                endpoints: vec![Endpoint {
+                Endpoint {
                     method: HttpMethod::Get,
                     path: "/processors/{id}/config".to_string(),
                     fn_name: "get_config".to_string(),
@@ -644,8 +575,8 @@ mod tests {
                     success_responses: vec![],
                     error_responses: vec![],
                     security: None,
-                }],
-            }],
+                },
+            ],
         };
         spec.tags.push(processors_tag);
         let canonical = canonicalize(&[("2.8.0".to_string(), spec)]);
@@ -653,16 +584,18 @@ mod tests {
         let files = emit_api(&canonical, &index);
         let proc_file = files.iter().find(|(n, _)| n == "processors.rs").unwrap();
         let body = &proc_file.1;
-        // Path param baked into URL
-        assert!(body.contains("get_processor"));
-        assert!(body.contains("/processors/"));
-        // Query param assembled (guard call is optional — only emitted for version-skewed params)
-        assert!(body.contains("verbose"));
-        // Sub-resource accessor
-        assert!(body.contains("pub fn config"));
-        assert!(body.contains("ProcessorsConfigApi"));
-        // Sub-resource struct + method
-        assert!(body.contains("pub struct ProcessorsConfigApi"));
+        // Flat struct name
+        assert!(body.contains("pub struct Processors"));
+        // Both endpoints as flat inherent methods — rustfmt wraps arg lists
+        // across lines, so check method name and `id: &str` separately.
+        assert!(body.contains("pub async fn get_processor"));
         assert!(body.contains("pub async fn get_config"));
+        assert!(body.contains("id: &str"));
+        assert!(body.contains("/processors/"));
+        // Query param assembled
+        assert!(body.contains("verbose"));
+        // No sub-resource structs / accessors
+        assert!(!body.contains("ProcessorsConfigApi"));
+        assert!(!body.contains("pub fn config"));
     }
 }

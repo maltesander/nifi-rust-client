@@ -25,9 +25,8 @@ async fn label_crud_lifecycle() {
         ..Default::default()
     };
     let created = client
-        .processgroups_api()
-        .labels(&pg_id)
-        .create_label(&body)
+        .processgroups()
+        .create_label(&pg_id, &body)
         .await
         .expect("failed to create label");
     let label_id = created.id.clone().expect("created label has no id");
@@ -39,7 +38,7 @@ async fn label_crud_lifecycle() {
 
     // Get — verify text
     let fetched = client
-        .labels_api()
+        .labels()
         .get_label(&label_id)
         .await
         .expect("failed to get label");
@@ -60,7 +59,7 @@ async fn label_crud_lifecycle() {
         ..Default::default()
     };
     let updated = client
-        .labels_api()
+        .labels()
         .update_label(&label_id, &update_body)
         .await
         .expect("failed to update label");
@@ -76,7 +75,7 @@ async fn label_crud_lifecycle() {
 
     // Delete
     client
-        .labels_api()
+        .labels()
         .remove_label(
             &label_id,
             Some(&version_after_update.to_string()),
@@ -88,7 +87,7 @@ async fn label_crud_lifecycle() {
 
     // Verify gone
     assert!(
-        client.labels_api().get_label(&label_id).await.is_err(),
+        client.labels().get_label(&label_id).await.is_err(),
         "expected error fetching deleted label"
     );
 

@@ -1,4 +1,4 @@
-use crate::parser::{ApiSpec, Endpoint, HttpMethod, QueryParam, SubGroup, TagGroup};
+use crate::parser::{ApiSpec, Endpoint, HttpMethod, QueryParam, TagGroup};
 
 pub fn emit_tests(spec: &ApiSpec) -> String {
     let mut out = String::new();
@@ -20,21 +20,14 @@ fn emit_tag_tests(tag: &TagGroup) -> String {
         "#[cfg(test)]\nmod {mod_name}_generated_tests {{\n"
     ));
     out.push_str("    use super::*;\n\n");
-    // Root endpoints
-    for ep in &tag.root_endpoints {
-        out.push_str(&emit_endpoint_test(ep, &tag.accessor_fn, None));
-    }
-    // Sub-group endpoints
-    for sg in &tag.sub_groups {
-        for ep in &sg.endpoints {
-            out.push_str(&emit_endpoint_test(ep, &tag.accessor_fn, Some(sg)));
-        }
+    for ep in &tag.endpoints {
+        out.push_str(&emit_endpoint_test(ep, &tag.accessor_fn));
     }
     out.push_str("}\n\n");
     out
 }
 
-fn emit_endpoint_test(ep: &Endpoint, accessor: &str, sub_group: Option<&SubGroup>) -> String {
+fn emit_endpoint_test(ep: &Endpoint, accessor: &str) -> String {
     // Skip form-encoded endpoints — they have no generated API method.
     if ep.body_kind == Some(crate::parser::RequestBodyKind::FormEncoded) {
         return String::new();
@@ -109,58 +102,29 @@ fn emit_endpoint_test(ep: &Endpoint, accessor: &str, sub_group: Option<&SubGroup
             String::new()
         };
 
-    let call_expr = match sub_group {
-        None => {
-            // client.accessor().fn_name(path_args..., query_args..., body?)
-            let mut all_args: Vec<String> = ep
-                .path_params
-                .iter()
-                .map(|p| format!("\"test-{}\"", p.name))
-                .collect();
-            for qp in &ep.query_params {
-                let arg = if qp.required {
-                    query_test_arg(qp)
-                } else {
-                    "None".to_string()
-                };
-                all_args.push(arg);
-            }
-            if let Some(b) = &body_arg {
-                all_args.push(b.clone());
-            }
-            format!(
-                "client.{accessor}().{fn_name}({args})",
-                fn_name = ep.fn_name,
-                args = all_args.join(", ")
-            )
+    // Flat API: client.accessor().fn_name(path_args..., query_args..., body?)
+    let call_expr = {
+        let mut all_args: Vec<String> = ep
+            .path_params
+            .iter()
+            .map(|p| format!("\"test-{}\"", p.name))
+            .collect();
+        for qp in &ep.query_params {
+            let arg = if qp.required {
+                query_test_arg(qp)
+            } else {
+                "None".to_string()
+            };
+            all_args.push(arg);
         }
-        Some(sg) => {
-            // client.accessor().sub_accessor("test-{primary}").fn_name(remaining_args..., query_args..., body?)
-            let primary = &sg.primary_param;
-            let mut all_args: Vec<String> = ep
-                .path_params
-                .iter()
-                .filter(|p| p.name != *primary)
-                .map(|p| format!("\"test-{}\"", p.name))
-                .collect();
-            for qp in &ep.query_params {
-                let arg = if qp.required {
-                    query_test_arg(qp)
-                } else {
-                    "None".to_string()
-                };
-                all_args.push(arg);
-            }
-            if let Some(b) = &body_arg {
-                all_args.push(b.clone());
-            }
-            format!(
-                "client.{accessor}().{sub_accessor}(\"test-{primary}\").{fn_name}({args})",
-                sub_accessor = sg.accessor_fn,
-                fn_name = ep.fn_name,
-                args = all_args.join(", ")
-            )
+        if let Some(b) = &body_arg {
+            all_args.push(b.clone());
         }
+        format!(
+            "client.{accessor}().{fn_name}({args})",
+            fn_name = ep.fn_name,
+            args = all_args.join(", ")
+        )
     };
 
     format!(

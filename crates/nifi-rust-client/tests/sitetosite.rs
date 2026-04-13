@@ -26,7 +26,7 @@ async fn get_site_to_site_details_returns_controller_id() {
         .build()
         .unwrap();
     let ctrl = client
-        .sitetosite_api()
+        .sitetosite()
         .get_site_to_site_details()
         .await
         .unwrap();

@@ -53,7 +53,7 @@ pub async fn logged_in_client() -> NifiClient {
         if !token.is_empty() {
             client.set_token(token).await;
             // Quick sanity-check: if the token is still valid, use it.
-            if client.flow_api().get_about_info().await.is_ok() {
+            if client.flow().get_about_info().await.is_ok() {
                 return client;
             }
             // Token expired — fall through to re-login below.
@@ -93,9 +93,8 @@ pub async fn create_temp_process_group(client: &NifiClient, name: &str) -> (Stri
         ..Default::default()
     };
     let created = client
-        .processgroups_api()
-        .process_groups("root")
-        .create_process_group(None, &body)
+        .processgroups()
+        .create_process_group("root", None, &body)
         .await
         .expect("failed to create temp process group");
     let id = created.id.clone().expect("created PG has no id");
@@ -110,7 +109,7 @@ pub async fn create_temp_process_group(client: &NifiClient, name: &str) -> (Stri
 #[cfg(not(feature = "dynamic"))]
 pub async fn delete_temp_process_group(client: &NifiClient, id: &str, version: i64) {
     client
-        .processgroups_api()
+        .processgroups()
         .remove_process_group(id, Some(&version.to_string()), None, None)
         .await
         .expect("failed to delete temp process group");
@@ -128,13 +127,15 @@ pub fn revision(version: i64) -> RevisionDto {
 #[cfg(not(feature = "dynamic"))]
 pub async fn start_processor(client: &NifiClient, proc_id: &str, version: i64) -> i64 {
     let result = client
-        .processors_api()
-        .run_status(proc_id)
-        .update_run_status(&ProcessorRunStatusEntity {
-            state: Some(ProcessorRunStatusEntityState::Running),
-            revision: Some(revision(version)),
-            ..Default::default()
-        })
+        .processors()
+        .update_run_status(
+            proc_id,
+            &ProcessorRunStatusEntity {
+                state: Some(ProcessorRunStatusEntityState::Running),
+                revision: Some(revision(version)),
+                ..Default::default()
+            },
+        )
         .await
         .expect("failed to start processor");
     result
@@ -148,13 +149,15 @@ pub async fn start_processor(client: &NifiClient, proc_id: &str, version: i64) -
 #[cfg(not(feature = "dynamic"))]
 pub async fn stop_processor(client: &NifiClient, proc_id: &str, version: i64) -> i64 {
     let result = client
-        .processors_api()
-        .run_status(proc_id)
-        .update_run_status(&ProcessorRunStatusEntity {
-            state: Some(ProcessorRunStatusEntityState::Stopped),
-            revision: Some(revision(version)),
-            ..Default::default()
-        })
+        .processors()
+        .update_run_status(
+            proc_id,
+            &ProcessorRunStatusEntity {
+                state: Some(ProcessorRunStatusEntityState::Stopped),
+                revision: Some(revision(version)),
+                ..Default::default()
+            },
+        )
         .await
         .expect("failed to stop processor");
     result
@@ -190,8 +193,7 @@ pub async fn dynamic_logged_in_client() -> nifi_rust_client::dynamic::DynamicCli
         if !token.is_empty() {
             client.set_token(token).await;
             // Detect version using the cached token.
-            if client.detect_version().await.is_ok()
-                && client.flow_api().get_about_info().await.is_ok()
+            if client.detect_version().await.is_ok() && client.flow().get_about_info().await.is_ok()
             {
                 return client;
             }
@@ -255,7 +257,7 @@ pub async fn ensure_test_flow(
             // /data/process-groups/{root} policy grants provenance visibility
             // on all NiFi versions.
             let flow = client
-                .flow_api()
+                .flow()
                 .get_flow("root", None)
                 .await
                 .expect("failed to get root flow");
@@ -288,9 +290,8 @@ pub async fn ensure_test_flow(
                 body.revision = Some(revision);
 
                 let created = client
-                    .processgroups_api()
-                    .process_groups("root")
-                    .create_process_group(None, &body)
+                    .processgroups()
+                    .create_process_group("root", None, &body)
                     .await
                     .expect("failed to create test PG");
                 created.id.clone().expect("created PG has no id")
@@ -298,7 +299,7 @@ pub async fn ensure_test_flow(
 
             // ── Find or create processors inside the child PG ───────────────
             let pg_flow = client
-                .flow_api()
+                .flow()
                 .get_flow(&pg_id, None)
                 .await
                 .expect("failed to get test PG flow");
@@ -332,9 +333,8 @@ pub async fn ensure_test_flow(
                     None,
                 );
                 let created = client
-                    .processgroups_api()
-                    .processors(&pg_id)
-                    .create_processor(&body)
+                    .processgroups()
+                    .create_processor(&pg_id, &body)
                     .await
                     .expect("failed to create GFF processor");
                 (
@@ -362,9 +362,8 @@ pub async fn ensure_test_flow(
                     Some(vec!["success".to_string()]),
                 );
                 let created = client
-                    .processgroups_api()
-                    .processors(&pg_id)
-                    .create_processor(&body)
+                    .processgroups()
+                    .create_processor(&pg_id, &body)
                     .await
                     .expect("failed to create LA processor");
                 (
@@ -399,9 +398,8 @@ pub async fn ensure_test_flow(
             if !conn_exists {
                 let conn_body = make_connection_entity(&gff_id, &la_id, &pg_id);
                 client
-                    .processgroups_api()
-                    .connections(&pg_id)
-                    .create_connection(&conn_body)
+                    .processgroups()
+                    .create_connection(&pg_id, &conn_body)
                     .await
                     .expect("failed to create GFF→LA connection");
             }
@@ -445,7 +443,7 @@ async fn start_if_not_running(
     fallback_rev: i64,
 ) {
     let proc = client
-        .processors_api()
+        .processors()
         .get_processor(proc_id)
         .await
         .expect("failed to get processor");
@@ -466,9 +464,8 @@ async fn start_if_not_running(
         revision.version = Some(rev);
         body.revision = Some(revision);
         client
-            .processors_api()
-            .run_status(proc_id)
-            .update_run_status(&body)
+            .processors()
+            .update_run_status(proc_id, &body)
             .await
             .expect("failed to start processor");
     }
@@ -559,7 +556,7 @@ pub async fn get_test_processor_entity(
 ) -> nifi_rust_client::dynamic::types::ProcessorEntity {
     let ids = ensure_test_flow(client).await;
     client
-        .processors_api()
+        .processors()
         .get_processor(&ids.gff_id)
         .await
         .expect("failed to get test processor entity")
@@ -589,7 +586,7 @@ pub async fn get_test_provenance_event(
             provenance: Some(prov_dto),
         };
         let submitted = client
-            .provenance_api()
+            .provenance()
             .submit_provenance_request(&query_body)
             .await
             .expect("failed to submit provenance query");
@@ -598,7 +595,7 @@ pub async fn get_test_provenance_event(
         // Poll until finished.
         let provenance = loop {
             let p = client
-                .provenance_api()
+                .provenance()
                 .get_provenance(&query_id, None, None, Some(false))
                 .await
                 .expect("failed to poll provenance query");
@@ -609,10 +606,7 @@ pub async fn get_test_provenance_event(
         };
 
         // Clean up the query.
-        let _ = client
-            .provenance_api()
-            .delete_provenance(&query_id, None)
-            .await;
+        let _ = client.provenance().delete_provenance(&query_id, None).await;
 
         if let Some(event) = provenance
             .results

@@ -56,7 +56,7 @@ async fn dynamic_about_returns_fields() {
         .await
         .unwrap();
 
-    let about = dynamic.flow_api().get_about_info().await.unwrap();
+    let about = dynamic.flow().get_about_info().await.unwrap();
 
     assert_eq!(about.version.as_deref(), Some("2.8.0"));
     assert_eq!(about.title.as_deref(), Some("NiFi"));
@@ -78,7 +78,7 @@ async fn dynamic_current_user_returns_identity() {
         .mount(&mock)
         .await;
 
-    let user = dynamic.flow_api().get_current_user().await.unwrap();
+    let user = dynamic.flow().get_current_user().await.unwrap();
 
     assert_eq!(user.identity.as_deref(), Some("admin"));
     assert!(!user.anonymous.unwrap_or(true));
@@ -100,7 +100,7 @@ async fn dynamic_get_resources() {
         .mount(&mock)
         .await;
 
-    let result = dynamic.resources_api().get_resources().await;
+    let result = dynamic.resources().get_resources().await;
 
     assert!(result.is_ok());
     let entity = result.unwrap();
@@ -149,7 +149,7 @@ async fn dynamic_flow_metrics_v2_6_0_errors_on_extra_param() {
     let mock = MockServer::start().await;
     let dynamic = dynamic_client_on(&mock, "2.6.0").await;
     let err = dynamic
-        .flow_api()
+        .flow()
         .get_flow_metrics(
             "prometheus",
             Some(IncludedRegistries::Jvm),
@@ -167,37 +167,6 @@ async fn dynamic_flow_metrics_v2_6_0_errors_on_extra_param() {
         ),
         "expected UnsupportedQueryParam, got: {err:?}"
     );
-}
-
-#[tokio::test]
-#[ignore = "Phase 4b: obsolete; replaced by dynamic_flow_metrics_v2_6_0_errors_on_extra_param"]
-async fn dynamic_flow_metrics_v2_6_0_skips_extra_param() {
-    let mock = MockServer::start().await;
-    let dynamic = dynamic_client_on(&mock, "2.6.0").await;
-
-    // v2.6.0 should pass includedRegistries but NOT flowMetricsReportingStrategy
-    Mock::given(method("GET"))
-        .and(path("/nifi-api/flow/metrics/prometheus"))
-        .and(query_param("includedRegistries", "JVM"))
-        .respond_with(ResponseTemplate::new(200))
-        .expect(1)
-        .mount(&mock)
-        .await;
-
-    dynamic
-        .flow_api()
-        .get_flow_metrics(
-            "prometheus",
-            Some(IncludedRegistries::Jvm), // includedRegistries
-            None,                          // sampleName
-            None,                          // sampleLabelValue
-            None,                          // rootFieldName
-            Some(FlowMetricsReportingStrategy::AllProcessGroups), // should be IGNORED for 2.6.0
-        )
-        .await
-        .unwrap();
-
-    // wiremock verifies the mock was called exactly once with the expected params
 }
 
 #[tokio::test]
@@ -219,7 +188,7 @@ async fn dynamic_flow_metrics_v2_8_0_passes_all_params() {
         .await;
 
     dynamic
-        .flow_api()
+        .flow()
         .get_flow_metrics(
             "prometheus",
             Some(IncludedRegistries::Jvm),
@@ -252,7 +221,7 @@ async fn dynamic_flow_metrics_v2_7_2_passes_all_params() {
         .await;
 
     dynamic
-        .flow_api()
+        .flow()
         .get_flow_metrics(
             "prometheus",
             Some(IncludedRegistries::Nifi),
@@ -263,44 +232,6 @@ async fn dynamic_flow_metrics_v2_7_2_passes_all_params() {
         )
         .await
         .unwrap();
-}
-
-// ── Narrowing conversion error tests ────────────────────────────────────────
-
-#[tokio::test]
-#[ignore = "Phase 4b: canonical superset union enums accept all variants; UnsupportedEnumVariant was a legacy-dispatch narrowing error"]
-async fn dynamic_unsupported_enum_variant() {
-    // IncludedRegistries::VersionInfo only exists in v2.8.0.
-    // Using it against v2.6.0 should return UnsupportedEnumVariant.
-    let mock = MockServer::start().await;
-    let dynamic = dynamic_client_on(&mock, "2.6.0").await;
-
-    Mock::given(method("GET"))
-        .and(path("/nifi-api/flow/metrics/prometheus"))
-        .respond_with(ResponseTemplate::new(200))
-        .mount(&mock)
-        .await;
-
-    let err = dynamic
-        .flow_api()
-        .get_flow_metrics(
-            "prometheus",
-            Some(IncludedRegistries::VersionInfo), // only in 2.8.0
-            None,
-            None,
-            None,
-            None,
-        )
-        .await
-        .unwrap_err();
-
-    assert!(
-        matches!(
-            err,
-            nifi_rust_client::NifiError::UnsupportedEnumVariant { .. }
-        ),
-        "expected UnsupportedEnumVariant, got: {err:?}"
-    );
 }
 
 #[tokio::test]
@@ -396,7 +327,7 @@ async fn dynamic_system_diagnostics_nodewise_true_omits_cluster_node_id() {
         .await;
 
     let diag = dynamic
-        .systemdiagnostics_api()
+        .systemdiagnostics()
         .get_system_diagnostics(Some(true), None, None)
         .await
         .expect("nodewise=true must not trigger cluster_node_id auto-injection");
@@ -407,31 +338,4 @@ async fn dynamic_system_diagnostics_nodewise_true_omits_cluster_node_id() {
             .and_then(|s| s.available_processors),
         Some(8),
     );
-}
-
-/// Complement to the test above: when the caller leaves `nodewise` as
-/// `None` (or `Some(false)`), auto-injection should still happen so that
-/// `DynamicClient::cluster_node_id()` is honored.
-#[tokio::test]
-#[ignore = "Phase 4b: canonical emitter does not auto-inject cluster_node_id; legacy dispatch feature dropped in the cutover"]
-async fn dynamic_system_diagnostics_nodewise_none_injects_cluster_node_id() {
-    let mock = MockServer::start().await;
-    let dynamic = clustered_dynamic_client_on(&mock, "2.8.0").await;
-
-    Mock::given(method("GET"))
-        .and(path("/nifi-api/system-diagnostics"))
-        .and(query_param("clusterNodeId", "node-abc"))
-        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
-            "systemDiagnostics": {
-                "aggregateSnapshot": { "availableProcessors": 8 }
-            }
-        })))
-        .mount(&mock)
-        .await;
-
-    dynamic
-        .systemdiagnostics_api()
-        .get_system_diagnostics(None, None, None)
-        .await
-        .expect("auto-injection should supply cluster_node_id when nodewise is None");
 }

@@ -147,7 +147,7 @@ where
 
 /// Build a [`HistoryPaginator`] backed by a static-mode [`crate::NifiClient`].
 ///
-/// Each page is fetched by calling `client.flow_api().query_history(...)`
+/// Each page is fetched by calling `client.flow().query_history(...)`
 /// with the provided `filter` and the current offset/page_size. Missing
 /// `actions` or `total` fields in the response surface as
 /// [`NifiError::MissingField`] via the [`crate::require!`] macro.
@@ -184,7 +184,7 @@ pub fn flow_history<'a>(
             let offset_s = offset.to_string();
             let count_s = count.to_string();
             let resp = client
-                .flow_api()
+                .flow()
                 .query_history(
                     &offset_s,
                     &count_s,
@@ -223,7 +223,7 @@ pub fn flow_history_dynamic<'a>(
             let offset_s = offset.to_string();
             let count_s = count.to_string();
             let resp = client
-                .flow_api()
+                .flow()
                 .query_history(
                     &offset_s,
                     &count_s,

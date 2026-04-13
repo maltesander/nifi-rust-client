@@ -24,9 +24,8 @@ async fn input_port_crud_lifecycle() {
         ..Default::default()
     };
     let created = client
-        .processgroups_api()
-        .input_ports(&pg_id)
-        .create_input_port(&body)
+        .processgroups()
+        .create_input_port(&pg_id, &body)
         .await
         .expect("failed to create input port");
     let port_id = created.id.clone().expect("created input port has no id");
@@ -38,7 +37,7 @@ async fn input_port_crud_lifecycle() {
 
     // Get — verify name
     let fetched = client
-        .inputports_api()
+        .inputports()
         .get_input_port(&port_id)
         .await
         .expect("failed to get input port");
@@ -59,7 +58,7 @@ async fn input_port_crud_lifecycle() {
         ..Default::default()
     };
     let updated = client
-        .inputports_api()
+        .inputports()
         .update_input_port(&port_id, &update_body)
         .await
         .expect("failed to update input port");
@@ -75,7 +74,7 @@ async fn input_port_crud_lifecycle() {
 
     // Delete
     client
-        .inputports_api()
+        .inputports()
         .remove_input_port(
             &port_id,
             Some(&version_after_update.to_string()),
@@ -87,11 +86,7 @@ async fn input_port_crud_lifecycle() {
 
     // Verify gone
     assert!(
-        client
-            .inputports_api()
-            .get_input_port(&port_id)
-            .await
-            .is_err(),
+        client.inputports().get_input_port(&port_id).await.is_err(),
         "expected error fetching deleted input port"
     );
 

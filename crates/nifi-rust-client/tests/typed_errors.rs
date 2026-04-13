@@ -21,7 +21,7 @@ async fn returns_unauthorized_on_401() {
         .unwrap()
         .build()
         .unwrap();
-    let err = client.flow_api().get_about_info().await.unwrap_err();
+    let err = client.flow().get_about_info().await.unwrap_err();
     assert!(
         matches!(err, NifiError::Unauthorized { .. }),
         "expected Unauthorized, got: {err:?}"
@@ -44,7 +44,7 @@ async fn returns_forbidden_on_403() {
         .unwrap()
         .build()
         .unwrap();
-    let err = client.flow_api().get_about_info().await.unwrap_err();
+    let err = client.flow().get_about_info().await.unwrap_err();
     assert!(
         matches!(err, NifiError::Forbidden { .. }),
         "expected Forbidden, got: {err:?}"
@@ -66,7 +66,7 @@ async fn returns_not_found_on_404() {
         .unwrap()
         .build()
         .unwrap();
-    let err = client.flow_api().get_about_info().await.unwrap_err();
+    let err = client.flow().get_about_info().await.unwrap_err();
     assert!(
         matches!(err, NifiError::NotFound { .. }),
         "expected NotFound, got: {err:?}"
@@ -89,7 +89,7 @@ async fn returns_conflict_on_409() {
         .unwrap()
         .build()
         .unwrap();
-    let err = client.flow_api().get_about_info().await.unwrap_err();
+    let err = client.flow().get_about_info().await.unwrap_err();
     assert!(
         matches!(err, NifiError::Conflict { .. }),
         "expected Conflict, got: {err:?}"
@@ -112,7 +112,7 @@ async fn returns_api_for_other_status_codes() {
         .unwrap()
         .build()
         .unwrap();
-    let err = client.flow_api().get_about_info().await.unwrap_err();
+    let err = client.flow().get_about_info().await.unwrap_err();
     assert!(
         matches!(err, NifiError::Api { status: 503, .. }),
         "expected Api with 503, got: {err:?}"

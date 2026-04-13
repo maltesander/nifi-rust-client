@@ -328,15 +328,9 @@ fn endpoint_map(spec: &ApiSpec) -> HashMap<(String, String), (&Endpoint, String)
     let mut map = HashMap::new();
     for tag in &spec.tags {
         let tag_name = tag.tag.clone();
-        for ep in &tag.root_endpoints {
+        for ep in &tag.endpoints {
             let key = (ep.method.as_str().to_string(), ep.path.clone());
             map.insert(key, (ep, tag_name.clone()));
-        }
-        for sg in &tag.sub_groups {
-            for ep in &sg.endpoints {
-                let key = (ep.method.as_str().to_string(), ep.path.clone());
-                map.insert(key, (ep, tag_name.clone()));
-            }
         }
     }
     map
@@ -596,13 +590,7 @@ fn type_tag_index(spec: &ApiSpec) -> HashMap<&str, Vec<String>> {
     for tag_group in &spec.tags {
         // Collect direct endpoint types
         let mut frontier: Vec<&str> = Vec::new();
-        let all_eps = tag_group.root_endpoints.iter().chain(
-            tag_group
-                .sub_groups
-                .iter()
-                .flat_map(|sg| sg.endpoints.iter()),
-        );
-        for ep in all_eps {
+        for ep in tag_group.endpoints.iter() {
             if let Some(t) = &ep.request_type {
                 frontier.push(t.as_str());
             }
@@ -933,8 +921,7 @@ mod tests {
             module_name: tag.to_lowercase(),
             accessor_fn: format!("{}_api", tag.to_lowercase()),
             types: vec![],
-            root_endpoints: endpoints,
-            sub_groups: vec![],
+            endpoints,
         }
     }
 

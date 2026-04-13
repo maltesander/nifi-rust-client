@@ -1,4 +1,4 @@
-use crate::parser::{ApiSpec, Endpoint, HttpMethod, QueryParam, SubGroup, TagGroup};
+use crate::parser::{ApiSpec, Endpoint, HttpMethod, QueryParam, TagGroup};
 use crate::util::escape_keyword;
 
 /// Returns a list of `(filename, content)` pairs to write into `src/api/`.
@@ -45,7 +45,7 @@ fn emit_mod(spec: &ApiSpec) -> String {
     crate::util::format_source(&out)
 }
 
-fn emit_tag(tag: &TagGroup, types_prefix: &str) -> String {
+fn emit_tag(tag: &TagGroup, _types_prefix: &str) -> String {
     let mut out = String::new();
     out.push_str("use crate::NifiClient;\nuse crate::NifiError;\n\n");
     out.push_str(&format!(
@@ -56,45 +56,11 @@ fn emit_tag(tag: &TagGroup, types_prefix: &str) -> String {
         "#[allow(private_interfaces, clippy::too_many_arguments, clippy::vec_init_then_push)]\n",
     );
     out.push_str(&format!("impl<'a> {}<'a> {{\n", tag.struct_name));
-    for ep in &tag.root_endpoints {
+    for ep in tag.endpoints.iter() {
         out.push_str(&emit_method(ep));
     }
-    for sg in &tag.sub_groups {
-        out.push_str(&emit_sub_group_accessor(sg));
-    }
     out.push_str("}\n");
-    for sg in &tag.sub_groups {
-        out.push_str(&emit_sub_struct(sg));
-    }
-    if types_prefix != "crate" {
-        out.push_str(&emit_trait_impls(tag, types_prefix));
-    }
     crate::util::format_source(&out)
-}
-
-fn emit_sub_group_accessor(sg: &SubGroup) -> String {
-    let mut out = String::new();
-    // Doc comment: describe the sub-resource scope and the id parameter.
-    out.push_str(&format!(
-        "    /// Scope operations to the `{}` sub-resource of a specific process group.\n",
-        sg.name
-    ));
-    out.push_str("    ///\n");
-    if let Some(doc) = &sg.primary_param_doc {
-        out.push_str(&format!("    /// - `{}`: {}\n", sg.primary_param, doc));
-    } else {
-        out.push_str(&format!(
-            "    /// - `{}`: The resource id.\n",
-            sg.primary_param
-        ));
-    }
-    out.push_str(&format!(
-        "    pub fn {accessor}<'b>(&'b self, {param}: &'b str) -> {struct_name}<'b> {{\n        {struct_name} {{ client: self.client, {param} }}\n    }}\n\n",
-        accessor = sg.accessor_fn,
-        param = sg.primary_param,
-        struct_name = sg.struct_name,
-    ));
-    out
 }
 
 /// Appends `# Parameters` rustdoc section for path params (excluding `skip_param`),
@@ -159,243 +125,6 @@ fn emit_error_and_permission_docs(out: &mut String, ep: &Endpoint) {
             }
         }
     }
-}
-
-/// Emits trait impl blocks for the root struct and all sub-resource structs.
-/// Uses `types_prefix` for the trait path (`{types_prefix}::traits::TraitName`).
-fn emit_trait_impls(tag: &TagGroup, types_prefix: &str) -> String {
-    let mut out = String::new();
-
-    // Root trait impl
-    out.push_str(&format!(
-        "#[allow(clippy::too_many_arguments)]\nimpl {types_prefix}::traits::{trait_name} for {struct_name}<'_> {{\n",
-        trait_name = tag.struct_name,
-        struct_name = tag.struct_name,
-    ));
-
-    // Accessor methods for sub-groups (RPITIT — no GAT bindings needed)
-    for sg in &tag.sub_groups {
-        out.push_str(&format!(
-            "    fn {accessor}<'b>(&'b self, {param}: &'b str) -> impl {types_prefix}::traits::{trait_name} + 'b {{\n        {struct_name} {{ client: self.client, {param} }}\n    }}\n\n",
-            accessor = sg.accessor_fn,
-            param = escape_keyword(&sg.primary_param),
-            trait_name = sg.struct_name,
-            struct_name = sg.struct_name,
-        ));
-    }
-
-    // Root-level endpoint methods delegate to inherent methods
-    for ep in &tag.root_endpoints {
-        emit_trait_impl_method(&mut out, ep, types_prefix, None);
-    }
-
-    out.push_str("}\n\n");
-
-    // Sub-resource trait impls
-    for sg in &tag.sub_groups {
-        out.push_str(&format!(
-            "#[allow(clippy::too_many_arguments)]\nimpl {types_prefix}::traits::{trait_name} for {struct_name}<'_> {{\n",
-            trait_name = sg.struct_name,
-            struct_name = sg.struct_name,
-        ));
-        for ep in &sg.endpoints {
-            emit_trait_impl_method(&mut out, ep, types_prefix, Some(&sg.primary_param));
-        }
-        out.push_str("}\n\n");
-    }
-
-    out
-}
-
-/// Emits a single trait impl method that delegates to the inherent method.
-fn emit_trait_impl_method(
-    out: &mut String,
-    ep: &Endpoint,
-    types_prefix: &str,
-    exclude_param: Option<&str>,
-) {
-    use crate::parser::RequestBodyKind;
-
-    // Skip form-encoded endpoints
-    if ep.body_kind == Some(RequestBodyKind::FormEncoded) {
-        return;
-    }
-
-    // Determine return type
-    let return_ty = crate::emit::common::response_return_type(ep, types_prefix);
-
-    // Path param args (excluding primary param for sub-resource)
-    let path_param_args: String = ep
-        .path_params
-        .iter()
-        .filter(|p| exclude_param != Some(p.name.as_str()))
-        .map(|p| format!(", {}: &str", escape_keyword(&p.name)))
-        .collect();
-
-    // Query param args
-    let query_param_args: String = ep
-        .query_params
-        .iter()
-        .map(|qp| {
-            let rust_type = trait_impl_query_param_type(qp, types_prefix);
-            if qp.required {
-                format!(", {}: {rust_type}", escape_keyword(&qp.rust_name))
-            } else {
-                format!(", {}: Option<{rust_type}>", escape_keyword(&qp.rust_name))
-            }
-        })
-        .collect();
-
-    // Body param
-    let body_arg = if ep.method == HttpMethod::Delete {
-        String::new()
-    } else if let Some(RequestBodyKind::Json) = &ep.body_kind {
-        let req_type = ep.request_type.as_deref().unwrap_or("serde_json::Value");
-        format!(", body: &{types_prefix}::types::{req_type}")
-    } else {
-        crate::emit::common::body_kind_signature(ep.body_kind.as_ref()).to_string()
-    };
-
-    // Build the delegation call args (just the param names, no types)
-    let call_path_args: String = ep
-        .path_params
-        .iter()
-        .filter(|p| exclude_param != Some(p.name.as_str()))
-        .map(|p| format!(", {}", escape_keyword(&p.name)))
-        .collect();
-
-    let call_query_args: String = ep
-        .query_params
-        .iter()
-        .map(|qp| format!(", {}", escape_keyword(&qp.rust_name)))
-        .collect();
-
-    let call_body_args = if ep.method == HttpMethod::Delete {
-        String::new()
-    } else {
-        crate::emit::common::body_kind_forward_args(ep.body_kind.as_ref()).to_string()
-    };
-
-    out.push_str(&format!(
-        "    async fn {fn_name}(&self{path_param_args}{query_param_args}{body_arg}) -> Result<{return_ty}, NifiError> {{\n        self.{fn_name}({call_args}).await\n    }}\n\n",
-        fn_name = ep.fn_name,
-        call_args = format!("{}{}{}", call_path_args, call_query_args, call_body_args).trim_start_matches(", "),
-    ));
-}
-
-/// Returns the Rust type string for a query param in trait impl context.
-fn trait_impl_query_param_type(qp: &QueryParam, types_prefix: &str) -> String {
-    use crate::parser::QueryParamType;
-    match &qp.ty {
-        QueryParamType::Str => "&str".to_string(),
-        QueryParamType::Bool => "bool".to_string(),
-        QueryParamType::I32 => "i32".to_string(),
-        QueryParamType::I64 => "i64".to_string(),
-        QueryParamType::F64 => "f64".to_string(),
-        QueryParamType::Enum(_) => {
-            let type_name = qp
-                .enum_type_name
-                .as_deref()
-                .expect("enum param must have type name");
-            format!("{types_prefix}::types::{type_name}")
-        }
-    }
-}
-
-fn emit_sub_struct(sg: &SubGroup) -> String {
-    let mut out = String::new();
-    out.push_str(&format!(
-        "pub struct {}<'a> {{\n    pub(crate) client: &'a NifiClient,\n    pub(crate) {}: &'a str,\n}}\n\n",
-        sg.struct_name, sg.primary_param,
-    ));
-    out.push_str(
-        "#[allow(private_interfaces, clippy::too_many_arguments, clippy::vec_init_then_push)]\n",
-    );
-    out.push_str(&format!("impl<'a> {}<'a> {{\n", sg.struct_name));
-    for ep in &sg.endpoints {
-        out.push_str(&emit_method_for_sub_group(ep, &sg.primary_param));
-    }
-    out.push_str("}\n\n");
-    out
-}
-
-/// Like emit_method, but excludes `primary_param` from the function signature
-/// and injects `let {primary_param} = self.{primary_param};` into the body.
-fn emit_method_for_sub_group(ep: &Endpoint, primary_param: &str) -> String {
-    // Skip form-encoded endpoints — they require manual implementations (e.g. NifiClient::login).
-    if ep.body_kind == Some(crate::parser::RequestBodyKind::FormEncoded) {
-        return String::new();
-    }
-    let mut out = String::new();
-    if let Some(doc) = &ep.doc {
-        out.push_str(&format!("    /// {doc}\n"));
-        if let Some(desc) = &ep.description {
-            out.push_str("    ///\n");
-            for line in desc.lines() {
-                out.push_str(&format!("    /// {line}\n"));
-            }
-        }
-        out.push_str(&format!(
-            "    ///\n    /// Calls `{} /nifi-api{}`.\n",
-            method_str(&ep.method),
-            ep.path
-        ));
-        emit_param_docs(&mut out, ep, Some(primary_param));
-        emit_error_and_permission_docs(&mut out, ep);
-    }
-
-    let return_ty = crate::emit::common::response_return_type(ep, "crate");
-    let return_result = format!("Result<{return_ty}, NifiError>");
-
-    // Only bind and exclude the primary param if it appears in this endpoint's path params.
-    // Some NiFi endpoints in the same sub-group use inconsistent param names (e.g. {id} vs
-    // {registry-id}), so we guard against injecting an unused binding.
-    let primary_in_path = ep.path_params.iter().any(|p| p.name == primary_param);
-
-    let path_param_args: String = ep
-        .path_params
-        .iter()
-        .filter(|p| !primary_in_path || p.name != primary_param)
-        .map(|p| format!(", {}: &str", escape_keyword(&p.name)))
-        .collect();
-
-    use crate::parser::RequestBodyKind;
-    // DELETE endpoints never send a body — ignore body_kind for signature generation.
-    let body_arg = if ep.method == HttpMethod::Delete {
-        String::new()
-    } else if let Some(RequestBodyKind::Json) = &ep.body_kind {
-        let ty = ep.request_type.as_deref().unwrap_or("serde_json::Value");
-        format!(", body: &crate::types::{ty}")
-    } else {
-        crate::emit::common::body_kind_signature(ep.body_kind.as_ref()).to_string()
-    };
-
-    let query_param_args: String = ep
-        .query_params
-        .iter()
-        .map(|qp| {
-            let rust_type = query_param_rust_type(qp);
-            if qp.required {
-                format!(", {}: {rust_type}", escape_keyword(&qp.rust_name))
-            } else {
-                format!(", {}: Option<{rust_type}>", escape_keyword(&qp.rust_name))
-            }
-        })
-        .collect();
-
-    out.push_str(&format!(
-        "    pub async fn {fn_name}(&self{path_param_args}{query_param_args}{body_arg}) -> {return_result} {{\n",
-        fn_name = ep.fn_name,
-    ));
-    // Inject binding so emit_method_body's format string can reference the primary param.
-    if primary_in_path {
-        out.push_str(&format!(
-            "        let {primary_param} = self.{primary_param};\n"
-        ));
-    }
-    out.push_str(&emit_method_body(ep));
-    out.push_str("    }\n\n");
-    out
 }
 
 fn emit_method(ep: &Endpoint) -> String {
@@ -856,61 +585,18 @@ mod tests {
         ApiSpec {
             tags: vec![TagGroup {
                 tag: "ControllerServices".to_string(),
-                struct_name: "ControllerServicesApi".to_string(),
+                struct_name: "ControllerServices".to_string(),
                 module_name: "controller_services".to_string(),
-                accessor_fn: "controller_services_api".to_string(),
+                accessor_fn: "controller_services".to_string(),
                 types: vec![],
-                root_endpoints: vec![ep_root],
-                sub_groups: vec![SubGroup {
-                    name: "config".to_string(),
-                    struct_name: "ControllerServicesConfigApi".to_string(),
-                    accessor_fn: "config".to_string(),
-                    primary_param: "id".to_string(),
-                    primary_param_doc: None,
-                    endpoints: vec![ep_sub],
-                }],
+                endpoints: vec![ep_root, ep_sub],
             }],
             all_types: vec![],
         }
     }
 
     #[test]
-    fn emit_api_includes_trait_impls() {
-        let spec = make_spec_with_sub_group();
-        let files = emit_api_with_prefix(&spec, "crate::v2_8_0");
-        let (_, content) = files
-            .iter()
-            .find(|(f, _)| f == "controller_services.rs")
-            .unwrap();
-
-        // Root trait impl
-        assert!(
-            content.contains(
-                "impl crate::v2_8_0::traits::ControllerServicesApi for ControllerServicesApi"
-            ),
-            "Missing root trait impl. Content:\n{content}"
-        );
-
-        // RPITIT accessor (no GAT binding)
-        assert!(
-            !content.contains("type ControllerServicesConfigApi<'b>"),
-            "GAT binding should not be present. Content:\n{content}"
-        );
-        assert!(
-            content.contains("-> impl crate::v2_8_0::traits::ControllerServicesConfigApi + 'b"),
-            "Missing RPITIT accessor. Content:\n{content}"
-        );
-
-        // Sub-resource trait impl (may be split across lines by rustfmt)
-        assert!(
-            content.contains("impl crate::v2_8_0::traits::ControllerServicesConfigApi")
-                && content.contains("for ControllerServicesConfigApi"),
-            "Missing sub-resource trait impl. Content:\n{content}"
-        );
-    }
-
-    #[test]
-    fn emit_api_skips_trait_impls_for_crate_prefix() {
+    fn emit_api_emits_flat_inherent_methods() {
         let spec = make_spec_with_sub_group();
         let files = emit_api_with_prefix(&spec, "crate");
         let (_, content) = files
@@ -918,9 +604,45 @@ mod tests {
             .find(|(f, _)| f == "controller_services.rs")
             .unwrap();
 
+        // Flat struct name (no "Api" suffix) and inherent impl.
+        assert!(
+            content.contains("pub struct ControllerServices<'a>"),
+            "Missing flat struct. Content:\n{content}"
+        );
+        assert!(
+            content.contains("impl<'a> ControllerServices<'a>"),
+            "Missing inherent impl. Content:\n{content}"
+        );
+
+        // Both endpoints emitted as flat inherent methods taking `id: &str`.
+        // rustfmt wraps multi-arg signatures across lines, so check for the
+        // fn name and the `id: &str` param independently.
+        assert!(
+            content.contains("pub async fn get_controller_service"),
+            "Missing get_controller_service as flat method. Content:\n{content}"
+        );
+        assert!(
+            content.contains("pub async fn analyze_configuration"),
+            "Missing analyze_configuration as flat method. Content:\n{content}"
+        );
+        assert!(
+            content.contains("id: &str"),
+            "Missing `id: &str` path param. Content:\n{content}"
+        );
+
+        // No sub-resource builder or sub-struct should be emitted.
+        assert!(
+            !content.contains("ControllerServicesConfigApi"),
+            "Sub-resource struct should not be emitted. Content:\n{content}"
+        );
+        assert!(
+            !content.contains("pub fn config"),
+            "Sub-resource accessor should not be emitted. Content:\n{content}"
+        );
+        // No trait impls either.
         assert!(
             !content.contains("::traits::"),
-            "Should not emit trait impls when types_prefix is 'crate'"
+            "Trait impls should not be emitted. Content:\n{content}"
         );
     }
 }

@@ -8,8 +8,8 @@ use wiremock::{Mock, MockServer, ResponseTemplate};
 /// bytes to the caller instead of the pre-Task-3.2 `()` return type.
 ///
 /// Uses `GET /controller/nar-manager/nars/{id}/content` because its accessor
-/// chain (`controller_api().content(id).download_nar()`) is the simplest
-/// bytes-returning path in the generated API.
+/// chain (`controller().download_nar(id)`) is the simplest bytes-returning
+/// path in the generated API.
 #[tokio::test]
 async fn nar_content_returns_bytes() {
     let server = MockServer::start().await;
@@ -33,9 +33,8 @@ async fn nar_content_returns_bytes() {
         .unwrap();
 
     let bytes = client
-        .controller_api()
-        .content("nar-id-123")
-        .download_nar()
+        .controller()
+        .download_nar("nar-id-123")
         .await
         .unwrap();
     assert_eq!(bytes, payload);

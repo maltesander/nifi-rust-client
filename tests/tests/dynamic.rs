@@ -23,7 +23,7 @@ async fn dynamic_detects_version() {
 async fn dynamic_about_returns_info() {
     let client = dynamic_logged_in_client().await;
     let about = client
-        .flow_api()
+        .flow()
         .get_about_info()
         .await
         .expect("failed to get about");
@@ -36,7 +36,7 @@ async fn dynamic_about_returns_info() {
 async fn dynamic_resources_returns_ok() {
     let client = dynamic_logged_in_client().await;
     client
-        .resources_api()
+        .resources()
         .get_resources()
         .await
         .expect("failed to get resources");
@@ -47,7 +47,7 @@ async fn dynamic_resources_returns_ok() {
 async fn dynamic_system_diagnostics_returns_ok() {
     let client = dynamic_logged_in_client().await;
     client
-        .systemdiagnostics_api()
+        .systemdiagnostics()
         .get_system_diagnostics(None, None, None)
         .await
         .expect("failed to get system diagnostics");
@@ -58,7 +58,7 @@ async fn dynamic_system_diagnostics_returns_ok() {
 async fn dynamic_current_user_returns_identity() {
     let client = dynamic_logged_in_client().await;
     let user = client
-        .flow_api()
+        .flow()
         .get_current_user()
         .await
         .expect("failed to get current user");
@@ -70,7 +70,7 @@ async fn dynamic_current_user_returns_identity() {
 async fn dynamic_get_process_group_root() {
     let client = dynamic_logged_in_client().await;
     let pg = client
-        .processgroups_api()
+        .processgroups()
         .get_process_group("root")
         .await
         .expect("failed to get root process group");

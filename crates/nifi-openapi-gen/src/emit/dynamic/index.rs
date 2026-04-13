@@ -20,8 +20,6 @@ pub struct IndexedEndpoint<'a> {
     pub tag: &'a str,
     /// Endpoint struct from the latest version that defines this endpoint.
     pub endpoint: &'a Endpoint,
-    /// `None` for root endpoints; `Some(...)` for sub-group endpoints.
-    pub sub_group: Option<&'a crate::parser::SubGroup>,
     /// Versions that declare this endpoint.
     pub versions: VersionSet,
     /// Per-query-param `VersionSet` (only populated for params present in
@@ -38,14 +36,13 @@ impl<'a> EndpointIndex<'a> {
     pub fn build(canonical: &'a CanonicalSpec) -> Self {
         let mut endpoints = Vec::new();
         for (key, canon) in &canonical.endpoints {
-            let (endpoint, sub_group) =
+            let endpoint =
                 find_latest_endpoint(canonical, key).expect("indexed endpoint exists in some spec");
             let qp_versions = collect_query_param_versions(canonical, key);
             endpoints.push(IndexedEndpoint {
                 key: key.clone(),
                 tag: &canon.tag,
                 endpoint,
-                sub_group,
                 versions: canon.versions.clone(),
                 query_param_versions: qp_versions,
             });
@@ -58,7 +55,7 @@ impl<'a> EndpointIndex<'a> {
 fn find_latest_endpoint<'a>(
     canonical: &'a CanonicalSpec,
     key: &EndpointKey,
-) -> Option<(&'a Endpoint, Option<&'a crate::parser::SubGroup>)> {
+) -> Option<&'a Endpoint> {
     let canon = canonical.endpoints.get(key)?;
     let versions: Vec<String> = canon.versions.to_vec();
     for version in versions.iter().rev() {
@@ -70,21 +67,11 @@ fn find_latest_endpoint<'a>(
     None
 }
 
-fn scan_spec<'a>(
-    spec: &'a ApiSpec,
-    key: &EndpointKey,
-) -> Option<(&'a Endpoint, Option<&'a crate::parser::SubGroup>)> {
+fn scan_spec<'a>(spec: &'a ApiSpec, key: &EndpointKey) -> Option<&'a Endpoint> {
     for tag in &spec.tags {
-        for ep in &tag.root_endpoints {
+        for ep in &tag.endpoints {
             if ep.method == key.method && ep.path == key.path {
-                return Some((ep, None));
-            }
-        }
-        for sg in &tag.sub_groups {
-            for ep in &sg.endpoints {
-                if ep.method == key.method && ep.path == key.path {
-                    return Some((ep, Some(sg)));
-                }
+                return Some(ep);
             }
         }
     }
@@ -97,7 +84,7 @@ fn collect_query_param_versions(
 ) -> BTreeMap<String, VersionSet> {
     let mut out: BTreeMap<String, VersionSet> = BTreeMap::new();
     for (version, spec) in &canonical.per_version_specs {
-        if let Some((ep, _)) = scan_spec(spec, key) {
+        if let Some(ep) = scan_spec(spec, key) {
             for qp in &ep.query_params {
                 out.entry(qp.name.clone()).or_default().insert(version);
             }
@@ -149,12 +136,11 @@ mod tests {
         ApiSpec {
             tags: vec![TagGroup {
                 tag: "Flow".to_string(),
-                struct_name: "FlowApi".to_string(),
+                struct_name: "Flow".to_string(),
                 module_name: "flow".to_string(),
-                accessor_fn: "flow_api".to_string(),
+                accessor_fn: "flow".to_string(),
                 types: vec![],
-                root_endpoints: eps,
-                sub_groups: vec![],
+                endpoints: eps,
             }],
             all_types: vec![],
         }

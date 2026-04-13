@@ -40,9 +40,12 @@ async fn create_process_group_sends_parameter_context_handling_strategy() {
         .unwrap();
     let body = nifi_rust_client::types::ProcessGroupEntity::default();
     let result = client
-        .processgroups_api()
-        .process_groups("parent-id")
-        .create_process_group(Some(ParameterContextHandlingStrategy::KeepExisting), &body)
+        .processgroups()
+        .create_process_group(
+            "parent-id",
+            Some(ParameterContextHandlingStrategy::KeepExisting),
+            &body,
+        )
         .await;
     assert!(result.is_ok(), "{:?}", result);
 }
@@ -63,9 +66,8 @@ async fn create_process_group_omits_query_when_strategy_is_none() {
         .unwrap();
     let body = nifi_rust_client::types::ProcessGroupEntity::default();
     let result = client
-        .processgroups_api()
-        .process_groups("parent-id")
-        .create_process_group(None, &body)
+        .processgroups()
+        .create_process_group("parent-id", None, &body)
         .await;
     assert!(result.is_ok(), "{:?}", result);
 }
@@ -88,9 +90,8 @@ async fn create_process_group_returns_entity() {
         .unwrap();
     let body = nifi_rust_client::types::ProcessGroupEntity::default();
     let entity = client
-        .processgroups_api()
-        .process_groups("parent-id")
-        .create_process_group(None, &body)
+        .processgroups()
+        .create_process_group("parent-id", None, &body)
         .await
         .unwrap();
     assert_eq!(entity.id.as_deref(), Some("new-pg-id"));
@@ -113,7 +114,7 @@ async fn remove_process_group_sends_version_query_param() {
         .build()
         .unwrap();
     let result = client
-        .processgroups_api()
+        .processgroups()
         .remove_process_group("pg-id", Some("7"), None, None)
         .await;
     assert!(result.is_ok(), "{:?}", result);
@@ -136,7 +137,7 @@ async fn remove_process_group_sends_all_query_params() {
         .build()
         .unwrap();
     let result = client
-        .processgroups_api()
+        .processgroups()
         .remove_process_group("pg-id", Some("3"), Some("my-client"), Some(true))
         .await;
     assert!(result.is_ok(), "{:?}", result);
@@ -162,9 +163,8 @@ async fn create_processor_returns_entity() {
         .unwrap();
     let body = nifi_rust_client::types::ProcessorEntity::default();
     let entity = client
-        .processgroups_api()
-        .processors("pg-id")
-        .create_processor(&body)
+        .processgroups()
+        .create_processor("pg-id", &body)
         .await
         .unwrap();
     assert_eq!(entity.id.as_deref(), Some("proc-id"));
@@ -187,9 +187,8 @@ async fn get_processors_sends_include_descendant_groups_when_true() {
         .build()
         .unwrap();
     let result = client
-        .processgroups_api()
-        .processors("pg-id")
-        .get_processors(Some(true))
+        .processgroups()
+        .get_processors("pg-id", Some(true))
         .await;
     assert!(result.is_ok(), "{:?}", result);
 }
@@ -209,9 +208,8 @@ async fn get_processors_sends_include_descendant_groups_when_false() {
         .build()
         .unwrap();
     let result = client
-        .processgroups_api()
-        .processors("pg-id")
-        .get_processors(Some(false))
+        .processgroups()
+        .get_processors("pg-id", Some(false))
         .await;
     assert!(result.is_ok(), "{:?}", result);
 }
@@ -233,7 +231,7 @@ async fn delete_processor_sends_version_query_param() {
         .build()
         .unwrap();
     let result = client
-        .processors_api()
+        .processors()
         .delete_processor("proc-id", Some("5"), None, None)
         .await;
     assert!(result.is_ok(), "{:?}", result);

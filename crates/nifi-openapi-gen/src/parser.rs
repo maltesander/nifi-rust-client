@@ -13,21 +13,10 @@ pub struct ApiSpec {
 #[derive(Debug, Clone)]
 pub struct TagGroup {
     pub tag: String,
-    pub struct_name: String, // e.g. "FlowApi"
+    pub struct_name: String, // e.g. "Flow"
     pub module_name: String, // e.g. "flow"  — used for file/module names
-    pub accessor_fn: String, // e.g. "flow_api" — used for NifiClient method name
+    pub accessor_fn: String, // e.g. "flow" — used for NifiClient method name
     pub types: Vec<TypeDef>, // types used by this tag's endpoints
-    pub root_endpoints: Vec<Endpoint>,
-    pub sub_groups: Vec<SubGroup>,
-}
-
-#[derive(Debug, Clone)]
-pub struct SubGroup {
-    pub name: String,                      // path segment after {id}, e.g. "config"
-    pub struct_name: String,               // e.g. "ControllerServicesConfigApi"
-    pub accessor_fn: String,               // e.g. "config"
-    pub primary_param: String,             // the param name baked into the sub-struct, e.g. "id"
-    pub primary_param_doc: Option<String>, // description for that param, e.g. "The process group id."
     pub endpoints: Vec<Endpoint>,
 }
 
@@ -179,11 +168,7 @@ pub fn load(path: &str) -> ApiSpec {
 
     // Collect StringEnum TypeDefs from query params across all tags
     for tag in &tags {
-        let all_eps = tag
-            .root_endpoints
-            .iter()
-            .chain(tag.sub_groups.iter().flat_map(|sg| sg.endpoints.iter()));
-        for ep in all_eps {
+        for ep in &tag.endpoints {
             for qp in &ep.query_params {
                 if let (Some(type_name), QueryParamType::Enum(variants)) =
                     (&qp.enum_type_name, &qp.ty)
@@ -405,27 +390,6 @@ fn sub_group_segment(path: &str) -> Option<&str> {
         }
     }
     None
-}
-
-/// "run-status" → "RunStatus", "config" → "Config"
-fn segment_to_pascal(seg: &str) -> String {
-    seg.split('-')
-        .map(|part| {
-            let mut c = part.chars();
-            match c.next() {
-                None => String::new(),
-                Some(f) => f.to_uppercase().collect::<String>() + c.as_str(),
-            }
-        })
-        .collect()
-}
-
-/// Returns the first `{param}` name in a path, snake_case-normalized.
-/// "/controller-services/{id}/config" → Some("id")
-fn first_path_param(path: &str) -> Option<String> {
-    path.split('/')
-        .find(|s| s.starts_with('{') && s.ends_with('}'))
-        .map(|s| prop_name_to_rust(&s[1..s.len() - 1].replace('-', "_")))
 }
 
 /// Capitalise the first character of a camelCase param name to produce PascalCase.
@@ -709,19 +673,19 @@ fn parse_tags(
     let mut groups: Vec<TagGroup> = tag_map
         .into_iter()
         .map(|(tag, all_endpoints)| {
-            let struct_name = format!("{}Api", tag.replace(' ', ""));
+            let struct_name = tag.replace(' ', "");
             let module_name = tag.to_lowercase().replace(' ', "_");
             let accessor_fn = tag_to_accessor(&tag);
-            let parent_base = struct_name
-                .strip_suffix("Api")
-                .unwrap_or(&struct_name)
-                .to_string();
 
-            // Split endpoints: root vs. sub-group.
-            // BTreeMap preserves deterministic ordering by accessor_fn.
-            // Tuple: (raw_seg, primary_param, endpoints)
+            // Bucket endpoints into root vs. sub-group exactly as the legacy
+            // code did, so the flattened `endpoints` list preserves insertion
+            // order: root endpoints first, then sub-group endpoints walked in
+            // BTreeMap (alphabetical accessor_fn) order. This ordering is
+            // load-bearing — downstream emitters preserve insertion order, and
+            // the Phase 5 byte-identical gate relies on the flat list matching
+            // `root + sub_groups.flat_map(.endpoints)` from the old code.
             let mut root_endpoints: Vec<Endpoint> = vec![];
-            let mut sub_map: std::collections::BTreeMap<String, (String, String, Vec<Endpoint>)> =
+            let mut sub_map: std::collections::BTreeMap<String, Vec<Endpoint>> =
                 std::collections::BTreeMap::new();
 
             for ep in all_endpoints {
@@ -729,40 +693,15 @@ fn parse_tags(
                     None => root_endpoints.push(ep),
                     Some(raw_seg) => {
                         let accessor = raw_seg.replace('-', "_");
-                        // Primary param is the first path param in this specific path,
-                        // computed per sub-group to avoid mismatches in tags with
-                        // multiple param names (e.g. {id} vs {group}).
-                        let pp = first_path_param(&ep.path).unwrap_or_else(|| "id".to_string());
-                        sub_map
-                            .entry(accessor)
-                            .or_insert_with(|| (raw_seg.to_string(), pp, vec![]))
-                            .2
-                            .push(ep);
+                        sub_map.entry(accessor).or_default().push(ep);
                     }
                 }
             }
 
-            let sub_groups = sub_map
-                .into_iter()
-                .map(|(accessor_fn, (raw_seg, primary_param, endpoints))| {
-                    let pascal = segment_to_pascal(&raw_seg);
-                    // Pull the description of the primary path param from any endpoint in the group.
-                    let primary_param_doc = endpoints.iter().find_map(|ep| {
-                        ep.path_params
-                            .iter()
-                            .find(|p| p.name == primary_param)
-                            .and_then(|p| p.doc.clone())
-                    });
-                    SubGroup {
-                        name: accessor_fn.clone(),
-                        struct_name: format!("{parent_base}{pascal}Api"),
-                        accessor_fn,
-                        primary_param: primary_param.clone(),
-                        primary_param_doc,
-                        endpoints,
-                    }
-                })
-                .collect();
+            let mut endpoints: Vec<Endpoint> = root_endpoints;
+            for (_accessor, eps) in sub_map {
+                endpoints.extend(eps);
+            }
 
             TagGroup {
                 tag,
@@ -770,8 +709,7 @@ fn parse_tags(
                 module_name,
                 accessor_fn,
                 types: vec![],
-                root_endpoints,
-                sub_groups,
+                endpoints,
             }
         })
         .collect();
@@ -814,7 +752,7 @@ fn strip_trailing_numeric_suffix(op_id: &str) -> &str {
 }
 
 fn tag_to_accessor(tag: &str) -> String {
-    format!("{}_api", tag.to_lowercase().replace(' ', "_"))
+    tag.to_lowercase().replace(' ', "_")
 }
 
 #[cfg(test)]
@@ -878,14 +816,7 @@ mod tests {
         let v: serde_json::Value = serde_json::from_str(&content).unwrap();
         let schemas = v["components"]["schemas"].as_object().unwrap().clone();
         let tags = parse_tags(&v, &schemas, &[]);
-        let all_eps: Vec<&Endpoint> = tags
-            .iter()
-            .flat_map(|t| {
-                t.root_endpoints
-                    .iter()
-                    .chain(t.sub_groups.iter().flat_map(|sg| sg.endpoints.iter()))
-            })
-            .collect();
+        let all_eps: Vec<&Endpoint> = tags.iter().flat_map(|t| t.endpoints.iter()).collect();
         let ep = all_eps
             .iter()
             .find(|e| {
@@ -904,14 +835,7 @@ mod tests {
         let v: serde_json::Value = serde_json::from_str(&content).unwrap();
         let schemas = v["components"]["schemas"].as_object().unwrap().clone();
         let tags = parse_tags(&v, &schemas, &[]);
-        let all_eps: Vec<&Endpoint> = tags
-            .iter()
-            .flat_map(|t| {
-                t.root_endpoints
-                    .iter()
-                    .chain(t.sub_groups.iter().flat_map(|sg| sg.endpoints.iter()))
-            })
-            .collect();
+        let all_eps: Vec<&Endpoint> = tags.iter().flat_map(|t| t.endpoints.iter()).collect();
         let ep = all_eps
             .iter()
             .find(|e| {
@@ -932,11 +856,7 @@ mod tests {
         let tags = parse_tags(&v, &schemas, &[]);
         let ep = tags
             .iter()
-            .flat_map(|t| {
-                t.root_endpoints
-                    .iter()
-                    .chain(t.sub_groups.iter().flat_map(|sg| sg.endpoints.iter()))
-            })
+            .flat_map(|t| t.endpoints.iter())
             .find(|e| e.path == "/flow/client-id" && matches!(e.method, HttpMethod::Get))
             .expect("/flow/client-id missing from parsed 2.9.0 spec");
         assert!(matches!(
@@ -955,11 +875,7 @@ mod tests {
         let tags = parse_tags(&v, &schemas, &[]);
         let ep = tags
             .iter()
-            .flat_map(|t| {
-                t.root_endpoints
-                    .iter()
-                    .chain(t.sub_groups.iter().flat_map(|sg| sg.endpoints.iter()))
-            })
+            .flat_map(|t| t.endpoints.iter())
             .find(|e| {
                 e.path == "/connectors/{id}/assets/{assetId}" && matches!(e.method, HttpMethod::Get)
             })
@@ -991,9 +907,7 @@ mod tests {
         let ep = tags
             .iter()
             .flat_map(|t| {
-                t.root_endpoints
-                    .iter()
-                    .chain(t.sub_groups.iter().flat_map(|sg| sg.endpoints.iter()))
+                t.endpoints.iter()
             })
             .find(|e| {
                 e.path
@@ -1017,11 +931,7 @@ mod tests {
         let tags = parse_tags(&v, &schemas, &[]);
         let ep = tags
             .iter()
-            .flat_map(|t| {
-                t.root_endpoints
-                    .iter()
-                    .chain(t.sub_groups.iter().flat_map(|sg| sg.endpoints.iter()))
-            })
+            .flat_map(|t| t.endpoints.iter())
             .find(|e| e.path == "/flow/about")
             .expect("/flow/about missing");
         assert!(matches!(

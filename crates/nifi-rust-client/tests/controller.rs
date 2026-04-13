@@ -21,11 +21,7 @@ async fn get_controller_config_returns_max_timer_driven_thread_count() {
         .unwrap()
         .build()
         .unwrap();
-    let config = client
-        .controller_api()
-        .get_controller_config()
-        .await
-        .unwrap();
+    let config = client.controller().get_controller_config().await.unwrap();
 
     assert_eq!(
         config
@@ -53,7 +49,7 @@ async fn upload_nar_sends_octet_stream_content_type() {
         .build()
         .unwrap();
     let result = client
-        .controller_api()
+        .controller()
         .upload_nar(Some("test.nar"), vec![1u8, 2, 3])
         .await;
     assert!(result.is_ok(), "{:?}", result);
@@ -76,7 +72,7 @@ async fn upload_nar_sets_filename_header() {
         .build()
         .unwrap();
     let result = client
-        .controller_api()
+        .controller()
         .upload_nar(Some("my-bundle.nar"), vec![0u8])
         .await;
     assert!(result.is_ok(), "{:?}", result);
@@ -98,10 +94,7 @@ async fn upload_nar_without_filename_still_sends_data() {
         .unwrap()
         .build()
         .unwrap();
-    let result = client
-        .controller_api()
-        .upload_nar(None, vec![0xca, 0xfe])
-        .await;
+    let result = client.controller().upload_nar(None, vec![0xca, 0xfe]).await;
     assert!(result.is_ok(), "{:?}", result);
 }
 
@@ -130,9 +123,8 @@ async fn clear_flow_analysis_rule_bulletins_returns_cleared_count() {
         .unwrap();
     let body = nifi_rust_client::types::ClearBulletinsRequestEntity::default();
     let result = client
-        .controller_api()
-        .bulletins("some-id")
-        .clear_flow_analysis_rule_bulletins(&body)
+        .controller()
+        .clear_flow_analysis_rule_bulletins("some-id", &body)
         .await;
 
     assert!(
@@ -164,9 +156,8 @@ async fn clear_parameter_provider_bulletins_returns_cleared_count() {
         .unwrap();
     let body = nifi_rust_client::types::ClearBulletinsRequestEntity::default();
     let result = client
-        .controller_api()
-        .bulletins("some-id")
-        .clear_parameter_provider_bulletins(&body)
+        .controller()
+        .clear_parameter_provider_bulletins("some-id", &body)
         .await;
 
     assert!(
@@ -198,9 +189,8 @@ async fn clear_registry_client_bulletins_returns_cleared_count() {
         .unwrap();
     let body = nifi_rust_client::types::ClearBulletinsRequestEntity::default();
     let result = client
-        .controller_api()
-        .bulletins("some-id")
-        .clear_registry_client_bulletins(&body)
+        .controller()
+        .clear_registry_client_bulletins("some-id", &body)
         .await;
 
     assert!(

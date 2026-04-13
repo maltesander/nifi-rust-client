@@ -18,7 +18,7 @@
 //! client.login("admin", "adminpassword123").await?;
 //!
 //! # #[cfg(not(feature = "dynamic"))]
-//! let about = client.flow_api().get_about_info().await?;
+//! let about = client.flow().get_about_info().await?;
 //! # #[cfg(not(feature = "dynamic"))]
 //! println!("Connected to NiFi {:?}", about.version);
 //! # Ok(())
@@ -70,7 +70,7 @@
 //! - [`NifiClientBuilder`] — construct a client with timeouts, proxies, TLS
 //!   options, credential providers, and retry policy.
 //! - [`NifiClient`] — the client handle itself; resource accessors like
-//!   `.flow_api()`, `.processors_api()`, etc. return borrowed resource structs.
+//!   `.flow()`, `.processors()`, etc. return borrowed resource structs.
 //! - [`NifiError`] — `#[non_exhaustive]` error type with typed variants
 //!   (`Unauthorized`, `Forbidden`, `NotFound`, `Conflict`,
 //!   `UnsupportedEndpoint`, etc.) and helpers like `status_code()` and
