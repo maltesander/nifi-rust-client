@@ -32,7 +32,7 @@ async fn login_and_connect_insecure() {
         .expect("failed to log in to NiFi");
 
     client
-        .flow_api()
+        .flow()
         .get_about_info()
         .await
         .expect("failed to reach NiFi");
@@ -64,7 +64,7 @@ async fn login_and_connect_with_ca_cert() {
         .expect("failed to log in to NiFi");
 
     client
-        .flow_api()
+        .flow()
         .get_about_info()
         .await
         .expect("failed to reach NiFi");

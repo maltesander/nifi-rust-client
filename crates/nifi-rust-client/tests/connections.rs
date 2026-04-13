@@ -30,7 +30,7 @@ async fn get_connection_returns_source_and_destination() {
         .build()
         .unwrap();
     let conn = client
-        .connections_api()
+        .connections()
         .get_connection("conn-id")
         .await
         .unwrap();
@@ -74,7 +74,7 @@ async fn update_connection_sends_body_and_returns_entity() {
         .unwrap();
     let body = nifi_rust_client::types::ConnectionEntity::default();
     let result = client
-        .connections_api()
+        .connections()
         .update_connection("conn-id", &body)
         .await;
 
@@ -100,7 +100,7 @@ async fn delete_connection_with_queued_data_returns_409() {
         .build()
         .unwrap();
     let err = client
-        .connections_api()
+        .connections()
         .delete_connection("conn-id", Some("1"), None, None)
         .await
         .unwrap_err();

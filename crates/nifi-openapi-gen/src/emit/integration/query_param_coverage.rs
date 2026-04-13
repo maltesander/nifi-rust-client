@@ -2,10 +2,9 @@ use std::collections::HashSet;
 
 use super::common::{
     build_accessor, capitalize_first, default_path_param_value, default_required_query_param_value,
-    find_endpoint, trait_use_stmt,
+    find_endpoint,
 };
 use crate::diff::VersionDiff;
-use crate::parser::compat::SubGroup;
 use crate::parser::{ApiSpec, Endpoint, HttpMethod, QueryParamType};
 use crate::util::{version_to_feature, wire_to_pascal};
 
@@ -63,7 +62,7 @@ pub fn emit_query_param_coverage_tests(
 
             // Look up the endpoint in the "to" spec.
             let ep_info = find_endpoint(to_spec, &ep_change.method, &ep_change.path);
-            let (endpoint, tag_group, sub_group) = match ep_info {
+            let (endpoint, tag_group) = match ep_info {
                 Some(info) => info,
                 None => continue,
             };
@@ -80,18 +79,13 @@ pub fn emit_query_param_coverage_tests(
                     None => continue,
                 };
 
-                let accessor = build_accessor(&tag_group.accessor_fn, sub_group.as_ref());
-                let tag = tag_group
-                    .accessor_fn
-                    .strip_suffix("_api")
-                    .unwrap_or(&tag_group.accessor_fn);
+                let accessor = build_accessor(&tag_group.accessor_fn);
                 let base_name = format!(
                     "param_{tag}_{fn_name}_{rust_name}",
+                    tag = tag_group.accessor_fn,
                     fn_name = endpoint.fn_name,
                     rust_name = qp.rust_name,
                 );
-
-                let use_trait = trait_use_stmt(&tag_group.struct_name, sub_group.as_ref());
 
                 // Build the argument expression for the target param.
                 let (param_arg, extra_use) = match &qp.ty {
@@ -112,13 +106,12 @@ pub fn emit_query_param_coverage_tests(
                     _ => ("Some(\"test-value\")".to_string(), None),
                 };
 
-                let call_args =
-                    build_call_args(endpoint, sub_group.as_ref(), &qp.rust_name, &param_arg);
+                let call_args = build_call_args(endpoint, &qp.rust_name, &param_arg);
 
                 // Extra use statement line (if any).
                 let use_type_line = extra_use
                     .as_deref()
-                    .map(|s| format!("\n    {s}"))
+                    .map(|s| format!("    {s}\n"))
                     .unwrap_or_default();
 
                 // Positive test — param accepted on the version that added it.
@@ -127,15 +120,13 @@ pub fn emit_query_param_coverage_tests(
 #[tokio::test]
 #[ignore = "requires a running NiFi instance (use tests/run.sh)"]
 async fn {base_name}_accepted() {{
-    {use_trait}{use_type_line}
-
+{use_type_line}
     let client = helpers::dynamic_logged_in_client().await;
     let result = client.{accessor}.{fn_name}({call_args}).await;
     assert!(result.is_ok(), "expected param {param_name} to be accepted, got: {{:?}}", result.unwrap_err());
 }}"#,
                     to_feature = to_feature,
                     base_name = base_name,
-                    use_trait = use_trait,
                     use_type_line = use_type_line,
                     accessor = accessor,
                     fn_name = endpoint.fn_name,
@@ -149,8 +140,7 @@ async fn {base_name}_accepted() {{
 #[tokio::test]
 #[ignore = "requires a running NiFi instance (use tests/run.sh)"]
 async fn {base_name}_ignored_on_older() {{
-    {use_trait}{use_type_line}
-
+{use_type_line}
     let client = helpers::dynamic_logged_in_client().await;
     let result = client.{accessor}.{fn_name}({call_args}).await;
     // Param should be silently skipped — no error expected
@@ -158,7 +148,6 @@ async fn {base_name}_ignored_on_older() {{
 }}"#,
                     negative_cfg = negative_cfg,
                     base_name = base_name,
-                    use_trait = use_trait,
                     use_type_line = use_type_line,
                     accessor = accessor,
                     fn_name = endpoint.fn_name,
@@ -210,18 +199,13 @@ fn query_param_key(method: &HttpMethod, path: &str, param: &str) -> String {
 /// All other params get defaults.
 fn build_call_args(
     endpoint: &Endpoint,
-    sub_group: Option<&SubGroup<'_>>,
     target_param_rust_name: &str,
     target_param_arg: &str,
 ) -> String {
     let mut args: Vec<String> = Vec::new();
-    let primary_param = sub_group.map(|sg| sg.primary_param.as_str());
 
-    // Path params (excluding primary for sub-group endpoints).
+    // Path params — all passed in declaration order.
     for pp in &endpoint.path_params {
-        if primary_param == Some(pp.name.as_str()) {
-            continue;
-        }
         let val = default_path_param_value(&pp.name);
         args.push(format!("\"{val}\""));
     }

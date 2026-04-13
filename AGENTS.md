@@ -85,7 +85,7 @@ tracing::debug!(method = "GET", path, "NiFi API request");
 
 Use the literal method name string and the `path` variable. This applies to all future methods.
 
-Resource struct methods (e.g. `FlowApi::about`) that delegate to a generic helper do **not** add their
+Resource struct methods (e.g. `Flow::about`) that delegate to a generic helper do **not** add their
 own `tracing::debug!` call — the helper already emits it. Only methods that send requests directly
 (bypassing the helpers) need their own debug line.
 
@@ -105,17 +105,17 @@ The API surface is split into resource structs mirroring NiFi's own API grouping
 Each resource borrows the client and adds methods for its API section:
 
 ```rust
-pub struct FlowApi<'a> { client: &'a NifiClient }
-pub struct ProcessorsApi<'a> { client: &'a NifiClient }
-pub struct AccessApi<'a> { client: &'a NifiClient }
+pub struct Flow<'a> { client: &'a NifiClient }
+pub struct Processors<'a> { client: &'a NifiClient }
+pub struct Access<'a> { client: &'a NifiClient }
 // etc.
 ```
 
 `NifiClient` exposes accessor methods that return these structs:
 
 ```rust
-client.flow_api().get_about_info().await?
-client.processors_api().get_processor("some-id").await?
+client.flow().get_about_info().await?
+client.processors().get_processor("some-id").await?
 ```
 
 Resource structs, types, and wiremock tests are **fully generated** from the OpenAPI spec via
@@ -284,7 +284,7 @@ lands, before it can silently corrupt generated code.
 
 ### Method name stability
 
-Generated method names on resource structs (e.g. `ProcessorsApi::update_run_status`)
+Generated method names on resource structs (e.g. `Processors::update_run_status`)
 are derived from the `operationId` with any trailing `_N` collision-counter
 suffix stripped. The raw `operationId` is preserved on `Endpoint::raw_operation_id`
 for override lookup and diagnostics.
@@ -394,7 +394,7 @@ The canonical dynamic emitter lives at
 `crates/nifi-openapi-gen/src/emit/dynamic/{mod,api,types,availability,index}.rs`. It consumes
 `CanonicalSpec` (built by `canonicalize_or_panic` over all spec versions) and emits:
 
-- `$OUT_DIR/dynamic/api/<tag>.rs` — one `FlowApi`-style concrete struct per tag, with inherent
+- `$OUT_DIR/dynamic/api/<tag>.rs` — one `Flow`-style concrete struct per tag, with inherent
   methods that route through `DynamicClient::inner()` (no traits, no dispatch enums).
 - `$OUT_DIR/dynamic/types/<tag>.rs` — union DTOs. Fields present in every supporting version
   stay at their natural type (String, i32, etc.); fields that only exist in some versions are
@@ -409,7 +409,9 @@ The hand-written `DynamicClient` lives at `crates/nifi-rust-client/src/dynamic/c
 `build.rs` copies it (alongside `strategy.rs`) into `$OUT_DIR/dynamic/` so the generated
 `mod.rs` can declare it via `pub mod client;`.
 
-Both static and dynamic modes use the same sub-resource builder pattern for path parameters:
+Both static and dynamic modes expose a flat API shape — path parameters are passed
+as ordinary method arguments (first positional argument, in the same order as the
+OpenAPI path placeholders):
 
 ```rust
 let client = NifiClientBuilder::new("https://nifi:8443")?
@@ -418,12 +420,12 @@ let client = NifiClientBuilder::new("https://nifi:8443")?
 client.login("admin", "password").await?;
 
 // Top-level methods
-let about = client.flow_api().get_about_info().await?;
+let about = client.flow().get_about_info().await?;
 
-// Sub-resource builder chain: .config(id) returns a sub-resource struct
-let analysis = client.controller_services_api()
-    .config("service-id")
-    .analyze_configuration(&body)
+// Path parameters as method arguments
+let analysis = client
+    .controller_services()
+    .analyze_configuration("service-id", &body)
     .await?;
 ```
 

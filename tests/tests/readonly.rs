@@ -11,7 +11,7 @@ mod helpers;
 async fn system_diagnostics_returns_ok() {
     let client = helpers::logged_in_client().await;
     client
-        .systemdiagnostics_api()
+        .systemdiagnostics()
         .get_system_diagnostics(None, None, None)
         .await
         .expect("failed to get system diagnostics");
@@ -24,7 +24,7 @@ async fn system_diagnostics_returns_ok() {
 async fn resources_returns_ok() {
     let client = helpers::logged_in_client().await;
     client
-        .resources_api()
+        .resources()
         .get_resources()
         .await
         .expect("failed to get resources");
@@ -37,7 +37,7 @@ async fn resources_returns_ok() {
 async fn site_to_site_details_returns_ok() {
     let client = helpers::logged_in_client().await;
     client
-        .sitetosite_api()
+        .sitetosite()
         .get_site_to_site_details()
         .await
         .expect("failed to get site-to-site details");
@@ -50,7 +50,7 @@ async fn site_to_site_details_returns_ok() {
 async fn counters_returns_ok() {
     let client = helpers::logged_in_client().await;
     client
-        .counters_api()
+        .counters()
         .get_counters(None, None)
         .await
         .expect("failed to get counters");
@@ -63,7 +63,7 @@ async fn counters_returns_ok() {
 async fn authentication_configuration_returns_ok() {
     let client = helpers::logged_in_client().await;
     client
-        .authentication_api()
+        .authentication()
         .get_authentication_configuration()
         .await
         .expect("failed to get authentication configuration");
@@ -76,7 +76,7 @@ async fn authentication_configuration_returns_ok() {
 async fn about_info_returns_nifi_version() {
     let client = helpers::logged_in_client().await;
     let about = client
-        .flow_api()
+        .flow()
         .get_about_info()
         .await
         .expect("failed to get about info");
@@ -91,7 +91,7 @@ async fn about_info_returns_nifi_version() {
 async fn banners_returns_ok() {
     let client = helpers::logged_in_client().await;
     client
-        .flow_api()
+        .flow()
         .get_banners()
         .await
         .expect("failed to get banners");
@@ -102,7 +102,7 @@ async fn banners_returns_ok() {
 async fn bulletin_board_returns_ok() {
     let client = helpers::logged_in_client().await;
     client
-        .flow_api()
+        .flow()
         .get_bulletin_board(None, None, None, None, None, None)
         .await
         .expect("failed to get bulletin board");
@@ -113,7 +113,7 @@ async fn bulletin_board_returns_ok() {
 async fn bulletins_returns_ok() {
     let client = helpers::logged_in_client().await;
     client
-        .flow_api()
+        .flow()
         .get_bulletins()
         .await
         .expect("failed to get bulletins");
@@ -124,7 +124,7 @@ async fn bulletins_returns_ok() {
 async fn flow_config_returns_ok() {
     let client = helpers::logged_in_client().await;
     client
-        .flow_api()
+        .flow()
         .get_flow_config()
         .await
         .expect("failed to get flow config");
@@ -135,7 +135,7 @@ async fn flow_config_returns_ok() {
 async fn cluster_summary_returns_ok() {
     let client = helpers::logged_in_client().await;
     client
-        .flow_api()
+        .flow()
         .get_cluster_summary()
         .await
         .expect("failed to get cluster summary");
@@ -146,7 +146,7 @@ async fn cluster_summary_returns_ok() {
 async fn generate_client_id_returns_ok() {
     let client = helpers::logged_in_client().await;
     client
-        .flow_api()
+        .flow()
         .generate_client_id()
         .await
         .expect("failed to generate client id");
@@ -159,7 +159,7 @@ async fn generate_client_id_returns_ok() {
 async fn processor_types_returns_ok() {
     let client = helpers::logged_in_client().await;
     let entity = client
-        .flow_api()
+        .flow()
         .get_processor_types(None, None, None)
         .await
         .expect("failed to get processor types");
@@ -178,7 +178,7 @@ async fn processor_types_returns_ok() {
 async fn controller_service_types_returns_ok() {
     let client = helpers::logged_in_client().await;
     let entity = client
-        .flow_api()
+        .flow()
         .get_controller_service_types(None, None, None, None, None, None, None)
         .await
         .expect("failed to get controller service types");
@@ -197,7 +197,7 @@ async fn controller_service_types_returns_ok() {
 async fn reporting_task_types_returns_ok() {
     let client = helpers::logged_in_client().await;
     let entity = client
-        .flow_api()
+        .flow()
         .get_reporting_task_types(None, None, None)
         .await
         .expect("failed to get reporting task types");
@@ -216,7 +216,7 @@ async fn reporting_task_types_returns_ok() {
 async fn prioritizers_returns_ok() {
     let client = helpers::logged_in_client().await;
     client
-        .flow_api()
+        .flow()
         .get_prioritizers()
         .await
         .expect("failed to get prioritizers");
@@ -227,7 +227,7 @@ async fn prioritizers_returns_ok() {
 async fn content_viewers_returns_ok() {
     let client = helpers::logged_in_client().await;
     client
-        .flow_api()
+        .flow()
         .get_content_viewers()
         .await
         .expect("failed to get content viewers");
@@ -240,7 +240,7 @@ async fn content_viewers_returns_ok() {
 async fn get_root_flow_returns_ok() {
     let client = helpers::logged_in_client().await;
     let entity = client
-        .flow_api()
+        .flow()
         .get_flow("root", None)
         .await
         .expect("failed to get root flow");
@@ -255,7 +255,7 @@ async fn get_root_flow_returns_ok() {
 async fn search_flow_returns_ok() {
     let client = helpers::logged_in_client().await;
     client
-        .flow_api()
+        .flow()
         .search_flow(Some("NiFi"), None)
         .await
         .expect("failed to search flow");
@@ -268,7 +268,7 @@ async fn search_flow_returns_ok() {
 async fn jmx_metrics_returns_ok() {
     let client = helpers::logged_in_client().await;
     client
-        .systemdiagnostics_api()
+        .systemdiagnostics()
         .get_jmx_metrics(None)
         .await
         .expect("failed to get jmx metrics");

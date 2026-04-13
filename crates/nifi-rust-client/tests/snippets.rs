@@ -30,7 +30,7 @@ async fn create_snippet_returns_id() {
         .build()
         .unwrap();
     let body = nifi_rust_client::types::SnippetEntity::default();
-    let entity = client.snippets_api().create_snippet(&body).await.unwrap();
+    let entity = client.snippets().create_snippet(&body).await.unwrap();
 
     assert_eq!(
         entity.snippet.as_ref().and_then(|s| s.id.as_deref()),

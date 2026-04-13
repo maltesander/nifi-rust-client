@@ -19,7 +19,7 @@ async fn get_funnel_returns_id() {
         .unwrap()
         .build()
         .unwrap();
-    let funnel = client.funnels_api().get_funnel("funnel-id").await.unwrap();
+    let funnel = client.funnels().get_funnel("funnel-id").await.unwrap();
 
     assert_eq!(funnel.id.as_deref(), Some("funnel-id"));
 }
@@ -42,9 +42,8 @@ async fn create_funnel_returns_id() {
         .unwrap();
     let body = nifi_rust_client::types::FunnelEntity::default();
     let funnel = client
-        .processgroups_api()
-        .funnels("pg-id")
-        .create_funnel(&body)
+        .processgroups()
+        .create_funnel("pg-id", &body)
         .await
         .unwrap();
 

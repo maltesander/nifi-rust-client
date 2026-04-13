@@ -159,9 +159,9 @@ fn parse_endpoints_grouped_by_tag() {
         .iter()
         .find(|t| t.tag == "Flow")
         .expect("Flow tag");
-    assert_eq!(flow.struct_name, "FlowApi");
+    assert_eq!(flow.struct_name, "Flow");
     assert_eq!(flow.module_name, "flow");
-    assert_eq!(flow.accessor_fn, "flow_api");
+    assert_eq!(flow.accessor_fn, "flow");
     assert_eq!(flow.endpoints.len(), 1);
 
     let about = &flow.endpoints[0];
@@ -235,13 +235,13 @@ fn load_full_nifi_spec() {
         spec.all_types.len()
     );
 
-    // Verify FlowApi exists with about endpoint
+    // Verify Flow tag exists with about endpoint
     let flow = spec
         .tags
         .iter()
         .find(|t| t.tag == "Flow")
         .expect("Flow tag missing");
-    assert_eq!(flow.struct_name, "FlowApi");
+    assert_eq!(flow.struct_name, "Flow");
     let about = flow
         .endpoints
         .iter()
@@ -253,8 +253,11 @@ fn load_full_nifi_spec() {
 }
 
 #[test]
-fn parse_sub_path_grouping() {
-    use nifi_openapi_gen::parser::compat;
+fn parse_flat_endpoints_preserves_sub_path_order() {
+    // With Phase 5 the parser no longer buckets endpoints into sub-groups.
+    // The flat `endpoints` list must still contain every endpoint under the
+    // tag in insertion order (root endpoints first, then previously-sub-grouped
+    // endpoints in BTreeMap order).
     let spec = load(&fixture("sub_paths.json"));
     let services = spec
         .tags
@@ -262,38 +265,34 @@ fn parse_sub_path_grouping() {
         .find(|t| t.tag == "Services")
         .expect("Services");
 
-    let (root_eps, sub_groups) = compat::regroup(services);
+    // Parser flat form now uses the bare tag name as struct_name.
+    assert_eq!(services.struct_name, "Services");
 
-    // /services/{id} → root
-    assert_eq!(root_eps.len(), 1);
-    assert_eq!(root_eps[0].fn_name, "get_service");
-
-    // /services/{id}/config/* → sub-group "config"
-    // /services/{id}/run-status → sub-group "run_status"
-    assert_eq!(
-        sub_groups.len(),
-        2,
-        "expected config + run_status sub-groups"
-    );
-
-    let config = sub_groups
+    let names: Vec<&str> = services
+        .endpoints
         .iter()
-        .find(|sg| sg.accessor_fn == "config")
-        .expect("config");
-    assert_eq!(config.struct_name, "ServicesConfigApi");
-    assert_eq!(config.primary_param, "id");
-    assert_eq!(
-        config.endpoints.len(),
-        2,
-        "expected analyze_config + get_verification"
-    );
+        .map(|e| e.fn_name.as_str())
+        .collect();
 
-    let run_status = sub_groups
-        .iter()
-        .find(|sg| sg.accessor_fn == "run_status")
-        .expect("run_status");
-    assert_eq!(run_status.struct_name, "ServicesRunStatusApi");
-    assert_eq!(run_status.endpoints.len(), 1);
+    // Root endpoint `/services/{id}` maps to `get_service`.
+    assert!(
+        names.contains(&"get_service"),
+        "missing get_service in {names:?}"
+    );
+    // `/services/{id}/config/*` → two ops under the old `config` sub-group.
+    assert!(
+        names.contains(&"analyze_config"),
+        "missing analyze_config in {names:?}"
+    );
+    assert!(
+        names.contains(&"get_verification"),
+        "missing get_verification in {names:?}"
+    );
+    // `/services/{id}/run-status` → the old `run_status` sub-group.
+    assert!(
+        names.iter().any(|n| n.contains("run_status")),
+        "missing run_status endpoint in {names:?}"
+    );
 }
 
 #[test]

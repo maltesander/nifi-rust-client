@@ -18,7 +18,7 @@ async fn user_crud_lifecycle() {
         ..Default::default()
     };
     let created = client
-        .tenants_api()
+        .tenants()
         .create_user(&body)
         .await
         .expect("failed to create user");
@@ -31,7 +31,7 @@ async fn user_crud_lifecycle() {
 
     // Get — verify identity
     let fetched = client
-        .tenants_api()
+        .tenants()
         .get_user(&user_id)
         .await
         .expect("failed to get user");
@@ -55,7 +55,7 @@ async fn user_crud_lifecycle() {
         ..Default::default()
     };
     let updated = client
-        .tenants_api()
+        .tenants()
         .update_user(&user_id, &update_body)
         .await
         .expect("failed to update user");
@@ -74,7 +74,7 @@ async fn user_crud_lifecycle() {
 
     // Delete
     client
-        .tenants_api()
+        .tenants()
         .remove_user(
             &user_id,
             Some(&version_after_update.to_string()),
@@ -86,7 +86,7 @@ async fn user_crud_lifecycle() {
 
     // Verify gone
     assert!(
-        client.tenants_api().get_user(&user_id).await.is_err(),
+        client.tenants().get_user(&user_id).await.is_err(),
         "expected error fetching deleted user"
     );
 }
@@ -106,7 +106,7 @@ async fn user_group_crud_lifecycle() {
         ..Default::default()
     };
     let created = client
-        .tenants_api()
+        .tenants()
         .create_user_group(&body)
         .await
         .expect("failed to create user group");
@@ -119,7 +119,7 @@ async fn user_group_crud_lifecycle() {
 
     // Get — verify identity
     let fetched = client
-        .tenants_api()
+        .tenants()
         .get_user_group(&group_id)
         .await
         .expect("failed to get user group");
@@ -144,7 +144,7 @@ async fn user_group_crud_lifecycle() {
         ..Default::default()
     };
     let updated = client
-        .tenants_api()
+        .tenants()
         .update_user_group(&group_id, &update_body)
         .await
         .expect("failed to update user group");
@@ -163,7 +163,7 @@ async fn user_group_crud_lifecycle() {
 
     // Delete
     client
-        .tenants_api()
+        .tenants()
         .remove_user_group(
             &group_id,
             Some(&version_after_update.to_string()),
@@ -175,11 +175,7 @@ async fn user_group_crud_lifecycle() {
 
     // Verify gone
     assert!(
-        client
-            .tenants_api()
-            .get_user_group(&group_id)
-            .await
-            .is_err(),
+        client.tenants().get_user_group(&group_id).await.is_err(),
         "expected error fetching deleted user group"
     );
 }

@@ -32,7 +32,7 @@ async fn current_user_identity_matches_login() {
         .expect("failed to log in to NiFi");
 
     let user = client
-        .flow_api()
+        .flow()
         .get_current_user()
         .await
         .expect("failed to get current user");
@@ -56,7 +56,7 @@ async fn flow_status_succeeds_on_fresh_instance() {
         .expect("failed to log in to NiFi");
 
     let status = client
-        .flow_api()
+        .flow()
         .get_controller_status()
         .await
         .expect("failed to get flow status");
@@ -82,7 +82,7 @@ async fn logout_clears_token_and_invalidates_session() {
 
     // Sanity check: a call with the token succeeds.
     client
-        .flow_api()
+        .flow()
         .get_about_info()
         .await
         .expect("expected authenticated call to succeed before logout");

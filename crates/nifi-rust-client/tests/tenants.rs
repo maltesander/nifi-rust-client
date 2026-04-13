@@ -22,7 +22,7 @@ async fn create_user_returns_id_and_identity() {
         .build()
         .unwrap();
     let body = nifi_rust_client::types::UserEntity::default();
-    let user = client.tenants_api().create_user(&body).await.unwrap();
+    let user = client.tenants().create_user(&body).await.unwrap();
 
     assert_eq!(user.id.as_deref(), Some("user-abc"));
     assert_eq!(
@@ -49,7 +49,7 @@ async fn get_user_returns_identity() {
         .unwrap()
         .build()
         .unwrap();
-    let user = client.tenants_api().get_user("user-abc").await.unwrap();
+    let user = client.tenants().get_user("user-abc").await.unwrap();
 
     assert_eq!(
         user.component.as_ref().and_then(|c| c.identity.as_deref()),
@@ -75,11 +75,7 @@ async fn get_user_group_returns_identity() {
         .unwrap()
         .build()
         .unwrap();
-    let group = client
-        .tenants_api()
-        .get_user_group("group-xyz")
-        .await
-        .unwrap();
+    let group = client.tenants().get_user_group("group-xyz").await.unwrap();
 
     assert_eq!(
         group.component.as_ref().and_then(|c| c.identity.as_deref()),

@@ -2,11 +2,9 @@ use std::collections::HashSet;
 
 use super::common::{
     build_accessor, default_path_param_value, default_required_query_param_value, find_endpoint,
-    trait_use_stmt,
 };
 use super::overrides::{EndpointBehavior, lookup_endpoint_override};
 use crate::diff::{EndpointSummary, VersionDiff};
-use crate::parser::compat::SubGroup;
 use crate::parser::{ApiSpec, Endpoint, HttpMethod};
 use crate::util::version_to_feature;
 
@@ -64,15 +62,14 @@ pub fn emit_endpoint_availability_tests(
 
         for added in &diff.endpoints.added {
             let ep_info = find_endpoint(to_spec, &added.method, &added.path);
-            let (endpoint, tag_group, sub_group) = match ep_info {
+            let (endpoint, tag_group) = match ep_info {
                 Some(info) => info,
                 None => continue,
             };
 
             let base_name = test_base_name(&tag_group.accessor_fn, &endpoint.fn_name);
-            let use_trait = trait_use_stmt(&tag_group.struct_name, sub_group.as_ref());
-            let accessor = build_accessor(&tag_group.accessor_fn, sub_group.as_ref());
-            let call_args = build_call_args(endpoint, sub_group.as_ref());
+            let accessor = build_accessor(&tag_group.accessor_fn);
+            let call_args = build_call_args(endpoint);
 
             // Track that this endpoint has at least one test (the negative test
             // is always generated below, so every endpoint that reaches here is tested).
@@ -104,14 +101,11 @@ pub fn emit_endpoint_availability_tests(
 #[tokio::test]
 #[ignore = "requires a running NiFi instance (use tests/run.sh)"]
 async fn {base_name}_available() {{
-    {use_trait}
-
     let client = helpers::dynamic_logged_in_client().await;
     let result = client.{accessor}.{fn_name}({call_args}).await;
     assert!(result.is_ok(), "expected endpoint to be available, got: {{:?}}", result.unwrap_err());
 }}"#,
                         to_feature = to_feature,
-                        use_trait = use_trait,
                         base_name = base_name,
                         accessor = accessor,
                         fn_name = endpoint.fn_name,
@@ -128,8 +122,6 @@ async fn {base_name}_available() {{
 #[tokio::test]
 #[ignore = "requires a running NiFi instance (use tests/run.sh)"]
 async fn {base_name}_unsupported() {{
-    {use_trait}
-
     let client = helpers::dynamic_logged_in_client().await;
     let result = client.{accessor}.{fn_name}({call_args}).await;
     let err = result.unwrap_err();
@@ -139,7 +131,6 @@ async fn {base_name}_unsupported() {{
     );
 }}"#,
                 negative_cfg = negative_cfg,
-                use_trait = use_trait,
                 base_name = base_name,
                 accessor = accessor,
                 fn_name = endpoint.fn_name,
@@ -198,16 +189,12 @@ fn is_safe_endpoint(summary: &EndpointSummary, endpoint: &Endpoint) -> bool {
 }
 
 /// Build the argument list for the function call.
-/// For sub-group endpoints, the primary path param is excluded (it's on the accessor).
-fn build_call_args(endpoint: &Endpoint, sub_group: Option<&SubGroup<'_>>) -> String {
+/// All path params are passed as regular arguments in declaration order.
+fn build_call_args(endpoint: &Endpoint) -> String {
     let mut args: Vec<String> = Vec::new();
-    let primary_param = sub_group.map(|sg| sg.primary_param.as_str());
 
-    // Path params (excluding primary for sub-group endpoints).
+    // Path params — all passed in declaration order.
     for pp in &endpoint.path_params {
-        if primary_param == Some(pp.name.as_str()) {
-            continue;
-        }
         let val = default_path_param_value(&pp.name);
         args.push(format!("\"{val}\""));
     }
@@ -253,9 +240,7 @@ pub fn collect_endpoint_metadata(
 
 /// Produce the test function base name, e.g. `endpoint_flow_get_listen_ports`.
 fn test_base_name(accessor_fn: &str, fn_name: &str) -> String {
-    // Strip the trailing "_api" from accessor_fn if present.
-    let tag = accessor_fn.strip_suffix("_api").unwrap_or(accessor_fn);
-    format!("endpoint_{tag}_{fn_name}")
+    format!("endpoint_{accessor_fn}_{fn_name}")
 }
 
 #[cfg(test)]
@@ -301,9 +286,9 @@ mod tests {
         ApiSpec {
             tags: vec![TagGroup {
                 tag: tag.to_string(),
-                struct_name: format!("{tag}Api"),
+                struct_name: tag.to_string(),
                 module_name: tag.to_lowercase(),
-                accessor_fn: format!("{}_api", tag.to_lowercase()),
+                accessor_fn: tag.to_lowercase(),
                 types: vec![],
                 endpoints: vec![endpoint],
             }],
@@ -429,13 +414,13 @@ mod tests {
     }
 
     #[test]
-    fn test_base_name_strips_api_suffix() {
+    fn test_base_name_joins_accessor_and_fn() {
         assert_eq!(
-            test_base_name("flow_api", "get_listen_ports"),
+            test_base_name("flow", "get_listen_ports"),
             "endpoint_flow_get_listen_ports"
         );
         assert_eq!(
-            test_base_name("processors_api", "get_processor"),
+            test_base_name("processors", "get_processor"),
             "endpoint_processors_get_processor"
         );
     }

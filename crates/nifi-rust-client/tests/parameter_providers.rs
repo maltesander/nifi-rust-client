@@ -32,7 +32,7 @@ async fn get_parameter_provider_returns_id_and_name() {
         .build()
         .unwrap();
     let pp = client
-        .parameterproviders_api()
+        .parameterproviders()
         .get_parameter_provider("pp-1")
         .await
         .unwrap();
@@ -66,7 +66,7 @@ async fn update_parameter_provider_sends_body_and_returns_entity() {
         .unwrap();
     let body = nifi_rust_client::types::ParameterProviderEntity::default();
     let updated = client
-        .parameterproviders_api()
+        .parameterproviders()
         .update_parameter_provider("pp-1", &body)
         .await
         .unwrap();
@@ -99,7 +99,7 @@ async fn remove_parameter_provider_returns_entity() {
         .build()
         .unwrap();
     let result = client
-        .parameterproviders_api()
+        .parameterproviders()
         .remove_parameter_provider("pp-1", Some("1"), None, None)
         .await
         .unwrap();
@@ -127,7 +127,7 @@ async fn remove_parameter_provider_returns_409_when_conflict() {
         .build()
         .unwrap();
     let err = client
-        .parameterproviders_api()
+        .parameterproviders()
         .remove_parameter_provider("pp-1", Some("1"), None, None)
         .await
         .unwrap_err();
@@ -154,9 +154,8 @@ async fn get_parameter_provider_references_returns_entity() {
         .build()
         .unwrap();
     let result = client
-        .parameterproviders_api()
-        .references("pp-1")
-        .get_parameter_provider_references()
+        .parameterproviders()
+        .get_parameter_provider_references("pp-1")
         .await
         .unwrap();
 
@@ -191,12 +190,7 @@ async fn get_state_returns_component_state() {
         .unwrap()
         .build()
         .unwrap();
-    let state = client
-        .parameterproviders_api()
-        .state("pp-1")
-        .get_state()
-        .await
-        .unwrap();
+    let state = client.parameterproviders().get_state("pp-1").await.unwrap();
 
     assert_eq!(state.component_id.as_deref(), Some("pp-1"));
 }
@@ -226,9 +220,8 @@ async fn clear_state_returns_component_state() {
         .unwrap();
     let body = nifi_rust_client::types::ComponentStateEntity::default();
     let state = client
-        .parameterproviders_api()
-        .state("pp-1")
-        .clear_state(&body)
+        .parameterproviders()
+        .clear_state("pp-1", &body)
         .await
         .unwrap();
 
@@ -259,9 +252,8 @@ async fn get_property_descriptor_returns_display_name() {
         .build()
         .unwrap();
     let descriptor = client
-        .parameterproviders_api()
-        .descriptors("pp-1")
-        .get_property_descriptor("Directory")
+        .parameterproviders()
+        .get_property_descriptor("pp-1", "Directory")
         .await
         .unwrap();
 
@@ -295,9 +287,8 @@ async fn analyze_configuration_returns_dto() {
         .unwrap();
     let body = nifi_rust_client::types::ConfigurationAnalysisEntity::default();
     let analysis = client
-        .parameterproviders_api()
-        .config("pp-1")
-        .analyze_configuration(&body)
+        .parameterproviders()
+        .analyze_configuration("pp-1", &body)
         .await
         .unwrap();
 
@@ -330,9 +321,8 @@ async fn submit_config_verification_request_returns_dto() {
         .unwrap();
     let body = nifi_rust_client::types::VerifyConfigRequestEntity::default();
     let req = client
-        .parameterproviders_api()
-        .config("pp-1")
-        .submit_config_verification_request(&body)
+        .parameterproviders()
+        .submit_config_verification_request("pp-1", &body)
         .await
         .unwrap();
 
@@ -364,9 +354,8 @@ async fn get_verification_request_returns_dto() {
         .build()
         .unwrap();
     let req = client
-        .parameterproviders_api()
-        .config("pp-1")
-        .get_verification_request("vr-1")
+        .parameterproviders()
+        .get_verification_request("pp-1", "vr-1")
         .await
         .unwrap();
 
@@ -399,9 +388,8 @@ async fn delete_verification_request_returns_dto() {
         .build()
         .unwrap();
     let req = client
-        .parameterproviders_api()
-        .config("pp-1")
-        .delete_verification_request("vr-1")
+        .parameterproviders()
+        .delete_verification_request("pp-1", "vr-1")
         .await
         .unwrap();
 
@@ -437,9 +425,8 @@ async fn fetch_parameters_returns_entity() {
         .unwrap();
     let body = nifi_rust_client::types::ParameterProviderParameterFetchEntity::default();
     let result = client
-        .parameterproviders_api()
-        .parameters("pp-1")
-        .fetch_parameters(&body)
+        .parameterproviders()
+        .fetch_parameters("pp-1", &body)
         .await
         .unwrap();
 
@@ -473,9 +460,8 @@ async fn submit_apply_parameters_returns_dto() {
         .unwrap();
     let body = nifi_rust_client::types::ParameterProviderParameterApplicationEntity::default();
     let req = client
-        .parameterproviders_api()
-        .apply_parameters_requests("pp-1")
-        .submit_apply_parameters(&body)
+        .parameterproviders()
+        .submit_apply_parameters("pp-1", &body)
         .await
         .unwrap();
 
@@ -509,9 +495,8 @@ async fn get_apply_parameters_request_returns_dto() {
         .build()
         .unwrap();
     let req = client
-        .parameterproviders_api()
-        .apply_parameters_requests("pp-1")
-        .get_parameter_provider_apply_parameters_request("apr-1")
+        .parameterproviders()
+        .get_parameter_provider_apply_parameters_request("pp-1", "apr-1")
         .await
         .unwrap();
 
@@ -544,9 +529,8 @@ async fn delete_apply_parameters_request_returns_dto() {
         .build()
         .unwrap();
     let req = client
-        .parameterproviders_api()
-        .apply_parameters_requests("pp-1")
-        .delete_apply_parameters_request("apr-1", None)
+        .parameterproviders()
+        .delete_apply_parameters_request("pp-1", "apr-1", None)
         .await
         .unwrap();
 
@@ -577,9 +561,8 @@ async fn clear_bulletins_returns_result_entity() {
         .unwrap();
     let body = nifi_rust_client::types::ClearBulletinsRequestEntity::default();
     let result = client
-        .parameterproviders_api()
-        .bulletins("pp-1")
-        .clear_bulletins(&body)
+        .parameterproviders()
+        .clear_bulletins("pp-1", &body)
         .await
         .unwrap();
 
@@ -613,7 +596,7 @@ async fn create_parameter_provider_returns_entity() {
         .unwrap();
     let body = nifi_rust_client::types::ParameterProviderEntity::default();
     let created = client
-        .controller_api()
+        .controller()
         .create_parameter_provider(&body)
         .await
         .unwrap();
@@ -648,9 +631,8 @@ async fn controller_clear_parameter_provider_bulletins_returns_result() {
         .unwrap();
     let body = nifi_rust_client::types::ClearBulletinsRequestEntity::default();
     let result = client
-        .controller_api()
-        .bulletins("pp-1")
-        .clear_parameter_provider_bulletins(&body)
+        .controller()
+        .clear_parameter_provider_bulletins("pp-1", &body)
         .await
         .unwrap();
 
@@ -681,7 +663,7 @@ async fn flow_get_parameter_providers_returns_list() {
         .unwrap()
         .build()
         .unwrap();
-    let result = client.flow_api().get_parameter_providers().await.unwrap();
+    let result = client.flow().get_parameter_providers().await.unwrap();
 
     let providers = result.parameter_providers.unwrap_or_default();
     assert_eq!(providers.len(), 1);

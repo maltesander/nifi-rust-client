@@ -66,22 +66,6 @@ pub(crate) fn body_kind_signature(body_kind: Option<&RequestBodyKind>) -> &'stat
     }
 }
 
-/// Forward-args fragment for delegating a call from a wrapper to the underlying
-/// inherent method. Returns the `", a, b"` portion (including the leading `, `)
-/// or an empty string.
-///
-/// - `Json`        → `", body"`
-/// - `OctetStream` → `", filename, data"`
-/// - `Multipart`   → `", filename, data"`
-/// - `Wildcard | FormEncoded | None` → `""`
-pub(crate) fn body_kind_forward_args(body_kind: Option<&RequestBodyKind>) -> &'static str {
-    match body_kind {
-        Some(RequestBodyKind::Json) => ", body",
-        Some(RequestBodyKind::OctetStream) | Some(RequestBodyKind::Multipart) => ", filename, data",
-        Some(RequestBodyKind::Wildcard) | Some(RequestBodyKind::FormEncoded) | None => "",
-    }
-}
-
 /// Controls how `FieldType::Enum` is mapped to a Rust type name.
 pub(crate) enum InlineEnumMode<'a> {
     /// Static mode: generate an inline enum type named `{struct_name}{PascalCase(field_name)}`.
@@ -307,39 +291,5 @@ mod tests {
         assert_eq!(body_kind_signature(None), "");
         assert_eq!(body_kind_signature(Some(&RequestBodyKind::Wildcard)), "");
         assert_eq!(body_kind_signature(Some(&RequestBodyKind::FormEncoded)), "");
-    }
-
-    #[test]
-    fn body_kind_forward_args_json() {
-        assert_eq!(
-            body_kind_forward_args(Some(&RequestBodyKind::Json)),
-            ", body"
-        );
-    }
-
-    #[test]
-    fn body_kind_forward_args_octet_stream() {
-        assert_eq!(
-            body_kind_forward_args(Some(&RequestBodyKind::OctetStream)),
-            ", filename, data"
-        );
-    }
-
-    #[test]
-    fn body_kind_forward_args_multipart() {
-        assert_eq!(
-            body_kind_forward_args(Some(&RequestBodyKind::Multipart)),
-            ", filename, data"
-        );
-    }
-
-    #[test]
-    fn body_kind_forward_args_no_contribution() {
-        assert_eq!(body_kind_forward_args(None), "");
-        assert_eq!(body_kind_forward_args(Some(&RequestBodyKind::Wildcard)), "");
-        assert_eq!(
-            body_kind_forward_args(Some(&RequestBodyKind::FormEncoded)),
-            ""
-        );
     }
 }

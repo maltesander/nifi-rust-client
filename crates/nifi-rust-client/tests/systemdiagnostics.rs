@@ -32,7 +32,7 @@ async fn get_system_diagnostics_returns_heap_and_processor_count() {
         .build()
         .unwrap();
     let diag = client
-        .systemdiagnostics_api()
+        .systemdiagnostics()
         .get_system_diagnostics(None, None, None)
         .await
         .unwrap();

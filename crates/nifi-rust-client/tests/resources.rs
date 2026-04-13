@@ -21,7 +21,7 @@ async fn get_resources_returns_list() {
         .unwrap()
         .build()
         .unwrap();
-    let entity = client.resources_api().get_resources().await.unwrap();
+    let entity = client.resources().get_resources().await.unwrap();
 
     assert!(entity.resources.as_deref().unwrap_or_default().len() >= 2);
 }

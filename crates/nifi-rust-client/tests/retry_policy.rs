@@ -58,7 +58,7 @@ async fn retries_on_503_then_succeeds() {
         .build()
         .unwrap();
 
-    let result = client.flow_api().get_about_info().await;
+    let result = client.flow().get_about_info().await;
     assert!(result.is_ok(), "expected Ok after retry, got: {result:?}");
 }
 
@@ -82,7 +82,7 @@ async fn stops_after_max_retries() {
         .build()
         .unwrap();
 
-    let err = client.flow_api().get_about_info().await.unwrap_err();
+    let err = client.flow().get_about_info().await.unwrap_err();
     assert!(
         matches!(err, NifiError::Api { status, .. } if status == 503),
         "expected Api error with status 503, got: {err:?}"
@@ -108,7 +108,7 @@ async fn no_retry_without_policy() {
         .build()
         .unwrap();
 
-    let err = client.flow_api().get_about_info().await.unwrap_err();
+    let err = client.flow().get_about_info().await.unwrap_err();
     assert!(
         matches!(err, NifiError::Api { status, .. } if status == 503),
         "expected Api error with status 503, got: {err:?}"
@@ -135,7 +135,7 @@ async fn does_not_retry_non_retryable_errors() {
         .build()
         .unwrap();
 
-    let err = client.flow_api().get_about_info().await.unwrap_err();
+    let err = client.flow().get_about_info().await.unwrap_err();
     assert!(
         matches!(err, NifiError::Api { status, .. } if status == 400),
         "expected Api error with status 400, got: {err:?}"
@@ -192,7 +192,7 @@ async fn retry_composes_with_auth_refresh() {
 
     client.set_token("expired-jwt".to_string()).await;
 
-    let result = client.flow_api().get_about_info().await;
+    let result = client.flow().get_about_info().await;
     assert!(
         result.is_ok(),
         "expected Ok after retry + auth refresh, got: {result:?}"

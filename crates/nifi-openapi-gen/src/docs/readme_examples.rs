@@ -52,7 +52,7 @@ pub fn emit_client_readme_examples(
             start_marker: "<!-- STATIC_RUST_EXAMPLE_START -->".into(),
             end_marker: "<!-- STATIC_RUST_EXAMPLE_END -->".into(),
             content: format!(
-                "```rust\nlet client = NifiClientBuilder::new(\"https://nifi:8443\")?.build()?;\nclient.login(\"admin\", \"password\").await?;\n\n// Full type safety \u{2014} ProcessorEntity is {mod_name}::types::ProcessorEntity\nlet proc = client.processors_api().get_processor(\"id\").await?;\n```"
+                "```rust\nlet client = NifiClientBuilder::new(\"https://nifi:8443\")?.build()?;\nclient.login(\"admin\", \"password\").await?;\n\n// Full type safety \u{2014} ProcessorEntity is {mod_name}::types::ProcessorEntity\nlet proc = client.processors().get_processor(\"id\").await?;\n```"
             ),
         },
         FileEdit::ReplaceBlock {

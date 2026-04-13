@@ -44,7 +44,7 @@ let client = NifiClientBuilder::new("https://nifi:8443")?.build()?;
 client.login("admin", "password").await?;
 
 // Full type safety — ProcessorEntity is v2_9_0::types::ProcessorEntity
-let proc = client.processors_api().get_processor("id").await?;
+let proc = client.processors().get_processor("id").await?;
 ```
 <!-- STATIC_RUST_EXAMPLE_END -->
 
@@ -74,7 +74,7 @@ if let Some(version) = client.detected_version() {
 }
 
 // Enum query params are typed — nodewise reporting with verbose diagnostics
-let diag = client.systemdiagnostics_api()
+let diag = client.systemdiagnostics()
     .get_system_diagnostics(Some(true), Some(DiagnosticLevel::Verbose), None)
     .await?;
 ```
@@ -92,10 +92,10 @@ API groups are reached via per-tag accessors on `DynamicClient` that return conc
 ```rust
 use nifi_rust_client::NifiError;
 
-// Sub-resource builder chain — same pattern as static mode
-let analysis = client.controller_services_api()
-    .config("service-id")
-    .analyze_configuration(&body)
+// Flat API: path parameters are passed as method arguments
+let analysis = client
+    .controller_services()
+    .analyze_configuration("service-id", &body)
     .await?;
 ```
 
@@ -196,7 +196,7 @@ client.authenticate().await?;
 
 // If a token expires mid-session, the client automatically
 // re-authenticates and retries the request.
-let about = client.flow_api().get_about_info().await?;
+let about = client.flow().get_about_info().await?;
 ```
 
 Read credentials from environment variables (`NIFI_USERNAME`, `NIFI_PASSWORD`):
@@ -244,7 +244,7 @@ this automatically. Otherwise, re-call `login()` to obtain a fresh token:
 ```rust,no_run
 use nifi_rust_client::NifiError;
 
-match client.flow_api().get_about_info().await {
+match client.flow().get_about_info().await {
     Err(NifiError::Unauthorized { .. }) => {
         client.login("admin", "password").await?;
         // retry the original call
@@ -278,7 +278,7 @@ let client = NifiClientBuilder::new("https://nifi-loadbalancer:8443")?
 
 // The LB may route login to node1 and subsequent calls to node2 — the token is valid on both.
 client.authenticate().await?;
-let about = client.flow_api().get_about_info().await?;
+let about = client.flow().get_about_info().await?;
 ```
 
 No per-node token cache or special routing headers are needed. The existing retry logic
@@ -367,43 +367,43 @@ On a missing `actions` or `total` field in the response, the paginator surfaces 
 All API methods are grouped into resource structs mirroring NiFi's own API grouping. Access them via the client:
 
 ```rust
-client.flow_api().get_about_info().await?;
-client.processors_api().get_processor("some-id").await?;
-client.processgroups_api().get_process_group("root").await?;
+client.flow().get_about_info().await?;
+client.processors().get_processor("some-id").await?;
+client.processgroups().get_process_group("root").await?;
 ```
 
 <!-- RESOURCE_ACCESSORS_START -->
 | Accessor | Resource | 2.6.0 | 2.7.2 | 2.8.0 | 2.9.0 |
 |----------|----------|-------|-------|-------|-------|
-| `client.access_api()` | Access | 3 | 3 | 3 | 3 |
-| `client.authentication_api()` | Authentication | 1 | 1 | 1 | 1 |
-| `client.connections_api()` | Connections | 3 | 3 | 3 | 3 |
-| `client.connectors_api()` | Connectors | — | — | — | 31 |
-| `client.controller_api()` | Controller | 39 | 46 | 46 | 46 |
-| `client.controller_services_api()` | Controller services | 13 | 14 | 14 | 14 |
-| `client.counters_api()` | Counters | 3 | 3 | 3 | 3 |
-| `client.datatransfer_api()` | Data transfer | 7 | 7 | 7 | 7 |
-| `client.flow_api()` | Flow | 60 | 63 | 63 | 67 |
-| `client.flowfilequeues_api()` | Flow file queues | 8 | 8 | 8 | 8 |
-| `client.funnels_api()` | Funnels | 3 | 3 | 3 | 3 |
-| `client.inputports_api()` | Input ports | 4 | 5 | 5 | 5 |
-| `client.labels_api()` | Labels | 3 | 3 | 3 | 3 |
-| `client.outputports_api()` | Output ports | 4 | 5 | 5 | 5 |
-| `client.parametercontexts_api()` | Parameter contexts | 14 | 14 | 14 | 14 |
-| `client.parameterproviders_api()` | Parameter providers | 15 | 16 | 16 | 16 |
-| `client.policies_api()` | Policies | 5 | 5 | 5 | 5 |
-| `client.processgroups_api()` | Process groups | 34 | 34 | 34 | 34 |
-| `client.processors_api()` | Processors | 14 | 15 | 15 | 15 |
-| `client.provenance_api()` | Provenance | 7 | 7 | 7 | 7 |
-| `client.provenanceevents_api()` | Provenance events | 6 | 6 | 6 | 6 |
-| `client.remoteprocessgroups_api()` | Remote process groups | 10 | 11 | 11 | 11 |
-| `client.reportingtasks_api()` | Reporting tasks | 11 | 12 | 12 | 12 |
-| `client.resources_api()` | Resources | 1 | 1 | 1 | 1 |
-| `client.sitetosite_api()` | Site to site | 2 | 2 | 2 | 2 |
-| `client.snippets_api()` | Snippets | 3 | 3 | 3 | 3 |
-| `client.systemdiagnostics_api()` | System diagnostics | 2 | 2 | 2 | 2 |
-| `client.tenants_api()` | Tenants | 11 | 11 | 11 | 11 |
-| `client.versions_api()` | Versions | 14 | 14 | 14 | 14 |
+| `client.access()` | Access | 3 | 3 | 3 | 3 |
+| `client.authentication()` | Authentication | 1 | 1 | 1 | 1 |
+| `client.connections()` | Connections | 3 | 3 | 3 | 3 |
+| `client.connectors()` | Connectors | — | — | — | 31 |
+| `client.controller()` | Controller | 39 | 46 | 46 | 46 |
+| `client.controller_services()` | Controller services | 13 | 14 | 14 | 14 |
+| `client.counters()` | Counters | 3 | 3 | 3 | 3 |
+| `client.datatransfer()` | Data transfer | 7 | 7 | 7 | 7 |
+| `client.flow()` | Flow | 60 | 63 | 63 | 67 |
+| `client.flowfilequeues()` | Flow file queues | 8 | 8 | 8 | 8 |
+| `client.funnels()` | Funnels | 3 | 3 | 3 | 3 |
+| `client.inputports()` | Input ports | 4 | 5 | 5 | 5 |
+| `client.labels()` | Labels | 3 | 3 | 3 | 3 |
+| `client.outputports()` | Output ports | 4 | 5 | 5 | 5 |
+| `client.parametercontexts()` | Parameter contexts | 14 | 14 | 14 | 14 |
+| `client.parameterproviders()` | Parameter providers | 15 | 16 | 16 | 16 |
+| `client.policies()` | Policies | 5 | 5 | 5 | 5 |
+| `client.processgroups()` | Process groups | 34 | 34 | 34 | 34 |
+| `client.processors()` | Processors | 14 | 15 | 15 | 15 |
+| `client.provenance()` | Provenance | 7 | 7 | 7 | 7 |
+| `client.provenanceevents()` | Provenance events | 6 | 6 | 6 | 6 |
+| `client.remoteprocessgroups()` | Remote process groups | 10 | 11 | 11 | 11 |
+| `client.reportingtasks()` | Reporting tasks | 11 | 12 | 12 | 12 |
+| `client.resources()` | Resources | 1 | 1 | 1 | 1 |
+| `client.sitetosite()` | Site to site | 2 | 2 | 2 | 2 |
+| `client.snippets()` | Snippets | 3 | 3 | 3 | 3 |
+| `client.systemdiagnostics()` | System diagnostics | 2 | 2 | 2 | 2 |
+| `client.tenants()` | Tenants | 11 | 11 | 11 | 11 |
+| `client.versions()` | Versions | 14 | 14 | 14 | 14 |
 
 > Numbers indicate the endpoint count available for each accessor in that NiFi version. — means the accessor is not available in that version.
 <!-- RESOURCE_ACCESSORS_END -->
@@ -449,7 +449,7 @@ async fn example() -> Result<(), NifiError> {
         .build_dynamic()?;
     client.login("admin", "adminpassword123").await?;
 
-    let pg = client.process_groups_api().get_process_group("root").await?;
+    let pg = client.processgroups().get_process_group("root").await?;
 
     // Macro: walks the chain and stamps a dotted path into the error.
     // On failure you get NifiError::MissingField { path: "component.name" }.

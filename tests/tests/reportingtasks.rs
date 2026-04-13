@@ -6,7 +6,7 @@ use nifi_rust_client::types::{ReportingTaskDto, ReportingTaskEntity};
 /// Discover the first available reporting task type from the NiFi instance.
 async fn first_reporting_task_type(client: &nifi_rust_client::NifiClient) -> String {
     let types = client
-        .flow_api()
+        .flow()
         .get_reporting_task_types(None, None, None)
         .await
         .expect("failed to list reporting task types");
@@ -35,7 +35,7 @@ async fn reporting_task_crud_lifecycle() {
         ..Default::default()
     };
     let created = client
-        .controller_api()
+        .controller()
         .create_reporting_task(&body)
         .await
         .expect("failed to create reporting task");
@@ -51,7 +51,7 @@ async fn reporting_task_crud_lifecycle() {
 
     // Get — verify name
     let fetched = client
-        .reportingtasks_api()
+        .reportingtasks()
         .get_reporting_task(&task_id)
         .await
         .expect("failed to get reporting task");
@@ -72,7 +72,7 @@ async fn reporting_task_crud_lifecycle() {
         ..Default::default()
     };
     let updated = client
-        .reportingtasks_api()
+        .reportingtasks()
         .update_reporting_task(&task_id, &update_body)
         .await
         .expect("failed to update reporting task");
@@ -88,7 +88,7 @@ async fn reporting_task_crud_lifecycle() {
 
     // Delete
     client
-        .reportingtasks_api()
+        .reportingtasks()
         .remove_reporting_task(
             &task_id,
             Some(&version_after_update.to_string()),
@@ -101,7 +101,7 @@ async fn reporting_task_crud_lifecycle() {
     // Verify gone
     assert!(
         client
-            .reportingtasks_api()
+            .reportingtasks()
             .get_reporting_task(&task_id)
             .await
             .is_err(),

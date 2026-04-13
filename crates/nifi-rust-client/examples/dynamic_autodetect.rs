@@ -39,7 +39,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!("Detected NiFi version: {version}");
     }
 
-    let about = client.flow_api().get_about_info().await?;
+    let about = client.flow().get_about_info().await?;
     println!("Server title: {:?}", about.title);
 
     Ok(())

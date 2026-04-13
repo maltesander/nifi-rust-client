@@ -81,7 +81,7 @@ async fn returns_json_message_on_401() {
         .unwrap()
         .build()
         .unwrap();
-    let err = client.flow_api().get_about_info().await.unwrap_err();
+    let err = client.flow().get_about_info().await.unwrap_err();
     assert_api_error(&err, 401, "Authentication required");
 }
 
@@ -100,7 +100,7 @@ async fn returns_json_message_on_403() {
         .unwrap()
         .build()
         .unwrap();
-    let err = client.flow_api().get_about_info().await.unwrap_err();
+    let err = client.flow().get_about_info().await.unwrap_err();
     assert_api_error(&err, 403, "Forbidden");
 }
 
@@ -120,7 +120,7 @@ async fn returns_json_message_on_404() {
         .unwrap()
         .build()
         .unwrap();
-    let err = client.flow_api().get_about_info().await.unwrap_err();
+    let err = client.flow().get_about_info().await.unwrap_err();
     assert_api_error(&err, 404, "Resource not found");
 }
 
@@ -140,7 +140,7 @@ async fn returns_json_message_on_409() {
         .unwrap()
         .build()
         .unwrap();
-    let err = client.flow_api().get_about_info().await.unwrap_err();
+    let err = client.flow().get_about_info().await.unwrap_err();
     assert_api_error(&err, 409, "Conflict: component is running");
 }
 
@@ -157,7 +157,7 @@ async fn falls_back_to_plain_text_body_on_error() {
         .unwrap()
         .build()
         .unwrap();
-    let err = client.flow_api().get_about_info().await.unwrap_err();
+    let err = client.flow().get_about_info().await.unwrap_err();
     assert_api_error(&err, 503, "Service Unavailable");
 }
 
@@ -176,7 +176,7 @@ async fn caller_can_match_on_status_code() {
         .unwrap()
         .build()
         .unwrap();
-    let err = client.flow_api().get_about_info().await.unwrap_err();
+    let err = client.flow().get_about_info().await.unwrap_err();
 
     assert!(matches!(err, NifiError::NotFound { .. }));
 }
@@ -197,6 +197,6 @@ async fn returns_json_message_on_delete_403() {
         .unwrap()
         .build()
         .unwrap();
-    let err = client.access_api().log_out().await.unwrap_err();
+    let err = client.access().log_out().await.unwrap_err();
     assert_api_error(&err, 403, "Not logged in");
 }

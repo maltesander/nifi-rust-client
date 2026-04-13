@@ -8,9 +8,9 @@ fn flow_spec() -> ApiSpec {
         all_types: vec![],
         tags: vec![TagGroup {
             tag: "Flow".into(),
-            struct_name: "FlowApi".into(),
+            struct_name: "Flow".into(),
             module_name: "flow".into(),
-            accessor_fn: "flow_api".into(),
+            accessor_fn: "flow".into(),
             types: vec![],
             endpoints: vec![
                 Endpoint {
@@ -101,10 +101,10 @@ fn all_output(spec: &ApiSpec) -> String {
 #[test]
 fn emit_resource_struct_and_accessor() {
     let out = all_output(&flow_spec());
-    assert!(out.contains("pub struct FlowApi"), "{out}");
+    assert!(out.contains("pub struct Flow"), "{out}");
     assert!(out.contains("pub(crate) client: &'a NifiClient"), "{out}");
-    assert!(out.contains("pub fn flow_api"), "{out}");
-    assert!(out.contains("FlowApi { client: self }"), "{out}");
+    assert!(out.contains("pub fn flow"), "{out}");
+    assert!(out.contains("flow::Flow { client: self }"), "{out}");
 }
 
 #[test]
@@ -135,7 +135,7 @@ fn emit_test_stub_for_get_endpoint() {
     assert!(out.contains("async fn test_get_about_info"), "{out}");
     assert!(out.contains("MockServer::start()"), "{out}");
     assert!(out.contains("/nifi-api/flow/about"), "{out}");
-    assert!(out.contains("client.flow_api().get_about_info()"), "{out}");
+    assert!(out.contains("client.flow().get_about_info()"), "{out}");
 }
 
 #[test]
@@ -170,7 +170,7 @@ fn emit_per_tag_files() {
 
     let flow_rs = files.iter().find(|(n, _)| n == "flow.rs").unwrap();
     assert!(
-        flow_rs.1.contains("pub struct FlowApi"),
+        flow_rs.1.contains("pub struct Flow"),
         "flow.rs missing struct: {}",
         flow_rs.1
     );
@@ -181,9 +181,9 @@ fn services_spec() -> ApiSpec {
         all_types: vec![],
         tags: vec![TagGroup {
             tag: "Services".into(),
-            struct_name: "ServicesApi".into(),
+            struct_name: "Services".into(),
             module_name: "services".into(),
-            accessor_fn: "services_api".into(),
+            accessor_fn: "services".into(),
             types: vec![],
             endpoints: vec![
                 Endpoint {
@@ -250,35 +250,34 @@ fn services_spec() -> ApiSpec {
 }
 
 #[test]
-fn emit_sub_struct_definition() {
+fn emit_flat_struct_no_sub_structs() {
     let out = all_output(&services_spec());
-    assert!(out.contains("pub struct ServicesConfigApi"), "{out}");
-    assert!(out.contains("pub(crate) id: &'a str"), "{out}");
-}
-
-#[test]
-fn emit_sub_group_accessor_on_parent() {
-    let out = all_output(&services_spec());
-    // accessor method on ServicesApi
-    assert!(out.contains("pub fn config"), "{out}");
-    // prettyplease may expand the struct init to multi-line
-    assert!(out.contains("client: self.client"), "{out}");
+    // Single flat struct named `Services` — no sub-resource helper structs.
+    assert!(out.contains("pub struct Services"), "{out}");
     assert!(
-        out.contains("ServicesConfigApi {") || out.contains("ServicesConfigApi{"),
-        "{out}"
+        !out.contains("ServicesConfigApi"),
+        "sub-resource struct should not be emitted: {out}"
+    );
+    assert!(
+        !out.contains("pub fn config"),
+        "sub-group accessor should not be emitted: {out}"
     );
 }
 
 #[test]
-fn emit_sub_group_method_excludes_primary_param() {
+fn emit_flat_method_takes_all_path_params() {
     let out = all_output(&services_spec());
-    // get_verification on ServicesConfigApi — id is NOT a function argument
+    // get_verification is emitted as a flat inherent method that takes both
+    // `id` and `request_id` as regular arguments.
     assert!(out.contains("pub async fn get_verification"), "{out}");
+    assert!(out.contains("id: &str"), "{out}");
     assert!(out.contains("request_id: &str"), "{out}");
-    // id comes from self.id via injected binding
-    assert!(out.contains("let id = self.id"), "{out}");
-    // must NOT have `id: &str` as a function parameter on get_verification
-    // Verify the format string still contains {id} for path building
+    // No `self.id` binding — the legacy sub-group injection is gone.
+    assert!(
+        !out.contains("let id = self.id"),
+        "self.id binding should not be emitted: {out}"
+    );
+    // Path format literal still interpolates both params.
     assert!(
         out.contains("/services/{id}/config/verification-requests/{request_id}")
             || out.contains("format!"),
@@ -287,17 +286,24 @@ fn emit_sub_group_method_excludes_primary_param() {
 }
 
 #[test]
-fn emit_test_stub_for_sub_group_endpoint() {
+fn emit_test_stub_for_flat_path_param_endpoint() {
     let out = emit_tests(&services_spec());
-    // Sub-group call: client.services().config("test-id").get_verification(...)
-    // prettyplease may break the method chain across lines
+    // Flat API call: client.services().get_verification("test-id", "test-request_id")
+    // prettyplease may wrap the method chain across lines, so check the
+    // pieces separately.
+    assert!(out.contains("client"), "missing client: {out}");
+    assert!(out.contains(".services()"), "missing .services(): {out}");
     assert!(
-        out.contains(".config(\"test-id\")"),
-        "missing config accessor call: {out}"
+        out.contains(".get_verification"),
+        "missing .get_verification: {out}"
     );
     assert!(
-        out.contains(".get_verification("),
-        "missing get_verification call: {out}"
+        out.contains("\"test-id\""),
+        "missing test-id placeholder: {out}"
+    );
+    assert!(
+        out.contains("\"test-request_id\""),
+        "missing test-request_id placeholder: {out}"
     );
 }
 
@@ -307,9 +313,9 @@ fn spec_with_enum_query_param() -> ApiSpec {
         all_types: vec![],
         tags: vec![TagGroup {
             tag: "ProcessGroups".into(),
-            struct_name: "ProcessGroupsApi".into(),
+            struct_name: "ProcessGroups".into(),
             module_name: "processgroups".into(),
-            accessor_fn: "processgroups_api".into(),
+            accessor_fn: "processgroups".into(),
             types: vec![],
             endpoints: vec![Endpoint {
                 method: HttpMethod::Post,
@@ -372,9 +378,9 @@ fn spec_with_query_params() -> ApiSpec {
         all_types: vec![],
         tags: vec![TagGroup {
             tag: "Flow".into(),
-            struct_name: "FlowApi".into(),
+            struct_name: "Flow".into(),
             module_name: "flow".into(),
-            accessor_fn: "flow_api".into(),
+            accessor_fn: "flow".into(),
             types: vec![],
             endpoints: vec![
                 // Optional string query param
@@ -567,9 +573,9 @@ fn spec_with_errors_and_security() -> ApiSpec {
         all_types: vec![],
         tags: vec![TagGroup {
             tag: "Flow".into(),
-            struct_name: "FlowApi".into(),
+            struct_name: "Flow".into(),
             module_name: "flow".into(),
-            accessor_fn: "flow_api".into(),
+            accessor_fn: "flow".into(),
             types: vec![],
             endpoints: vec![Endpoint {
                 method: HttpMethod::Get,
@@ -606,9 +612,9 @@ fn spec_with_multi_security() -> ApiSpec {
         all_types: vec![],
         tags: vec![TagGroup {
             tag: "Processors".into(),
-            struct_name: "ProcessorsApi".into(),
+            struct_name: "Processors".into(),
             module_name: "processors".into(),
-            accessor_fn: "processors_api".into(),
+            accessor_fn: "processors".into(),
             types: vec![],
             endpoints: vec![Endpoint {
                 method: HttpMethod::Delete,
@@ -645,9 +651,9 @@ fn spec_with_no_auth() -> ApiSpec {
         all_types: vec![],
         tags: vec![TagGroup {
             tag: "Access".into(),
-            struct_name: "AccessApi".into(),
+            struct_name: "Access".into(),
             module_name: "access".into(),
-            accessor_fn: "access_api".into(),
+            accessor_fn: "access".into(),
             types: vec![],
             endpoints: vec![Endpoint {
                 method: HttpMethod::Post,
@@ -741,9 +747,9 @@ fn no_permissions_section_when_security_absent() {
         all_types: vec![],
         tags: vec![TagGroup {
             tag: "Flow".into(),
-            struct_name: "FlowApi".into(),
+            struct_name: "Flow".into(),
             module_name: "flow".into(),
-            accessor_fn: "flow_api".into(),
+            accessor_fn: "flow".into(),
             types: vec![],
             endpoints: vec![Endpoint {
                 method: HttpMethod::Get,

@@ -55,8 +55,8 @@ pub use emit::dynamic::{EndpointIndex, emit_dynamic};
 pub use emit::{
     collect_endpoint_metadata, collect_enum_metadata, collect_query_param_metadata, emit_api,
     emit_api_with_prefix, emit_cli, emit_endpoint_availability_tests, emit_enum_coverage_tests,
-    emit_field_presence_tests, emit_query_param_coverage_tests, emit_static_traits, emit_tests,
-    emit_types, tested_type_names,
+    emit_field_presence_tests, emit_query_param_coverage_tests, emit_tests, emit_types,
+    tested_type_names,
 };
 
 #[doc(hidden)]

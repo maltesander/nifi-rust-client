@@ -26,11 +26,7 @@ async fn get_processor_returns_name_and_type() {
         .unwrap()
         .build()
         .unwrap();
-    let proc = client
-        .processors_api()
-        .get_processor("proc-id")
-        .await
-        .unwrap();
+    let proc = client.processors().get_processor("proc-id").await.unwrap();
 
     assert_eq!(proc.id.as_deref(), Some("proc-id"));
     assert_eq!(
@@ -63,7 +59,7 @@ async fn update_processor_sends_body_and_returns_entity() {
         .unwrap();
     let body = nifi_rust_client::types::ProcessorEntity::default();
     let updated = client
-        .processors_api()
+        .processors()
         .update_processor("proc-id", &body)
         .await
         .unwrap();
@@ -90,7 +86,7 @@ async fn delete_running_processor_returns_409() {
         .build()
         .unwrap();
     let err = client
-        .processors_api()
+        .processors()
         .delete_processor("proc-id", Some("1"), None, None)
         .await
         .unwrap_err();
@@ -122,11 +118,7 @@ async fn clear_processor_bulletins_returns_cleared_count() {
         .build()
         .unwrap();
     let body = nifi_rust_client::types::ClearBulletinsRequestEntity::default();
-    let result = client
-        .processors_api()
-        .bulletins("some-id")
-        .clear_bulletins(&body)
-        .await;
+    let result = client.processors().clear_bulletins("some-id", &body).await;
 
     assert!(
         result.is_ok(),

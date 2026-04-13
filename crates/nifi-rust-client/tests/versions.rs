@@ -30,7 +30,7 @@ async fn get_version_information_returns_state() {
         .build()
         .unwrap();
     let entity = client
-        .versions_api()
+        .versions()
         .get_version_information("pg-id")
         .await
         .unwrap();

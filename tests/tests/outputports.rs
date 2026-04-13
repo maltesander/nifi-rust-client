@@ -24,9 +24,8 @@ async fn output_port_crud_lifecycle() {
         ..Default::default()
     };
     let created = client
-        .processgroups_api()
-        .output_ports(&pg_id)
-        .create_output_port(&body)
+        .processgroups()
+        .create_output_port(&pg_id, &body)
         .await
         .expect("failed to create output port");
     let port_id = created.id.clone().expect("created output port has no id");
@@ -38,7 +37,7 @@ async fn output_port_crud_lifecycle() {
 
     // Get — verify name
     let fetched = client
-        .outputports_api()
+        .outputports()
         .get_output_port(&port_id)
         .await
         .expect("failed to get output port");
@@ -59,7 +58,7 @@ async fn output_port_crud_lifecycle() {
         ..Default::default()
     };
     let updated = client
-        .outputports_api()
+        .outputports()
         .update_output_port(&port_id, &update_body)
         .await
         .expect("failed to update output port");
@@ -75,7 +74,7 @@ async fn output_port_crud_lifecycle() {
 
     // Delete
     client
-        .outputports_api()
+        .outputports()
         .remove_output_port(
             &port_id,
             Some(&version_after_update.to_string()),
@@ -88,7 +87,7 @@ async fn output_port_crud_lifecycle() {
     // Verify gone
     assert!(
         client
-            .outputports_api()
+            .outputports()
             .get_output_port(&port_id)
             .await
             .is_err(),

@@ -50,7 +50,7 @@ let client = NifiClientBuilder::new("https://nifi.example.com:8443")?
 
 client.login("admin", "password").await?;
 
-let about = client.flow_api().get_about_info().await?;
+let about = client.flow().get_about_info().await?;
 println!("NiFi version: {:?}", about.version);
 ```
 
@@ -80,7 +80,7 @@ if let Some(version) = client.detected_version() {
     println!("Connected to NiFi {version}");
 }
 
-let diag = client.systemdiagnostics_api()
+let diag = client.systemdiagnostics()
     .get_system_diagnostics(Some(true), Some(DiagnosticLevel::Verbose), None)
     .await?;
 ```

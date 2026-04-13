@@ -13,9 +13,9 @@ pub struct ApiSpec {
 #[derive(Debug, Clone)]
 pub struct TagGroup {
     pub tag: String,
-    pub struct_name: String, // e.g. "FlowApi"
+    pub struct_name: String, // e.g. "Flow"
     pub module_name: String, // e.g. "flow"  — used for file/module names
-    pub accessor_fn: String, // e.g. "flow_api" — used for NifiClient method name
+    pub accessor_fn: String, // e.g. "flow" — used for NifiClient method name
     pub types: Vec<TypeDef>, // types used by this tag's endpoints
     pub endpoints: Vec<Endpoint>,
 }
@@ -673,7 +673,7 @@ fn parse_tags(
     let mut groups: Vec<TagGroup> = tag_map
         .into_iter()
         .map(|(tag, all_endpoints)| {
-            let struct_name = format!("{}Api", tag.replace(' ', ""));
+            let struct_name = tag.replace(' ', "");
             let module_name = tag.to_lowercase().replace(' ', "_");
             let accessor_fn = tag_to_accessor(&tag);
 
@@ -752,7 +752,7 @@ fn strip_trailing_numeric_suffix(op_id: &str) -> &str {
 }
 
 fn tag_to_accessor(tag: &str) -> String {
-    format!("{}_api", tag.to_lowercase().replace(' ', "_"))
+    tag.to_lowercase().replace(' ', "_")
 }
 
 #[cfg(test)]
@@ -940,231 +940,5 @@ mod tests {
         ));
         // response_type should still be populated the old way
         assert!(ep.response_type.is_some());
-    }
-}
-
-/// Compatibility shim for Phase 5 commit 1.
-///
-/// Reconstructs the pre-phase-5 sub-group shape from the flat
-/// [`TagGroup::endpoints`] list so that consumers (emitters, integration test
-/// codegen, dynamic index builder) can keep producing byte-identical output
-/// while the parser itself is flat.
-///
-/// This entire module is deleted in Phase 5 commit 2 when consumers are
-/// rewritten to consume flat endpoints directly.
-///
-/// Visibility note: `pub` (not `pub(crate)`) so the gen crate's own
-/// integration tests (`crates/nifi-openapi-gen/tests/*.rs`) can import it.
-/// Those tests live outside the crate's library module tree but assert on
-/// sub-group shape, so they need the same shim.
-pub mod compat {
-    use super::{Endpoint, TagGroup};
-
-    /// Borrowed reconstruction of the legacy `parser::SubGroup`.
-    ///
-    /// Unlike the original (which owned `Vec<Endpoint>`), this version borrows
-    /// endpoints out of a [`TagGroup`] so [`regroup`] is cheap to call from
-    /// emitters that previously walked `tag.sub_groups` directly.
-    #[derive(Debug, Clone)]
-    pub struct SubGroup<'a> {
-        pub name: String,
-        pub struct_name: String,
-        pub accessor_fn: String,
-        pub primary_param: String,
-        pub primary_param_doc: Option<String>,
-        pub endpoints: Vec<&'a Endpoint>,
-    }
-
-    /// Re-bucket a [`TagGroup`]'s flat `endpoints` list into the legacy
-    /// `(root_endpoints, sub_groups)` shape.
-    ///
-    /// The bucketing algorithm is a verbatim port of the pre-phase-5
-    /// `parse_tags` body — the goal is byte-identical output from every
-    /// downstream emitter that consumes this view.
-    pub fn regroup<'a>(tag: &'a TagGroup) -> (Vec<&'a Endpoint>, Vec<SubGroup<'a>>) {
-        let parent_base = tag
-            .struct_name
-            .strip_suffix("Api")
-            .unwrap_or(&tag.struct_name)
-            .to_string();
-
-        // Tuple: (raw_seg, primary_param, endpoints)
-        let mut root_endpoints: Vec<&'a Endpoint> = vec![];
-        let mut sub_map: std::collections::BTreeMap<String, (String, String, Vec<&'a Endpoint>)> =
-            std::collections::BTreeMap::new();
-
-        for ep in &tag.endpoints {
-            match sub_group_segment(&ep.path) {
-                None => root_endpoints.push(ep),
-                Some(raw_seg) => {
-                    let accessor = raw_seg.replace('-', "_");
-                    // Primary param is the first path param in this specific
-                    // path, computed per sub-group to avoid mismatches in
-                    // tags with multiple param names (e.g. {id} vs {group}).
-                    let pp = first_path_param(&ep.path).unwrap_or_else(|| "id".to_string());
-                    sub_map
-                        .entry(accessor)
-                        .or_insert_with(|| (raw_seg.to_string(), pp, vec![]))
-                        .2
-                        .push(ep);
-                }
-            }
-        }
-
-        let sub_groups = sub_map
-            .into_iter()
-            .map(|(accessor_fn, (raw_seg, primary_param, endpoints))| {
-                let pascal = segment_to_pascal(&raw_seg);
-                // Pull the description of the primary path param from any
-                // endpoint in the group.
-                let primary_param_doc = endpoints.iter().find_map(|ep| {
-                    ep.path_params
-                        .iter()
-                        .find(|p| p.name == primary_param)
-                        .and_then(|p| p.doc.clone())
-                });
-                SubGroup {
-                    name: accessor_fn.clone(),
-                    struct_name: format!("{parent_base}{pascal}Api"),
-                    accessor_fn,
-                    primary_param: primary_param.clone(),
-                    primary_param_doc,
-                    endpoints,
-                }
-            })
-            .collect();
-
-        (root_endpoints, sub_groups)
-    }
-
-    // ---- private helpers (duplicated from pre-phase-5 parser) ----
-
-    /// Returns the first non-param path segment after the first `{param}`,
-    /// or `None`.
-    fn sub_group_segment(path: &str) -> Option<&str> {
-        let mut after_param = false;
-        for seg in path.split('/').filter(|s| !s.is_empty()) {
-            if after_param && !seg.starts_with('{') {
-                return Some(seg);
-            }
-            if seg.starts_with('{') && seg.ends_with('}') {
-                after_param = true;
-            }
-        }
-        None
-    }
-
-    /// "run-status" → "RunStatus", "config" → "Config".
-    fn segment_to_pascal(seg: &str) -> String {
-        seg.split('-')
-            .map(|part| {
-                let mut c = part.chars();
-                match c.next() {
-                    None => String::new(),
-                    Some(f) => f.to_uppercase().collect::<String>() + c.as_str(),
-                }
-            })
-            .collect()
-    }
-
-    /// Returns the first `{param}` name in a path, snake_case-normalized.
-    /// Mirrors the pre-phase-5 parser's `first_path_param` helper, which
-    /// applied `prop_name_to_rust` to the raw param name.
-    fn first_path_param(path: &str) -> Option<String> {
-        path.split('/')
-            .find(|s| s.starts_with('{') && s.ends_with('}'))
-            .map(|s| prop_name_to_rust_local(&s[1..s.len() - 1].replace('-', "_")))
-    }
-
-    /// Local copy of `prop_name_to_rust` so the compat module is
-    /// self-contained.
-    fn prop_name_to_rust_local(name: &str) -> String {
-        let mut out = String::new();
-        for (i, ch) in name.chars().enumerate() {
-            if ch.is_uppercase() && i > 0 {
-                out.push('_');
-            }
-            out.push(ch.to_ascii_lowercase());
-        }
-        out
-    }
-
-    #[cfg(test)]
-    mod tests {
-        use super::*;
-        use crate::content_type::ResponseBodyKind;
-        use crate::parser::{Endpoint, HttpMethod, TagGroup};
-
-        fn ep(path: &str) -> Endpoint {
-            Endpoint {
-                method: HttpMethod::Get,
-                path: path.to_string(),
-                fn_name: "op".to_string(),
-                raw_operation_id: "op".to_string(),
-                doc: None,
-                description: None,
-                path_params: vec![],
-                request_type: None,
-                body_kind: None,
-                body_doc: None,
-                response_type: None,
-                response_inner: None,
-                response_field: None,
-                response_kind: ResponseBodyKind::Empty,
-                query_params: vec![],
-                success_responses: vec![],
-                error_responses: vec![],
-                security: None,
-            }
-        }
-
-        fn tag_with(endpoints: Vec<Endpoint>) -> TagGroup {
-            TagGroup {
-                tag: "Foo".to_string(),
-                struct_name: "FooApi".to_string(),
-                module_name: "foo".to_string(),
-                accessor_fn: "foo_api".to_string(),
-                types: vec![],
-                endpoints,
-            }
-        }
-
-        #[test]
-        fn regroup_splits_root_and_sub_groups_in_btreemap_order() {
-            let tag = tag_with(vec![
-                ep("/foo"),
-                ep("/foo/{id}"),
-                ep("/foo/{id}/run-status"),
-                ep("/foo/{id}/config"),
-                ep("/foo/{id}/config/analysis"),
-            ]);
-            let (root, subs) = regroup(&tag);
-            // Root: "/foo" (no {id}) and "/foo/{id}" (no segment after param).
-            assert_eq!(root.len(), 2);
-            assert_eq!(root[0].path, "/foo");
-            assert_eq!(root[1].path, "/foo/{id}");
-
-            // Two sub-groups in BTreeMap (alphabetical) order.
-            assert_eq!(subs.len(), 2);
-            assert_eq!(subs[0].accessor_fn, "config");
-            assert_eq!(subs[0].name, "config");
-            assert_eq!(subs[0].struct_name, "FooConfigApi");
-            assert_eq!(subs[0].primary_param, "id");
-            // Both /config and /config/analysis bucket together.
-            assert_eq!(subs[0].endpoints.len(), 2);
-
-            assert_eq!(subs[1].accessor_fn, "run_status");
-            assert_eq!(subs[1].name, "run_status");
-            assert_eq!(subs[1].struct_name, "FooRunStatusApi");
-            assert_eq!(subs[1].endpoints.len(), 1);
-        }
-
-        #[test]
-        fn regroup_handles_tag_with_no_sub_groups() {
-            let tag = tag_with(vec![ep("/foo"), ep("/bar")]);
-            let (root, subs) = regroup(&tag);
-            assert_eq!(root.len(), 2);
-            assert!(subs.is_empty());
-        }
     }
 }

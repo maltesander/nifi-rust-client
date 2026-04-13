@@ -23,6 +23,6 @@ async fn flow_client_id_returns_text() {
         .build()
         .unwrap();
 
-    let id = client.flow_api().generate_client_id().await.unwrap();
+    let id = client.flow().generate_client_id().await.unwrap();
     assert_eq!(id, "abc-123");
 }

@@ -32,9 +32,8 @@ async fn create_processor(
         ..Default::default()
     };
     let created = client
-        .processgroups_api()
-        .processors(pg_id)
-        .create_processor(&body)
+        .processgroups()
+        .create_processor(pg_id, &body)
         .await
         .expect("failed to create processor");
     let id = created.id.clone().expect("processor has no id");
@@ -53,17 +52,15 @@ async fn flow_status_reads_return_ok() {
 
     // ── process group status ──────────────────────────────────────────────────
     client
-        .flow_api()
-        .status("root")
-        .get_process_group_status(None, None, None)
+        .flow()
+        .get_process_group_status("root", None, None, None)
         .await
         .expect("failed to get process group status");
 
     // ── process group status history ──────────────────────────────────────────
     client
-        .flow_api()
-        .status("root")
-        .get_process_group_status_history()
+        .flow()
+        .get_process_group_status_history("root")
         .await
         .expect("failed to get process group status history");
 
@@ -78,17 +75,15 @@ async fn flow_status_reads_return_ok() {
         create_processor(&client, &pg_id, "test-status-dst", 400.0, 0.0).await;
 
     client
-        .flow_api()
-        .status(&src_id)
-        .get_processor_status(None, None)
+        .flow()
+        .get_processor_status(&src_id, None, None)
         .await
         .expect("failed to get processor status");
 
     // ── processor status history ──────────────────────────────────────────────
     client
-        .flow_api()
-        .status(&src_id)
-        .get_processor_status_history()
+        .flow()
+        .get_processor_status_history(&src_id)
         .await
         .expect("failed to get processor status history");
 
@@ -114,9 +109,8 @@ async fn flow_status_reads_return_ok() {
         ..Default::default()
     };
     let created_conn = client
-        .processgroups_api()
-        .connections(&pg_id)
-        .create_connection(&conn_body)
+        .processgroups()
+        .create_connection(&pg_id, &conn_body)
         .await
         .expect("failed to create connection");
     let conn_id = created_conn.id.clone().expect("connection has no id");
@@ -127,17 +121,15 @@ async fn flow_status_reads_return_ok() {
         .expect("connection has no revision");
 
     client
-        .flow_api()
-        .status(&conn_id)
-        .get_connection_status(None, None)
+        .flow()
+        .get_connection_status(&conn_id, None, None)
         .await
         .expect("failed to get connection status");
 
     // ── connection status history ─────────────────────────────────────────────
     client
-        .flow_api()
-        .status(&conn_id)
-        .get_connection_status_history()
+        .flow()
+        .get_connection_status_history(&conn_id)
         .await
         .expect("failed to get connection status history");
 
@@ -159,9 +151,8 @@ async fn flow_status_reads_return_ok() {
         ..Default::default()
     };
     let created_ip = client
-        .processgroups_api()
-        .input_ports(&pg_id)
-        .create_input_port(&ip_body)
+        .processgroups()
+        .create_input_port(&pg_id, &ip_body)
         .await
         .expect("failed to create input port");
     let input_port_id = created_ip.id.clone().expect("input port has no id");
@@ -172,9 +163,8 @@ async fn flow_status_reads_return_ok() {
         .expect("input port has no revision");
 
     client
-        .flow_api()
-        .status(&input_port_id)
-        .get_input_port_status(None, None)
+        .flow()
+        .get_input_port_status(&input_port_id, None, None)
         .await
         .expect("failed to get input port status");
 
@@ -192,9 +182,8 @@ async fn flow_status_reads_return_ok() {
         ..Default::default()
     };
     let created_op = client
-        .processgroups_api()
-        .output_ports(&pg_id)
-        .create_output_port(&op_body)
+        .processgroups()
+        .create_output_port(&pg_id, &op_body)
         .await
         .expect("failed to create output port");
     let output_port_id = created_op.id.clone().expect("output port has no id");
@@ -205,15 +194,14 @@ async fn flow_status_reads_return_ok() {
         .expect("output port has no revision");
 
     client
-        .flow_api()
-        .status(&output_port_id)
-        .get_output_port_status(None, None)
+        .flow()
+        .get_output_port_status(&output_port_id, None, None)
         .await
         .expect("failed to get output port status");
 
     // ── cleanup (reverse order of creation) ──────────────────────────────────
     client
-        .outputports_api()
+        .outputports()
         .remove_output_port(
             &output_port_id,
             Some(&output_port_version.to_string()),
@@ -223,7 +211,7 @@ async fn flow_status_reads_return_ok() {
         .await
         .expect("failed to delete output port");
     client
-        .inputports_api()
+        .inputports()
         .remove_input_port(
             &input_port_id,
             Some(&input_port_version.to_string()),
@@ -233,17 +221,17 @@ async fn flow_status_reads_return_ok() {
         .await
         .expect("failed to delete input port");
     client
-        .connections_api()
+        .connections()
         .delete_connection(&conn_id, Some(&conn_version.to_string()), None, None)
         .await
         .expect("failed to delete connection");
     client
-        .processors_api()
+        .processors()
         .delete_processor(&dst_id, Some(&dst_version.to_string()), None, None)
         .await
         .expect("failed to delete dst processor");
     client
-        .processors_api()
+        .processors()
         .delete_processor(&src_id, Some(&src_version.to_string()), None, None)
         .await
         .expect("failed to delete src processor");

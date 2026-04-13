@@ -1,8 +1,6 @@
 use std::collections::HashMap;
 
 use crate::content_type::RequestBodyKind;
-use crate::emit::cli::verb_map;
-use crate::parser::compat::{self, SubGroup};
 use crate::parser::{ApiSpec, Endpoint, HttpMethod, QueryParamType, TagGroup};
 use crate::util::format_source;
 
@@ -94,12 +92,13 @@ fn is_skipped_body_kind(ep: &Endpoint) -> bool {
     )
 }
 
-/// Strip "Api" suffix to get the resource name.
+/// The resource name used in CLI subcommand variants.
+///
+/// Task 2.1 flattened `TagGroup::struct_name` to the bare tag name
+/// (e.g. `"Processors"` rather than `"ProcessorsApi"`), so this is a
+/// direct clone of `struct_name`.
 fn resource_name(tag: &TagGroup) -> String {
-    tag.struct_name
-        .strip_suffix("Api")
-        .unwrap_or(&tag.struct_name)
-        .to_string()
+    tag.struct_name.clone()
 }
 
 fn emit_resource_enum(out: &mut String, tags: &[&TagGroup]) {
@@ -145,55 +144,24 @@ fn emit_tag_code(out: &mut String, tag: &TagGroup, canonical: &HashMap<Canonical
 
     out.push_str(&format!("// === {} ===\n\n", variant_base));
 
-    // Collect all command entries: (command_name, variant_name, args_struct_name, is_subgroup, subgroup_ref)
+    // Command entries — one per emittable endpoint. Command name is derived
+    // from `fn_name` (kebab-case), which is guaranteed unique per tag by
+    // `naming::check_collisions`, so no deduplication pass is needed.
     let mut commands: Vec<CommandEntry> = Vec::new();
-
-    let (root_eps, sub_groups) = compat::regroup(tag);
-
-    // Root endpoints
-    for ep in root_eps.iter().copied() {
+    for ep in &tag.endpoints {
         if is_skipped_body_kind(ep) {
             continue;
         }
-        let verb = verb_map::classify(ep, &tag.module_name);
-        let cmd_name = verb.command_name();
-        let variant_name = pascal_case(&cmd_name);
+        let cmd_name = ep.fn_name.replace('_', "-");
+        let variant_name = pascal_case(&ep.fn_name);
         let args_name = format!("{variant_base}{variant_name}Args");
         commands.push(CommandEntry {
             command_name: cmd_name,
             variant_name,
             args_name,
             endpoint: ep,
-            sub_group: None,
         });
     }
-
-    // Sub-group endpoints
-    for sg in &sub_groups {
-        for ep in sg.endpoints.iter().copied() {
-            if is_skipped_body_kind(ep) {
-                continue;
-            }
-            let verb = verb_map::classify(ep, &tag.module_name);
-            let cmd_name = format!("{}-{}", sg.name, verb.command_name());
-            let variant_name = format!(
-                "{}{}",
-                pascal_case(&sg.name),
-                pascal_case(&verb.command_name())
-            );
-            let args_name = format!("{variant_base}{variant_name}Args");
-            commands.push(CommandEntry {
-                command_name: cmd_name,
-                variant_name,
-                args_name,
-                endpoint: ep,
-                sub_group: Some(sg),
-            });
-        }
-    }
-
-    // Deduplicate command names by appending method suffix on collision
-    deduplicate_commands(&mut commands, &variant_base);
 
     // --- Command enum ---
     out.push_str("#[derive(clap::Subcommand)]\n");
@@ -243,48 +211,6 @@ struct CommandEntry<'a> {
     variant_name: String,
     args_name: String,
     endpoint: &'a Endpoint,
-    sub_group: Option<&'a SubGroup<'a>>,
-}
-
-fn deduplicate_commands(commands: &mut Vec<CommandEntry<'_>>, variant_base: &str) {
-    // Pass 1: add HTTP method suffix on collision (e.g. "list" → "list-get")
-    dedup_pass(commands, variant_base, |cmd| {
-        let method_suffix = match cmd.endpoint.method {
-            HttpMethod::Get => "get",
-            HttpMethod::Post => "post",
-            HttpMethod::Put => "put",
-            HttpMethod::Delete => "delete",
-        };
-        format!("{}-{}", cmd.command_name, method_suffix)
-    });
-
-    // Pass 2: if still duplicated, fall back to the fn_name (always unique)
-    dedup_pass(commands, variant_base, |cmd| {
-        cmd.endpoint.fn_name.replace('_', "-")
-    });
-}
-
-fn dedup_pass(
-    commands: &mut Vec<CommandEntry<'_>>,
-    variant_base: &str,
-    rename: impl Fn(&CommandEntry<'_>) -> String,
-) {
-    let mut seen = std::collections::HashMap::<String, Vec<usize>>::new();
-    for (i, cmd) in commands.iter().enumerate() {
-        seen.entry(cmd.command_name.clone()).or_default().push(i);
-    }
-
-    for indices in seen.values() {
-        if indices.len() > 1 {
-            for &i in indices {
-                let new_name = rename(&commands[i]);
-                let new_variant = pascal_case(&new_name);
-                commands[i].command_name = new_name;
-                commands[i].args_name = format!("{variant_base}{new_variant}Args");
-                commands[i].variant_name = new_variant;
-            }
-        }
-    }
 }
 
 fn emit_args_struct(out: &mut String, cmd: &CommandEntry<'_>) {
@@ -292,20 +218,8 @@ fn emit_args_struct(out: &mut String, cmd: &CommandEntry<'_>) {
     out.push_str("#[derive(clap::Args)]\n");
     out.push_str(&format!("pub struct {} {{\n", cmd.args_name));
 
-    // Sub-group primary param first (positional)
-    if let Some(sg) = cmd.sub_group {
-        let param = rust_ident(&sg.primary_param);
-        if let Some(doc) = &sg.primary_param_doc {
-            out.push_str(&format!("    /// {}\n", escape_doc(doc)));
-        }
-        out.push_str(&format!("    pub {param}: String,\n"));
-    }
-
-    // Path params (positional) — skip the sub-group primary param if already emitted
+    // Path params — all positional, in declaration order.
     for pp in &ep.path_params {
-        if cmd.sub_group.is_some() && pp.name == cmd.sub_group.unwrap().primary_param {
-            continue;
-        }
         if let Some(doc) = &pp.doc {
             out.push_str(&format!("    /// {}\n", escape_doc(doc)));
         }
@@ -362,19 +276,10 @@ fn emit_handler(
     // Canonical dynamic path has no traits — the concrete resource struct is
     // returned directly and its methods are inherent. No import needed.
     let _ = cmd;
-    let _ = tag;
 
-    // Build the API accessor chain
-    let api_access = if let Some(sg) = cmd.sub_group {
-        format!(
-            "client.{}().{}(&args.{})",
-            tag.accessor_fn,
-            sg.accessor_fn,
-            rust_ident(&sg.primary_param)
-        )
-    } else {
-        format!("client.{}()", tag.accessor_fn)
-    };
+    // Flat API: a single accessor returns the tag struct, then the method
+    // is called directly with all path params as regular arguments.
+    let api_access = format!("client.{}()", tag.accessor_fn);
 
     // Body resolution for POST/PUT
     if let Some(req_type) = &ep.request_type
@@ -387,14 +292,9 @@ fn emit_handler(
         out.push_str("        .map_err(|e| crate::error::CliError::User(format!(\"invalid request body: {e}\")))?;\n");
     }
 
-    // Build method call arguments
+    // Build method call arguments — all path params are passed in order.
     let mut call_args = Vec::new();
-
-    // Path params (skip sub-group primary param — it's in the accessor)
     for pp in &ep.path_params {
-        if cmd.sub_group.is_some() && pp.name == cmd.sub_group.unwrap().primary_param {
-            continue;
-        }
         call_args.push(format!("&args.{}", rust_ident(&pp.name)));
     }
 
@@ -568,9 +468,9 @@ mod tests {
         let module_name = tag.to_lowercase();
         TagGroup {
             tag: tag.to_string(),
-            struct_name: format!("{tag}Api"),
+            struct_name: tag.to_string(),
             module_name: module_name.clone(),
-            accessor_fn: format!("{module_name}_api"),
+            accessor_fn: module_name.clone(),
             types: vec![],
             endpoints,
         }
@@ -649,7 +549,24 @@ mod tests {
             src.contains("ProcessorsCommand"),
             "missing ProcessorsCommand enum"
         );
-        assert!(src.contains("GetArgs"), "missing GetArgs struct");
-        assert!(src.contains("DeleteArgs"), "missing DeleteArgs struct");
+        // Flat command name is derived from fn_name — `get_processor` →
+        // `get-processor`, variant `GetProcessor`, args struct
+        // `ProcessorsGetProcessorArgs`.
+        assert!(
+            src.contains("ProcessorsGetProcessorArgs"),
+            "missing ProcessorsGetProcessorArgs struct"
+        );
+        assert!(
+            src.contains("ProcessorsDeleteProcessorArgs"),
+            "missing ProcessorsDeleteProcessorArgs struct"
+        );
+        assert!(
+            src.contains("name = \"get-processor\""),
+            "missing get-processor command name"
+        );
+        assert!(
+            src.contains("name = \"delete-processor\""),
+            "missing delete-processor command name"
+        );
     }
 }

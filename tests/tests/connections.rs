@@ -34,9 +34,8 @@ async fn create_generate_processor(
         ..Default::default()
     };
     let created = client
-        .processgroups_api()
-        .processors(pg_id)
-        .create_processor(&body)
+        .processgroups()
+        .create_processor(pg_id, &body)
         .await
         .expect("failed to create processor");
     let id = created.id.clone().expect("processor has no id");
@@ -86,9 +85,8 @@ async fn connection_crud_lifecycle() {
         ..Default::default()
     };
     let created_conn = client
-        .processgroups_api()
-        .connections(&pg_id)
-        .create_connection(&conn_body)
+        .processgroups()
+        .create_connection(&pg_id, &conn_body)
         .await
         .expect("failed to create connection");
     let conn_id = created_conn.id.clone().expect("connection has no id");
@@ -100,7 +98,7 @@ async fn connection_crud_lifecycle() {
 
     // Verify connection exists.
     let fetched = client
-        .connections_api()
+        .connections()
         .get_connection(&conn_id)
         .await
         .expect("failed to get connection");
@@ -123,29 +121,25 @@ async fn connection_crud_lifecycle() {
 
     // Delete connection.
     client
-        .connections_api()
+        .connections()
         .delete_connection(&conn_id, Some(&conn_version.to_string()), None, None)
         .await
         .expect("failed to delete connection");
 
     // Verify gone.
     assert!(
-        client
-            .connections_api()
-            .get_connection(&conn_id)
-            .await
-            .is_err(),
+        client.connections().get_connection(&conn_id).await.is_err(),
         "expected error fetching deleted connection"
     );
 
     // Clean up processors and process group.
     client
-        .processors_api()
+        .processors()
         .delete_processor(&src_id, Some(&src_version.to_string()), None, None)
         .await
         .expect("failed to delete src processor");
     client
-        .processors_api()
+        .processors()
         .delete_processor(&dst_id, Some(&dst_version.to_string()), None, None)
         .await
         .expect("failed to delete dst processor");

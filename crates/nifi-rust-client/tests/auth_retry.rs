@@ -56,7 +56,7 @@ async fn auto_refreshes_token_on_401() {
     client.set_token("expired-jwt".to_string()).await;
 
     // The call should auto-refresh and succeed.
-    let result = client.flow_api().get_about_info().await;
+    let result = client.flow().get_about_info().await;
     assert!(result.is_ok(), "expected Ok, got: {result:?}");
 
     // Token should be the fresh one.
@@ -84,7 +84,7 @@ async fn no_retry_without_auth_provider() {
     client.set_token("expired-jwt".to_string()).await;
 
     // Without an auth provider, the 401 should propagate immediately.
-    let err = client.flow_api().get_about_info().await.unwrap_err();
+    let err = client.flow().get_about_info().await.unwrap_err();
     assert!(
         matches!(err, NifiError::Unauthorized { .. }),
         "expected Unauthorized, got: {err:?}"
@@ -122,7 +122,7 @@ async fn no_infinite_loop_when_refresh_fails() {
     client.set_token("expired-jwt".to_string()).await;
 
     // The refresh attempt fails with Auth error (login returns Auth, not Unauthorized).
-    let err = client.flow_api().get_about_info().await.unwrap_err();
+    let err = client.flow().get_about_info().await.unwrap_err();
     assert!(
         matches!(err, NifiError::Auth { .. }),
         "expected Auth error from failed re-login, got: {err:?}"

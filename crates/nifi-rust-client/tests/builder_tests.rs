@@ -95,6 +95,6 @@ async fn builder_client_can_make_requests() {
         .build()
         .unwrap();
 
-    let result = client.flow_api().get_about_info().await;
+    let result = client.flow().get_about_info().await;
     assert!(result.is_ok(), "{:?}", result);
 }

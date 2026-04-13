@@ -2,10 +2,9 @@ use std::collections::HashSet;
 
 use super::common::{
     build_accessor, capitalize_first, default_path_param_value, default_required_query_param_value,
-    find_endpoint, trait_use_stmt,
+    find_endpoint,
 };
 use crate::diff::VersionDiff;
-use crate::parser::compat::SubGroup;
 use crate::parser::{ApiSpec, Endpoint};
 use crate::util::{version_to_feature, wire_to_pascal};
 
@@ -64,7 +63,7 @@ pub fn emit_enum_coverage_tests(
 
                 // Look up the endpoint in the "to" spec.
                 let ep_info = find_endpoint(to_spec, &ep_change.method, &ep_change.path);
-                let (endpoint, tag_group, sub_group) = match ep_info {
+                let (endpoint, tag_group) = match ep_info {
                     Some(info) => info,
                     None => continue,
                 };
@@ -87,13 +86,11 @@ pub fn emit_enum_coverage_tests(
                     }
                 };
 
-                // Build accessor chain: e.g. "client.flow_api()" or
-                // "client.processgroups_api().process_groups(\"root\")"
-                let accessor = build_accessor(&tag_group.accessor_fn, sub_group.as_ref());
+                // Build the flat accessor: e.g. `flow()` or `process_groups()`.
+                let accessor = build_accessor(&tag_group.accessor_fn);
 
                 // Build the function call arguments.
-                let call_args =
-                    build_call_args(endpoint, sub_group.as_ref(), &qp.rust_name, "ENUM_VALUE");
+                let call_args = build_call_args(endpoint, &qp.rust_name, "ENUM_VALUE");
 
                 for wire_value in &param_change.added_enum_values {
                     let variant = wire_to_pascal(wire_value);
@@ -101,7 +98,6 @@ pub fn emit_enum_coverage_tests(
                     let variant_lower = variant.to_lowercase();
                     let base_name = format!("enum_{type_lower}_{variant_lower}");
 
-                    let use_trait = trait_use_stmt(&tag_group.struct_name, sub_group.as_ref());
                     let use_type =
                         format!("use nifi_rust_client::dynamic::types::{enum_type_name};");
                     let enum_arg = format!("Some({enum_type_name}::{variant})");
@@ -113,7 +109,6 @@ pub fn emit_enum_coverage_tests(
 #[tokio::test]
 #[ignore = "requires a running NiFi instance (use tests/run.sh)"]
 async fn {base_name}_accepted() {{
-    {use_trait}
     {use_type}
 
     let client = helpers::dynamic_logged_in_client().await;
@@ -121,7 +116,6 @@ async fn {base_name}_accepted() {{
     assert!(result.is_ok(), "expected {enum_type_name}::{variant} to be accepted, got: {{:?}}", result.unwrap_err());
 }}"#,
                         to_feature = to_feature,
-                        use_trait = use_trait,
                         use_type = use_type,
                         base_name = base_name,
                         accessor = accessor,
@@ -137,7 +131,6 @@ async fn {base_name}_accepted() {{
 #[tokio::test]
 #[ignore = "requires a running NiFi instance (use tests/run.sh)"]
 async fn {base_name}_unsupported() {{
-    {use_trait}
     {use_type}
 
     let client = helpers::dynamic_logged_in_client().await;
@@ -149,7 +142,6 @@ async fn {base_name}_unsupported() {{
     );
 }}"#,
                         negative_cfg = negative_cfg,
-                        use_trait = use_trait,
                         use_type = use_type,
                         base_name = base_name,
                         accessor = accessor,
@@ -188,18 +180,13 @@ async fn {base_name}_unsupported() {{
 /// All other params get a default value.
 fn build_call_args(
     endpoint: &Endpoint,
-    sub_group: Option<&SubGroup<'_>>,
     enum_param_rust_name: &str,
     enum_placeholder: &str,
 ) -> String {
     let mut args: Vec<String> = Vec::new();
-    let primary_param = sub_group.map(|sg| sg.primary_param.as_str());
 
-    // Path params (excluding primary for sub-group endpoints).
+    // Path params — all passed in declaration order.
     for pp in &endpoint.path_params {
-        if primary_param == Some(pp.name.as_str()) {
-            continue;
-        }
         let val = default_path_param_value(&pp.name);
         args.push(format!("\"{val}\""));
     }

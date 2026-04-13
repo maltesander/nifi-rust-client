@@ -20,7 +20,7 @@ async fn get_output_port_returns_name() {
         .build()
         .unwrap();
     let port = client
-        .outputports_api()
+        .outputports()
         .get_output_port("port-id")
         .await
         .unwrap();
@@ -50,9 +50,8 @@ async fn create_output_port_returns_id() {
         .unwrap();
     let body = nifi_rust_client::types::PortEntity::default();
     let port = client
-        .processgroups_api()
-        .output_ports("pg-id")
-        .create_output_port(&body)
+        .processgroups()
+        .create_output_port("pg-id", &body)
         .await
         .unwrap();
 
@@ -83,11 +82,7 @@ async fn clear_output_port_bulletins_returns_cleared_count() {
         .build()
         .unwrap();
     let body = nifi_rust_client::types::ClearBulletinsRequestEntity::default();
-    let result = client
-        .outputports_api()
-        .bulletins("some-id")
-        .clear_bulletins(&body)
-        .await;
+    let result = client.outputports().clear_bulletins("some-id", &body).await;
 
     assert!(
         result.is_ok(),

@@ -36,9 +36,8 @@ async fn provenance_search_and_events() {
         ..Default::default()
     };
     let created = client
-        .processgroups_api()
-        .processors(&pg_id)
-        .create_processor(&proc_body)
+        .processgroups()
+        .create_processor(&pg_id, &proc_body)
         .await
         .expect("failed to create processor");
     let proc_id = created.id.clone().expect("processor has no id");
@@ -55,7 +54,7 @@ async fn provenance_search_and_events() {
 
     // ── get_search_options — no data required ─────────────────────────────────
     client
-        .provenance_api()
+        .provenance()
         .get_search_options()
         .await
         .expect("failed to get provenance search options");
@@ -72,7 +71,7 @@ async fn provenance_search_and_events() {
         }),
     };
     let submitted = client
-        .provenance_api()
+        .provenance()
         .submit_provenance_request(&query_body)
         .await
         .expect("failed to submit provenance query");
@@ -81,7 +80,7 @@ async fn provenance_search_and_events() {
     // ── poll until the query finishes ─────────────────────────────────────────
     let provenance = loop {
         let p = client
-            .provenance_api()
+            .provenance()
             .get_provenance(&query_id, None, None, Some(false))
             .await
             .expect("failed to poll provenance query");
@@ -100,7 +99,7 @@ async fn provenance_search_and_events() {
         .and_then(|e| e.event_id)
     {
         client
-            .provenanceevents_api()
+            .provenanceevents()
             .get_provenance_event(&event_id.to_string(), None)
             .await
             .expect("failed to get provenance event by id");
@@ -108,7 +107,7 @@ async fn provenance_search_and_events() {
 
     // ── delete the provenance query ───────────────────────────────────────────
     client
-        .provenance_api()
+        .provenance()
         .delete_provenance(&query_id, None)
         .await
         .expect("failed to delete provenance query");
@@ -116,7 +115,7 @@ async fn provenance_search_and_events() {
     // ── cleanup ───────────────────────────────────────────────────────────────
     let stopped_version = helpers::stop_processor(&client, &proc_id, running_version).await;
     client
-        .processors_api()
+        .processors()
         .delete_processor(&proc_id, Some(&stopped_version.to_string()), None, None)
         .await
         .expect("failed to delete processor");

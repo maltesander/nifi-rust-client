@@ -22,9 +22,8 @@ async fn funnel_crud_lifecycle() {
         ..Default::default()
     };
     let created = client
-        .processgroups_api()
-        .funnels(&pg_id)
-        .create_funnel(&body)
+        .processgroups()
+        .create_funnel(&pg_id, &body)
         .await
         .expect("failed to create funnel");
     let funnel_id = created.id.clone().expect("created funnel has no id");
@@ -36,7 +35,7 @@ async fn funnel_crud_lifecycle() {
 
     // Get — verify it exists
     let fetched = client
-        .funnels_api()
+        .funnels()
         .get_funnel(&funnel_id)
         .await
         .expect("failed to get funnel");
@@ -57,7 +56,7 @@ async fn funnel_crud_lifecycle() {
         ..Default::default()
     };
     let updated = client
-        .funnels_api()
+        .funnels()
         .update_funnel(&funnel_id, &update_body)
         .await
         .expect("failed to update funnel");
@@ -69,7 +68,7 @@ async fn funnel_crud_lifecycle() {
 
     // Delete
     client
-        .funnels_api()
+        .funnels()
         .remove_funnel(
             &funnel_id,
             Some(&version_after_update.to_string()),
@@ -81,7 +80,7 @@ async fn funnel_crud_lifecycle() {
 
     // Verify gone
     assert!(
-        client.funnels_api().get_funnel(&funnel_id).await.is_err(),
+        client.funnels().get_funnel(&funnel_id).await.is_err(),
         "expected error fetching deleted funnel"
     );
 

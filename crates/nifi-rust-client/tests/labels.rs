@@ -19,7 +19,7 @@ async fn get_label_returns_label_text() {
         .unwrap()
         .build()
         .unwrap();
-    let label = client.labels_api().get_label("label-id").await.unwrap();
+    let label = client.labels().get_label("label-id").await.unwrap();
 
     assert_eq!(label.id.as_deref(), Some("label-id"));
     assert_eq!(
@@ -46,9 +46,8 @@ async fn create_label_returns_id() {
         .unwrap();
     let body = nifi_rust_client::types::LabelEntity::default();
     let label = client
-        .processgroups_api()
-        .labels("pg-id")
-        .create_label(&body)
+        .processgroups()
+        .create_label("pg-id", &body)
         .await
         .unwrap();
 

@@ -67,9 +67,8 @@ async fn process_group_crud_lifecycle() {
         ..Default::default()
     };
     let created = client
-        .processgroups_api()
-        .process_groups(root_id)
-        .create_process_group(None, &body)
+        .processgroups()
+        .create_process_group(root_id, None, &body)
         .await
         .expect("failed to create process group");
     let pg_id = created.id.clone().expect("created entity has no id");
@@ -81,7 +80,7 @@ async fn process_group_crud_lifecycle() {
 
     // Get — verify it exists with the right name
     let fetched = client
-        .processgroups_api()
+        .processgroups()
         .get_process_group(&pg_id)
         .await
         .expect("failed to get process group");
@@ -105,7 +104,7 @@ async fn process_group_crud_lifecycle() {
         ..Default::default()
     };
     let updated = client
-        .processgroups_api()
+        .processgroups()
         .update_process_group(&pg_id, &update_body)
         .await
         .expect("failed to update process group");
@@ -121,13 +120,13 @@ async fn process_group_crud_lifecycle() {
 
     // Delete
     client
-        .processgroups_api()
+        .processgroups()
         .remove_process_group(&pg_id, Some(&version_after_update.to_string()), None, None)
         .await
         .expect("failed to delete process group");
 
     // Verify gone — expect an error (404)
-    let fetch_after_delete = client.processgroups_api().get_process_group(&pg_id).await;
+    let fetch_after_delete = client.processgroups().get_process_group(&pg_id).await;
     assert!(
         fetch_after_delete.is_err(),
         "expected error fetching deleted process group, got {:?}",
@@ -160,9 +159,8 @@ async fn processor_crud_lifecycle() {
         ..Default::default()
     };
     let pg = client
-        .processgroups_api()
-        .process_groups(root_id)
-        .create_process_group(None, &pg_body)
+        .processgroups()
+        .create_process_group(root_id, None, &pg_body)
         .await
         .expect("failed to create parent process group");
     let pg_id = pg.id.clone().expect("process group has no id");
@@ -194,9 +192,8 @@ async fn processor_crud_lifecycle() {
         ..Default::default()
     };
     let created_proc = client
-        .processgroups_api()
-        .processors(&pg_id)
-        .create_processor(&proc_body)
+        .processgroups()
+        .create_processor(&pg_id, &proc_body)
         .await
         .expect("failed to create processor");
     let proc_id = created_proc.id.clone().expect("processor has no id");
@@ -208,7 +205,7 @@ async fn processor_crud_lifecycle() {
 
     // Get — verify it exists
     let fetched_proc = client
-        .processors_api()
+        .processors()
         .get_processor(&proc_id)
         .await
         .expect("failed to get processor");
@@ -222,9 +219,8 @@ async fn processor_crud_lifecycle() {
 
     // List with includeDescendantGroups=true — processor should appear under root
     let all_processors = client
-        .processgroups_api()
-        .processors(root_id)
-        .get_processors(Some(true))
+        .processgroups()
+        .get_processors(root_id, Some(true))
         .await
         .expect("failed to list processors with includeDescendantGroups");
     let found = all_processors
@@ -237,20 +233,20 @@ async fn processor_crud_lifecycle() {
 
     // Delete processor
     client
-        .processors_api()
+        .processors()
         .delete_processor(&proc_id, Some(&proc_version.to_string()), None, None)
         .await
         .expect("failed to delete processor");
 
     // Delete parent process group
     client
-        .processgroups_api()
+        .processgroups()
         .remove_process_group(&pg_id, Some(&pg_version.to_string()), None, None)
         .await
         .expect("failed to delete parent process group");
 
     // Verify processor is gone
-    let fetch_after_delete = client.processors_api().get_processor(&proc_id).await;
+    let fetch_after_delete = client.processors().get_processor(&proc_id).await;
     assert!(
         fetch_after_delete.is_err(),
         "expected error fetching deleted processor, got {:?}",
@@ -292,9 +288,8 @@ async fn processor_run_status_lifecycle() {
         ..Default::default()
     };
     let created_proc = client
-        .processgroups_api()
-        .processors(&pg_id)
-        .create_processor(&proc_body)
+        .processgroups()
+        .create_processor(&pg_id, &proc_body)
         .await
         .expect("failed to create processor");
     let proc_id = created_proc.id.clone().expect("processor has no id");
@@ -306,9 +301,8 @@ async fn processor_run_status_lifecycle() {
 
     // ── property descriptor (works on a stopped processor) ───────────────────
     let descriptor = client
-        .processors_api()
-        .descriptors(&proc_id)
-        .get_property_descriptor(None, "File Size", None)
+        .processors()
+        .get_property_descriptor(&proc_id, None, "File Size", None)
         .await
         .expect("failed to get property descriptor");
     assert!(
@@ -318,30 +312,33 @@ async fn processor_run_status_lifecycle() {
 
     // ── processor state read + clear (processor is freshly created = stopped) ─
     client
-        .processors_api()
-        .state(&proc_id)
-        .get_state()
+        .processors()
+        .get_state(&proc_id)
         .await
         .expect("failed to get processor state");
 
     client
-        .processors_api()
-        .state(&proc_id)
-        .clear_state(&ComponentStateEntity {
-            ..Default::default()
-        })
+        .processors()
+        .clear_state(
+            &proc_id,
+            &ComponentStateEntity {
+                ..Default::default()
+            },
+        )
         .await
         .expect("failed to clear processor state");
 
     // ── start / stop ──────────────────────────────────────────────────────────
     let started = client
-        .processors_api()
-        .run_status(&proc_id)
-        .update_run_status(&ProcessorRunStatusEntity {
-            state: Some(ProcessorRunStatusEntityState::Running),
-            revision: Some(helpers::revision(proc_version)),
-            ..Default::default()
-        })
+        .processors()
+        .update_run_status(
+            &proc_id,
+            &ProcessorRunStatusEntity {
+                state: Some(ProcessorRunStatusEntityState::Running),
+                revision: Some(helpers::revision(proc_version)),
+                ..Default::default()
+            },
+        )
         .await
         .expect("failed to start processor");
     assert!(
@@ -359,20 +356,21 @@ async fn processor_run_status_lifecycle() {
 
     // ── diagnostics (requires running processor) ──────────────────────────────
     client
-        .processors_api()
-        .diagnostics(&proc_id)
-        .get_processor_diagnostics()
+        .processors()
+        .get_processor_diagnostics(&proc_id)
         .await
         .expect("failed to get processor diagnostics");
 
     let stopped = client
-        .processors_api()
-        .run_status(&proc_id)
-        .update_run_status(&ProcessorRunStatusEntity {
-            state: Some(ProcessorRunStatusEntityState::Stopped),
-            revision: Some(helpers::revision(running_version)),
-            ..Default::default()
-        })
+        .processors()
+        .update_run_status(
+            &proc_id,
+            &ProcessorRunStatusEntity {
+                state: Some(ProcessorRunStatusEntityState::Stopped),
+                revision: Some(helpers::revision(running_version)),
+                ..Default::default()
+            },
+        )
         .await
         .expect("failed to stop processor");
     assert!(
@@ -391,7 +389,7 @@ async fn processor_run_status_lifecycle() {
         .expect("stopped entity has no revision version");
 
     client
-        .processors_api()
+        .processors()
         .delete_processor(&proc_id, Some(&final_version.to_string()), None, None)
         .await
         .expect("failed to delete processor");
@@ -434,9 +432,8 @@ async fn processor_terminate_clears_threads() {
         ..Default::default()
     };
     let created_proc = client
-        .processgroups_api()
-        .processors(&pg_id)
-        .create_processor(&proc_body)
+        .processgroups()
+        .create_processor(&pg_id, &proc_body)
         .await
         .expect("failed to create processor");
     let proc_id = created_proc.id.clone().expect("processor has no id");
@@ -448,14 +445,13 @@ async fn processor_terminate_clears_threads() {
 
     // Terminate on a stopped processor clears any residual threads and returns the entity.
     client
-        .processors_api()
-        .threads(&proc_id)
-        .terminate_processor()
+        .processors()
+        .terminate_processor(&proc_id)
         .await
         .expect("failed to terminate processor threads");
 
     client
-        .processors_api()
+        .processors()
         .delete_processor(&proc_id, Some(&proc_version.to_string()), None, None)
         .await
         .expect("failed to delete processor");

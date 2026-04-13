@@ -24,9 +24,8 @@ async fn post_multipart_sends_file_part() {
         .unwrap();
 
     let _entity = client
-        .processgroups_api()
-        .process_groups("root")
-        .upload_process_group("flow.json", b"{}".to_vec())
+        .processgroups()
+        .upload_process_group("root", "flow.json", b"{}".to_vec())
         .await
         .unwrap();
 }

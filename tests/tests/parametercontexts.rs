@@ -20,7 +20,7 @@ async fn parameter_context_crud_lifecycle() {
         ..Default::default()
     };
     let created = client
-        .parametercontexts_api()
+        .parametercontexts()
         .create_parameter_context(&body)
         .await
         .expect("failed to create parameter context");
@@ -33,7 +33,7 @@ async fn parameter_context_crud_lifecycle() {
 
     // Get — verify name
     let fetched = client
-        .parametercontexts_api()
+        .parametercontexts()
         .get_parameter_context(&ctx_id, None)
         .await
         .expect("failed to get parameter context");
@@ -57,7 +57,7 @@ async fn parameter_context_crud_lifecycle() {
         ..Default::default()
     };
     let updated = client
-        .parametercontexts_api()
+        .parametercontexts()
         .update_parameter_context(&ctx_id, &update_body)
         .await
         .expect("failed to update parameter context");
@@ -69,7 +69,7 @@ async fn parameter_context_crud_lifecycle() {
 
     // Delete
     client
-        .parametercontexts_api()
+        .parametercontexts()
         .delete_parameter_context(&ctx_id, Some(&version_after_update.to_string()), None, None)
         .await
         .expect("failed to delete parameter context");
@@ -77,7 +77,7 @@ async fn parameter_context_crud_lifecycle() {
     // Verify gone
     assert!(
         client
-            .parametercontexts_api()
+            .parametercontexts()
             .get_parameter_context(&ctx_id, None)
             .await
             .is_err(),

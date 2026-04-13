@@ -9,7 +9,7 @@ use nifi_rust_client::types::{
 /// Discover the first available controller service type from the NiFi instance.
 async fn first_controller_service_type(client: &nifi_rust_client::NifiClient) -> String {
     let types = client
-        .flow_api()
+        .flow()
         .get_controller_service_types(None, None, None, None, None, None, None)
         .await
         .expect("failed to list controller service types");
@@ -38,7 +38,7 @@ async fn controller_service_crud_lifecycle() {
         ..Default::default()
     };
     let created = client
-        .controller_api()
+        .controller()
         .create_controller_service(&body)
         .await
         .expect("failed to create controller service");
@@ -51,7 +51,7 @@ async fn controller_service_crud_lifecycle() {
 
     // Get — verify name.
     let fetched = client
-        .controller_services_api()
+        .controller_services()
         .get_controller_service(&svc_id, None)
         .await
         .expect("failed to get controller service");
@@ -72,7 +72,7 @@ async fn controller_service_crud_lifecycle() {
         ..Default::default()
     };
     let updated = client
-        .controller_services_api()
+        .controller_services()
         .update_controller_service(&svc_id, &update_body)
         .await
         .expect("failed to update controller service");
@@ -88,7 +88,7 @@ async fn controller_service_crud_lifecycle() {
 
     // Delete.
     client
-        .controller_services_api()
+        .controller_services()
         .remove_controller_service(&svc_id, Some(&version_after_update.to_string()), None, None)
         .await
         .expect("failed to delete controller service");
@@ -96,7 +96,7 @@ async fn controller_service_crud_lifecycle() {
     // Verify gone.
     assert!(
         client
-            .controller_services_api()
+            .controller_services()
             .get_controller_service(&svc_id, None)
             .await
             .is_err(),
@@ -121,7 +121,7 @@ async fn controller_service_run_status_and_state() {
         ..Default::default()
     };
     let created = client
-        .controller_api()
+        .controller()
         .create_controller_service(&body)
         .await
         .expect("failed to create controller service");
@@ -134,19 +134,21 @@ async fn controller_service_run_status_and_state() {
 
     // ── enable / disable ─────────────────────────────────────────────────────
     client
-        .controller_services_api()
-        .run_status(&svc_id)
-        .update_run_status(&ControllerServiceRunStatusEntity {
-            state: Some(ControllerServiceRunStatusEntityState::Enabled),
-            revision: Some(helpers::revision(version)),
-            ..Default::default()
-        })
+        .controller_services()
+        .update_run_status(
+            &svc_id,
+            &ControllerServiceRunStatusEntity {
+                state: Some(ControllerServiceRunStatusEntityState::Enabled),
+                revision: Some(helpers::revision(version)),
+                ..Default::default()
+            },
+        )
         .await
         .expect("failed to enable controller service");
 
     // Re-fetch to get the current revision — the service may still be in ENABLING transition.
     let after_enable = client
-        .controller_services_api()
+        .controller_services()
         .get_controller_service(&svc_id, None)
         .await
         .expect("failed to re-fetch controller service after enable");
@@ -170,19 +172,21 @@ async fn controller_service_run_status_and_state() {
     );
 
     client
-        .controller_services_api()
-        .run_status(&svc_id)
-        .update_run_status(&ControllerServiceRunStatusEntity {
-            state: Some(ControllerServiceRunStatusEntityState::Disabled),
-            revision: Some(helpers::revision(version_after_enable)),
-            ..Default::default()
-        })
+        .controller_services()
+        .update_run_status(
+            &svc_id,
+            &ControllerServiceRunStatusEntity {
+                state: Some(ControllerServiceRunStatusEntityState::Disabled),
+                revision: Some(helpers::revision(version_after_enable)),
+                ..Default::default()
+            },
+        )
         .await
         .expect("failed to disable controller service");
 
     // Re-fetch to get the final revision after disable.
     let after_disable = client
-        .controller_services_api()
+        .controller_services()
         .get_controller_service(&svc_id, None)
         .await
         .expect("failed to re-fetch controller service after disable");
@@ -208,7 +212,7 @@ async fn controller_service_run_status_and_state() {
     // ── wait for DISABLED state (NiFi transitions asynchronously) ──────────
     for _ in 0..30 {
         let svc = client
-            .controller_services_api()
+            .controller_services()
             .get_controller_service(&svc_id, None)
             .await
             .expect("failed to re-fetch service while waiting for DISABLED");
@@ -224,24 +228,25 @@ async fn controller_service_run_status_and_state() {
 
     // ── state operations ─────────────────────────────────────────────────────
     client
-        .controller_services_api()
-        .state(&svc_id)
-        .get_state()
+        .controller_services()
+        .get_state(&svc_id)
         .await
         .expect("failed to get controller service state");
 
     client
-        .controller_services_api()
-        .state(&svc_id)
-        .clear_state(&ComponentStateEntity {
-            ..Default::default()
-        })
+        .controller_services()
+        .clear_state(
+            &svc_id,
+            &ComponentStateEntity {
+                ..Default::default()
+            },
+        )
         .await
         .expect("failed to clear controller service state");
 
     // ── delete ────────────────────────────────────────────────────────────────
     client
-        .controller_services_api()
+        .controller_services()
         .remove_controller_service(
             &svc_id,
             Some(&version_after_disable.to_string()),

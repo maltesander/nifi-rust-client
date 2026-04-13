@@ -29,7 +29,7 @@ async fn submit_provenance_request_returns_id() {
         .unwrap();
     let body = nifi_rust_client::types::ProvenanceEntity::default();
     let prov = client
-        .provenance_api()
+        .provenance()
         .submit_provenance_request(&body)
         .await
         .unwrap();
