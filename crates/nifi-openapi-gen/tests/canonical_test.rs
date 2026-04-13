@@ -1,9 +1,11 @@
+use std::path::Path;
+
 use nifi_openapi_gen::canonical::{
     canonicalize, CanonicalEndpoint, CanonicalField, CanonicalSpec, CanonicalType, EndpointKey,
     VersionSet,
 };
 use nifi_openapi_gen::content_type::ResponseBodyKind;
-use nifi_openapi_gen::parser::{ApiSpec, Endpoint, Field, FieldType, HttpMethod, TagGroup, TypeDef, TypeKind};
+use nifi_openapi_gen::parser::{load, ApiSpec, Endpoint, Field, FieldType, HttpMethod, TagGroup, TypeDef, TypeKind};
 
 #[test]
 fn version_set_new_is_empty() {
@@ -312,4 +314,75 @@ fn canonicalize_enum_variants_union_across_versions() {
         t.variants.get("CONNECTOR").unwrap().versions.to_vec(),
         vec!["2.9.0"]
     );
+}
+
+#[test]
+fn canonicalize_real_spec_chain_monotonic_growth() {
+    let specs_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("specs");
+    let versions = ["2.6.0", "2.7.2", "2.8.0", "2.9.0"];
+    let all_parsed: Vec<(String, ApiSpec)> = versions
+        .iter()
+        .map(|v| {
+            let p = specs_dir.join(v).join("nifi-api.json");
+            (v.to_string(), load(p.to_str().unwrap()))
+        })
+        .collect();
+
+    let canonical = canonicalize(&all_parsed);
+
+    // Sanity: we have hundreds of endpoints and types in the canonical spec.
+    assert!(
+        canonical.endpoints.len() >= 200,
+        "expected at least 200 canonical endpoints, got {}",
+        canonical.endpoints.len()
+    );
+    assert!(
+        canonical.types.len() >= 200,
+        "expected at least 200 canonical types, got {}",
+        canonical.types.len()
+    );
+
+    // Every endpoint belongs to at least one version.
+    for (key, ep) in &canonical.endpoints {
+        assert!(
+            !ep.versions.is_empty(),
+            "endpoint {:?} {} has empty version set",
+            key.method, key.path
+        );
+    }
+
+    // Every type belongs to at least one version.
+    for (name, t) in &canonical.types {
+        assert!(
+            !t.versions.is_empty(),
+            "type {} has empty version set",
+            name
+        );
+    }
+
+    // At least one endpoint should be present in all four versions
+    // (e.g. /flow/about has existed since 2.6.0).
+    let flow_about_key = EndpointKey {
+        method: HttpMethod::Get,
+        path: "/flow/about".into(),
+    };
+    let flow_about = canonical
+        .endpoints
+        .get(&flow_about_key)
+        .expect("GET /flow/about should be canonical");
+    assert_eq!(
+        flow_about.versions.to_vec(),
+        vec!["2.6.0", "2.7.2", "2.8.0", "2.9.0"]
+    );
+
+    // At least one endpoint should be NEW in 2.9.0 (connectors).
+    let connectors_key = EndpointKey {
+        method: HttpMethod::Get,
+        path: "/connectors".into(),
+    };
+    if let Some(connectors_ep) = canonical.endpoints.get(&connectors_key) {
+        // Per NIFI_API_CHANGES.md, /connectors appeared in 2.9.0 only.
+        assert!(connectors_ep.versions.contains("2.9.0"));
+        assert!(!connectors_ep.versions.contains("2.6.0"));
+    }
 }
