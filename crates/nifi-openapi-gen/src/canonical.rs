@@ -8,7 +8,7 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
-use crate::parser::{ApiSpec, Endpoint, FieldType, HttpMethod, TagGroup, TypeKind};
+use crate::parser::{ApiSpec, Endpoint, FieldType, HttpMethod, TagGroup, TypeDef, TypeKind};
 
 /// Set of supported NiFi version strings (e.g. "2.8.0").
 ///
@@ -124,6 +124,9 @@ fn merge_spec(canonical: &mut CanonicalSpec, version: &str, spec: &ApiSpec) {
             }
         }
     }
+    for type_def in &spec.all_types {
+        merge_type(canonical, version, type_def);
+    }
 }
 
 fn merge_endpoint(
@@ -145,4 +148,30 @@ fn merge_endpoint(
             raw_operation_id: endpoint.raw_operation_id.clone(),
             versions: VersionSet::with(version),
         });
+}
+
+fn merge_type(canonical: &mut CanonicalSpec, version: &str, type_def: &TypeDef) {
+    let entry = canonical
+        .types
+        .entry(type_def.name.clone())
+        .or_insert_with(|| CanonicalType {
+            name: type_def.name.clone(),
+            kind: type_def.kind.clone(),
+            fields: BTreeMap::new(),
+            variants: BTreeMap::new(),
+            versions: VersionSet::new(),
+        });
+    entry.versions.insert(version);
+
+    for field in &type_def.fields {
+        entry
+            .fields
+            .entry(field.rust_name.clone())
+            .and_modify(|f| f.versions.insert(version))
+            .or_insert_with(|| CanonicalField {
+                name: field.rust_name.clone(),
+                ty: field.ty.clone(),
+                versions: VersionSet::with(version),
+            });
+    }
 }

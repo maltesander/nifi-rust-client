@@ -3,7 +3,7 @@ use nifi_openapi_gen::canonical::{
     VersionSet,
 };
 use nifi_openapi_gen::content_type::ResponseBodyKind;
-use nifi_openapi_gen::parser::{ApiSpec, Endpoint, FieldType, HttpMethod, TagGroup, TypeKind};
+use nifi_openapi_gen::parser::{ApiSpec, Endpoint, Field, FieldType, HttpMethod, TagGroup, TypeDef, TypeKind};
 
 #[test]
 fn version_set_new_is_empty() {
@@ -194,4 +194,87 @@ fn canonicalize_new_endpoint_in_later_version_only_has_later_version() {
         })
         .unwrap();
     assert_eq!(new_ep.versions.to_vec(), vec!["2.9.0"]);
+}
+
+fn make_field(name: &str, ty: FieldType) -> Field {
+    Field {
+        rust_name: name.to_string(),
+        serde_name: name.to_string(),
+        ty,
+        doc: None,
+        read_only: false,
+        deprecated: false,
+    }
+}
+
+fn make_type(name: &str, fields: Vec<Field>) -> TypeDef {
+    TypeDef {
+        name: name.to_string(),
+        kind: TypeKind::Dto,
+        fields,
+        doc: None,
+    }
+}
+
+fn make_spec_with_types(types: Vec<TypeDef>) -> ApiSpec {
+    ApiSpec {
+        tags: vec![],
+        all_types: types,
+    }
+}
+
+#[test]
+fn canonicalize_single_type_tracks_version() {
+    let spec = make_spec_with_types(vec![make_type(
+        "AboutDto",
+        vec![make_field("title", FieldType::Str)],
+    )]);
+    let canonical = canonicalize(&[("2.8.0".to_string(), spec)]);
+    assert_eq!(canonical.types.len(), 1);
+    let t = canonical.types.get("AboutDto").unwrap();
+    assert_eq!(t.versions.to_vec(), vec!["2.8.0"]);
+    assert_eq!(t.fields.len(), 1);
+    assert_eq!(t.fields.get("title").unwrap().versions.to_vec(), vec!["2.8.0"]);
+}
+
+#[test]
+fn canonicalize_type_present_in_two_versions_unions_versions() {
+    let spec_a = make_spec_with_types(vec![make_type(
+        "AboutDto",
+        vec![make_field("title", FieldType::Str)],
+    )]);
+    let spec_b = make_spec_with_types(vec![make_type(
+        "AboutDto",
+        vec![make_field("title", FieldType::Str)],
+    )]);
+    let canonical = canonicalize(&[
+        ("2.8.0".to_string(), spec_a),
+        ("2.9.0".to_string(), spec_b),
+    ]);
+    let t = canonical.types.get("AboutDto").unwrap();
+    assert_eq!(t.versions.to_vec(), vec!["2.8.0", "2.9.0"]);
+    assert_eq!(t.fields.get("title").unwrap().versions.to_vec(), vec!["2.8.0", "2.9.0"]);
+}
+
+#[test]
+fn canonicalize_new_field_in_later_version_has_later_version_only() {
+    let spec_a = make_spec_with_types(vec![make_type(
+        "AboutDto",
+        vec![make_field("title", FieldType::Str)],
+    )]);
+    let spec_b = make_spec_with_types(vec![make_type(
+        "AboutDto",
+        vec![
+            make_field("title", FieldType::Str),
+            make_field("version", FieldType::Str),
+        ],
+    )]);
+    let canonical = canonicalize(&[
+        ("2.8.0".to_string(), spec_a),
+        ("2.9.0".to_string(), spec_b),
+    ]);
+    let t = canonical.types.get("AboutDto").unwrap();
+    assert_eq!(t.fields.len(), 2);
+    assert_eq!(t.fields.get("title").unwrap().versions.to_vec(), vec!["2.8.0", "2.9.0"]);
+    assert_eq!(t.fields.get("version").unwrap().versions.to_vec(), vec!["2.9.0"]);
 }
