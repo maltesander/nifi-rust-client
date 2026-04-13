@@ -127,6 +127,9 @@ pub fn canonicalize(all_parsed: &[(String, ApiSpec)]) -> CanonicalSpec {
     let mut canonical = CanonicalSpec::new();
     for (version, spec) in all_parsed {
         merge_spec(&mut canonical, version, spec);
+        canonical
+            .per_version_specs
+            .insert(version.clone(), spec.clone());
     }
     canonical
 }
@@ -237,6 +240,9 @@ where
             panic!("{}", msgs.join("\n\n"));
         }
         merge_spec(&mut canonical, version, spec);
+        canonical
+            .per_version_specs
+            .insert(version.clone(), spec.clone());
     }
     canonical
 }

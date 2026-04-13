@@ -424,3 +424,31 @@ fn canonical_spec_new_has_empty_per_version_specs() {
     let canonical = CanonicalSpec::new();
     assert!(canonical.per_version_specs.is_empty());
 }
+
+#[test]
+fn canonicalize_populates_per_version_specs() {
+    let spec_a = make_spec_with_types(vec![make_type(
+        "AboutDto",
+        vec![make_field("title", FieldType::Str)],
+    )]);
+    let spec_b = make_spec_with_types(vec![make_type(
+        "AboutDto",
+        vec![
+            make_field("title", FieldType::Str),
+            make_field("version", FieldType::Str),
+        ],
+    )]);
+    let canonical = canonicalize(&[
+        ("2.6.0".to_string(), spec_a),
+        ("2.7.2".to_string(), spec_b),
+    ]);
+
+    assert_eq!(canonical.per_version_specs.len(), 2);
+    assert!(canonical.per_version_specs.contains_key("2.6.0"));
+    assert!(canonical.per_version_specs.contains_key("2.7.2"));
+
+    let stored_26 = canonical.per_version_specs.get("2.6.0").unwrap();
+    assert_eq!(stored_26.all_types[0].fields.len(), 1);
+    let stored_27 = canonical.per_version_specs.get("2.7.2").unwrap();
+    assert_eq!(stored_27.all_types[0].fields.len(), 2);
+}
