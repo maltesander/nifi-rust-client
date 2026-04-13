@@ -56,6 +56,36 @@ fn main() -> Result<(), Box<dyn Error>> {
         }
     }
 
+    if config.dynamic && config.versions.len() > 1 {
+        let dynamic_v2_src_dir = Path::new(&manifest_dir).join("src/dynamic_v2");
+        let dynamic_v2_dst_dir = Path::new(&out_dir).join("dynamic_v2");
+        std::fs::create_dir_all(&dynamic_v2_dst_dir)
+            .map_err(|e| format!("failed to create dynamic_v2 dir: {e}"))?;
+        for entry in std::fs::read_dir(&dynamic_v2_src_dir)
+            .map_err(|e| format!("failed to read src/dynamic_v2: {e}"))?
+        {
+            let entry = entry.map_err(|e| format!("read_dir entry: {e}"))?;
+            let src = entry.path();
+            // Only copy `client.rs`. The hand-written `mod.rs` in src/dynamic_v2/
+            // exists only for IDE/rust-analyzer happiness while developers edit
+            // `client.rs`; the generated `dynamic_v2/mod.rs` is the real
+            // orchestrator and must not be overwritten.
+            if src.extension().and_then(|s| s.to_str()) == Some("rs")
+                && entry.file_name() != "mod.rs"
+            {
+                let dst = dynamic_v2_dst_dir.join(entry.file_name());
+                std::fs::copy(&src, &dst).map_err(|e| {
+                    format!(
+                        "failed to copy {} to {}: {e}",
+                        src.display(),
+                        dst.display()
+                    )
+                })?;
+            }
+        }
+        println!("cargo::rerun-if-changed=src/dynamic_v2");
+    }
+
     println!("cargo::rerun-if-changed={}", specs_dir.display());
     println!("cargo::rerun-if-changed=build.rs");
     println!("cargo::rerun-if-changed=src/dynamic/strategy.rs");

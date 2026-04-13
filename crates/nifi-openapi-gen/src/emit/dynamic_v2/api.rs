@@ -10,6 +10,7 @@ use std::collections::BTreeMap;
 use crate::canonical::CanonicalSpec;
 use crate::content_type::ResponseBodyKind;
 use crate::parser::{Endpoint, HttpMethod};
+use crate::util::escape_keyword;
 
 use super::availability::endpoint_variant_name;
 use super::index::{EndpointIndex, IndexedEndpoint};
@@ -118,17 +119,18 @@ fn emit_tag_file(meta: &TagMeta<'_>, endpoints: &[&IndexedEndpoint<'_>]) -> Stri
         }
     }
 
-    out.push_str("#[allow(clippy::too_many_arguments, clippy::let_unit_value, clippy::vec_init_then_push)]\n");
+    out.push_str("#[allow(clippy::too_many_arguments, clippy::let_unit_value, clippy::vec_init_then_push, unused_variables)]\n");
     out.push_str(&format!("impl<'a> {}<'a> {{\n", meta.struct_name));
     for ep in &roots {
         emit_method(&mut out, ep, SelfKind::Root);
     }
     // Sub-group accessors on the root struct.
     for (sg_struct, sg) in &sg_meta {
+        let esc_param = escape_keyword(&sg.primary_param);
         out.push_str(&format!(
-            "    pub fn {accessor}<'b>(&'b self, {param}: &'b str) -> {sg_struct}<'b> {{\n        {sg_struct} {{ client: self.client, {param}: {param}.to_string() }}\n    }}\n\n",
+            "    pub fn {accessor}<'b>(&'b self, {esc_param}: &'b str) -> {sg_struct}<'b> {{\n        {sg_struct} {{ client: self.client, {raw_param}: {esc_param}.to_string() }}\n    }}\n\n",
             accessor = sg.accessor_fn,
-            param = sg.primary_param,
+            raw_param = sg.primary_param,
         ));
     }
     out.push_str("}\n\n");
@@ -140,7 +142,7 @@ fn emit_tag_file(meta: &TagMeta<'_>, endpoints: &[&IndexedEndpoint<'_>]) -> Stri
             "pub struct {sg_struct}<'a> {{\n    pub(crate) client: &'a DynamicClientV2,\n    pub(crate) {param}: String,\n}}\n\n",
             param = sg.primary_param,
         ));
-        out.push_str("#[allow(clippy::too_many_arguments, clippy::let_unit_value, clippy::vec_init_then_push)]\n");
+        out.push_str("#[allow(clippy::too_many_arguments, clippy::let_unit_value, clippy::vec_init_then_push, unused_variables)]\n");
         out.push_str(&format!("impl<'a> {sg_struct}<'a> {{\n"));
         for ep in eps {
             emit_method(&mut out, ep, SelfKind::SubGroup(sg.primary_param.as_str()));
@@ -171,20 +173,32 @@ fn emit_method(out: &mut String, ep: &IndexedEndpoint<'_>, self_kind: SelfKind<'
         if Some(pp.name.as_str()) == skip_param {
             continue;
         }
-        args.push(format!("{}: &str", pp.name));
+        args.push(format!("{}: &str", escape_keyword(&pp.name)));
     }
     for qp in &ep.endpoint.query_params {
         let ty = qp_rust_type(qp);
         if qp.required {
-            args.push(format!("{}: {}", qp.rust_name, ty));
+            args.push(format!("{}: {}", escape_keyword(&qp.rust_name), ty));
         } else {
-            args.push(format!("{}: Option<{}>", qp.rust_name, ty));
+            args.push(format!("{}: Option<{}>", escape_keyword(&qp.rust_name), ty));
         }
     }
-    if ep.endpoint.body_kind.is_some()
-        && let Some(rt) = &ep.endpoint.request_type
-    {
-        args.push(format!("body: &crate::dynamic_v2::types::{rt}"));
+    use crate::content_type::RequestBodyKind;
+    match &ep.endpoint.body_kind {
+        Some(RequestBodyKind::Json) => {
+            if let Some(rt) = &ep.endpoint.request_type {
+                args.push(format!("body: &crate::dynamic_v2::types::{rt}"));
+            }
+        }
+        Some(RequestBodyKind::OctetStream) => {
+            args.push("filename: Option<&str>".to_string());
+            args.push("data: Vec<u8>".to_string());
+        }
+        Some(RequestBodyKind::Multipart) => {
+            args.push("filename: &str".to_string());
+            args.push("data: Vec<u8>".to_string());
+        }
+        _ => {}
     }
 
     let return_ty = response_type_for(ep.endpoint);
@@ -205,9 +219,9 @@ fn emit_method(out: &mut String, ep: &IndexedEndpoint<'_>, self_kind: SelfKind<'
     for pp in &ep.endpoint.path_params {
         let placeholder = format!("{{{}}}", pp.name);
         let value = if Some(pp.name.as_str()) == skip_param {
-            format!("&self.{}", pp.name)
+            format!("&self.{}", escape_keyword(&pp.name))
         } else {
-            pp.name.to_string()
+            escape_keyword(&pp.name)
         };
         path_expr = format!("{path_expr}.replace(\"{placeholder}\", {value})");
     }
@@ -258,7 +272,8 @@ fn emit_query_push(out: &mut String, ep: &IndexedEndpoint<'_>, qp: &crate::parse
         .unwrap_or_else(|| endpoint_versions.clone());
     let needs_guard = qp_versions != *endpoint_versions;
 
-    let to_string_expr = format!("{}.to_string()", qp.rust_name);
+    let escaped_rust_name = escape_keyword(&qp.rust_name);
+    let to_string_expr = format!("{escaped_rust_name}.to_string()");
 
     if qp.required {
         if needs_guard {
@@ -270,7 +285,10 @@ fn emit_query_push(out: &mut String, ep: &IndexedEndpoint<'_>, qp: &crate::parse
             value = to_string_expr,
         ));
     } else {
-        out.push_str(&format!("        if let Some({n}) = {n} {{\n", n = qp.rust_name));
+        out.push_str(&format!(
+            "        if let Some({n}) = {n} {{\n",
+            n = escaped_rust_name
+        ));
         if needs_guard {
             emit_guard_indented(out, ep, &qp.name, &qp_versions);
         }
@@ -328,8 +346,11 @@ fn emit_guard_indented(
 }
 
 fn response_type_for(ep: &Endpoint) -> String {
+    use crate::content_type::ResponseBodyKind;
     match (&ep.response_kind, &ep.response_inner, &ep.response_type) {
         (ResponseBodyKind::Empty, _, _) => "()".to_string(),
+        (ResponseBodyKind::Text | ResponseBodyKind::Xml, _, _) => "String".to_string(),
+        (ResponseBodyKind::OctetStream | ResponseBodyKind::Wildcard, _, _) => "Vec<u8>".to_string(),
         (_, Some(inner), _) => format!("crate::dynamic_v2::types::{inner}"),
         (_, _, Some(rt)) => format!("crate::dynamic_v2::types::{rt}"),
         _ => "()".to_string(),
@@ -342,87 +363,150 @@ fn emit_dispatch(out: &mut String, ep: &IndexedEndpoint<'_>, has_query: bool) {
     let return_kind = &ep.endpoint.response_kind;
     let request_kind = &ep.endpoint.body_kind;
     let returns_unit = matches!(return_kind, ResponseBodyKind::Empty);
-
-    // Determine the base helper name and whether it needs a body arg.
-    let (helper, takes_body) = match (&ep.key.method, request_kind) {
-        (HttpMethod::Get, _) => ("get", false),
-        (HttpMethod::Delete, _) => ("delete", false),
-        (HttpMethod::Post, Some(RequestBodyKind::Json)) => ("post", true),
-        (HttpMethod::Post, Some(RequestBodyKind::Multipart)) => ("post_multipart", false),
-        (HttpMethod::Post, Some(RequestBodyKind::OctetStream)) => ("post_octet_stream", false),
-        (HttpMethod::Post, Some(RequestBodyKind::FormEncoded)) => ("post_no_body", false),
-        (HttpMethod::Post, Some(RequestBodyKind::Wildcard)) => ("post_no_body", false),
-        (HttpMethod::Post, None) => ("post_no_body", false),
-        (HttpMethod::Put, Some(RequestBodyKind::Json)) => ("put", true),
-        (HttpMethod::Put, _) => ("put_no_body", false),
-    };
-
-    // Suffix helper name with `_with_query` when query params are present.
-    // Only the helpers that actually have `_with_query` variants get the suffix;
-    // for the others (multipart, octet_stream, post_no_body) we fall through to
-    // the no-query variant — the generated code is still correct since query
-    // params on such endpoints are rare in NiFi specs.
-    let supports_with_query = matches!(helper, "get" | "delete" | "post" | "put");
-    let effective_helper = if has_query && supports_with_query {
-        format!("{helper}_with_query")
-    } else {
-        helper.to_string()
-    };
+    let returns_text = matches!(return_kind, ResponseBodyKind::Text | ResponseBodyKind::Xml);
+    let returns_bytes =
+        matches!(return_kind, ResponseBodyKind::OctetStream | ResponseBodyKind::Wildcard);
 
     let path_arg = "&path";
-    let query_arg = if has_query && supports_with_query {
-        ", &query"
-    } else {
-        ""
-    };
-    let body_arg = if takes_body { ", body" } else { "" };
+    let use_query = has_query;
 
+    // ── Unit (Empty) returns ─────────────────────────────────────────────
     if returns_unit {
-        match (helper, has_query && supports_with_query) {
-            ("delete", true) => {
+        match (&ep.key.method, request_kind, use_query) {
+            (HttpMethod::Delete, _, true) => {
                 out.push_str(&format!(
-                    "        self.client.inner().delete_with_query({path_arg}{query_arg}).await\n"
+                    "        self.client.inner().delete_with_query({path_arg}, &query).await\n"
                 ));
             }
-            ("delete", false) => {
+            (HttpMethod::Delete, _, false) => {
                 out.push_str(&format!(
                     "        self.client.inner().delete({path_arg}).await\n"
                 ));
             }
-            ("post_no_body", _) => {
+            (HttpMethod::Post, Some(RequestBodyKind::Json), _) => {
+                out.push_str(&format!(
+                    "        self.client.inner().post_void({path_arg}, body).await\n"
+                ));
+            }
+            (HttpMethod::Post, Some(RequestBodyKind::OctetStream), _) => {
+                out.push_str(&format!(
+                    "        self.client.inner().post_void_octet_stream({path_arg}, filename, data).await\n"
+                ));
+            }
+            (HttpMethod::Post, _, _) => {
                 out.push_str(&format!(
                     "        self.client.inner().post_void_no_body({path_arg}).await\n"
                 ));
             }
-            ("put_no_body", _) => {
+            (HttpMethod::Put, Some(RequestBodyKind::Json), _) => {
+                out.push_str(&format!(
+                    "        self.client.inner().put_void({path_arg}, body).await\n"
+                ));
+            }
+            (HttpMethod::Put, _, _) => {
                 out.push_str(&format!(
                     "        self.client.inner().put_void_no_body({path_arg}).await\n"
                 ));
             }
             _ => {
-                // post/put with body and empty response — make the call and discard the value.
                 out.push_str(&format!(
-                    "        let _: () = self.client.inner().{effective_helper}::<_, ()>({path_arg}{body_arg}{query_arg}).await?;\n        Ok(())\n"
+                    "        self.client.inner().get_void_with_query({path_arg}, &[]).await\n"
                 ));
             }
         }
         return;
     }
 
-    // Non-unit returns
+    // ── Text / bytes returns ─────────────────────────────────────────────
+    if returns_text {
+        if use_query {
+            out.push_str(
+                "        todo!(\"text GET with query params not implemented in dynamic_v2\")\n",
+            );
+        } else {
+            out.push_str(&format!(
+                "        self.client.inner().get_text({path_arg}).await\n"
+            ));
+        }
+        return;
+    }
+
+    if returns_bytes {
+        if use_query {
+            out.push_str(&format!(
+                "        self.client.inner().get_bytes_with_query({path_arg}, &query).await\n"
+            ));
+        } else {
+            out.push_str(&format!(
+                "        self.client.inner().get_bytes({path_arg}).await\n"
+            ));
+        }
+        return;
+    }
+
+    // ── Non-unit JSON returns ────────────────────────────────────────────
+    // Determine the effective call expression per method + body kind.
+    let call_for_entity = |helper: &str, body: &str, q: &str| -> String {
+        format!("self.client.inner().{helper}({path_arg}{body}{q}).await?")
+    };
+
+    let (base_helper, body_args, query_args): (&str, &str, String) =
+        match (&ep.key.method, request_kind, use_query) {
+            // GET
+            (HttpMethod::Get, _, true) => ("get_with_query", "", ", &query".to_string()),
+            (HttpMethod::Get, _, false) => ("get", "", String::new()),
+            // DELETE with return value
+            (HttpMethod::Delete, _, true) => {
+                ("delete_returning_with_query", "", ", &query".to_string())
+            }
+            (HttpMethod::Delete, _, false) => ("delete_returning", "", String::new()),
+            // POST
+            (HttpMethod::Post, Some(RequestBodyKind::Json), true) => {
+                ("post_with_query", ", body", ", &query".to_string())
+            }
+            (HttpMethod::Post, Some(RequestBodyKind::Json), false) => {
+                ("post", ", body", String::new())
+            }
+            (HttpMethod::Post, Some(RequestBodyKind::OctetStream), _) => {
+                ("post_octet_stream", ", filename, data", String::new())
+            }
+            (HttpMethod::Post, Some(RequestBodyKind::Multipart), _) => {
+                ("post_multipart", ", filename, data", String::new())
+            }
+            (HttpMethod::Post, _, _) => ("post_no_body", "", String::new()),
+            // PUT
+            (HttpMethod::Put, Some(RequestBodyKind::Json), true) => {
+                ("put_with_query", ", body", ", &query".to_string())
+            }
+            (HttpMethod::Put, Some(RequestBodyKind::Json), false) => {
+                ("put", ", body", String::new())
+            }
+            (HttpMethod::Put, _, _) => ("put_no_body", "", String::new()),
+        };
+
     match (&ep.endpoint.response_inner, &ep.endpoint.response_field) {
         (Some(inner), Some(field)) => {
             let entity = ep.endpoint.response_type.as_deref().unwrap_or(inner);
+            let call_expr = call_for_entity(base_helper, body_args, &query_args);
             out.push_str(&format!(
-                "        let wrapper: crate::dynamic_v2::types::{entity} = self.client.inner().{effective_helper}({path_arg}{body_arg}{query_arg}).await?;\n"
+                "        let wrapper: crate::dynamic_v2::types::{entity} = {call_expr};\n"
             ));
             out.push_str(&format!("        Ok(wrapper.{field}.unwrap_or_default())\n"));
         }
         _ => {
-            let rt = ep.endpoint.response_type.as_deref().unwrap_or("()");
-            out.push_str(&format!(
-                "        self.client.inner().{effective_helper}::<crate::dynamic_v2::types::{rt}>({path_arg}{body_arg}{query_arg}).await\n"
-            ));
+            if let Some(_rt) = ep.endpoint.response_type.as_deref() {
+                // post/put with body: Rust infers B from `body` and T from the outer
+                // return type — no turbofish needed. For no-body helpers (single type
+                // param T), we also let inference drive it.
+                out.push_str(&format!(
+                    "        self.client.inner().{base_helper}({path_arg}{body_args}{query_args}).await\n"
+                ));
+            } else {
+                // No named response type — treat as unit.
+                out.push_str(&format!(
+                    "        self.client.inner().post_void_no_body({path_arg}).await\n"
+                ));
+            }
         }
     }
 }

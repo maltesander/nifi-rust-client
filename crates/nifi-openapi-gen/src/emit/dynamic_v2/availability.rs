@@ -119,7 +119,7 @@ pub fn endpoint_variant_name(method: &crate::parser::HttpMethod, path: &str) -> 
     for segment in path.split('/').filter(|s| !s.is_empty()) {
         out.push('_');
         if let Some(inner) = segment.strip_prefix('{').and_then(|s| s.strip_suffix('}')) {
-            out.push_str(&inner.to_ascii_uppercase());
+            out.push_str(&inner.to_ascii_uppercase().replace('-', "_"));
         } else {
             out.push_str(&segment.to_ascii_uppercase().replace('-', "_"));
         }
