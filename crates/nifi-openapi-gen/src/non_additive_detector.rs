@@ -6,7 +6,9 @@
 //! detector emits a `NonAdditiveChange` variant. The caller panics
 //! unless the change is accepted by `NON_ADDITIVE_OVERRIDES`.
 
-use crate::canonical::CanonicalSpec;
+use std::collections::BTreeSet;
+
+use crate::canonical::{CanonicalSpec, EndpointKey};
 use crate::parser::{ApiSpec, FieldType, HttpMethod};
 
 #[derive(Debug, Clone, PartialEq)]
@@ -55,6 +57,47 @@ pub fn check(
     version: &str,
     spec: &ApiSpec,
 ) -> Vec<NonAdditiveChange> {
-    let _ = (canonical, version, spec);
-    Vec::new()
+    let mut out = Vec::new();
+    check_endpoint_removed(canonical, version, spec, &mut out);
+    out
+}
+
+fn collect_spec_endpoint_keys(spec: &ApiSpec) -> BTreeSet<EndpointKey> {
+    let mut keys = BTreeSet::new();
+    for tag in &spec.tags {
+        for endpoint in &tag.root_endpoints {
+            keys.insert(EndpointKey {
+                method: endpoint.method.clone(),
+                path: endpoint.path.clone(),
+            });
+        }
+        for sub in &tag.sub_groups {
+            for endpoint in &sub.endpoints {
+                keys.insert(EndpointKey {
+                    method: endpoint.method.clone(),
+                    path: endpoint.path.clone(),
+                });
+            }
+        }
+    }
+    keys
+}
+
+fn check_endpoint_removed(
+    canonical: &CanonicalSpec,
+    version: &str,
+    spec: &ApiSpec,
+    out: &mut Vec<NonAdditiveChange>,
+) {
+    let spec_keys = collect_spec_endpoint_keys(spec);
+    for (key, canonical_ep) in &canonical.endpoints {
+        if !spec_keys.contains(key) {
+            out.push(NonAdditiveChange::EndpointRemoved {
+                method: key.method.clone(),
+                path: key.path.clone(),
+                previous_versions: canonical_ep.versions.to_vec(),
+                missing_in: version.to_string(),
+            });
+        }
+    }
 }
