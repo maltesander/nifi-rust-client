@@ -137,7 +137,7 @@ impl DynamicClient {
         let strategy = self.strategy;
         self.version
             .get_or_try_init(|| async {
-                let resp: AboutResponse = self.client.get("/flow/about").await?;
+                let resp: AboutResponse = self.client.get("/flow/about", &[]).await?;
                 crate::dynamic::strategy::resolve_version(
                     &resp.about.version,
                     strategy,
@@ -178,11 +178,11 @@ impl DynamicClient {
             .cluster_node_id
             .get_or_init(|| async {
                 let summary: Result<ClusterSummaryResponse, NifiError> =
-                    self.client.get("/flow/cluster/summary").await;
+                    self.client.get("/flow/cluster/summary", &[]).await;
                 match summary {
                     Ok(s) if s.cluster_summary.clustered => {
                         let cluster: Result<ClusterResponse, NifiError> =
-                            self.client.get("/controller/cluster").await;
+                            self.client.get("/controller/cluster", &[]).await;
                         match cluster {
                             Ok(c) => c
                                 .cluster
