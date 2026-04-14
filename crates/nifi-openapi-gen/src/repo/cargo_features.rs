@@ -29,12 +29,10 @@ pub fn patch_client_cargo_features(toml_str: &str, versions: &[&str]) -> String 
         features.insert("default", toml_edit::value(arr));
     }
 
-    // dynamic feature — depends on all version features
-    let mut dynamic_arr = toml_edit::Array::new();
-    for version in versions {
-        dynamic_arr.push(version_to_feature(version).as_str());
-    }
-    features.insert("dynamic", toml_edit::value(dynamic_arr));
+    // dynamic feature — orthogonal to per-version features. Empty
+    // list by design: dynamic canonicalizes specs from disk
+    // regardless of which version features are enabled.
+    features.insert("dynamic", toml_edit::value(toml_edit::Array::new()));
 
     features.sort_values();
     doc.to_string()
@@ -163,7 +161,8 @@ mod tests {
     fn test_patch_client_cargo_features_includes_dynamic() {
         let toml = "[package]\nname = \"nifi-rust-client\"\n";
         let result = patch_client_cargo_features(toml, &["2.7.2", "2.8.0"]);
-        assert!(result.contains("dynamic = [\"nifi-2-7-2\", \"nifi-2-8-0\"]"));
+        // dynamic is orthogonal to per-version features — always emitted as empty
+        assert!(result.contains("dynamic = []"));
     }
 
     #[test]
@@ -172,10 +171,8 @@ mod tests {
         let result = patch_client_cargo_features(toml, &["2.7.2", "2.8.0", "2.9.0"]);
         assert!(result.contains("default = [\"nifi-2-9-0\"]"));
         assert!(result.contains("nifi-2-9-0 = []"));
-        // dynamic should include all three versions
-        assert!(result.contains("nifi-2-7-2"));
-        assert!(result.contains("nifi-2-8-0"));
-        assert!(result.contains("nifi-2-9-0"));
+        // dynamic is now empty — orthogonal to per-version features
+        assert!(result.contains("dynamic = []"));
     }
 
     #[test]
