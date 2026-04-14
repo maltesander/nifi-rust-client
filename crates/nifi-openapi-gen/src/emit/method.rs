@@ -308,7 +308,9 @@ fn query_param_rust_type_dynamic(qp: &QueryParam) -> String {
 /// - If no header params: prelude is empty, header_arg_expr is `"&[]"`.
 /// - If all required: prelude is empty, header_arg_expr is an array literal.
 /// - If any optional: prelude builds a `Vec`, header_arg_expr is `"__headers.as_slice()"`.
-fn emit_headers_setup(ep: &Endpoint) -> (String, String) {
+///
+/// `indent` is the string prepended to every emitted line (e.g. `"        "` for 8 spaces).
+fn emit_headers_setup(ep: &Endpoint, indent: &str) -> (String, String) {
     if ep.header_params.is_empty() {
         return (String::new(), "&[]".to_string());
     }
@@ -322,16 +324,16 @@ fn emit_headers_setup(ep: &Endpoint) -> (String, String) {
     }
     // At least one optional: build a Vec.
     let mut prelude = String::new();
-    prelude.push_str("        let mut __headers: Vec<(&str, &str)> = Vec::new();\n");
+    prelude.push_str(&format!("{indent}let mut __headers: Vec<(&str, &str)> = Vec::new();\n"));
     for hp in &ep.header_params {
         if hp.required {
             prelude.push_str(&format!(
-                "        __headers.push((\"{}\", {}));\n",
+                "{indent}__headers.push((\"{}\", {}));\n",
                 hp.name, hp.rust_name
             ));
         } else {
             prelude.push_str(&format!(
-                "        if let Some(v) = {} {{\n            __headers.push((\"{}\", v));\n        }}\n",
+                "{indent}if let Some(v) = {} {{\n{indent}    __headers.push((\"{}\", v));\n{indent}}}\n",
                 hp.rust_name, hp.name
             ));
         }
@@ -376,7 +378,7 @@ fn emit_method_body_static(ep: &Endpoint) -> String {
     }
     let query_setup = query_lines.join("\n");
 
-    let (headers_prelude, header_arg) = emit_headers_setup(ep);
+    let (headers_prelude, header_arg) = emit_headers_setup(ep, "        ");
     let setup = if headers_prelude.is_empty() {
         query_setup
     } else {
@@ -477,7 +479,7 @@ fn emit_simple_method_body_static(
 ) -> String {
     use crate::content_type::ResponseBodyKind;
     let entity_ty = ep.response_type.as_deref().unwrap_or("_");
-    let (headers_prelude, header_arg) = emit_headers_setup(ep);
+    let (headers_prelude, header_arg) = emit_headers_setup(ep, "        ");
     match ep.method {
         HttpMethod::Get => match &ep.response_kind {
             ResponseBodyKind::Json { .. } => {
@@ -669,33 +671,9 @@ fn emit_method_body_dynamic(ep: &Endpoint, ctx: &DynamicMethodCtx<'_>, out: &mut
 }
 
 fn emit_headers_setup_dynamic(out: &mut String, ep: &Endpoint) -> String {
-    if ep.header_params.is_empty() {
-        return "&[]".to_string();
-    }
-    if ep.header_params.iter().all(|h| h.required) {
-        let pairs: Vec<String> = ep
-            .header_params
-            .iter()
-            .map(|h| format!("(\"{}\", {})", h.name, h.rust_name))
-            .collect();
-        return format!("&[{}]", pairs.join(", "));
-    }
-    // At least one optional: build a Vec.
-    out.push_str("        let mut __headers: Vec<(&str, &str)> = Vec::new();\n");
-    for hp in &ep.header_params {
-        if hp.required {
-            out.push_str(&format!(
-                "        __headers.push((\"{}\", {}));\n",
-                hp.name, hp.rust_name
-            ));
-        } else {
-            out.push_str(&format!(
-                "        if let Some(v) = {} {{\n            __headers.push((\"{}\", v));\n        }}\n",
-                hp.rust_name, hp.name
-            ));
-        }
-    }
-    "__headers.as_slice()".to_string()
+    let (prelude, header_arg) = emit_headers_setup(ep, "        ");
+    out.push_str(&prelude);
+    header_arg
 }
 
 fn emit_query_push_dynamic(
@@ -716,7 +694,7 @@ fn emit_query_push_dynamic(
 
     if qp.required {
         if needs_guard {
-            emit_guard(out, ctx, &qp.name, &qp_versions);
+            emit_guard(out, ctx, &qp.name, &qp_versions, "        ");
         }
         out.push_str(&format!(
             "        query.push((\"{name}\", {value}));\n",
@@ -729,7 +707,7 @@ fn emit_query_push_dynamic(
             n = escaped_rust_name
         ));
         if needs_guard {
-            emit_guard_indented(out, ctx, &qp.name, &qp_versions);
+            emit_guard(out, ctx, &qp.name, &qp_versions, "            ");
         }
         out.push_str(&format!(
             "            query.push((\"{name}\", {value}));\n",
@@ -740,11 +718,17 @@ fn emit_query_push_dynamic(
     }
 }
 
+/// Emit a runtime `UnsupportedQueryParam` guard for `param`.
+///
+/// `indent` is the prefix for the outermost guard lines (e.g. `"        "` for 8
+/// spaces when at statement level, `"            "` for 12 spaces when nested
+/// inside an `if let Some(…)` block).
 fn emit_guard(
     out: &mut String,
     ctx: &DynamicMethodCtx<'_>,
     param: &str,
     versions: &VersionSet,
+    indent: &str,
 ) {
     let variant = &ctx.endpoint_variant;
     let supported: Vec<String> = versions
@@ -752,36 +736,16 @@ fn emit_guard(
         .into_iter()
         .map(|v| format!("\"{v}\".to_string()"))
         .collect();
+    let inner = format!("{indent}    ");
     out.push_str(&format!(
-        "        let __detected = self.client.detected_version_str();\n        if !crate::dynamic::availability::query_param_supported(Endpoint::{variant}, \"{param}\", &__detected) {{\n"
+        "{indent}let __detected = self.client.detected_version_str();\n\
+         {indent}if !crate::dynamic::availability::query_param_supported(Endpoint::{variant}, \"{param}\", &__detected) {{\n"
     ));
     out.push_str(&format!(
-        "            return Err(NifiError::UnsupportedQueryParam {{ endpoint: Endpoint::{variant}.as_str(), param: \"{param}\", detected_version: __detected, supported_in: vec![{}] }});\n",
+        "{inner}return Err(NifiError::UnsupportedQueryParam {{ endpoint: Endpoint::{variant}.as_str(), param: \"{param}\", detected_version: __detected, supported_in: vec![{}] }});\n",
         supported.join(", "),
     ));
-    out.push_str("        }\n");
-}
-
-fn emit_guard_indented(
-    out: &mut String,
-    ctx: &DynamicMethodCtx<'_>,
-    param: &str,
-    versions: &VersionSet,
-) {
-    let variant = &ctx.endpoint_variant;
-    let supported: Vec<String> = versions
-        .to_vec()
-        .into_iter()
-        .map(|v| format!("\"{v}\".to_string()"))
-        .collect();
-    out.push_str(&format!(
-        "            let __detected = self.client.detected_version_str();\n            if !crate::dynamic::availability::query_param_supported(Endpoint::{variant}, \"{param}\", &__detected) {{\n"
-    ));
-    out.push_str(&format!(
-        "                return Err(NifiError::UnsupportedQueryParam {{ endpoint: Endpoint::{variant}.as_str(), param: \"{param}\", detected_version: __detected, supported_in: vec![{}] }});\n",
-        supported.join(", "),
-    ));
-    out.push_str("            }\n");
+    out.push_str(&format!("{indent}}}\n"));
 }
 
 fn emit_dispatch_dynamic(out: &mut String, ep: &Endpoint, has_query: bool, header_arg: &str) {
