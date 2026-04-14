@@ -50,6 +50,7 @@ fn header_params_are_collected_for_range_endpoint() {
     let hp = &endpoint.header_params[0];
     assert_eq!(hp.name, "Range");
     assert_eq!(hp.rust_name, "range");
+    assert!(!hp.required);
 }
 
 #[test]

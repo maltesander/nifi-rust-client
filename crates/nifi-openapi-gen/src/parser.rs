@@ -439,6 +439,11 @@ fn parse_tags(
             None => continue,
         };
         for (http_method, op) in methods {
+            // HTTP methods we recognize. Path-item field names like "parameters"
+            // or "summary" are skipped explicitly. Any other method (HEAD, PATCH,
+            // OPTIONS, TRACE, ...) panics with parser_strict so the maintainer
+            // has to add a parser arm + an HTTP helper to client.rs rather than
+            // silently emitting incorrect code.
             let method = match http_method.as_str() {
                 "get" => HttpMethod::Get,
                 "post" => HttpMethod::Post,

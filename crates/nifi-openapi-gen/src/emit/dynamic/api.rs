@@ -88,7 +88,6 @@ fn collect_tag_meta(canonical: &CanonicalSpec) -> BTreeMap<&str, TagMeta<'_>> {
 
 fn emit_tag_file(meta: &TagMeta<'_>, endpoints: &[&IndexedEndpoint<'_>]) -> String {
     let mut out = String::new();
-    out.push_str("#[allow(unused_imports)]\n");
     out.push_str("use crate::NifiError;\n");
     out.push_str("use crate::dynamic::DynamicClient;\n");
     out.push_str("use crate::dynamic::availability::Endpoint;\n\n");
