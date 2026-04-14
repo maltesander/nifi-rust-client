@@ -115,6 +115,19 @@ pub struct PathParam {
 }
 
 #[derive(Debug, Clone)]
+pub struct HeaderParam {
+    /// Original header name from the spec, used as the HTTP header key
+    /// (e.g. "Filename", "Range"). Case is preserved.
+    pub name: String,
+    /// snake_case Rust identifier for the method argument.
+    pub rust_name: String,
+    /// Whether the header is required (OpenAPI `required: true`).
+    pub required: bool,
+    /// Human-readable description from the spec, if any.
+    pub doc: Option<String>,
+}
+
+#[derive(Debug, Clone)]
 pub struct Endpoint {
     pub method: HttpMethod,
     pub path: String,
@@ -143,6 +156,7 @@ pub struct Endpoint {
     /// Task 3.2 will migrate emitters to consume `response_kind` directly.
     pub response_kind: crate::content_type::ResponseBodyKind,
     pub query_params: Vec<QueryParam>,
+    pub header_params: Vec<HeaderParam>,
     /// 2xx responses: (status_code, description), e.g. ("206", "Partial Content...").
     pub success_responses: Vec<(String, String)>,
     /// Non-2xx responses: (status_code, description), e.g. ("400", "NiFi was unable to...").
@@ -311,8 +325,13 @@ fn parse_field_type(prop: &Value, json_pointer: &str) -> FieldType {
         }
         Some("boolean") => FieldType::Bool,
         Some("integer") => match prop.get("format").and_then(|f| f.as_str()) {
+            Some("int32") | None => FieldType::I32,
             Some("int64") => FieldType::I64,
-            _ => FieldType::I32,
+            Some(other) => crate::parser_strict::panic_unknown(
+                "integer_format",
+                json_pointer,
+                &format!("format={other:?}"),
+            ),
         },
         Some("number") => FieldType::F64,
         Some("array") => {
@@ -420,12 +439,23 @@ fn parse_tags(
             None => continue,
         };
         for (http_method, op) in methods {
+            // HTTP methods we recognize. Path-item field names like "parameters"
+            // or "summary" are skipped explicitly. Any other method (HEAD, PATCH,
+            // OPTIONS, TRACE, ...) panics with parser_strict so the maintainer
+            // has to add a parser arm + an HTTP helper to client.rs rather than
+            // silently emitting incorrect code.
             let method = match http_method.as_str() {
                 "get" => HttpMethod::Get,
                 "post" => HttpMethod::Post,
                 "put" => HttpMethod::Put,
                 "delete" => HttpMethod::Delete,
-                _ => continue,
+                // Path-item fields that are not HTTP operations — skip.
+                "parameters" | "summary" | "description" | "servers" | "$ref" => continue,
+                other => crate::parser_strict::panic_unknown(
+                    "http_method",
+                    &format!("/paths{raw_path}/{other}"),
+                    &format!("method={other:?}"),
+                ),
             };
             let tags = op["tags"]
                 .as_array()
@@ -492,8 +522,13 @@ fn parse_tags(
                             Some("boolean") => QueryParamType::Bool,
                             Some("integer") => {
                                 match schema.get("format").and_then(|f| f.as_str()) {
+                                    Some("int32") | None => QueryParamType::I32,
                                     Some("int64") => QueryParamType::I64,
-                                    _ => QueryParamType::I32,
+                                    Some(other) => crate::parser_strict::panic_unknown(
+                                        "integer_format",
+                                        &format!("/paths{raw_path}/{http_method}/parameters/{name}"),
+                                        &format!("format={other:?}"),
+                                    ),
                                 }
                             }
                             Some("number") => QueryParamType::F64,
@@ -517,6 +552,56 @@ fn parse_tags(
                             .and_then(|d| d.as_str())
                             .map(String::from),
                         enum_type_name,
+                    })
+                })
+                .collect();
+
+            // Validate param locations. Unknown `in` values — including
+            // `cookie` if a future NiFi spec introduces one — panic via
+            // `panic_unknown` so the maintainer must add explicit support
+            // rather than silently losing the parameter.
+            for p in op["parameters"].as_array().unwrap_or(&vec![]).iter() {
+                let in_ = p.get("in").and_then(|v| v.as_str()).unwrap_or("");
+                if matches!(in_, "path" | "query" | "header") {
+                    continue;
+                }
+                let name = p.get("name").and_then(|n| n.as_str()).unwrap_or("?");
+                crate::parser_strict::panic_unknown(
+                    "param_in",
+                    &format!("/paths{raw_path}/{http_method}/parameters/{name}"),
+                    &format!("in={in_:?}"),
+                );
+            }
+
+            let header_params: Vec<HeaderParam> = op["parameters"]
+                .as_array()
+                .unwrap_or(&vec![])
+                .iter()
+                .filter(|p| p.get("in").and_then(|i| i.as_str()) == Some("header"))
+                .filter_map(|p| {
+                    let raw = p.get("name").and_then(|n| n.as_str())?;
+                    let schema = p.get("schema").unwrap_or(p);
+                    // Header scalar types follow the same allow-list as query params.
+                    // String is the only type used by current NiFi specs; integer
+                    // and boolean would also be valid HTTP header value types if a
+                    // future spec adds them, so we extend the allow-list defensively.
+                    match schema.get("type").and_then(|t| t.as_str()) {
+                        Some("string") | None => {}
+                        Some(other) => crate::parser_strict::panic_unknown(
+                            "header_param_type",
+                            &format!("/paths{raw_path}/{http_method}/parameters/{raw}"),
+                            &format!("type={other:?}"),
+                        ),
+                    }
+                    let required = p.get("required").and_then(|r| r.as_bool()).unwrap_or(false);
+                    Some(HeaderParam {
+                        name: raw.to_string(),
+                        rust_name: prop_name_to_rust(&raw.replace('-', "_")),
+                        required,
+                        doc: p
+                            .get("description")
+                            .and_then(|d| d.as_str())
+                            .map(String::from),
                     })
                 })
                 .collect();
@@ -662,6 +747,7 @@ fn parse_tags(
                 response_field,
                 response_kind,
                 query_params,
+                header_params,
                 success_responses,
                 error_responses,
                 security,

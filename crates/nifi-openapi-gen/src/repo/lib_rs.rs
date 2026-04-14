@@ -116,8 +116,11 @@ pub fn emit_lib_rs_feature_flags(layout: &RepoLayout, versions: &[&str]) -> Vec<
         .map(|v| format!("`{}`", version_to_feature(v)))
         .collect();
     let features_list = features.join(", ");
+    // replace_between_markers adds a trailing \n before the end marker;
+    // omit one here so the rendered block has exactly one blank line between
+    // the table row and the end marker (none — the marker sits on the next line).
     let content = format!(
-        "//! | {features_list} | Compile against a specific NiFi version. The semver-latest is the default. |\n"
+        "//! | {features_list} | Compile against a specific NiFi version. The semver-latest is the default. |"
     );
     vec![FileEdit::ReplaceBlock {
         path: layout.client_lib_rs.clone(),

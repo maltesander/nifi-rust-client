@@ -3,6 +3,7 @@ pub mod cli;
 pub(crate) mod common;
 pub mod dynamic;
 pub mod integration;
+pub mod method;
 mod tests;
 mod types;
 

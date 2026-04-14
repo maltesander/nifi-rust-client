@@ -42,6 +42,7 @@ fn can_construct_internal_model() {
                     schema_ref: "AboutEntity".into(),
                 },
                 query_params: vec![],
+                header_params: vec![],
                 success_responses: vec![],
                 error_responses: vec![],
                 security: None,

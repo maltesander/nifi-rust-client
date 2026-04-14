@@ -124,23 +124,6 @@ pub enum NifiError {
         supported_in: Vec<String>,
     },
 
-    /// A request-body field the caller set is not supported by the detected
-    /// NiFi server version. Reserved for the canonical superset dynamic
-    /// codegen path; legacy dispatch never emits this variant.
-    #[snafu(display(
-        "Body field '{field}' on endpoint '{endpoint}' is not supported in NiFi {detected_version} (supported in: {supported_in:?})"
-    ))]
-    UnsupportedBodyField {
-        /// `"METHOD /path"` form.
-        endpoint: &'static str,
-        /// Wire name of the body field.
-        field: &'static str,
-        /// Version the server reported.
-        detected_version: String,
-        /// Versions in which this field is supported.
-        supported_in: Vec<String>,
-    },
-
     /// A required `Option<T>` field was absent when an end-user called
     /// [`RequireField::require`](crate::RequireField::require) or the
     /// [`require!`](crate::require) macro.
@@ -225,16 +208,4 @@ mod tests {
         assert!(msg.contains("2.6.0"));
     }
 
-    #[test]
-    fn unsupported_body_field_variant_renders() {
-        let err = NifiError::UnsupportedBodyField {
-            endpoint: "POST /process-groups/{id}/parameter-contexts",
-            field: "handlingStrategy",
-            detected_version: "2.6.0".to_string(),
-            supported_in: vec!["2.9.0".to_string()],
-        };
-        assert!(!err.is_retryable());
-        assert_eq!(err.status_code(), None);
-        assert!(err.to_string().contains("handlingStrategy"));
-    }
 }

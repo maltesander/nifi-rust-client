@@ -42,7 +42,7 @@ crates/
         strategy.rs       # Hand-written: VersionResolutionStrategy + resolve_version
         client.rs         # Hand-written: DynamicClient (copied into $OUT_DIR/dynamic/ at build time)
       # Generated at build time into $OUT_DIR (not tracked in git):
-      # vx_y_z/           — per-version api/, types/, traits/
+      # vx_y_z/           — per-version api/, types/
       # dynamic/          — canonical api/, types/, availability.rs, client.rs, mod.rs
     tests/
       *.rs                        # Hand-written wiremock tests per API group
@@ -85,7 +85,7 @@ tracing::debug!(method = "GET", path, "NiFi API request");
 
 Use the literal method name string and the `path` variable. This applies to all future methods.
 
-Resource struct methods (e.g. `Flow::about`) that delegate to a generic helper do **not** add their
+Resource struct methods (e.g. `Flow::get_about_info`) that delegate to a generic helper do **not** add their
 own `tracing::debug!` call — the helper already emits it. Only methods that send requests directly
 (bypassing the helpers) need their own debug line.
 
@@ -352,9 +352,10 @@ Environment variables read by integration tests:
 
 ### How versions are structured
 
-Generated files live in `crates/nifi-rust-client/src/v{major}_{minor}_{patch}/`. Each version
-directory contains `api/`, `types/`, `traits/`, and `mod.rs`. `lib.rs` re-exports `api`, `types`,
-and `traits` from the active version under a stable public path.
+Generated files live in `$OUT_DIR/v{major}_{minor}_{patch}/` (written by `build.rs`; not tracked in
+git). Each version directory contains `api/`, `types/`, and `mod.rs`. The hand-written `lib.rs`
+re-exports `api` and `types` from the active version under a stable public path via
+`include!(concat!(env!("OUT_DIR"), "/generated_lib.rs"))`.
 
 Naming conventions:
 

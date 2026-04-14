@@ -126,6 +126,7 @@ mod tests {
                     enum_type_name: None,
                 })
                 .collect(),
+            header_params: vec![],
             success_responses: vec![],
             error_responses: vec![],
             security: None,

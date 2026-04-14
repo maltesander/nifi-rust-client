@@ -15,7 +15,7 @@ to depend on from a downstream `build.rs`:
 - `nifi_openapi_gen::build_api::generate_integration_tests`
 - `nifi_openapi_gen::specs_dir()`
 - The generated file layout written into the caller-supplied `out_dir`:
-  `generated_lib.rs`, `vX_Y_Z/{api,types,traits}/*.rs`, `dynamic/*`
+  `generated_lib.rs`, `vX_Y_Z/{api,types}/*.rs`, `dynamic/*`
 
 Everything else in this crate — `parser`, `emit`, `diff`, `docs`, `repo`,
 `util`, and the flat re-exports in `lib.rs` — is an implementation detail.
@@ -28,22 +28,18 @@ be reconsidered for `1.0`.
 
 Internal code generator for `nifi-rust-client`. Reads an OpenAPI 3.0.1 spec and writes:
 
-- `src/v{version}/types/<tag>.rs` + `common.rs` + `mod.rs` — per-tag DTO/entity structs
-- `src/v{version}/api/<tag>.rs` + `mod.rs` — per-tag resource structs with async methods
-- `src/v{version}/traits/<tag>.rs` + `mod.rs` — per-version traits for mockability and generic code
-- `src/lib.rs` — cfg-gated re-exports (auto-managed)
-- `tests/v{version}_generated_tests.rs` — wiremock stubs for every endpoint
+- `$OUT_DIR/v{version}/types/<tag>.rs` + `mod.rs` — per-tag DTO/entity structs
+- `$OUT_DIR/v{version}/api/<tag>.rs` + `mod.rs` — per-tag resource structs with async methods
+- `$OUT_DIR/tests/<tag>_generated_tests.rs` — wiremock stubs for every endpoint
 
-Stale files within the active version's `api/`, `types/`, and `traits/` dirs are deleted automatically. Other versions' directories are never touched. `cargo fmt` is run on all output.
+Stale files within the active version's `api/` and `types/` dirs are deleted automatically. Other versions' directories are never touched. `cargo fmt` is run on all output.
 
 When the `dynamic` feature is present in `Cargo.toml`, the generator also writes:
 
-- `src/dynamic/types/<tag>.rs` + `common.rs` + `mod.rs` — common union types with all fields as `Option<T>`
-- `src/dynamic/traits/<tag>.rs` + `mod.rs` — public API traits for dynamic dispatch
-- `src/dynamic/dispatch/<tag>.rs` + `mod.rs` — dispatch enums that route calls to the correct version
-- `src/dynamic/impls/v{version}/` + `mod.rs` — per-version trait implementations
-- `src/dynamic/conversions/` — `From` impls converting each version's types to common types
-- `src/dynamic/mod.rs` — module re-exports
+- `$OUT_DIR/dynamic/types/<tag>.rs` + `mod.rs` — canonical union types (fields absent in some versions are `Option<T>`)
+- `$OUT_DIR/dynamic/api/<tag>.rs` + `mod.rs` — concrete resource structs with inherent async methods and runtime availability checks
+- `$OUT_DIR/dynamic/availability.rs` — `Endpoint` enum and availability tables consulted at runtime
+- `$OUT_DIR/dynamic/mod.rs` — orchestrator that declares `api`, `types`, `availability`, `strategy`, and `client` submodules
 
 These files are regenerated from scratch on every run, covering all supported versions.
 
@@ -125,10 +121,6 @@ The generator enriches every method and struct with documentation derived from t
 - Struct and field docs are emitted as full multi-line rustdoc comments, preserving paragraph breaks from the spec.
 - Fields marked `readOnly` in the spec receive `#[serde(skip_serializing)]` so they are never sent in request bodies. Their doc comment is appended with "Read-only — this field is ignored when serializing requests to NiFi."
 
-## Stale file cleanup
-
-During a full-discovery run (no `NIFI_VERSION` / `NIFI_API_SPEC` override), the generator scans for `src/v*/` directories and `tests/v*_generated_tests.rs` files whose version is no longer present in `specs/` and deletes them automatically. Single-version runs leave other version directories untouched.
-
 ## Architecture
 
 The generator is organized into four module groups plus two binaries:
@@ -145,7 +137,7 @@ The generator is organized into four module groups plus two binaries:
 | `src/emit/api.rs` | Emit `api/<tag>.rs` — resource structs with async methods |
 | `src/emit/tests.rs` | Emit wiremock test stubs |
 | `src/emit/common.rs` | Shared emit helpers (doc comments, serde attributes) |
-| `src/emit/dynamic/` | Emit all `dynamic/` code — traits, dispatch enums, per-version impls, common types, conversions, tests |
+| `src/emit/dynamic/` | Emit all `dynamic/` code — canonical union types, inherent-method API structs, availability tables |
 | `src/emit/integration/` | Emit dynamic integration tests — enum coverage, endpoint availability, field presence, query param coverage |
 | **`src/docs/`** | **Documentation generation** |
 | `src/docs/integration_coverage.rs` | Generate the integration test coverage section in `crates/nifi-rust-client/README.md` |
@@ -157,7 +149,6 @@ The generator is organized into four module groups plus two binaries:
 | `src/repo/lib_rs.rs` | Regenerate `lib.rs` with cfg-gated re-exports |
 | `src/repo/cargo_features.rs` | Sync Cargo.toml feature flags for both crates |
 | `src/repo/docker_compose.rs` | Update docker-compose default NiFi image tag |
-| `src/repo/cleanup.rs` | Delete stale version directories and test files |
 
 To add or change endpoints, update the spec parsing and emission logic in the `src/` modules rather than editing generated files directly.
 

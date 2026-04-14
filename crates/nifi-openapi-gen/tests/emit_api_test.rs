@@ -32,6 +32,7 @@ fn flow_spec() -> ApiSpec {
                         schema_ref: "AboutEntity".into(),
                     },
                     query_params: vec![],
+                    header_params: vec![],
                     success_responses: vec![],
                     error_responses: vec![],
                     security: None,
@@ -58,6 +59,7 @@ fn flow_spec() -> ApiSpec {
                         schema_ref: "ProcessorEntity".into(),
                     },
                     query_params: vec![],
+                    header_params: vec![],
                     success_responses: vec![],
                     error_responses: vec![],
                     security: None,
@@ -80,6 +82,7 @@ fn flow_spec() -> ApiSpec {
                         schema_ref: "ProcessorEntity".into(),
                     },
                     query_params: vec![],
+                    header_params: vec![],
                     success_responses: vec![],
                     error_responses: vec![],
                     security: None,
@@ -112,7 +115,7 @@ fn emit_get_with_entity_unwrap() {
     let out = all_output(&flow_spec());
     assert!(out.contains("pub async fn get_about_info"), "{out}");
     assert!(out.contains("Result<crate::types::AboutDto"), "{out}");
-    assert!(out.contains(".get(\"/flow/about\")"), "{out}");
+    assert!(out.contains(".get(\"/flow/about\", &[])"), "{out}");
     assert!(out.contains("Ok(e.about.unwrap_or_default())"), "{out}");
 }
 
@@ -146,7 +149,7 @@ fn emit_post_with_body() {
         out.contains("body: &crate::types::CreateProcessorRequestEntity"),
         "{out}"
     );
-    assert!(out.contains(".post(\"/processors\", body)"), "{out}");
+    assert!(out.contains(".post(\"/processors\", &[], body)"), "{out}");
 }
 
 #[test]
@@ -208,6 +211,7 @@ fn services_spec() -> ApiSpec {
                         schema_ref: "ServiceEntity".into(),
                     },
                     query_params: vec![],
+                    header_params: vec![],
                     success_responses: vec![],
                     error_responses: vec![],
                     security: None,
@@ -240,6 +244,7 @@ fn services_spec() -> ApiSpec {
                         schema_ref: "ServiceEntity".into(),
                     },
                     query_params: vec![],
+                    header_params: vec![],
                     success_responses: vec![],
                     error_responses: vec![],
                     security: None,
@@ -345,6 +350,7 @@ fn spec_with_enum_query_param() -> ApiSpec {
                     doc: None,
                     enum_type_name: Some("ParameterContextHandlingStrategy".into()),
                 }],
+                header_params: vec![],
                 success_responses: vec![],
                 error_responses: vec![],
                 security: None,
@@ -410,6 +416,7 @@ fn spec_with_query_params() -> ApiSpec {
                         doc: None,
                         enum_type_name: None,
                     }],
+                    header_params: vec![],
                     success_responses: vec![],
                     error_responses: vec![],
                     security: None,
@@ -451,6 +458,7 @@ fn spec_with_query_params() -> ApiSpec {
                             enum_type_name: None,
                         },
                     ],
+                    header_params: vec![],
                     success_responses: vec![],
                     error_responses: vec![],
                     security: None,
@@ -495,6 +503,7 @@ fn spec_with_query_params() -> ApiSpec {
                             enum_type_name: None,
                         },
                     ],
+                    header_params: vec![],
                     success_responses: vec![],
                     error_responses: vec![],
                     security: None,
@@ -593,6 +602,7 @@ fn spec_with_errors_and_security() -> ApiSpec {
                 response_field: None,
                 response_kind: nifi_openapi_gen::content_type::ResponseBodyKind::Empty,
                 query_params: vec![],
+                header_params: vec![],
                 success_responses: vec![],
                 error_responses: vec![
                     ("401".into(), "Client could not be authenticated.".into()),
@@ -635,6 +645,7 @@ fn spec_with_multi_security() -> ApiSpec {
                 response_field: None,
                 response_kind: nifi_openapi_gen::content_type::ResponseBodyKind::Empty,
                 query_params: vec![],
+                header_params: vec![],
                 success_responses: vec![],
                 error_responses: vec![],
                 security: Some(vec![
@@ -671,6 +682,7 @@ fn spec_with_no_auth() -> ApiSpec {
                 response_field: None,
                 response_kind: nifi_openapi_gen::content_type::ResponseBodyKind::Empty,
                 query_params: vec![],
+                header_params: vec![],
                 success_responses: vec![],
                 error_responses: vec![],
                 security: Some(vec![]),
@@ -767,6 +779,7 @@ fn no_permissions_section_when_security_absent() {
                 response_field: None,
                 response_kind: nifi_openapi_gen::content_type::ResponseBodyKind::Empty,
                 query_params: vec![],
+                header_params: vec![],
                 success_responses: vec![],
                 error_responses: vec![],
                 security: None,
