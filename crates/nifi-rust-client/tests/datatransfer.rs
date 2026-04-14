@@ -115,7 +115,7 @@ async fn receive_flow_files_sends_octet_stream_and_succeeds() {
         .unwrap();
     let result = client
         .datatransfer()
-        .receive_flow_files("port-id", "tx-id", Some("flowfile.bin"), b"hello".to_vec())
+        .receive_flow_files("port-id", "tx-id", b"hello".to_vec())
         .await;
 
     assert!(result.is_ok());
