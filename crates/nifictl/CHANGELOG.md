@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-04-14
+
+- Normalize dynamic path template placeholders in `openapi-gen` ([160d46d](https://github.com/maltesander/nifi-rust-client/commit/160d46d))
+
 ## [0.1.0] - 2026-04-14
 
 ### Breaking Changes
@@ -25,4 +29,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Use nifi-rust-client 0.10.0 instead of workspace dependency. ([291d281](https://github.com/maltesander/nifi-rust-client/commit/291d281))
 
 [Unreleased]: https://github.com/maltesander/nifi-rust-client/commits/HEAD
+[0.1.1]: https://github.com/maltesander/nifi-rust-client/compare/ctl-v0.1.0...ctl-v0.1.1
 [0.1.0]: https://github.com/maltesander/nifi-rust-client/compare/ctl-v0.0.0...ctl-v0.1.0
