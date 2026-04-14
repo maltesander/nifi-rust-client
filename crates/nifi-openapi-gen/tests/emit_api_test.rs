@@ -115,7 +115,7 @@ fn emit_get_with_entity_unwrap() {
     let out = all_output(&flow_spec());
     assert!(out.contains("pub async fn get_about_info"), "{out}");
     assert!(out.contains("Result<crate::types::AboutDto"), "{out}");
-    assert!(out.contains(".get(\"/flow/about\")"), "{out}");
+    assert!(out.contains(".get(\"/flow/about\", &[])"), "{out}");
     assert!(out.contains("Ok(e.about.unwrap_or_default())"), "{out}");
 }
 
@@ -149,7 +149,7 @@ fn emit_post_with_body() {
         out.contains("body: &crate::types::CreateProcessorRequestEntity"),
         "{out}"
     );
-    assert!(out.contains(".post(\"/processors\", body)"), "{out}");
+    assert!(out.contains(".post(\"/processors\", &[], body)"), "{out}");
 }
 
 #[test]

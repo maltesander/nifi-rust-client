@@ -246,6 +246,24 @@ fn emit_args_struct(out: &mut String, cmd: &CommandEntry<'_>) {
         }
     }
 
+    // Header params as --flags (e.g. --filename, --range)
+    for hp in &ep.header_params {
+        if let Some(doc) = &hp.doc {
+            out.push_str(&format!("    /// {}\n", escape_doc(doc)));
+        }
+        let flag_name = hp.rust_name.replace('_', "-");
+        let field = rust_ident(&hp.rust_name);
+        if hp.required {
+            out.push_str(&format!(
+                "    #[arg(long = \"{flag_name}\")]\n    pub {field}: String,\n",
+            ));
+        } else {
+            out.push_str(&format!(
+                "    #[arg(long = \"{flag_name}\")]\n    pub {field}: Option<String>,\n",
+            ));
+        }
+    }
+
     // Body args for POST/PUT with request_type
     if ep.request_type.is_some() && (ep.method == HttpMethod::Post || ep.method == HttpMethod::Put)
     {
@@ -343,6 +361,16 @@ fn emit_handler(
             QueryParamType::I32 | QueryParamType::I64 | QueryParamType::F64 => {
                 call_args.push(format!("args.{field}"));
             }
+        }
+    }
+
+    // Header params (e.g. Filename, Range) — passed as Option<&str> or &str
+    for hp in &ep.header_params {
+        let field = rust_ident(&hp.rust_name);
+        if hp.required {
+            call_args.push(format!("&args.{field}"));
+        } else {
+            call_args.push(format!("args.{field}.as_deref()"));
         }
     }
 

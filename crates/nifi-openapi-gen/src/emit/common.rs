@@ -57,7 +57,9 @@ pub(crate) fn response_return_type(ep: &Endpoint, types_prefix: &str) -> String 
 /// - `Wildcard | FormEncoded | None` → `""`
 pub(crate) fn body_kind_signature(body_kind: Option<&RequestBodyKind>) -> &'static str {
     match body_kind {
-        Some(RequestBodyKind::OctetStream) => ", filename: Option<&str>, data: Vec<u8>",
+        // OctetStream: only the raw bytes; any Filename header is emitted via
+        // header_params (B.7) and no longer appears here.
+        Some(RequestBodyKind::OctetStream) => ", data: Vec<u8>",
         Some(RequestBodyKind::Multipart) => ", filename: &str, data: Vec<u8>",
         Some(RequestBodyKind::Json)
         | Some(RequestBodyKind::Wildcard)
@@ -266,9 +268,10 @@ mod tests {
 
     #[test]
     fn body_kind_signature_octet_stream() {
+        // filename is now emitted via header_params (B.7); OctetStream only contributes data.
         assert_eq!(
             body_kind_signature(Some(&RequestBodyKind::OctetStream)),
-            ", filename: Option<&str>, data: Vec<u8>"
+            ", data: Vec<u8>"
         );
     }
 

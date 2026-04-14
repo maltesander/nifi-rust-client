@@ -126,6 +126,13 @@ fn emit_method(out: &mut String, ep: &IndexedEndpoint<'_>) {
             args.push(format!("{}: Option<{}>", escape_keyword(&qp.rust_name), ty));
         }
     }
+    for hp in &ep.endpoint.header_params {
+        if hp.required {
+            args.push(format!("{}: &str", hp.rust_name));
+        } else {
+            args.push(format!("{}: Option<&str>", hp.rust_name));
+        }
+    }
     use crate::content_type::RequestBodyKind;
     match &ep.endpoint.body_kind {
         Some(RequestBodyKind::Json) => {
@@ -134,7 +141,7 @@ fn emit_method(out: &mut String, ep: &IndexedEndpoint<'_>) {
             }
         }
         Some(RequestBodyKind::OctetStream) => {
-            args.push("filename: Option<&str>".to_string());
+            // filename, if any, is now a header param; only raw bytes come here.
             args.push("data: Vec<u8>".to_string());
         }
         Some(RequestBodyKind::Multipart) => {
@@ -175,15 +182,53 @@ fn emit_method(out: &mut String, ep: &IndexedEndpoint<'_>) {
         }
     }
 
+    // Header setup
+    let header_arg = emit_headers_setup_dynamic(out, ep.endpoint);
+
     // Tracing + dispatch
     let method_lit = ep.key.method.as_str();
     out.push_str(&format!(
         "        tracing::debug!(method = \"{method_lit}\", path = path.as_str(), \"NiFi API request\");\n"
     ));
 
-    emit_dispatch(out, ep, has_query);
+    emit_dispatch(out, ep, has_query, &header_arg);
 
     out.push_str("    }\n\n");
+}
+
+/// Emits header setup code (if any) and returns the header_arg expression.
+///
+/// - No header params: returns `"&[]"` (nothing emitted).
+/// - All required: returns an array literal (nothing emitted).
+/// - Any optional: emits a Vec builder and returns `"__headers.as_slice()"`.
+fn emit_headers_setup_dynamic(out: &mut String, ep: &crate::parser::Endpoint) -> String {
+    if ep.header_params.is_empty() {
+        return "&[]".to_string();
+    }
+    if ep.header_params.iter().all(|h| h.required) {
+        let pairs: Vec<String> = ep
+            .header_params
+            .iter()
+            .map(|h| format!("(\"{}\", {})", h.name, h.rust_name))
+            .collect();
+        return format!("&[{}]", pairs.join(", "));
+    }
+    // At least one optional: build a Vec.
+    out.push_str("        let mut __headers: Vec<(&str, &str)> = Vec::new();\n");
+    for hp in &ep.header_params {
+        if hp.required {
+            out.push_str(&format!(
+                "        __headers.push((\"{}\", {}));\n",
+                hp.name, hp.rust_name
+            ));
+        } else {
+            out.push_str(&format!(
+                "        if let Some(v) = {} {{\n            __headers.push((\"{}\", v));\n        }}\n",
+                hp.rust_name, hp.name
+            ));
+        }
+    }
+    "__headers.as_slice()".to_string()
 }
 
 fn qp_rust_type(qp: &crate::parser::QueryParam) -> String {
@@ -296,7 +341,7 @@ fn response_type_for(ep: &Endpoint) -> String {
     }
 }
 
-fn emit_dispatch(out: &mut String, ep: &IndexedEndpoint<'_>, has_query: bool) {
+fn emit_dispatch(out: &mut String, ep: &IndexedEndpoint<'_>, has_query: bool, header_arg: &str) {
     use crate::content_type::{RequestBodyKind, ResponseBodyKind};
 
     let return_kind = &ep.endpoint.response_kind;
@@ -316,42 +361,42 @@ fn emit_dispatch(out: &mut String, ep: &IndexedEndpoint<'_>, has_query: bool) {
         match (&ep.key.method, request_kind, use_query) {
             (HttpMethod::Delete, _, true) => {
                 out.push_str(&format!(
-                    "        self.client.inner().delete_with_query({path_arg}, &query).await\n"
+                    "        self.client.inner().delete_with_query({path_arg}, {header_arg}, &query).await\n"
                 ));
             }
             (HttpMethod::Delete, _, false) => {
                 out.push_str(&format!(
-                    "        self.client.inner().delete({path_arg}).await\n"
+                    "        self.client.inner().delete({path_arg}, {header_arg}).await\n"
                 ));
             }
             (HttpMethod::Post, Some(RequestBodyKind::Json), _) => {
                 out.push_str(&format!(
-                    "        self.client.inner().post_void({path_arg}, body).await\n"
+                    "        self.client.inner().post_void({path_arg}, {header_arg}, body).await\n"
                 ));
             }
             (HttpMethod::Post, Some(RequestBodyKind::OctetStream), _) => {
                 out.push_str(&format!(
-                    "        self.client.inner().post_void_octet_stream({path_arg}, filename, data).await\n"
+                    "        self.client.inner().post_void_octet_stream({path_arg}, {header_arg}, data).await\n"
                 ));
             }
             (HttpMethod::Post, _, _) => {
                 out.push_str(&format!(
-                    "        self.client.inner().post_void_no_body({path_arg}).await\n"
+                    "        self.client.inner().post_void_no_body({path_arg}, {header_arg}).await\n"
                 ));
             }
             (HttpMethod::Put, Some(RequestBodyKind::Json), _) => {
                 out.push_str(&format!(
-                    "        self.client.inner().put_void({path_arg}, body).await\n"
+                    "        self.client.inner().put_void({path_arg}, {header_arg}, body).await\n"
                 ));
             }
             (HttpMethod::Put, _, _) => {
                 out.push_str(&format!(
-                    "        self.client.inner().put_void_no_body({path_arg}).await\n"
+                    "        self.client.inner().put_void_no_body({path_arg}, {header_arg}).await\n"
                 ));
             }
             _ => {
                 out.push_str(&format!(
-                    "        self.client.inner().get_void_with_query({path_arg}, &[]).await\n"
+                    "        self.client.inner().get_void_with_query({path_arg}, {header_arg}, &[]).await\n"
                 ));
             }
         }
@@ -366,7 +411,7 @@ fn emit_dispatch(out: &mut String, ep: &IndexedEndpoint<'_>, has_query: bool) {
             );
         } else {
             out.push_str(&format!(
-                "        self.client.inner().get_text({path_arg}).await\n"
+                "        self.client.inner().get_text({path_arg}, {header_arg}).await\n"
             ));
         }
         return;
@@ -375,11 +420,11 @@ fn emit_dispatch(out: &mut String, ep: &IndexedEndpoint<'_>, has_query: bool) {
     if returns_bytes {
         if use_query {
             out.push_str(&format!(
-                "        self.client.inner().get_bytes_with_query({path_arg}, &query).await\n"
+                "        self.client.inner().get_bytes_with_query({path_arg}, {header_arg}, &query).await\n"
             ));
         } else {
             out.push_str(&format!(
-                "        self.client.inner().get_bytes({path_arg}).await\n"
+                "        self.client.inner().get_bytes({path_arg}, {header_arg}).await\n"
             ));
         }
         return;
@@ -387,8 +432,8 @@ fn emit_dispatch(out: &mut String, ep: &IndexedEndpoint<'_>, has_query: bool) {
 
     // ── Non-unit JSON returns ────────────────────────────────────────────
     // Determine the effective call expression per method + body kind.
-    let call_for_entity = |helper: &str, body: &str, q: &str| -> String {
-        format!("self.client.inner().{helper}({path_arg}{body}{q}).await?")
+    let call_for_entity = |helper: &str, header: &str, body: &str, q: &str| -> String {
+        format!("self.client.inner().{helper}({path_arg}, {header}{body}{q}).await?")
     };
 
     let (base_helper, body_args, query_args): (&str, &str, String) =
@@ -409,7 +454,7 @@ fn emit_dispatch(out: &mut String, ep: &IndexedEndpoint<'_>, has_query: bool) {
                 ("post", ", body", String::new())
             }
             (HttpMethod::Post, Some(RequestBodyKind::OctetStream), _) => {
-                ("post_octet_stream", ", filename, data", String::new())
+                ("post_octet_stream", ", data", String::new())
             }
             (HttpMethod::Post, Some(RequestBodyKind::Multipart), _) => {
                 ("post_multipart", ", filename, data", String::new())
@@ -428,7 +473,7 @@ fn emit_dispatch(out: &mut String, ep: &IndexedEndpoint<'_>, has_query: bool) {
     match (&ep.endpoint.response_inner, &ep.endpoint.response_field) {
         (Some(inner), Some(field)) => {
             let entity = ep.endpoint.response_type.as_deref().unwrap_or(inner);
-            let call_expr = call_for_entity(base_helper, body_args, &query_args);
+            let call_expr = call_for_entity(base_helper, header_arg, body_args, &query_args);
             out.push_str(&format!(
                 "        let wrapper: crate::dynamic::types::{entity} = {call_expr};\n"
             ));
@@ -442,12 +487,12 @@ fn emit_dispatch(out: &mut String, ep: &IndexedEndpoint<'_>, has_query: bool) {
                 // return type — no turbofish needed. For no-body helpers (single type
                 // param T), we also let inference drive it.
                 out.push_str(&format!(
-                    "        self.client.inner().{base_helper}({path_arg}{body_args}{query_args}).await\n"
+                    "        self.client.inner().{base_helper}({path_arg}, {header_arg}{body_args}{query_args}).await\n"
                 ));
             } else {
                 // No named response type — treat as unit.
                 out.push_str(&format!(
-                    "        self.client.inner().post_void_no_body({path_arg}).await\n"
+                    "        self.client.inner().post_void_no_body({path_arg}, {header_arg}).await\n"
                 ));
             }
         }

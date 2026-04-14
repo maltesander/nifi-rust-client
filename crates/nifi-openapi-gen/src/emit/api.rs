@@ -183,8 +183,20 @@ fn emit_method(ep: &Endpoint) -> String {
         })
         .collect();
 
+    let header_param_args: String = ep
+        .header_params
+        .iter()
+        .map(|hp| {
+            if hp.required {
+                format!(", {}: &str", hp.rust_name)
+            } else {
+                format!(", {}: Option<&str>", hp.rust_name)
+            }
+        })
+        .collect();
+
     out.push_str(&format!(
-        "    pub async fn {fn_name}(&self{path_param_args}{query_param_args}{body_arg}) -> {return_result} {{\n",
+        "    pub async fn {fn_name}(&self{path_param_args}{query_param_args}{header_param_args}{body_arg}) -> {return_result} {{\n",
         fn_name = ep.fn_name,
     ));
     out.push_str(&emit_method_body(ep));
@@ -248,6 +260,42 @@ fn query_param_rust_type(qp: &QueryParam) -> String {
     }
 }
 
+/// Returns (prelude_lines, header_arg_expr) for emitting extra_headers.
+///
+/// - If no header params: prelude is empty, header_arg_expr is `"&[]"`.
+/// - If all required: prelude is empty, header_arg_expr is an array literal.
+/// - If any optional: prelude builds a `Vec`, header_arg_expr is `"__headers.as_slice()"`.
+fn emit_headers_setup(ep: &Endpoint) -> (String, String) {
+    if ep.header_params.is_empty() {
+        return (String::new(), "&[]".to_string());
+    }
+    if ep.header_params.iter().all(|h| h.required) {
+        let pairs: Vec<String> = ep
+            .header_params
+            .iter()
+            .map(|h| format!("(\"{}\", {})", h.name, h.rust_name))
+            .collect();
+        return (String::new(), format!("&[{}]", pairs.join(", ")));
+    }
+    // At least one optional: build a Vec.
+    let mut prelude = String::new();
+    prelude.push_str("        let mut __headers: Vec<(&str, &str)> = Vec::new();\n");
+    for hp in &ep.header_params {
+        if hp.required {
+            prelude.push_str(&format!(
+                "        __headers.push((\"{}\", {}));\n",
+                hp.name, hp.rust_name
+            ));
+        } else {
+            prelude.push_str(&format!(
+                "        if let Some(v) = {} {{\n            __headers.push((\"{}\", v));\n        }}\n",
+                hp.rust_name, hp.name
+            ));
+        }
+    }
+    (prelude, "__headers.as_slice()".to_string())
+}
+
 fn emit_method_body(ep: &Endpoint) -> String {
     let path_expr = if ep.path_params.is_empty() {
         format!("\"{}\"", ep.path)
@@ -283,6 +331,13 @@ fn emit_method_body(ep: &Endpoint) -> String {
     }
     let query_setup = query_lines.join("\n");
 
+    let (headers_prelude, header_arg) = emit_headers_setup(ep);
+    let setup = if headers_prelude.is_empty() {
+        query_setup
+    } else {
+        format!("{query_setup}\n{headers_prelude}")
+    };
+
     let entity_ty = ep.response_type.as_deref().unwrap_or("_");
 
     use crate::content_type::ResponseBodyKind;
@@ -291,46 +346,46 @@ fn emit_method_body(ep: &Endpoint) -> String {
             ResponseBodyKind::Json { .. } => {
                 if has_inner {
                     format!(
-                        "{query_setup}\n        let e: crate::types::{entity_ty} = self.client.get_with_query({path_expr}, &query).await?;\n        Ok(e.{inner_field}.unwrap_or_default())\n"
+                        "{setup}\n        let e: crate::types::{entity_ty} = self.client.get_with_query({path_expr}, {header_arg}, &query).await?;\n        Ok(e.{inner_field}.unwrap_or_default())\n"
                     )
                 } else {
                     // Both schema-typed and schemaless JSON use the same helper;
                     // schemaless falls back to `serde_json::Value` via the return type.
                     format!(
-                        "{query_setup}\n        self.client.get_with_query({path_expr}, &query).await\n"
+                        "{setup}\n        self.client.get_with_query({path_expr}, {header_arg}, &query).await\n"
                     )
                 }
             }
             ResponseBodyKind::OctetStream | ResponseBodyKind::Wildcard => {
                 format!(
-                    "{query_setup}\n        self.client.get_bytes_with_query({path_expr}, &query).await\n"
+                    "{setup}\n        self.client.get_bytes_with_query({path_expr}, {header_arg}, &query).await\n"
                 )
             }
             ResponseBodyKind::Text | ResponseBodyKind::Xml => {
                 // No current NiFi GET endpoint has query params AND text/xml response.
                 // Emit a todo!() so a future spec addition surfaces loudly at runtime.
                 format!(
-                    "{query_setup}\n        todo!(\"text/xml GET with query params not implemented\")\n"
+                    "{setup}\n        todo!(\"text/xml GET with query params not implemented\")\n"
                 )
             }
             ResponseBodyKind::Empty => {
                 format!(
-                    "{query_setup}\n        self.client.get_void_with_query({path_expr}, &query).await\n"
+                    "{setup}\n        self.client.get_void_with_query({path_expr}, {header_arg}, &query).await\n"
                 )
             }
         },
         HttpMethod::Delete => {
             if has_inner {
                 format!(
-                    "{query_setup}\n        let e: crate::types::{entity_ty} = self.client.delete_returning_with_query({path_expr}, &query).await?;\n        Ok(e.{inner_field}.unwrap_or_default())\n"
+                    "{setup}\n        let e: crate::types::{entity_ty} = self.client.delete_returning_with_query({path_expr}, {header_arg}, &query).await?;\n        Ok(e.{inner_field}.unwrap_or_default())\n"
                 )
             } else if ep.response_type.is_some() {
                 format!(
-                    "{query_setup}\n        self.client.delete_returning_with_query({path_expr}, &query).await\n"
+                    "{setup}\n        self.client.delete_returning_with_query({path_expr}, {header_arg}, &query).await\n"
                 )
             } else {
                 format!(
-                    "{query_setup}\n        self.client.delete_with_query({path_expr}, &query).await\n"
+                    "{setup}\n        self.client.delete_with_query({path_expr}, {header_arg}, &query).await\n"
                 )
             }
         }
@@ -348,15 +403,15 @@ fn emit_method_body(ep: &Endpoint) -> String {
             };
             if has_inner {
                 format!(
-                    "{query_setup}\n        let e: crate::types::{entity_ty} = self.client.post_with_query({path_expr}, {body_expr}, &query).await?;\n        Ok(e.{inner_field}.unwrap_or_default())\n"
+                    "{setup}\n        let e: crate::types::{entity_ty} = self.client.post_with_query({path_expr}, {header_arg}, {body_expr}, &query).await?;\n        Ok(e.{inner_field}.unwrap_or_default())\n"
                 )
             } else if ep.response_type.is_some() {
                 format!(
-                    "{query_setup}\n        self.client.post_with_query({path_expr}, {body_expr}, &query).await\n"
+                    "{setup}\n        self.client.post_with_query({path_expr}, {header_arg}, {body_expr}, &query).await\n"
                 )
             } else {
                 format!(
-                    "{query_setup}\n        self.client.post_void_with_query({path_expr}, {body_expr}, &query).await\n"
+                    "{setup}\n        self.client.post_void_with_query({path_expr}, {header_arg}, {body_expr}, &query).await\n"
                 )
             }
         }
@@ -377,37 +432,38 @@ fn emit_simple_method_body(
 ) -> String {
     use crate::content_type::ResponseBodyKind;
     let entity_ty = ep.response_type.as_deref().unwrap_or("_");
+    let (headers_prelude, header_arg) = emit_headers_setup(ep);
     match ep.method {
         HttpMethod::Get => match &ep.response_kind {
             ResponseBodyKind::Json { .. } => {
                 if has_inner {
                     format!(
-                        "        let e: crate::types::{entity_ty} = self.client.get({path_expr}).await?;\n        Ok(e.{inner_field}.unwrap_or_default())\n"
+                        "{headers_prelude}        let e: crate::types::{entity_ty} = self.client.get({path_expr}, {header_arg}).await?;\n        Ok(e.{inner_field}.unwrap_or_default())\n"
                     )
                 } else {
                     // Both schema-typed and schemaless JSON use the same helper.
-                    format!("        self.client.get({path_expr}).await\n")
+                    format!("{headers_prelude}        self.client.get({path_expr}, {header_arg}).await\n")
                 }
             }
             ResponseBodyKind::Text | ResponseBodyKind::Xml => {
-                format!("        self.client.get_text({path_expr}).await\n")
+                format!("{headers_prelude}        self.client.get_text({path_expr}, {header_arg}).await\n")
             }
             ResponseBodyKind::OctetStream | ResponseBodyKind::Wildcard => {
-                format!("        self.client.get_bytes({path_expr}).await\n")
+                format!("{headers_prelude}        self.client.get_bytes({path_expr}, {header_arg}).await\n")
             }
             ResponseBodyKind::Empty => {
-                format!("        self.client.get_void({path_expr}).await\n")
+                format!("{headers_prelude}        self.client.get_void({path_expr}, {header_arg}).await\n")
             }
         },
         HttpMethod::Delete => {
             if has_inner {
                 format!(
-                    "        let e: crate::types::{entity_ty} = self.client.delete_returning({path_expr}).await?;\n        Ok(e.{inner_field}.unwrap_or_default())\n"
+                    "{headers_prelude}        let e: crate::types::{entity_ty} = self.client.delete_returning({path_expr}, {header_arg}).await?;\n        Ok(e.{inner_field}.unwrap_or_default())\n"
                 )
             } else if ep.response_type.is_some() {
-                format!("        self.client.delete_returning({path_expr}).await\n")
+                format!("{headers_prelude}        self.client.delete_returning({path_expr}, {header_arg}).await\n")
             } else {
-                format!("        self.client.delete({path_expr}).await\n")
+                format!("{headers_prelude}        self.client.delete({path_expr}, {header_arg}).await\n")
             }
         }
         HttpMethod::Post => {
@@ -420,63 +476,61 @@ fn emit_simple_method_body(
                 Some(RequestBodyKind::Json) => {
                     if is_text_response {
                         format!(
-                            "        self.client.post_returning_text({path_expr}, body).await\n"
+                            "{headers_prelude}        self.client.post_returning_text({path_expr}, {header_arg}, body).await\n"
                         )
                     } else if has_inner {
                         format!(
-                            "        let e: crate::types::{entity_ty} = self.client.post({path_expr}, body).await?;\n        Ok(e.{inner_field}.unwrap_or_default())\n"
+                            "{headers_prelude}        let e: crate::types::{entity_ty} = self.client.post({path_expr}, {header_arg}, body).await?;\n        Ok(e.{inner_field}.unwrap_or_default())\n"
                         )
                     } else if ep.response_type.is_some() {
-                        format!("        self.client.post({path_expr}, body).await\n")
+                        format!("{headers_prelude}        self.client.post({path_expr}, {header_arg}, body).await\n")
                     } else {
-                        format!("        self.client.post_void({path_expr}, body).await\n")
+                        format!("{headers_prelude}        self.client.post_void({path_expr}, {header_arg}, body).await\n")
                     }
                 }
                 Some(RequestBodyKind::OctetStream) => {
                     if is_text_response {
-                        // `filename` is in the signature for API stability but the
-                        // text-returning helper doesn't send a Filename header.
                         format!(
-                            "        let _ = filename;\n        self.client.post_octet_stream_returning_text({path_expr}, data).await\n"
+                            "{headers_prelude}        self.client.post_octet_stream_returning_text({path_expr}, {header_arg}, data).await\n"
                         )
                     } else if has_inner {
                         format!(
-                            "        let e: crate::types::{entity_ty} = self.client.post_octet_stream({path_expr}, filename, data).await?;\n        Ok(e.{inner_field}.unwrap_or_default())\n"
+                            "{headers_prelude}        let e: crate::types::{entity_ty} = self.client.post_octet_stream({path_expr}, {header_arg}, data).await?;\n        Ok(e.{inner_field}.unwrap_or_default())\n"
                         )
                     } else if ep.response_type.is_some() {
                         format!(
-                            "        self.client.post_octet_stream({path_expr}, filename, data).await\n"
+                            "{headers_prelude}        self.client.post_octet_stream({path_expr}, {header_arg}, data).await\n"
                         )
                     } else {
                         format!(
-                            "        self.client.post_void_octet_stream({path_expr}, filename, data).await\n"
+                            "{headers_prelude}        self.client.post_void_octet_stream({path_expr}, {header_arg}, data).await\n"
                         )
                     }
                 }
                 Some(RequestBodyKind::Multipart) => {
                     if has_inner {
                         format!(
-                            "        let e: crate::types::{entity_ty} = self.client.post_multipart({path_expr}, filename, data).await?;\n        Ok(e.{inner_field}.unwrap_or_default())\n"
+                            "{headers_prelude}        let e: crate::types::{entity_ty} = self.client.post_multipart({path_expr}, {header_arg}, filename, data).await?;\n        Ok(e.{inner_field}.unwrap_or_default())\n"
                         )
                     } else if ep.response_type.is_some() {
                         format!(
-                            "        self.client.post_multipart({path_expr}, filename, data).await\n"
+                            "{headers_prelude}        self.client.post_multipart({path_expr}, {header_arg}, filename, data).await\n"
                         )
                     } else {
                         format!(
-                            "        self.client.post_void_multipart({path_expr}, filename, data).await\n"
+                            "{headers_prelude}        self.client.post_void_multipart({path_expr}, {header_arg}, filename, data).await\n"
                         )
                     }
                 }
                 Some(RequestBodyKind::Wildcard) | Some(RequestBodyKind::FormEncoded) | None => {
                     if has_inner {
                         format!(
-                            "        let e: crate::types::{entity_ty} = self.client.post_no_body({path_expr}).await?;\n        Ok(e.{inner_field}.unwrap_or_default())\n"
+                            "{headers_prelude}        let e: crate::types::{entity_ty} = self.client.post_no_body({path_expr}, {header_arg}).await?;\n        Ok(e.{inner_field}.unwrap_or_default())\n"
                         )
                     } else if ep.response_type.is_some() {
-                        format!("        self.client.post_no_body({path_expr}).await\n")
+                        format!("{headers_prelude}        self.client.post_no_body({path_expr}, {header_arg}).await\n")
                     } else {
-                        format!("        self.client.post_void_no_body({path_expr}).await\n")
+                        format!("{headers_prelude}        self.client.post_void_no_body({path_expr}, {header_arg}).await\n")
                     }
                 }
             }
@@ -487,12 +541,12 @@ fn emit_simple_method_body(
                 Some(RequestBodyKind::Json) => {
                     if has_inner {
                         format!(
-                            "        let e: crate::types::{entity_ty} = self.client.put({path_expr}, body).await?;\n        Ok(e.{inner_field}.unwrap_or_default())\n"
+                            "{headers_prelude}        let e: crate::types::{entity_ty} = self.client.put({path_expr}, {header_arg}, body).await?;\n        Ok(e.{inner_field}.unwrap_or_default())\n"
                         )
                     } else if ep.response_type.is_some() {
-                        format!("        self.client.put({path_expr}, body).await\n")
+                        format!("{headers_prelude}        self.client.put({path_expr}, {header_arg}, body).await\n")
                     } else {
-                        format!("        self.client.put_void({path_expr}, body).await\n")
+                        format!("{headers_prelude}        self.client.put_void({path_expr}, {header_arg}, body).await\n")
                     }
                 }
                 Some(RequestBodyKind::OctetStream)
@@ -502,12 +556,12 @@ fn emit_simple_method_body(
                 | None => {
                     if has_inner {
                         format!(
-                            "        let e: crate::types::{entity_ty} = self.client.put_no_body({path_expr}).await?;\n        Ok(e.{inner_field}.unwrap_or_default())\n"
+                            "{headers_prelude}        let e: crate::types::{entity_ty} = self.client.put_no_body({path_expr}, {header_arg}).await?;\n        Ok(e.{inner_field}.unwrap_or_default())\n"
                         )
                     } else if ep.response_type.is_some() {
-                        format!("        self.client.put_no_body({path_expr}).await\n")
+                        format!("{headers_prelude}        self.client.put_no_body({path_expr}, {header_arg}).await\n")
                     } else {
-                        format!("        self.client.put_void_no_body({path_expr}).await\n")
+                        format!("{headers_prelude}        self.client.put_void_no_body({path_expr}, {header_arg}).await\n")
                     }
                 }
             }
