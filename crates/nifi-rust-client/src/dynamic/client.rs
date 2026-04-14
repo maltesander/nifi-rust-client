@@ -234,11 +234,3 @@ impl DynamicClient {
             .unwrap_or(false)
     }
 }
-
-impl std::ops::Deref for DynamicClient {
-    type Target = NifiClient;
-
-    fn deref(&self) -> &NifiClient {
-        &self.client
-    }
-}
