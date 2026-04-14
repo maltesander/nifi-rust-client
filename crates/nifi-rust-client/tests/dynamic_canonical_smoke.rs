@@ -55,7 +55,7 @@ async fn dynamic_unsupported_endpoint_error() {
 
     let target: Option<Endpoint> = ENDPOINT_AVAILABILITY
         .iter()
-        .find(|(_, versions)| !versions.iter().any(|v| *v == "2.6.0"))
+        .find(|(_, versions)| !versions.contains(&"2.6.0"))
         .map(|(e, _)| *e);
     let Some(target) = target else {
         // No version-skewed endpoint in the current spec set; nothing to assert.
@@ -105,7 +105,7 @@ async fn dynamic_unsupported_query_param_error() {
     // Find any (endpoint, param) pair where 2.6.0 is NOT in the supported set.
     let target = QUERY_PARAM_AVAILABILITY
         .iter()
-        .find(|((_, _), versions)| !versions.iter().any(|v| *v == "2.6.0"))
+        .find(|((_, _), versions)| !versions.contains(&"2.6.0"))
         .copied();
     let Some(((endpoint, param), _versions)) = target else {
         eprintln!("skipping: no version-skewed query param in current spec set");

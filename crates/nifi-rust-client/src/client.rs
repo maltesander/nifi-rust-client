@@ -325,6 +325,7 @@ impl NifiClient {
     /// POST with no request body; ignores the response body.
     ///
     /// Used by the dynamic emitter for void no-body POST endpoints.
+    #[cfg(feature = "dynamic")]
     #[tracing::instrument(skip(self))]
     pub(crate) async fn post_void_no_body(&self, path: &str) -> Result<(), NifiError> {
         self.with_retry(|| async {
@@ -446,6 +447,7 @@ impl NifiClient {
     /// GET with query parameters; ignores the response body.
     ///
     /// Used by the dynamic emitter for void GET endpoints with query params.
+    #[cfg(feature = "dynamic")]
     #[tracing::instrument(skip(self, query))]
     pub(crate) async fn get_void_with_query(
         &self,
