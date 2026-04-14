@@ -13,6 +13,65 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-04-14
+
+### Breaking Changes
+
+- Flatten public API — client.flow() replaces client.flow_api() ([b254b8b](https://github.com/maltesander/nifi-rust-client/commit/b254b8b))
+
+### Added
+
+- Forward token/set_token/authenticate on DynamicClient ([f46a9d2](https://github.com/maltesander/nifi-rust-client/commit/f46a9d2))
+- Accept dynamic feature without version feature ([f0c60e2](https://github.com/maltesander/nifi-rust-client/commit/f0c60e2))
+- Dynamic emission reads all specs from disk ([4bd7aa6](https://github.com/maltesander/nifi-rust-client/commit/4bd7aa6))
+- Set dynamic = [] in Cargo.toml ([ea90ea1](https://github.com/maltesander/nifi-rust-client/commit/ea90ea1))
+- Delete NifiError::MissingRequiredField ([09ca02b](https://github.com/maltesander/nifi-rust-client/commit/09ca02b))
+- Rewire build_api.rs to canonical dynamic emitter only ([4b0d960](https://github.com/maltesander/nifi-rust-client/commit/4b0d960))
+- Extend DynamicClientV2 with legacy public surface ([3b21de5](https://github.com/maltesander/nifi-rust-client/commit/3b21de5))
+- Hand-write DynamicClientV2 with require_endpoint guard ([fc14901](https://github.com/maltesander/nifi-rust-client/commit/fc14901))
+- Add put_with_query helper for canonical dynamic emitter ([7a64ce2](https://github.com/maltesander/nifi-rust-client/commit/7a64ce2))
+- Add UnsupportedBodyField error variant ([86c504b](https://github.com/maltesander/nifi-rust-client/commit/86c504b))
+- Add UnsupportedQueryParam error variant ([6f21562](https://github.com/maltesander/nifi-rust-client/commit/6f21562))
+
+### Changed
+
+- Thread extra_headers slice through HTTP helpers ([16e9a1f](https://github.com/maltesander/nifi-rust-client/commit/16e9a1f))
+- Remove DynamicClient: Deref<NifiClient> ([b6b5bfb](https://github.com/maltesander/nifi-rust-client/commit/b6b5bfb))
+- Delete unused UnsupportedBodyField variant ([30e26c1](https://github.com/maltesander/nifi-rust-client/commit/30e26c1))
+- Delete 8 unused HTTP helpers ([a1b82f8](https://github.com/maltesander/nifi-rust-client/commit/a1b82f8))
+- Rename dynamic_v2 to dynamic after legacy deletion ([8e7f0a2](https://github.com/maltesander/nifi-rust-client/commit/8e7f0a2))
+
+### Fixed
+
+- Restore 7 dead helpers as dispatch-table backstops ([b5bfa01](https://github.com/maltesander/nifi-rust-client/commit/b5bfa01))
+- Suppress dead-code warning on dynamic-only build ([e0a772c](https://github.com/maltesander/nifi-rust-client/commit/e0a772c))
+- Address Phase A code-review findings ([887aa98](https://github.com/maltesander/nifi-rust-client/commit/887aa98))
+- Suppress dead-code warning on dynamic-only helpers ([1c4bd9c](https://github.com/maltesander/nifi-rust-client/commit/1c4bd9c))
+- Restore post_void_no_body and get_void_with_query ([bc73d85](https://github.com/maltesander/nifi-rust-client/commit/bc73d85))
+- Drop unused `use super::*;` in client tests ([a4726e0](https://github.com/maltesander/nifi-rust-client/commit/a4726e0))
+- Correct path-param order in create_port_transaction test ([acbb84b](https://github.com/maltesander/nifi-rust-client/commit/acbb84b))
+- Adapt hand-written wiremock tests to canonical dynamic ([b04a871](https://github.com/maltesander/nifi-rust-client/commit/b04a871))
+- Drop FlowApi trait import from pagination for canonical dynamic ([1e320e9](https://github.com/maltesander/nifi-rust-client/commit/1e320e9))
+- Guard cluster_node_id auto-injection on nodewise flag ([a91b34c](https://github.com/maltesander/nifi-rust-client/commit/a91b34c))
+
+### Documentation
+
+- Bump switch-back example to nifi-2-9-0 ([331a34c](https://github.com/maltesander/nifi-rust-client/commit/331a34c))
+- Describe canonical-superset dynamic mode as the only dynamic path ([f546fc4](https://github.com/maltesander/nifi-rust-client/commit/f546fc4))
+
+### Tests
+
+- Wiremock coverage for header param forwarding ([7230129](https://github.com/maltesander/nifi-rust-client/commit/7230129))
+- Surface error on first page of HistoryPaginator ([f96b693](https://github.com/maltesander/nifi-rust-client/commit/f96b693))
+- Wiremock coverage for emitted header params ([dfc77cb](https://github.com/maltesander/nifi-rust-client/commit/dfc77cb))
+- Canary for UnsupportedQueryParam end-to-end ([f71b214](https://github.com/maltesander/nifi-rust-client/commit/f71b214))
+- Adapt imports for canonical dynamic path ([db29eb9](https://github.com/maltesander/nifi-rust-client/commit/db29eb9))
+- Smoke test query-param availability table for dynamic_v2 ([87bc197](https://github.com/maltesander/nifi-rust-client/commit/87bc197))
+- Smoke test DynamicClientV2 UnsupportedEndpoint path ([a4f1412](https://github.com/maltesander/nifi-rust-client/commit/a4f1412))
+- Smoke test DynamicClientV2 happy path via wiremock ([e3471f0](https://github.com/maltesander/nifi-rust-client/commit/e3471f0))
+- Drop _N suffixes from NiFi API method calls ([ff9a375](https://github.com/maltesander/nifi-rust-client/commit/ff9a375))
+- Drop _N suffixes from wiremock method calls ([1784810](https://github.com/maltesander/nifi-rust-client/commit/1784810))
+
 ## [0.9.0] - 2026-04-12
 
 ## [0.8.0] - 2026-04-12
@@ -423,7 +482,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Structured error handling** — `NifiError` via `snafu` with distinct variants for HTTP, auth, serialization, and network errors.
 - **Tracing** — all HTTP requests emit a `tracing::debug!` event with method and path before sending.
 
-[Unreleased]: https://github.com/maltesander/nifi-rust-client/compare/client-v0.9.0...HEAD
+[Unreleased]: https://github.com/maltesander/nifi-rust-client/compare/client-v0.10.0...HEAD
+[0.10.0]: https://github.com/maltesander/nifi-rust-client/compare/client-v0.9.0...client-v0.10.0
 [0.9.0]: https://github.com/maltesander/nifi-rust-client/compare/client-v0.8.0...client-v0.9.0
 [0.8.0]: https://github.com/maltesander/nifi-rust-client/compare/client-v0.7.0...client-v0.8.0
 [0.7.0]: https://github.com/maltesander/nifi-rust-client/compare/client-v0.6.0...client-v0.7.0
