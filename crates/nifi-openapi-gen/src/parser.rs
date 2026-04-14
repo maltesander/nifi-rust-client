@@ -526,7 +526,9 @@ fn parse_tags(
                                     Some("int64") => QueryParamType::I64,
                                     Some(other) => crate::parser_strict::panic_unknown(
                                         "integer_format",
-                                        &format!("/paths{raw_path}/{http_method}/parameters/{name}"),
+                                        &format!(
+                                            "/paths{raw_path}/{http_method}/parameters/{name}"
+                                        ),
                                         &format!("format={other:?}"),
                                     ),
                                 }

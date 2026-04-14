@@ -324,7 +324,9 @@ fn emit_headers_setup(ep: &Endpoint, indent: &str) -> (String, String) {
     }
     // At least one optional: build a Vec.
     let mut prelude = String::new();
-    prelude.push_str(&format!("{indent}let mut __headers: Vec<(&str, &str)> = Vec::new();\n"));
+    prelude.push_str(&format!(
+        "{indent}let mut __headers: Vec<(&str, &str)> = Vec::new();\n"
+    ));
     for hp in &ep.header_params {
         if hp.required {
             prelude.push_str(&format!(
@@ -489,17 +491,25 @@ fn emit_simple_method_body_static(
                     )
                 } else {
                     // Both schema-typed and schemaless JSON use the same helper.
-                    format!("{headers_prelude}        self.client.get({path_expr}, {header_arg}).await\n")
+                    format!(
+                        "{headers_prelude}        self.client.get({path_expr}, {header_arg}).await\n"
+                    )
                 }
             }
             ResponseBodyKind::Text | ResponseBodyKind::Xml => {
-                format!("{headers_prelude}        self.client.get_text({path_expr}, {header_arg}).await\n")
+                format!(
+                    "{headers_prelude}        self.client.get_text({path_expr}, {header_arg}).await\n"
+                )
             }
             ResponseBodyKind::OctetStream | ResponseBodyKind::Wildcard => {
-                format!("{headers_prelude}        self.client.get_bytes({path_expr}, {header_arg}).await\n")
+                format!(
+                    "{headers_prelude}        self.client.get_bytes({path_expr}, {header_arg}).await\n"
+                )
             }
             ResponseBodyKind::Empty => {
-                format!("{headers_prelude}        self.client.get_void({path_expr}, {header_arg}).await\n")
+                format!(
+                    "{headers_prelude}        self.client.get_void({path_expr}, {header_arg}).await\n"
+                )
             }
         },
         HttpMethod::Delete => {
@@ -508,9 +518,13 @@ fn emit_simple_method_body_static(
                     "{headers_prelude}        let e: crate::types::{entity_ty} = self.client.delete_returning({path_expr}, {header_arg}).await?;\n        Ok(e.{inner_field}.unwrap_or_default())\n"
                 )
             } else if ep.response_type.is_some() {
-                format!("{headers_prelude}        self.client.delete_returning({path_expr}, {header_arg}).await\n")
+                format!(
+                    "{headers_prelude}        self.client.delete_returning({path_expr}, {header_arg}).await\n"
+                )
             } else {
-                format!("{headers_prelude}        self.client.delete({path_expr}, {header_arg}).await\n")
+                format!(
+                    "{headers_prelude}        self.client.delete({path_expr}, {header_arg}).await\n"
+                )
             }
         }
         HttpMethod::Post => {
@@ -530,9 +544,13 @@ fn emit_simple_method_body_static(
                             "{headers_prelude}        let e: crate::types::{entity_ty} = self.client.post({path_expr}, {header_arg}, body).await?;\n        Ok(e.{inner_field}.unwrap_or_default())\n"
                         )
                     } else if ep.response_type.is_some() {
-                        format!("{headers_prelude}        self.client.post({path_expr}, {header_arg}, body).await\n")
+                        format!(
+                            "{headers_prelude}        self.client.post({path_expr}, {header_arg}, body).await\n"
+                        )
                     } else {
-                        format!("{headers_prelude}        self.client.post_void({path_expr}, {header_arg}, body).await\n")
+                        format!(
+                            "{headers_prelude}        self.client.post_void({path_expr}, {header_arg}, body).await\n"
+                        )
                     }
                 }
                 Some(RequestBodyKind::OctetStream) => {
@@ -575,9 +593,13 @@ fn emit_simple_method_body_static(
                             "{headers_prelude}        let e: crate::types::{entity_ty} = self.client.post_no_body({path_expr}, {header_arg}).await?;\n        Ok(e.{inner_field}.unwrap_or_default())\n"
                         )
                     } else if ep.response_type.is_some() {
-                        format!("{headers_prelude}        self.client.post_no_body({path_expr}, {header_arg}).await\n")
+                        format!(
+                            "{headers_prelude}        self.client.post_no_body({path_expr}, {header_arg}).await\n"
+                        )
                     } else {
-                        format!("{headers_prelude}        self.client.post_void_no_body({path_expr}, {header_arg}).await\n")
+                        format!(
+                            "{headers_prelude}        self.client.post_void_no_body({path_expr}, {header_arg}).await\n"
+                        )
                     }
                 }
             }
@@ -591,9 +613,13 @@ fn emit_simple_method_body_static(
                             "{headers_prelude}        let e: crate::types::{entity_ty} = self.client.put({path_expr}, {header_arg}, body).await?;\n        Ok(e.{inner_field}.unwrap_or_default())\n"
                         )
                     } else if ep.response_type.is_some() {
-                        format!("{headers_prelude}        self.client.put({path_expr}, {header_arg}, body).await\n")
+                        format!(
+                            "{headers_prelude}        self.client.put({path_expr}, {header_arg}, body).await\n"
+                        )
                     } else {
-                        format!("{headers_prelude}        self.client.put_void({path_expr}, {header_arg}, body).await\n")
+                        format!(
+                            "{headers_prelude}        self.client.put_void({path_expr}, {header_arg}, body).await\n"
+                        )
                     }
                 }
                 Some(RequestBodyKind::OctetStream)
@@ -606,9 +632,13 @@ fn emit_simple_method_body_static(
                             "{headers_prelude}        let e: crate::types::{entity_ty} = self.client.put_no_body({path_expr}, {header_arg}).await?;\n        Ok(e.{inner_field}.unwrap_or_default())\n"
                         )
                     } else if ep.response_type.is_some() {
-                        format!("{headers_prelude}        self.client.put_no_body({path_expr}, {header_arg}).await\n")
+                        format!(
+                            "{headers_prelude}        self.client.put_no_body({path_expr}, {header_arg}).await\n"
+                        )
                     } else {
-                        format!("{headers_prelude}        self.client.put_void_no_body({path_expr}, {header_arg}).await\n")
+                        format!(
+                            "{headers_prelude}        self.client.put_void_no_body({path_expr}, {header_arg}).await\n"
+                        )
                     }
                 }
             }
@@ -623,9 +653,7 @@ fn dynamic_response_type_for(ep: &Endpoint) -> String {
     match (&ep.response_kind, &ep.response_inner, &ep.response_type) {
         (ResponseBodyKind::Empty, _, _) => "()".to_string(),
         (ResponseBodyKind::Text | ResponseBodyKind::Xml, _, _) => "String".to_string(),
-        (ResponseBodyKind::OctetStream | ResponseBodyKind::Wildcard, _, _) => {
-            "Vec<u8>".to_string()
-        }
+        (ResponseBodyKind::OctetStream | ResponseBodyKind::Wildcard, _, _) => "Vec<u8>".to_string(),
         (_, Some(inner), _) => format!("crate::dynamic::types::{inner}"),
         (_, _, Some(rt)) => format!("crate::dynamic::types::{rt}"),
         _ => "()".to_string(),

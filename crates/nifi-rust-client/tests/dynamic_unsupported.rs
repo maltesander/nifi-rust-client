@@ -64,11 +64,11 @@ async fn setting_unsupported_query_param_returns_unsupported_query_param_error()
     let result = client
         .flow()
         .get_flow_metrics(
-            "prometheus",      // producer path param — value irrelevant, no HTTP call made
-            None,              // included_registries
-            None,              // sample_name
-            None,              // sample_label_value
-            None,              // root_field_name
+            "prometheus", // producer path param — value irrelevant, no HTTP call made
+            None,         // included_registries
+            None,         // sample_name
+            None,         // sample_label_value
+            None,         // root_field_name
             Some(FlowMetricsReportingStrategy::AllProcessGroups),
         )
         .await;

@@ -10,7 +10,10 @@ use wiremock::{Mock, MockServer, ResponseTemplate};
 
 /// Helper: mount the about mock and return a DynamicClient pointed at `server`.
 #[allow(clippy::unwrap_used)]
-async fn dynamic_client_on(server: &MockServer, version: &str) -> nifi_rust_client::dynamic::DynamicClient {
+async fn dynamic_client_on(
+    server: &MockServer,
+    version: &str,
+) -> nifi_rust_client::dynamic::DynamicClient {
     Mock::given(method("GET"))
         .and(path("/nifi-api/flow/about"))
         .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({

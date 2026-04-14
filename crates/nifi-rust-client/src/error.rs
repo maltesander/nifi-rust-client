@@ -207,5 +207,4 @@ mod tests {
         assert!(msg.contains("registries"));
         assert!(msg.contains("2.6.0"));
     }
-
 }

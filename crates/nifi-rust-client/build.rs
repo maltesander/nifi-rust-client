@@ -22,12 +22,10 @@ fn main() -> Result<(), Box<dyn Error>> {
     // empty API surface. The same guard is enforced statically in lib.rs via
     // compile_error!; this build-side check gives an earlier, clearer message.
     if config.versions.is_empty() && !config.dynamic {
-        return Err(
-            "No NiFi feature enabled. Enable at least one of: \
+        return Err("No NiFi feature enabled. Enable at least one of: \
              `nifi-2-6-0`, `nifi-2-7-2`, `nifi-2-8-0`, `nifi-2-9-0`, \
              or `dynamic` in your Cargo.toml."
-                .into(),
-        );
+            .into());
     }
 
     // Tell rustc which features are active. lib.rs uses these cfgs as

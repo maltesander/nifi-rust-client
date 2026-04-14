@@ -13,9 +13,7 @@ fn spec_path(version: &str) -> PathBuf {
 
 #[test]
 fn header_params_are_collected_for_filename_endpoint() {
-    let spec = nifi_openapi_gen::parser::load(
-        spec_path("2.9.0").to_str().unwrap(),
-    );
+    let spec = nifi_openapi_gen::parser::load(spec_path("2.9.0").to_str().unwrap());
     let endpoint = spec
         .tags
         .iter()
@@ -34,9 +32,7 @@ fn header_params_are_collected_for_filename_endpoint() {
 
 #[test]
 fn header_params_are_collected_for_range_endpoint() {
-    let spec = nifi_openapi_gen::parser::load(
-        spec_path("2.9.0").to_str().unwrap(),
-    );
+    let spec = nifi_openapi_gen::parser::load(spec_path("2.9.0").to_str().unwrap());
     let endpoint = spec
         .tags
         .iter()
@@ -55,17 +51,14 @@ fn header_params_are_collected_for_range_endpoint() {
 
 #[test]
 fn endpoints_without_header_params_have_empty_vec() {
-    let spec = nifi_openapi_gen::parser::load(
-        spec_path("2.9.0").to_str().unwrap(),
-    );
+    let spec = nifi_openapi_gen::parser::load(spec_path("2.9.0").to_str().unwrap());
     // GET /flow/about has no header params
     let endpoint = spec
         .tags
         .iter()
         .flat_map(|t| &t.endpoints)
         .find(|e| {
-            e.path == "/flow/about"
-                && matches!(e.method, nifi_openapi_gen::parser::HttpMethod::Get)
+            e.path == "/flow/about" && matches!(e.method, nifi_openapi_gen::parser::HttpMethod::Get)
         })
         .expect("GET /flow/about should exist in 2.9.0");
     assert!(endpoint.header_params.is_empty());
@@ -73,9 +66,7 @@ fn endpoints_without_header_params_have_empty_vec() {
 
 #[test]
 fn all_filename_header_endpoints_collected() {
-    let spec = nifi_openapi_gen::parser::load(
-        spec_path("2.9.0").to_str().unwrap(),
-    );
+    let spec = nifi_openapi_gen::parser::load(spec_path("2.9.0").to_str().unwrap());
     let filename_endpoints: Vec<_> = spec
         .tags
         .iter()

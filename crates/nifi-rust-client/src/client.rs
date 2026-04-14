@@ -780,9 +780,7 @@ impl NifiClient {
         self.with_retry(|| async {
             tracing::debug!(method = "DELETE", path, "NiFi API request");
             let url = self.api_url(path);
-            let mut req = self
-                .authenticated(self.http.delete(url).query(query))
-                .await;
+            let mut req = self.authenticated(self.http.delete(url).query(query)).await;
             for (name, value) in extra_headers {
                 req = req.header(*name, *value);
             }
@@ -802,9 +800,7 @@ impl NifiClient {
         self.with_retry(|| async {
             tracing::debug!(method = "DELETE", path, "NiFi API request");
             let url = self.api_url(path);
-            let mut req = self
-                .authenticated(self.http.delete(url).query(query))
-                .await;
+            let mut req = self.authenticated(self.http.delete(url).query(query)).await;
             for (name, value) in extra_headers {
                 req = req.header(*name, *value);
             }
@@ -1070,4 +1066,3 @@ pub fn extract_error_message(body: &str) -> String {
         .and_then(|v| v["message"].as_str().map(str::to_owned))
         .unwrap_or_else(|| body.to_owned())
 }
-
