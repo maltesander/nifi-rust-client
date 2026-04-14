@@ -324,8 +324,13 @@ impl NifiClient {
 
     /// POST with no request body; ignores the response body.
     ///
-    /// Used by the dynamic emitter for void no-body POST endpoints.
-    #[cfg(feature = "dynamic")]
+    /// Called by both the static per-version emitter (for POST endpoints
+    /// with no body and an empty response) and the dynamic canonical
+    /// emitter. No current NiFi 2.x spec triggers the static path, so
+    /// this helper is only reached via generated code in `$OUT_DIR` that
+    /// clippy's dead-code lint cannot see. Kept available via
+    /// `#[allow(dead_code)]` rather than deleted.
+    #[allow(dead_code)]
     #[tracing::instrument(skip(self))]
     pub(crate) async fn post_void_no_body(&self, path: &str) -> Result<(), NifiError> {
         self.with_retry(|| async {
@@ -446,8 +451,13 @@ impl NifiClient {
 
     /// GET with query parameters; ignores the response body.
     ///
-    /// Used by the dynamic emitter for void GET endpoints with query params.
-    #[cfg(feature = "dynamic")]
+    /// Called by both the static per-version emitter (for GET endpoints
+    /// with query params and an empty response) and the dynamic canonical
+    /// emitter. No current NiFi 2.x spec triggers the static path, so
+    /// this helper is only reached via generated code in `$OUT_DIR` that
+    /// clippy's dead-code lint cannot see. Kept available via
+    /// `#[allow(dead_code)]` rather than deleted.
+    #[allow(dead_code)]
     #[tracing::instrument(skip(self, query))]
     pub(crate) async fn get_void_with_query(
         &self,

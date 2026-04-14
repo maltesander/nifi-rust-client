@@ -121,10 +121,6 @@ The generator enriches every method and struct with documentation derived from t
 - Struct and field docs are emitted as full multi-line rustdoc comments, preserving paragraph breaks from the spec.
 - Fields marked `readOnly` in the spec receive `#[serde(skip_serializing)]` so they are never sent in request bodies. Their doc comment is appended with "Read-only — this field is ignored when serializing requests to NiFi."
 
-## Stale file cleanup
-
-During a full-discovery run (no `NIFI_VERSION` / `NIFI_API_SPEC` override), the generator scans for `src/v*/` directories and `tests/v*_generated_tests.rs` files whose version is no longer present in `specs/` and deletes them automatically. Single-version runs leave other version directories untouched.
-
 ## Architecture
 
 The generator is organized into four module groups plus two binaries:
@@ -153,7 +149,6 @@ The generator is organized into four module groups plus two binaries:
 | `src/repo/lib_rs.rs` | Regenerate `lib.rs` with cfg-gated re-exports |
 | `src/repo/cargo_features.rs` | Sync Cargo.toml feature flags for both crates |
 | `src/repo/docker_compose.rs` | Update docker-compose default NiFi image tag |
-| `src/repo/cleanup.rs` | Delete stale version directories and test files |
 
 To add or change endpoints, update the spec parsing and emission logic in the `src/` modules rather than editing generated files directly.
 

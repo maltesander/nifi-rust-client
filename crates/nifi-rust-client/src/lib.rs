@@ -106,13 +106,13 @@
 //! none fail at both build-script time and compile time.
 
 // `has_any_version` is a rustc-cfg emitted by build.rs whenever it runs
-// successfully with at least one NiFi version feature enabled (or the
-// `dynamic` feature, which pulls in all versions). The flag is invisible
-// to users — it isn't a Cargo feature and can't be set externally. If
-// build.rs is ever bypassed entirely (some `cargo doc` / rust-analyzer
-// configurations), the flag is unset and this compile_error! fires with
-// an actionable message. The primary zero-features guard is the runtime
-// check in build.rs itself; this is defence in depth.
+// successfully with at least one NiFi version feature enabled. The flag
+// is invisible to users — it isn't a Cargo feature and can't be set
+// externally. If build.rs is ever bypassed entirely (some `cargo doc` /
+// rust-analyzer configurations), the flag is unset and this
+// compile_error! fires with an actionable message. The primary
+// zero-features guard is the runtime check in build.rs itself; this is
+// defence in depth.
 #[cfg(not(has_any_version))]
 compile_error!(
     "nifi-rust-client requires at least one NiFi version feature \
