@@ -86,10 +86,9 @@ impl GenerateConfig {
 /// After calling this function the caller should `include!` the generated
 /// `generated_lib.rs` from their `lib.rs`.
 pub fn generate_client(specs_dir: &Path, out_dir: &Path, config: &GenerateConfig) {
-    let all_parsed = parse_specs(specs_dir, &config.versions);
-
-    // ── Per-version modules ─────────────────────────────────────────────
-    for (version_str, spec) in &all_parsed {
+    // ── Per-version modules (only Cargo-feature-enabled versions) ──────
+    let per_version_parsed = parse_specs(specs_dir, &config.versions);
+    for (version_str, spec) in &per_version_parsed {
         let mod_name = version_to_mod_name(version_str);
         let versioned_dir = out_dir.join(&mod_name);
 
@@ -114,9 +113,22 @@ pub fn generate_client(specs_dir: &Path, out_dir: &Path, config: &GenerateConfig
         );
     }
 
-    // ── Dynamic module (only when multiple versions are present) ─────────
-    if config.dynamic && all_parsed.len() > 1 {
-        generate_dynamic(out_dir, &all_parsed);
+    // ── Dynamic module: always canonicalize across every spec on disk ───
+    //
+    // The dynamic module's type surface must be stable across feature-flag
+    // permutations.  `nifictl` forces `dynamic` workspace-wide via Cargo
+    // feature unification, so a single-version-feature build still gets
+    // `dynamic` enabled.  Without this split, that build would produce only
+    // one entry in `per_version_parsed` and the `> 1` guard would skip
+    // dynamic emission entirely — leaving `crate::dynamic` absent while
+    // `builder.rs` and `pagination.rs` reference it under
+    // `#[cfg(feature = "dynamic")]`.
+    if config.dynamic {
+        let all_versions_from_disk = crate::util::discover_spec_versions(specs_dir);
+        if all_versions_from_disk.len() > 1 {
+            let all_parsed_from_disk = parse_specs(specs_dir, &all_versions_from_disk);
+            generate_dynamic(out_dir, &all_parsed_from_disk);
+        }
     }
 
     // ── generated_lib.rs ────────────────────────────────────────────────
@@ -320,7 +332,11 @@ fn generate_lib_rs_fragment(versions: &[String], out_dir: &Path, dynamic: bool) 
     }
 
     // ── dynamic (canonical) — public, gated on `dynamic` feature.
-    if dynamic && versions.len() > 1 {
+    // Emit the module declaration whenever dynamic is enabled, regardless
+    // of how many per-version features are active.  The dynamic module is
+    // always generated from all specs on disk (see generate_client), so
+    // it is always present in $OUT_DIR when config.dynamic is true.
+    if dynamic {
         out.push_str(&format!(
             "#[cfg(feature = \"dynamic\")]\n\
              #[path = \"{out_dir_str}/dynamic/mod.rs\"]\n\
