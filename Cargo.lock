@@ -991,22 +991,8 @@ name = "nifi-integration-tests"
 version = "0.0.0"
 dependencies = [
  "nifi-openapi-gen 0.10.1",
- "nifi-rust-client 0.10.0",
+ "nifi-rust-client 0.10.1",
  "tokio",
-]
-
-[[package]]
-name = "nifi-openapi-gen"
-version = "0.10.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e9f42253acfd4649fd64585975432cbb8d322873e98e1563ae4f273e5751d9e4"
-dependencies = [
- "prettyplease",
- "semver",
- "serde",
- "serde_json",
- "syn",
- "toml_edit 0.25.11+spec-1.1.0",
 ]
 
 [[package]]
@@ -1024,8 +1010,40 @@ dependencies = [
 ]
 
 [[package]]
+name = "nifi-openapi-gen"
+version = "0.10.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5861d392a212e1d28efc4200f857410be7e687793be2304d34ef61de35702249"
+dependencies = [
+ "prettyplease",
+ "semver",
+ "serde",
+ "serde_json",
+ "syn",
+ "toml_edit 0.25.11+spec-1.1.0",
+]
+
+[[package]]
 name = "nifi-rust-client"
 version = "0.10.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a91f630d3ca0042f7d5a4126860695001513cad7281510dfc8b1fae1fa37da68"
+dependencies = [
+ "async-trait",
+ "nifi-openapi-gen 0.10.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "reqwest",
+ "semver",
+ "serde",
+ "serde_json",
+ "snafu",
+ "tokio",
+ "tracing",
+ "url",
+]
+
+[[package]]
+name = "nifi-rust-client"
+version = "0.10.1"
 dependencies = [
  "async-trait",
  "nifi-openapi-gen 0.10.1",
@@ -1042,24 +1060,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "nifi-rust-client"
-version = "0.10.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a91f630d3ca0042f7d5a4126860695001513cad7281510dfc8b1fae1fa37da68"
-dependencies = [
- "async-trait",
- "nifi-openapi-gen 0.10.0",
- "reqwest",
- "semver",
- "serde",
- "serde_json",
- "snafu",
- "tokio",
- "tracing",
- "url",
-]
-
-[[package]]
 name = "nifictl"
 version = "0.1.0"
 dependencies = [
@@ -1067,7 +1067,7 @@ dependencies = [
  "clap_complete",
  "comfy-table",
  "nifi-openapi-gen 0.10.1",
- "nifi-rust-client 0.10.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "nifi-rust-client 0.10.0",
  "serde",
  "serde_json",
  "serde_yaml",
