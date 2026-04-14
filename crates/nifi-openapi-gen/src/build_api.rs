@@ -269,12 +269,23 @@ fn generate_lib_rs_fragment(versions: &[String], out_dir: &Path, dynamic: bool) 
         .map(|v| format!("feature = \"{}\"", version_to_feature(v)))
         .collect();
 
-    // Guard: at least one version feature must be enabled.
-    out.push_str(&format!(
-        "#[cfg(not(any({})))]\n\
-         compile_error!(\"Enable at least one NiFi version feature (e.g. nifi-2-8-0)\");\n\n",
-        version_cfgs.join(", "),
-    ));
+    // Guard: at least one version feature (or `dynamic`) must be enabled.
+    // When `dynamic` is enabled alone (no per-version features), skip the
+    // guard entirely — the dynamic module provides the full API surface.
+    if !dynamic || !versions.is_empty() {
+        // Build the cfg condition. When `dynamic` is also on, passing
+        // `feature = "dynamic"` into the `any()` is sufficient to silence
+        // the error for dynamic-only builds that somehow reach this point.
+        let mut cfgs = version_cfgs.clone();
+        if dynamic {
+            cfgs.push("feature = \"dynamic\"".to_owned());
+        }
+        out.push_str(&format!(
+            "#[cfg(not(any({})))]\n\
+             compile_error!(\"Enable at least one NiFi version feature (e.g. nifi-2-8-0) or the `dynamic` feature\");\n\n",
+            cfgs.join(", "),
+        ));
+    }
 
     // Guard: multiple version features without `dynamic`.
     if versions.len() > 1 {

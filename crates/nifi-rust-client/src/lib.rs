@@ -105,19 +105,19 @@
 //! At least one version feature (or `dynamic`) must be enabled — builds with
 //! none fail at both build-script time and compile time.
 
-// `has_any_version` is a rustc-cfg emitted by build.rs whenever it runs
-// successfully with at least one NiFi version feature enabled. The flag
-// is invisible to users — it isn't a Cargo feature and can't be set
-// externally. If build.rs is ever bypassed entirely (some `cargo doc` /
-// rust-analyzer configurations), the flag is unset and this
-// compile_error! fires with an actionable message. The primary
-// zero-features guard is the runtime check in build.rs itself; this is
-// defence in depth.
-#[cfg(not(has_any_version))]
+// `has_dynamic_or_version` is a rustc-cfg emitted by build.rs whenever it
+// runs successfully with at least one NiFi version feature or the `dynamic`
+// feature enabled. The flag is invisible to users — it isn't a Cargo
+// feature and can't be set externally. If build.rs is ever bypassed
+// entirely (some `cargo doc` / rust-analyzer configurations), the flag is
+// unset and this compile_error! fires with an actionable message. The
+// primary zero-features guard is the runtime check in build.rs itself;
+// this is defence in depth.
+#[cfg(not(has_dynamic_or_version))]
 compile_error!(
-    "nifi-rust-client requires at least one NiFi version feature \
-     to be enabled. Enable one of: `nifi-2-6-0`, `nifi-2-7-2`, \
-     `nifi-2-8-0`, `nifi-2-9-0`."
+    "nifi-rust-client requires at least one NiFi feature to be \
+     enabled. Enable one of: `nifi-2-6-0`, `nifi-2-7-2`, \
+     `nifi-2-8-0`, `nifi-2-9-0`, or `dynamic`."
 );
 
 /// Client builder: configure timeouts, TLS, credentials, and retry before connecting.
