@@ -311,8 +311,13 @@ fn parse_field_type(prop: &Value, json_pointer: &str) -> FieldType {
         }
         Some("boolean") => FieldType::Bool,
         Some("integer") => match prop.get("format").and_then(|f| f.as_str()) {
+            Some("int32") | None => FieldType::I32,
             Some("int64") => FieldType::I64,
-            _ => FieldType::I32,
+            Some(other) => crate::parser_strict::panic_unknown(
+                "integer_format",
+                json_pointer,
+                &format!("format={other:?}"),
+            ),
         },
         Some("number") => FieldType::F64,
         Some("array") => {
@@ -425,7 +430,13 @@ fn parse_tags(
                 "post" => HttpMethod::Post,
                 "put" => HttpMethod::Put,
                 "delete" => HttpMethod::Delete,
-                _ => continue,
+                // Path-item fields that are not HTTP operations — skip.
+                "parameters" | "summary" | "description" | "servers" | "$ref" => continue,
+                other => crate::parser_strict::panic_unknown(
+                    "http_method",
+                    &format!("/paths{raw_path}/{other}"),
+                    &format!("method={other:?}"),
+                ),
             };
             let tags = op["tags"]
                 .as_array()
@@ -492,8 +503,13 @@ fn parse_tags(
                             Some("boolean") => QueryParamType::Bool,
                             Some("integer") => {
                                 match schema.get("format").and_then(|f| f.as_str()) {
+                                    Some("int32") | None => QueryParamType::I32,
                                     Some("int64") => QueryParamType::I64,
-                                    _ => QueryParamType::I32,
+                                    Some(other) => crate::parser_strict::panic_unknown(
+                                        "integer_format",
+                                        &format!("/paths{raw_path}/{http_method}/parameters/{name}"),
+                                        &format!("format={other:?}"),
+                                    ),
                                 }
                             }
                             Some("number") => QueryParamType::F64,
@@ -520,6 +536,25 @@ fn parse_tags(
                     })
                 })
                 .collect();
+
+            // Validate param locations. Unknown `in` values panic with the
+            // full JSON pointer so new OpenAPI extensions are caught at
+            // build time. `header` is passed through for Task B.5 to
+            // collect; `cookie` is reserved (zero cookie params in current
+            // NiFi specs, but the allow-list keeps it from panicking if
+            // one appears).
+            for p in op["parameters"].as_array().unwrap_or(&vec![]).iter() {
+                let in_ = p.get("in").and_then(|v| v.as_str()).unwrap_or("");
+                if matches!(in_, "path" | "query" | "header" | "cookie") {
+                    continue;
+                }
+                let name = p.get("name").and_then(|n| n.as_str()).unwrap_or("?");
+                crate::parser_strict::panic_unknown(
+                    "param_in",
+                    &format!("/paths{raw_path}/{http_method}/parameters/{name}"),
+                    &format!("in={in_:?}"),
+                );
+            }
 
             let request_body = op.get("requestBody");
             let request_type = request_body
