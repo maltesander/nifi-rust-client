@@ -668,7 +668,15 @@ fn emit_method_body_dynamic(ep: &Endpoint, ctx: &DynamicMethodCtx<'_>, out: &mut
     ));
 
     // 2. Path binding — always a local `let path` variable.
-    let mut path_expr = format!("\"{}\".to_string()", ep.path);
+    //
+    // The spec path template uses the *raw* OpenAPI param name
+    // (e.g. `{componentId}`, `{drop-request-id}`), but `PathParam::name`
+    // is snake_cased by the parser. Normalize the template so its
+    // placeholders match the snake_case keys we emit below — otherwise
+    // `.replace(...)` silently fails to substitute and the URL is sent
+    // to NiFi with a literal `{componentId}` segment.
+    let normalized_path = normalize_path_for_format(&ep.path);
+    let mut path_expr = format!("\"{normalized_path}\".to_string()");
     for pp in &ep.path_params {
         let placeholder = format!("{{{}}}", pp.name);
         let value = escape_keyword(&pp.name);

@@ -261,4 +261,107 @@ mod tests {
         assert!(!body.contains("ProcessorsConfigApi"));
         assert!(!body.contains("pub fn config"));
     }
+
+    /// Regression: the dynamic emitter must substitute camelCase path-param
+    /// placeholders. The parser snake_cases `PathParam::name`, so the
+    /// generated `.replace(...)` call must target the *normalized*
+    /// placeholder in the path template — otherwise the URL is sent to NiFi
+    /// with a literal `{componentId}` segment.
+    #[test]
+    fn emit_dynamic_path_replace_matches_template_placeholder() {
+        use crate::parser::PathParam;
+        let mut spec = flow_about_spec();
+        let tag = TagGroup {
+            tag: "ProvenanceEvents".to_string(),
+            struct_name: "ProvenanceEvents".to_string(),
+            module_name: "provenanceevents".to_string(),
+            accessor_fn: "provenance_events".to_string(),
+            types: vec![],
+            endpoints: vec![
+                // camelCase placeholder
+                Endpoint {
+                    method: HttpMethod::Get,
+                    path: "/provenance-events/latest/{componentId}".to_string(),
+                    fn_name: "get_latest_provenance_events".to_string(),
+                    raw_operation_id: "getLatestProvenanceEvents".to_string(),
+                    doc: None,
+                    description: None,
+                    path_params: vec![PathParam {
+                        name: "component_id".to_string(),
+                        doc: None,
+                    }],
+                    request_type: None,
+                    body_kind: None,
+                    body_doc: None,
+                    response_type: None,
+                    response_inner: None,
+                    response_field: None,
+                    response_kind: crate::content_type::ResponseBodyKind::Empty,
+                    query_params: vec![],
+                    header_params: vec![],
+                    success_responses: vec![],
+                    error_responses: vec![],
+                    security: None,
+                },
+                // hyphenated placeholder
+                Endpoint {
+                    method: HttpMethod::Get,
+                    path: "/flowfile-queues/{id}/drop-requests/{drop-request-id}".to_string(),
+                    fn_name: "get_drop_request".to_string(),
+                    raw_operation_id: "getDropRequest".to_string(),
+                    doc: None,
+                    description: None,
+                    path_params: vec![
+                        PathParam {
+                            name: "id".to_string(),
+                            doc: None,
+                        },
+                        PathParam {
+                            name: "drop_request_id".to_string(),
+                            doc: None,
+                        },
+                    ],
+                    request_type: None,
+                    body_kind: None,
+                    body_doc: None,
+                    response_type: None,
+                    response_inner: None,
+                    response_field: None,
+                    response_kind: crate::content_type::ResponseBodyKind::Empty,
+                    query_params: vec![],
+                    header_params: vec![],
+                    success_responses: vec![],
+                    error_responses: vec![],
+                    security: None,
+                },
+            ],
+        };
+        spec.tags.push(tag);
+        let canonical = canonicalize(&[("2.8.0".to_string(), spec)]);
+        let index = EndpointIndex::build(&canonical);
+        let files = emit_api(&canonical, &index);
+        let body = &files
+            .iter()
+            .find(|(n, _)| n == "provenanceevents.rs")
+            .unwrap()
+            .1;
+
+        // Every .replace("{X}", ...) call must target a placeholder that
+        // actually exists in the path template written on the previous line.
+        for method_body in body.split("pub async fn").skip(1) {
+            let path_line = method_body
+                .lines()
+                .find(|l| l.contains("let path ="))
+                .unwrap_or_else(|| panic!("no path binding: {method_body}"));
+            for rep_line in method_body.lines().filter(|l| l.contains(".replace(\"{")) {
+                let start = rep_line.find("\"{").unwrap() + 1;
+                let end = start + rep_line[start..].find('}').unwrap() + 1;
+                let placeholder = &rep_line[start..end];
+                assert!(
+                    path_line.contains(placeholder),
+                    "generated dynamic body has .replace({placeholder}) but path line does not contain that placeholder.\n path_line: {path_line}\n  rep_line: {rep_line}",
+                );
+            }
+        }
+    }
 }
