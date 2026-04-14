@@ -636,9 +636,9 @@ dependencies = [
 
 [[package]]
 name = "hyper-rustls"
-version = "0.27.8"
+version = "0.27.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c2b52f86d1d4bc0d6b4e6826d960b1b333217e07d36b882dca570a5e1c48895b"
+checksum = "33ca68d021ef39cf6463ab54c1d0f5daf03377b70561305bb89a8f83aab66e0f"
 dependencies = [
  "http",
  "hyper",
@@ -990,23 +990,9 @@ dependencies = [
 name = "nifi-integration-tests"
 version = "0.0.0"
 dependencies = [
- "nifi-openapi-gen 0.10.0",
+ "nifi-openapi-gen 0.10.1",
  "nifi-rust-client 0.10.0",
  "tokio",
-]
-
-[[package]]
-name = "nifi-openapi-gen"
-version = "0.10.0"
-dependencies = [
- "clap",
- "prettyplease",
- "semver",
- "serde",
- "serde_json",
- "syn",
- "tempfile",
- "toml_edit 0.25.11+spec-1.1.0",
 ]
 
 [[package]]
@@ -1024,11 +1010,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "nifi-openapi-gen"
+version = "0.10.1"
+dependencies = [
+ "clap",
+ "prettyplease",
+ "semver",
+ "serde",
+ "serde_json",
+ "syn",
+ "tempfile",
+ "toml_edit 0.25.11+spec-1.1.0",
+]
+
+[[package]]
 name = "nifi-rust-client"
 version = "0.10.0"
 dependencies = [
  "async-trait",
- "nifi-openapi-gen 0.10.0",
+ "nifi-openapi-gen 0.10.1",
  "reqwest",
  "semver",
  "serde",
@@ -1048,7 +1048,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a91f630d3ca0042f7d5a4126860695001513cad7281510dfc8b1fae1fa37da68"
 dependencies = [
  "async-trait",
- "nifi-openapi-gen 0.10.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "nifi-openapi-gen 0.10.0",
  "reqwest",
  "semver",
  "serde",
@@ -1066,7 +1066,7 @@ dependencies = [
  "clap",
  "clap_complete",
  "comfy-table",
- "nifi-openapi-gen 0.10.0",
+ "nifi-openapi-gen 0.10.1",
  "nifi-rust-client 0.10.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde",
  "serde_json",

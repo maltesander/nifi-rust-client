@@ -14,6 +14,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.1] - 2026-04-14
+
+### Fixed
+
+- Normalize dynamic path template placeholders ([160d46d](https://github.com/maltesander/nifi-rust-client/commit/160d46d))
+
 ## [0.10.0] - 2026-04-14
 
 ### Breaking Changes
@@ -186,6 +192,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Stable method names across NiFi versions via path-based grouping ([a058972](https://github.com/maltesander/nifi-rust-client/commit/a058972))
 
+[0.10.1]: https://github.com/maltesander/nifi-rust-client/compare/gen-v0.10.0...gen-v0.10.1
 [0.10.0]: https://github.com/maltesander/nifi-rust-client/compare/gen-v0.9.0...gen-v0.10.0
 [0.9.0]: https://github.com/maltesander/nifi-rust-client/compare/gen-v0.8.0...gen-v0.9.0
 [0.8.0]: https://github.com/maltesander/nifi-rust-client/compare/gen-v0.7.0...gen-v0.8.0
