@@ -125,10 +125,16 @@ pub fn generate_client(specs_dir: &Path, out_dir: &Path, config: &GenerateConfig
     // `#[cfg(feature = "dynamic")]`.
     if config.dynamic {
         let all_versions_from_disk = crate::util::discover_spec_versions(specs_dir);
-        if all_versions_from_disk.len() > 1 {
-            let all_parsed_from_disk = parse_specs(specs_dir, &all_versions_from_disk);
-            generate_dynamic(out_dir, &all_parsed_from_disk);
+        if all_versions_from_disk.len() < 2 {
+            panic!(
+                "nifi-openapi-gen: `dynamic` feature requires at least 2 NiFi spec versions in {}. \
+                 Found {} version(s). Either disable the `dynamic` feature or add more specs.",
+                specs_dir.display(),
+                all_versions_from_disk.len()
+            );
         }
+        let all_parsed_from_disk = parse_specs(specs_dir, &all_versions_from_disk);
+        generate_dynamic(out_dir, &all_parsed_from_disk);
     }
 
     // ── generated_lib.rs ────────────────────────────────────────────────
