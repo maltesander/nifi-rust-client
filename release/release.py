@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
-"""Release automation for nifi-openapi-gen and nifi-rust-client.
+"""Release automation for nifi-openapi-gen, nifi-rust-client, and nifictl.
 
 Each crate is released independently with prefixed git tags:
   - gen-vX.Y.Z    for nifi-openapi-gen
   - client-vX.Y.Z for nifi-rust-client
+  - ctl-vX.Y.Z    for nifictl
 
 Usage:
     release.py gen <bump>     [--dry-run] [--tag-message MSG]
     release.py client <bump>  [--dry-run] [--skip-integration] [--tag-message MSG]
+    release.py ctl <bump>     [--dry-run] [--tag-message MSG]
 
     bump: major | minor | patch
 
@@ -175,7 +177,7 @@ def _rollback_hint(crate: CrateConfig) -> str:
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description="Release automation for nifi-openapi-gen and nifi-rust-client.",
+        description="Release automation for nifi-openapi-gen, nifi-rust-client, and nifictl.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument(
