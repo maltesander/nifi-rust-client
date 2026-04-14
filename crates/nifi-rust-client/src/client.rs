@@ -443,6 +443,11 @@ impl NifiClient {
     ///
     /// Treats 302 as success in addition to 2xx: NiFi's `GET /access/logout/complete`
     /// responds with a redirect once the logout is complete.
+    ///
+    /// Called from generated static-emitter code; clippy cannot see those
+    /// call sites, and dynamic-only builds skip per-version emission so the
+    /// helper appears unused there.
+    #[allow(dead_code)]
     #[tracing::instrument(skip(self))]
     pub(crate) async fn get_void(
         &self,
@@ -573,6 +578,11 @@ impl NifiClient {
     }
 
     /// POST a JSON body and return the `text/plain` response body.
+    ///
+    /// Called from generated static-emitter code; clippy cannot see those
+    /// call sites, and dynamic-only builds skip per-version emission so the
+    /// helper appears unused there.
+    #[allow(dead_code)]
     #[tracing::instrument(skip(self, body))]
     pub(crate) async fn post_returning_text<B: serde::Serialize>(
         &self,
@@ -594,6 +604,11 @@ impl NifiClient {
     }
 
     /// POST an `application/octet-stream` body and return the `text/plain` response body.
+    ///
+    /// Called from generated static-emitter code; clippy cannot see those
+    /// call sites, and dynamic-only builds skip per-version emission so the
+    /// helper appears unused there.
+    #[allow(dead_code)]
     #[tracing::instrument(skip(self, data))]
     pub(crate) async fn post_octet_stream_returning_text(
         &self,
