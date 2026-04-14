@@ -424,7 +424,6 @@ All methods return `Result<T, NifiError>`. Variants:
 - `NifiError::UnsupportedVersion { detected }` — dynamic mode: unsupported NiFi version
 - `NifiError::UnsupportedEndpoint { endpoint, version }` — dynamic mode: endpoint not available on the detected server version
 - `NifiError::UnsupportedQueryParam { endpoint, param, detected_version, supported_in }` — dynamic mode: query param set to a non-`None` value on a server that does not support it
-- `NifiError::UnsupportedBodyField { endpoint, field, detected_version, supported_in }` — dynamic mode: request-body field set to a non-`None` value on a server that does not support it (reserved; not yet emitted)
 - `NifiError::UnsupportedEnumVariant { variant, type_name, version }` — response enum variant not recognized by this client build
 - `NifiError::MissingField { path }` — end-user code asked for an `Option<T>` that turned out to be `None` (via `RequireField::require` / `require!` macro)
 
