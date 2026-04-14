@@ -551,15 +551,13 @@ fn parse_tags(
                 })
                 .collect();
 
-            // Validate param locations. Unknown `in` values panic with the
-            // full JSON pointer so new OpenAPI extensions are caught at
-            // build time. `header` is passed through for Task B.5 to
-            // collect; `cookie` is reserved (zero cookie params in current
-            // NiFi specs, but the allow-list keeps it from panicking if
-            // one appears).
+            // Validate param locations. Unknown `in` values — including
+            // `cookie` if a future NiFi spec introduces one — panic via
+            // `panic_unknown` so the maintainer must add explicit support
+            // rather than silently losing the parameter.
             for p in op["parameters"].as_array().unwrap_or(&vec![]).iter() {
                 let in_ = p.get("in").and_then(|v| v.as_str()).unwrap_or("");
-                if matches!(in_, "path" | "query" | "header" | "cookie") {
+                if matches!(in_, "path" | "query" | "header") {
                     continue;
                 }
                 let name = p.get("name").and_then(|n| n.as_str()).unwrap_or("?");
