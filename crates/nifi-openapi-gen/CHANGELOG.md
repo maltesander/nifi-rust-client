@@ -14,6 +14,96 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-04-14
+
+### Breaking Changes
+
+- Flatten public API — client.flow() replaces client.flow_api() ([b254b8b](https://github.com/maltesander/nifi-rust-client/commit/b254b8b))
+
+### Added
+
+- Scaffold shared emit::method module ([64a394f](https://github.com/maltesander/nifi-rust-client/commit/64a394f))
+- Accept dynamic feature without version feature ([f0c60e2](https://github.com/maltesander/nifi-rust-client/commit/f0c60e2))
+- Dynamic emission reads all specs from disk ([4bd7aa6](https://github.com/maltesander/nifi-rust-client/commit/4bd7aa6))
+- Emit dynamic = [] instead of per-version union ([dc993e0](https://github.com/maltesander/nifi-rust-client/commit/dc993e0))
+- Emit header params as method arguments ([bce7cd1](https://github.com/maltesander/nifi-rust-client/commit/bce7cd1))
+- Collect header params into Endpoint ([d88a700](https://github.com/maltesander/nifi-rust-client/commit/d88a700))
+- Rewire build_api.rs to canonical dynamic emitter only ([4b0d960](https://github.com/maltesander/nifi-rust-client/commit/4b0d960))
+- Delete legacy dispatch-based dynamic emitter ([83ec27a](https://github.com/maltesander/nifi-rust-client/commit/83ec27a))
+- Inline dynamic types emitter into canonical module ([cdb43b7](https://github.com/maltesander/nifi-rust-client/commit/cdb43b7))
+- Emit DetectedVersion + SUPPORTED_VERSIONS from canonical availability emitter ([06b1eb8](https://github.com/maltesander/nifi-rust-client/commit/06b1eb8))
+- Orchestrate dynamic_v2 emit (availability + types + api + mod) ([661b891](https://github.com/maltesander/nifi-rust-client/commit/661b891))
+- Emit full canonical api with sub-groups, params, body kinds ([3cd51a9](https://github.com/maltesander/nifi-rust-client/commit/3cd51a9))
+- Emit canonical api stubs for no-arg GETs in dynamic_v2 ([52d4618](https://github.com/maltesander/nifi-rust-client/commit/52d4618))
+- Emit canonical dynamic_v2 types via legacy shim ([2cdb06b](https://github.com/maltesander/nifi-rust-client/commit/2cdb06b))
+- Emit Endpoint enum and availability tables for dynamic_v2 ([b7db02b](https://github.com/maltesander/nifi-rust-client/commit/b7db02b))
+- Scaffold dynamic_v2 emit module + endpoint index ([abae7ed](https://github.com/maltesander/nifi-rust-client/commit/abae7ed))
+- Add project function returning per-version ApiSpec ([9de301e](https://github.com/maltesander/nifi-rust-client/commit/9de301e))
+- Populate per_version_specs during canonicalization ([1dfa8c9](https://github.com/maltesander/nifi-rust-client/commit/1dfa8c9))
+- Add per_version_specs field to CanonicalSpec ([2785de8](https://github.com/maltesander/nifi-rust-client/commit/2785de8))
+- Wire canonicalize + non-additive detector into generate pipeline ([c0e2f65](https://github.com/maltesander/nifi-rust-client/commit/c0e2f65))
+- Panic with actionable message on non-additive changes ([6f0d3d7](https://github.com/maltesander/nifi-rust-client/commit/6f0d3d7))
+- Add non-additive override table (empty) ([9d8a515](https://github.com/maltesander/nifi-rust-client/commit/9d8a515))
+- Detect enum variant removal as non-additive ([09c1f69](https://github.com/maltesander/nifi-rust-client/commit/09c1f69))
+- Detect field type changes as non-additive ([64dc793](https://github.com/maltesander/nifi-rust-client/commit/64dc793))
+- Detect field removal as non-additive change ([b583c04](https://github.com/maltesander/nifi-rust-client/commit/b583c04))
+- Detect type removal as non-additive change ([435908b](https://github.com/maltesander/nifi-rust-client/commit/435908b))
+- Detect endpoint removal as non-additive change ([99ecf9e](https://github.com/maltesander/nifi-rust-client/commit/99ecf9e))
+- Add non-additive detector module skeleton ([3001da9](https://github.com/maltesander/nifi-rust-client/commit/3001da9))
+- Canonicalize enum variants with version sets ([94718ea](https://github.com/maltesander/nifi-rust-client/commit/94718ea))
+- Canonicalize types and fields with version sets ([6e63b39](https://github.com/maltesander/nifi-rust-client/commit/6e63b39))
+- Canonicalize endpoints with version sets ([950e99e](https://github.com/maltesander/nifi-rust-client/commit/950e99e))
+- Add canonical spec type skeletons ([f4a7616](https://github.com/maltesander/nifi-rust-client/commit/f4a7616))
+- Add VersionSet for canonical spec metadata ([3d811b1](https://github.com/maltesander/nifi-rust-client/commit/3d811b1))
+- Emit fn_names.txt goldens per spec version ([be16106](https://github.com/maltesander/nifi-rust-client/commit/be16106))
+- Add fn_names golden emitter writing per-version tables ([c3b7aa5](https://github.com/maltesander/nifi-rust-client/commit/c3b7aa5))
+- Add specs_dir to RepoLayout for per-version artifact emitters ([092a1ee](https://github.com/maltesander/nifi-rust-client/commit/092a1ee))
+- Apply naming post-pass in generate binary ([e92723a](https://github.com/maltesander/nifi-rust-client/commit/e92723a))
+- Apply naming overrides and run collision/drift checks in parse_specs ([f98b3b8](https://github.com/maltesander/nifi-rust-client/commit/f98b3b8))
+- Panic on cross-version fn_name drift with actionable message ([4ef7713](https://github.com/maltesander/nifi-rust-client/commit/4ef7713))
+- Panic on same-tag fn_name collision with actionable message ([668cd53](https://github.com/maltesander/nifi-rust-client/commit/668cd53))
+- Add naming module with override application ([33052a4](https://github.com/maltesander/nifi-rust-client/commit/33052a4))
+- Add naming_overrides scaffold for method-name pinning ([d11c4af](https://github.com/maltesander/nifi-rust-client/commit/d11c4af))
+- Strip _N suffix from operationId-derived fn_name ([0f87700](https://github.com/maltesander/nifi-rust-client/commit/0f87700))
+
+### Changed
+
+- Dedupe header-setup and guard emission helpers ([445fc49](https://github.com/maltesander/nifi-rust-client/commit/445fc49))
+- Dedupe static+dynamic emit_method via EmitMode ([d826bab](https://github.com/maltesander/nifi-rust-client/commit/d826bab))
+- Move static emit_method body to emit::method ([ff6f0df](https://github.com/maltesander/nifi-rust-client/commit/ff6f0df))
+- Flatten parser SubGroup via compat shim ([93345ae](https://github.com/maltesander/nifi-rust-client/commit/93345ae))
+- Rename dynamic_v2 to dynamic after legacy deletion ([8e7f0a2](https://github.com/maltesander/nifi-rust-client/commit/8e7f0a2))
+- Derive Debug, Clone on ApiSpec and TagGroup ([fe05c08](https://github.com/maltesander/nifi-rust-client/commit/fe05c08))
+- Drop redundant fields from CanonicalEndpoint and hoist imports ([e7d0f30](https://github.com/maltesander/nifi-rust-client/commit/e7d0f30))
+- Derive Default for VersionSet ([3969038](https://github.com/maltesander/nifi-rust-client/commit/3969038))
+
+### Fixed
+
+- Strict-fail on cookie params instead of silently dropping ([a71d010](https://github.com/maltesander/nifi-rust-client/commit/a71d010))
+- Panic when dynamic enabled with <2 specs on disk ([69eca27](https://github.com/maltesander/nifi-rust-client/commit/69eca27))
+- Tighten parser silent drops ([2150783](https://github.com/maltesander/nifi-rust-client/commit/2150783))
+- Address Phase A code-review findings ([887aa98](https://github.com/maltesander/nifi-rust-client/commit/887aa98))
+- Align integration coverage emitters with post-phase-4b runtime ([d815931](https://github.com/maltesander/nifi-rust-client/commit/d815931))
+- Adapt hand-written wiremock tests to canonical dynamic ([b04a871](https://github.com/maltesander/nifi-rust-client/commit/b04a871))
+- Sort VersionSet iteration in semver order, not lexicographic ([fd9d086](https://github.com/maltesander/nifi-rust-client/commit/fd9d086))
+- Treat inline enum variant additions as additive ([61d8700](https://github.com/maltesander/nifi-rust-client/commit/61d8700))
+- Guard cluster_node_id auto-injection on nodewise flag ([a91b34c](https://github.com/maltesander/nifi-rust-client/commit/a91b34c))
+
+### Documentation
+
+- Rewrite README against current emitter tree ([7d85b19](https://github.com/maltesander/nifi-rust-client/commit/7d85b19))
+
+### Tests
+
+- Adapt imports for canonical dynamic path ([db29eb9](https://github.com/maltesander/nifi-rust-client/commit/db29eb9))
+- Cover canonicalize_or_panic per_version_specs population ([d5c271f](https://github.com/maltesander/nifi-rust-client/commit/d5c271f))
+- Multi-version round-trip byte-identity against real specs ([e29ac8a](https://github.com/maltesander/nifi-rust-client/commit/e29ac8a))
+- Single-version round-trip byte-identity against real specs ([28d99d4](https://github.com/maltesander/nifi-rust-client/commit/28d99d4))
+- Golden detector test against real spec chain ([4db4c5d](https://github.com/maltesander/nifi-rust-client/commit/4db4c5d))
+- Smoke-test canonicalize on real spec chain ([aaae64a](https://github.com/maltesander/nifi-rust-client/commit/aaae64a))
+- Regression test asserting fn_names.txt goldens match regeneration ([2355f76](https://github.com/maltesander/nifi-rust-client/commit/2355f76))
+- Cover strip_trailing_numeric_suffix edge cases ([baeb4b5](https://github.com/maltesander/nifi-rust-client/commit/baeb4b5))
+
 ## [0.9.0] - 2026-04-12
 
 ### Added
@@ -96,6 +186,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Stable method names across NiFi versions via path-based grouping ([a058972](https://github.com/maltesander/nifi-rust-client/commit/a058972))
 
+[0.10.0]: https://github.com/maltesander/nifi-rust-client/compare/gen-v0.9.0...gen-v0.10.0
 [0.9.0]: https://github.com/maltesander/nifi-rust-client/compare/gen-v0.8.0...gen-v0.9.0
 [0.8.0]: https://github.com/maltesander/nifi-rust-client/compare/gen-v0.7.0...gen-v0.8.0
 [0.7.0]: https://github.com/maltesander/nifi-rust-client/compare/gen-v0.6.0...gen-v0.7.0
