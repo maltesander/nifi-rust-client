@@ -77,6 +77,34 @@ mod static_tests {
         assert_eq!(all_ids, (0..250).collect::<Vec<i32>>());
     }
 
+    /// Regression: if the *first* page of a paginated endpoint returns
+    /// a server error, `HistoryPaginator::next_page()` must surface the
+    /// error rather than silently treating it as "no more pages"
+    /// (`Ok(None)`).
+    #[tokio::test]
+    async fn history_paginator_surfaces_error_on_first_page() {
+        let mock = MockServer::start().await;
+
+        Mock::given(method("GET"))
+            .and(path("/nifi-api/flow/history"))
+            .respond_with(ResponseTemplate::new(500).set_body_string("server on fire"))
+            .mount(&mock)
+            .await;
+
+        let client = NifiClientBuilder::new(&mock.uri())
+            .expect("builder")
+            .build()
+            .expect("client");
+        client.set_token("fake-token".to_string()).await;
+
+        let mut paginator = flow_history(&client, HistoryFilter::default(), 100);
+        let first_page = paginator.next_page().await;
+        assert!(
+            first_page.is_err(),
+            "first call should yield Err(..), got {first_page:?}"
+        );
+    }
+
     #[tokio::test]
     async fn static_401_propagation() {
         let mock = MockServer::start().await;
