@@ -1025,24 +1025,6 @@ dependencies = [
 
 [[package]]
 name = "nifi-rust-client"
-version = "0.10.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a91f630d3ca0042f7d5a4126860695001513cad7281510dfc8b1fae1fa37da68"
-dependencies = [
- "async-trait",
- "nifi-openapi-gen 0.10.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "reqwest",
- "semver",
- "serde",
- "serde_json",
- "snafu",
- "tokio",
- "tracing",
- "url",
-]
-
-[[package]]
-name = "nifi-rust-client"
 version = "0.10.1"
 dependencies = [
  "async-trait",
@@ -1060,6 +1042,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "nifi-rust-client"
+version = "0.10.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "38d419b2fbd952048ca772b43ad6d847cc411248f30c58f67b6b15ad008a88d8"
+dependencies = [
+ "async-trait",
+ "nifi-openapi-gen 0.10.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "reqwest",
+ "semver",
+ "serde",
+ "serde_json",
+ "snafu",
+ "tokio",
+ "tracing",
+ "url",
+]
+
+[[package]]
 name = "nifictl"
 version = "0.1.0"
 dependencies = [
@@ -1067,7 +1067,7 @@ dependencies = [
  "clap_complete",
  "comfy-table",
  "nifi-openapi-gen 0.10.1",
- "nifi-rust-client 0.10.0",
+ "nifi-rust-client 0.10.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde",
  "serde_json",
  "serde_yaml",
