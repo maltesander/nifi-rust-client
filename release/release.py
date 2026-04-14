@@ -118,12 +118,14 @@ CRATES = {
             "crates/nifi-rust-client/Cargo.toml",
             "crates/nifi-rust-client/CHANGELOG.md",
             "crates/nifi-rust-client/README.md",
+            "crates/nifi-rust-client/src/lib.rs",
             "README.md",
             "Cargo.lock",
         ],
         readme_shorthand_paths=[
             os.path.join(ROOT, "README.md"),
             os.path.join(ROOT, "crates", "nifi-rust-client", "README.md"),
+            os.path.join(ROOT, "crates", "nifi-rust-client", "src", "lib.rs"),
         ],
         validate_build_dep=True,
     ),
@@ -335,6 +337,8 @@ def update_client_build_dep(new_gen_version, dry_run):
 FEATURE_EXAMPLE_TAGS = [
     ("<!-- STATIC_FEATURE_EXAMPLE_START -->", "<!-- STATIC_FEATURE_EXAMPLE_END -->"),
     ("<!-- DYNAMIC_FEATURE_EXAMPLE_START -->", "<!-- DYNAMIC_FEATURE_EXAMPLE_END -->"),
+    ("<!-- LIB_STATIC_FEATURE_EXAMPLE_START -->", "<!-- LIB_STATIC_FEATURE_EXAMPLE_END -->"),
+    ("<!-- LIB_DYNAMIC_FEATURE_EXAMPLE_START -->", "<!-- LIB_DYNAMIC_FEATURE_EXAMPLE_END -->"),
 ]
 
 
