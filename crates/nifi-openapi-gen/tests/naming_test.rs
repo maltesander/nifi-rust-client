@@ -78,6 +78,7 @@ fn make_endpoint(method: HttpMethod, path: &str, fn_name: &str, raw_op_id: &str)
         response_field: None,
         response_kind: ResponseBodyKind::Empty,
         query_params: vec![],
+        header_params: vec![],
         success_responses: vec![],
         error_responses: vec![],
         security: None,

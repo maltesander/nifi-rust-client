@@ -459,6 +459,7 @@ mod tests {
                 ResponseBodyKind::Empty
             },
             query_params: vec![],
+            header_params: vec![],
             success_responses: vec![],
             error_responses: vec![],
             security: None,
