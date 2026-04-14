@@ -6,8 +6,24 @@
 //! Divergence between static and dynamic lives in `EmitMode` and is
 //! gated on `match mode` inside the helpers.
 
+use std::collections::BTreeMap;
+
+use crate::canonical::VersionSet;
 use crate::parser::{Endpoint, HttpMethod, QueryParam};
 use crate::util::escape_keyword;
+
+/// Extra per-endpoint context the dynamic emitter needs that isn't
+/// available from the plain `Endpoint` struct: the set of NiFi
+/// versions that declare this endpoint, the per-query-param version
+/// set (so optional params only available in a subset of versions
+/// can be guarded), and the canonical `Endpoint::FOO` variant name
+/// used by the runtime availability check.
+pub struct DynamicMethodCtx<'a> {
+    pub endpoint_versions: &'a VersionSet,
+    pub query_param_versions: &'a BTreeMap<String, VersionSet>,
+    pub endpoint_variant: String,
+    pub method_lit: &'static str,
+}
 
 /// Selects whether the emitted method body targets a static
 /// per-version resource struct or the canonical-superset dynamic
@@ -22,7 +38,7 @@ pub enum EmitMode<'a> {
         api_type_path: &'a str,
     },
     /// Canonical-superset dynamic emission.
-    Dynamic,
+    Dynamic(DynamicMethodCtx<'a>),
 }
 
 impl<'a> EmitMode<'a> {
@@ -31,7 +47,7 @@ impl<'a> EmitMode<'a> {
     pub fn client_expr(&self) -> &'static str {
         match self {
             EmitMode::Static { .. } => "self.client",
-            EmitMode::Dynamic => "self.client.inner()",
+            EmitMode::Dynamic(_) => "self.client.inner()",
         }
     }
 
@@ -42,7 +58,7 @@ impl<'a> EmitMode<'a> {
             EmitMode::Static { api_type_path, .. } => {
                 format!("{api_type_path}::types::{ty_name}")
             }
-            EmitMode::Dynamic => format!("crate::dynamic::types::{ty_name}"),
+            EmitMode::Dynamic(_) => format!("crate::dynamic::types::{ty_name}"),
         }
     }
 }
@@ -53,18 +69,21 @@ impl<'a> EmitMode<'a> {
 /// block and the struct declaration; this function only appends
 /// the method itself (doc comment + signature + body).
 pub fn emit_method(ep: &Endpoint, mode: &EmitMode<'_>, out: &mut String) {
-    // Skip form-encoded endpoints — they require manual implementations (e.g. NifiClient::login).
-    if ep.body_kind == Some(crate::parser::RequestBodyKind::FormEncoded) {
+    // Skip form-encoded endpoints for static — they require manual
+    // implementations (e.g. NifiClient::login). Dynamic preserves its
+    // existing (somewhat quirky) behavior of emitting a stub that
+    // routes through the normal dispatch fall-through.
+    if matches!(mode, EmitMode::Static { .. })
+        && ep.body_kind == Some(crate::parser::RequestBodyKind::FormEncoded)
+    {
         return;
     }
 
-    // Dynamic-only: emit_method dispatch fills this in C.8.
-    if let EmitMode::Dynamic = mode {
-        // Placeholder for C.8. Static emission path below is the only
-        // active path in C.7.
-    }
-
-    if let Some(doc) = &ep.doc {
+    // Doc comments only in static mode. The dynamic emitter is
+    // intentionally docstring-free to keep per-tag files small.
+    if matches!(mode, EmitMode::Static { .. })
+        && let Some(doc) = &ep.doc
+    {
         out.push_str(&format!("    /// {doc}\n"));
         if let Some(desc) = &ep.description {
             out.push_str("    ///\n");
@@ -81,31 +100,60 @@ pub fn emit_method(ep: &Endpoint, mode: &EmitMode<'_>, out: &mut String) {
         emit_error_and_permission_docs(out, ep);
     }
 
-    let return_ty = crate::emit::common::response_return_type(ep, "crate");
+    let return_ty = match mode {
+        EmitMode::Static { .. } => crate::emit::common::response_return_type(ep, "crate"),
+        EmitMode::Dynamic(_) => dynamic_response_type_for(ep),
+    };
     let return_result = format!("Result<{return_ty}, NifiError>");
 
     let path_param_args: String = ep
         .path_params
         .iter()
-        .map(|p| format!(", {}: &str", escape_keyword(&p.name)))
+        .map(|p| match mode {
+            EmitMode::Static { .. } => format!(", {}: &str", escape_keyword(&p.name)),
+            EmitMode::Dynamic(_) => format!(", {}: &str", escape_keyword(&p.name)),
+        })
         .collect();
 
     use crate::parser::RequestBodyKind;
-    // DELETE endpoints never send a body — ignore body_kind for signature generation.
-    let body_arg = if ep.method == HttpMethod::Delete {
-        String::new()
-    } else if let Some(RequestBodyKind::Json) = &ep.body_kind {
-        let ty = ep.request_type.as_deref().unwrap_or("serde_json::Value");
-        format!(", body: &crate::types::{ty}")
-    } else {
-        crate::emit::common::body_kind_signature(ep.body_kind.as_ref()).to_string()
+    // For static: DELETE endpoints never send a body — ignore body_kind for
+    // signature generation. For dynamic: body args appear on every method
+    // (including DELETE) to preserve existing generator output; `data`
+    // becomes an unused argument for DELETE methods, silenced by the
+    // struct-level `unused_variables` lint.
+    let body_arg = match mode {
+        EmitMode::Static { .. } => {
+            if ep.method == HttpMethod::Delete {
+                String::new()
+            } else if let Some(RequestBodyKind::Json) = &ep.body_kind {
+                let ty = ep.request_type.as_deref().unwrap_or("serde_json::Value");
+                format!(", body: &crate::types::{ty}")
+            } else {
+                crate::emit::common::body_kind_signature(ep.body_kind.as_ref()).to_string()
+            }
+        }
+        EmitMode::Dynamic(_) => match &ep.body_kind {
+            Some(RequestBodyKind::Json) => {
+                if let Some(rt) = &ep.request_type {
+                    format!(", body: &crate::dynamic::types::{rt}")
+                } else {
+                    String::new()
+                }
+            }
+            Some(RequestBodyKind::OctetStream) => ", data: Vec<u8>".to_string(),
+            Some(RequestBodyKind::Multipart) => ", filename: &str, data: Vec<u8>".to_string(),
+            _ => String::new(),
+        },
     };
 
     let query_param_args: String = ep
         .query_params
         .iter()
         .map(|qp| {
-            let rust_type = query_param_rust_type(qp);
+            let rust_type = match mode {
+                EmitMode::Static { .. } => query_param_rust_type_static(qp),
+                EmitMode::Dynamic(_) => query_param_rust_type_dynamic(qp),
+            };
             if qp.required {
                 format!(", {}: {rust_type}", escape_keyword(&qp.rust_name))
             } else {
@@ -126,11 +174,22 @@ pub fn emit_method(ep: &Endpoint, mode: &EmitMode<'_>, out: &mut String) {
         })
         .collect();
 
+    // Dynamic reorders args: path, query, header, body — but so does static.
+    // Dynamic's existing output puts query before header which matches static.
     out.push_str(&format!(
         "    pub async fn {fn_name}(&self{path_param_args}{query_param_args}{header_param_args}{body_arg}) -> {return_result} {{\n",
         fn_name = ep.fn_name,
     ));
-    out.push_str(&emit_method_body(ep));
+
+    match mode {
+        EmitMode::Static { .. } => {
+            out.push_str(&emit_method_body_static(ep));
+        }
+        EmitMode::Dynamic(ctx) => {
+            emit_method_body_dynamic(ep, ctx, out);
+        }
+    }
+
     out.push_str("    }\n\n");
 }
 
@@ -235,7 +294,7 @@ fn camel_hyphen_to_snake(s: &str) -> String {
     out
 }
 
-fn query_param_rust_type(qp: &QueryParam) -> String {
+fn query_param_rust_type_static(qp: &QueryParam) -> String {
     use crate::parser::QueryParamType;
     match &qp.ty {
         QueryParamType::Str => "&str".to_string(),
@@ -251,6 +310,22 @@ fn query_param_rust_type(qp: &QueryParam) -> String {
                 .expect("enum param must have type name");
             format!("crate::types::{type_name}")
         }
+    }
+}
+
+fn query_param_rust_type_dynamic(qp: &QueryParam) -> String {
+    use crate::parser::QueryParamType::*;
+    match &qp.ty {
+        Str => "&str".to_string(),
+        Bool => "bool".to_string(),
+        I32 => "i32".to_string(),
+        I64 => "i64".to_string(),
+        F64 => "f64".to_string(),
+        Enum(_) => qp
+            .enum_type_name
+            .as_ref()
+            .map(|n| format!("crate::dynamic::types::{n}"))
+            .unwrap_or_else(|| "&str".to_string()),
     }
 }
 
@@ -290,7 +365,9 @@ fn emit_headers_setup(ep: &Endpoint) -> (String, String) {
     (prelude, "__headers.as_slice()".to_string())
 }
 
-fn emit_method_body(ep: &Endpoint) -> String {
+// ───────────────────────────── Static body ─────────────────────────────
+
+fn emit_method_body_static(ep: &Endpoint) -> String {
     let path_expr = if ep.path_params.is_empty() {
         format!("\"{}\"", ep.path)
     } else {
@@ -303,7 +380,7 @@ fn emit_method_body(ep: &Endpoint) -> String {
 
     // If no query params, use the existing simple helpers.
     if ep.query_params.is_empty() {
-        return emit_simple_method_body(ep, &path_expr, has_inner, inner_field);
+        return emit_simple_method_body_static(ep, &path_expr, has_inner, inner_field);
     }
 
     // Build query vec construction code.
@@ -412,13 +489,13 @@ fn emit_method_body(ep: &Endpoint) -> String {
         HttpMethod::Put => {
             // No PUT endpoints with query params in the current spec.
             // Fall back to the simple helpers.
-            emit_simple_method_body(ep, &path_expr, has_inner, inner_field)
+            emit_simple_method_body_static(ep, &path_expr, has_inner, inner_field)
         }
     }
 }
 
 /// The original emit_method_body logic, used when there are no query params.
-fn emit_simple_method_body(
+fn emit_simple_method_body_static(
     ep: &Endpoint,
     path_expr: &str,
     has_inner: bool,
@@ -558,6 +635,325 @@ fn emit_simple_method_body(
                         format!("{headers_prelude}        self.client.put_void_no_body({path_expr}, {header_arg}).await\n")
                     }
                 }
+            }
+        }
+    }
+}
+
+// ──────────────────────────── Dynamic body ────────────────────────────
+
+fn dynamic_response_type_for(ep: &Endpoint) -> String {
+    use crate::content_type::ResponseBodyKind;
+    match (&ep.response_kind, &ep.response_inner, &ep.response_type) {
+        (ResponseBodyKind::Empty, _, _) => "()".to_string(),
+        (ResponseBodyKind::Text | ResponseBodyKind::Xml, _, _) => "String".to_string(),
+        (ResponseBodyKind::OctetStream | ResponseBodyKind::Wildcard, _, _) => {
+            "Vec<u8>".to_string()
+        }
+        (_, Some(inner), _) => format!("crate::dynamic::types::{inner}"),
+        (_, _, Some(rt)) => format!("crate::dynamic::types::{rt}"),
+        _ => "()".to_string(),
+    }
+}
+
+fn emit_method_body_dynamic(ep: &Endpoint, ctx: &DynamicMethodCtx<'_>, out: &mut String) {
+    // 1. require_endpoint prelude
+    out.push_str(&format!(
+        "        self.client.require_endpoint(Endpoint::{variant}).await?;\n",
+        variant = ctx.endpoint_variant,
+    ));
+
+    // 2. Path binding — always a local `let path` variable.
+    let mut path_expr = format!("\"{}\".to_string()", ep.path);
+    for pp in &ep.path_params {
+        let placeholder = format!("{{{}}}", pp.name);
+        let value = escape_keyword(&pp.name);
+        path_expr = format!("{path_expr}.replace(\"{placeholder}\", {value})");
+    }
+    out.push_str(&format!("        let path = {path_expr};\n"));
+
+    // 3. Query vec
+    let has_query = !ep.query_params.is_empty();
+    if has_query {
+        out.push_str("        let mut query: Vec<(&str, String)> = Vec::new();\n");
+        for qp in &ep.query_params {
+            emit_query_push_dynamic(out, ep, ctx, qp);
+        }
+    }
+
+    // 4. Header setup
+    let header_arg = emit_headers_setup_dynamic(out, ep);
+
+    // 5. Tracing
+    out.push_str(&format!(
+        "        tracing::debug!(method = \"{method_lit}\", path = path.as_str(), \"NiFi API request\");\n",
+        method_lit = ctx.method_lit,
+    ));
+
+    // 6. Dispatch
+    emit_dispatch_dynamic(out, ep, has_query, &header_arg);
+}
+
+fn emit_headers_setup_dynamic(out: &mut String, ep: &Endpoint) -> String {
+    if ep.header_params.is_empty() {
+        return "&[]".to_string();
+    }
+    if ep.header_params.iter().all(|h| h.required) {
+        let pairs: Vec<String> = ep
+            .header_params
+            .iter()
+            .map(|h| format!("(\"{}\", {})", h.name, h.rust_name))
+            .collect();
+        return format!("&[{}]", pairs.join(", "));
+    }
+    // At least one optional: build a Vec.
+    out.push_str("        let mut __headers: Vec<(&str, &str)> = Vec::new();\n");
+    for hp in &ep.header_params {
+        if hp.required {
+            out.push_str(&format!(
+                "        __headers.push((\"{}\", {}));\n",
+                hp.name, hp.rust_name
+            ));
+        } else {
+            out.push_str(&format!(
+                "        if let Some(v) = {} {{\n            __headers.push((\"{}\", v));\n        }}\n",
+                hp.rust_name, hp.name
+            ));
+        }
+    }
+    "__headers.as_slice()".to_string()
+}
+
+fn emit_query_push_dynamic(
+    out: &mut String,
+    _ep: &Endpoint,
+    ctx: &DynamicMethodCtx<'_>,
+    qp: &QueryParam,
+) {
+    let qp_versions = ctx
+        .query_param_versions
+        .get(&qp.name)
+        .cloned()
+        .unwrap_or_else(|| ctx.endpoint_versions.clone());
+    let needs_guard = qp_versions != *ctx.endpoint_versions;
+
+    let escaped_rust_name = escape_keyword(&qp.rust_name);
+    let to_string_expr = format!("{escaped_rust_name}.to_string()");
+
+    if qp.required {
+        if needs_guard {
+            emit_guard(out, ctx, &qp.name, &qp_versions);
+        }
+        out.push_str(&format!(
+            "        query.push((\"{name}\", {value}));\n",
+            name = qp.name,
+            value = to_string_expr,
+        ));
+    } else {
+        out.push_str(&format!(
+            "        if let Some({n}) = {n} {{\n",
+            n = escaped_rust_name
+        ));
+        if needs_guard {
+            emit_guard_indented(out, ctx, &qp.name, &qp_versions);
+        }
+        out.push_str(&format!(
+            "            query.push((\"{name}\", {value}));\n",
+            name = qp.name,
+            value = to_string_expr,
+        ));
+        out.push_str("        }\n");
+    }
+}
+
+fn emit_guard(
+    out: &mut String,
+    ctx: &DynamicMethodCtx<'_>,
+    param: &str,
+    versions: &VersionSet,
+) {
+    let variant = &ctx.endpoint_variant;
+    let supported: Vec<String> = versions
+        .to_vec()
+        .into_iter()
+        .map(|v| format!("\"{v}\".to_string()"))
+        .collect();
+    out.push_str(&format!(
+        "        let __detected = self.client.detected_version_str();\n        if !crate::dynamic::availability::query_param_supported(Endpoint::{variant}, \"{param}\", &__detected) {{\n"
+    ));
+    out.push_str(&format!(
+        "            return Err(NifiError::UnsupportedQueryParam {{ endpoint: Endpoint::{variant}.as_str(), param: \"{param}\", detected_version: __detected, supported_in: vec![{}] }});\n",
+        supported.join(", "),
+    ));
+    out.push_str("        }\n");
+}
+
+fn emit_guard_indented(
+    out: &mut String,
+    ctx: &DynamicMethodCtx<'_>,
+    param: &str,
+    versions: &VersionSet,
+) {
+    let variant = &ctx.endpoint_variant;
+    let supported: Vec<String> = versions
+        .to_vec()
+        .into_iter()
+        .map(|v| format!("\"{v}\".to_string()"))
+        .collect();
+    out.push_str(&format!(
+        "            let __detected = self.client.detected_version_str();\n            if !crate::dynamic::availability::query_param_supported(Endpoint::{variant}, \"{param}\", &__detected) {{\n"
+    ));
+    out.push_str(&format!(
+        "                return Err(NifiError::UnsupportedQueryParam {{ endpoint: Endpoint::{variant}.as_str(), param: \"{param}\", detected_version: __detected, supported_in: vec![{}] }});\n",
+        supported.join(", "),
+    ));
+    out.push_str("            }\n");
+}
+
+fn emit_dispatch_dynamic(out: &mut String, ep: &Endpoint, has_query: bool, header_arg: &str) {
+    use crate::content_type::{RequestBodyKind, ResponseBodyKind};
+
+    let return_kind = &ep.response_kind;
+    let request_kind = &ep.body_kind;
+    let returns_unit = matches!(return_kind, ResponseBodyKind::Empty);
+    let returns_text = matches!(return_kind, ResponseBodyKind::Text | ResponseBodyKind::Xml);
+    let returns_bytes = matches!(
+        return_kind,
+        ResponseBodyKind::OctetStream | ResponseBodyKind::Wildcard
+    );
+
+    let path_arg = "&path";
+    let use_query = has_query;
+
+    // ── Unit (Empty) returns ─────────────────────────────────────────────
+    if returns_unit {
+        match (&ep.method, request_kind, use_query) {
+            (HttpMethod::Delete, _, true) => {
+                out.push_str(&format!(
+                    "        self.client.inner().delete_with_query({path_arg}, {header_arg}, &query).await\n"
+                ));
+            }
+            (HttpMethod::Delete, _, false) => {
+                out.push_str(&format!(
+                    "        self.client.inner().delete({path_arg}, {header_arg}).await\n"
+                ));
+            }
+            (HttpMethod::Post, Some(RequestBodyKind::Json), _) => {
+                out.push_str(&format!(
+                    "        self.client.inner().post_void({path_arg}, {header_arg}, body).await\n"
+                ));
+            }
+            (HttpMethod::Post, Some(RequestBodyKind::OctetStream), _) => {
+                out.push_str(&format!(
+                    "        self.client.inner().post_void_octet_stream({path_arg}, {header_arg}, data).await\n"
+                ));
+            }
+            (HttpMethod::Post, _, _) => {
+                out.push_str(&format!(
+                    "        self.client.inner().post_void_no_body({path_arg}, {header_arg}).await\n"
+                ));
+            }
+            (HttpMethod::Put, Some(RequestBodyKind::Json), _) => {
+                out.push_str(&format!(
+                    "        self.client.inner().put_void({path_arg}, {header_arg}, body).await\n"
+                ));
+            }
+            (HttpMethod::Put, _, _) => {
+                out.push_str(&format!(
+                    "        self.client.inner().put_void_no_body({path_arg}, {header_arg}).await\n"
+                ));
+            }
+            _ => {
+                out.push_str(&format!(
+                    "        self.client.inner().get_void_with_query({path_arg}, {header_arg}, &[]).await\n"
+                ));
+            }
+        }
+        return;
+    }
+
+    // ── Text / bytes returns ─────────────────────────────────────────────
+    if returns_text {
+        if use_query {
+            out.push_str(
+                "        todo!(\"text GET with query params not implemented in dynamic\")\n",
+            );
+        } else {
+            out.push_str(&format!(
+                "        self.client.inner().get_text({path_arg}, {header_arg}).await\n"
+            ));
+        }
+        return;
+    }
+
+    if returns_bytes {
+        if use_query {
+            out.push_str(&format!(
+                "        self.client.inner().get_bytes_with_query({path_arg}, {header_arg}, &query).await\n"
+            ));
+        } else {
+            out.push_str(&format!(
+                "        self.client.inner().get_bytes({path_arg}, {header_arg}).await\n"
+            ));
+        }
+        return;
+    }
+
+    // ── Non-unit JSON returns ────────────────────────────────────────────
+    let call_for_entity = |helper: &str, header: &str, body: &str, q: &str| -> String {
+        format!("self.client.inner().{helper}({path_arg}, {header}{body}{q}).await?")
+    };
+
+    let (base_helper, body_args, query_args): (&str, &str, String) =
+        match (&ep.method, request_kind, use_query) {
+            (HttpMethod::Get, _, true) => ("get_with_query", "", ", &query".to_string()),
+            (HttpMethod::Get, _, false) => ("get", "", String::new()),
+            (HttpMethod::Delete, _, true) => {
+                ("delete_returning_with_query", "", ", &query".to_string())
+            }
+            (HttpMethod::Delete, _, false) => ("delete_returning", "", String::new()),
+            (HttpMethod::Post, Some(RequestBodyKind::Json), true) => {
+                ("post_with_query", ", body", ", &query".to_string())
+            }
+            (HttpMethod::Post, Some(RequestBodyKind::Json), false) => {
+                ("post", ", body", String::new())
+            }
+            (HttpMethod::Post, Some(RequestBodyKind::OctetStream), _) => {
+                ("post_octet_stream", ", data", String::new())
+            }
+            (HttpMethod::Post, Some(RequestBodyKind::Multipart), _) => {
+                ("post_multipart", ", filename, data", String::new())
+            }
+            (HttpMethod::Post, _, _) => ("post_no_body", "", String::new()),
+            (HttpMethod::Put, Some(RequestBodyKind::Json), true) => {
+                ("put_with_query", ", body", ", &query".to_string())
+            }
+            (HttpMethod::Put, Some(RequestBodyKind::Json), false) => {
+                ("put", ", body", String::new())
+            }
+            (HttpMethod::Put, _, _) => ("put_no_body", "", String::new()),
+        };
+
+    match (&ep.response_inner, &ep.response_field) {
+        (Some(inner), Some(field)) => {
+            let entity = ep.response_type.as_deref().unwrap_or(inner);
+            let call_expr = call_for_entity(base_helper, header_arg, body_args, &query_args);
+            out.push_str(&format!(
+                "        let wrapper: crate::dynamic::types::{entity} = {call_expr};\n"
+            ));
+            out.push_str(&format!(
+                "        Ok(wrapper.{field}.unwrap_or_default())\n"
+            ));
+        }
+        _ => {
+            if let Some(_rt) = ep.response_type.as_deref() {
+                out.push_str(&format!(
+                    "        self.client.inner().{base_helper}({path_arg}, {header_arg}{body_args}{query_args}).await\n"
+                ));
+            } else {
+                out.push_str(&format!(
+                    "        self.client.inner().post_void_no_body({path_arg}, {header_arg}).await\n"
+                ));
             }
         }
     }
