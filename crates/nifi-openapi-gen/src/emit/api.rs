@@ -16,7 +16,7 @@ pub fn emit_api_with_prefix(spec: &ApiSpec, types_prefix: &str) -> Vec<(String, 
     let mut files = vec![];
     files.push(("mod.rs".to_string(), emit_mod(spec)));
     for tag in &spec.tags {
-        let mut content = emit_tag(tag, types_prefix);
+        let mut content = emit_tag(tag);
         if types_prefix != "crate" {
             content = content.replace("crate::types::", &format!("{types_prefix}::types::"));
         }
@@ -45,7 +45,7 @@ fn emit_mod(spec: &ApiSpec) -> String {
     crate::util::format_source(&out)
 }
 
-fn emit_tag(tag: &TagGroup, types_prefix: &str) -> String {
+fn emit_tag(tag: &TagGroup) -> String {
     let mut out = String::new();
     out.push_str("use crate::NifiClient;\nuse crate::NifiError;\n\n");
     out.push_str(&format!(
@@ -56,10 +56,7 @@ fn emit_tag(tag: &TagGroup, types_prefix: &str) -> String {
         "#[allow(private_interfaces, clippy::too_many_arguments, clippy::vec_init_then_push)]\n",
     );
     out.push_str(&format!("impl<'a> {}<'a> {{\n", tag.struct_name));
-    let mode = EmitMode::Static {
-        version: "",
-        api_type_path: types_prefix,
-    };
+    let mode = EmitMode::Static;
     for ep in tag.endpoints.iter() {
         method::emit_method(ep, &mode, &mut out);
     }

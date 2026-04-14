@@ -29,38 +29,12 @@ pub struct DynamicMethodCtx<'a> {
 /// per-version resource struct or the canonical-superset dynamic
 /// resource struct.
 pub enum EmitMode<'a> {
-    /// Static per-version emission. `version` is the semver string
-    /// (e.g. `"2.9.0"`); `api_type_path` is the Rust path prefix used
-    /// when referencing types from this version's type module
-    /// (e.g. `"crate::v2_9_0"`).
-    Static {
-        version: &'a str,
-        api_type_path: &'a str,
-    },
+    /// Static per-version emission. Type-path rewriting is handled
+    /// after the fact by `emit_api_with_prefix` via a string replace,
+    /// so no version or prefix fields are needed here.
+    Static,
     /// Canonical-superset dynamic emission.
     Dynamic(DynamicMethodCtx<'a>),
-}
-
-impl<'a> EmitMode<'a> {
-    /// Expression used to reach the underlying `NifiClient` from the
-    /// current `self`.
-    pub fn client_expr(&self) -> &'static str {
-        match self {
-            EmitMode::Static { .. } => "self.client",
-            EmitMode::Dynamic(_) => "self.client.inner()",
-        }
-    }
-
-    /// Rust path prefix for referencing a type (DTO or enum) from
-    /// generated code.
-    pub fn type_path(&self, ty_name: &str) -> String {
-        match self {
-            EmitMode::Static { api_type_path, .. } => {
-                format!("{api_type_path}::types::{ty_name}")
-            }
-            EmitMode::Dynamic(_) => format!("crate::dynamic::types::{ty_name}"),
-        }
-    }
 }
 
 /// Emit the body of a method for the given endpoint into `out`.
@@ -73,7 +47,7 @@ pub fn emit_method(ep: &Endpoint, mode: &EmitMode<'_>, out: &mut String) {
     // implementations (e.g. NifiClient::login). Dynamic preserves its
     // existing (somewhat quirky) behavior of emitting a stub that
     // routes through the normal dispatch fall-through.
-    if matches!(mode, EmitMode::Static { .. })
+    if matches!(mode, EmitMode::Static)
         && ep.body_kind == Some(crate::parser::RequestBodyKind::FormEncoded)
     {
         return;
@@ -81,7 +55,7 @@ pub fn emit_method(ep: &Endpoint, mode: &EmitMode<'_>, out: &mut String) {
 
     // Doc comments only in static mode. The dynamic emitter is
     // intentionally docstring-free to keep per-tag files small.
-    if matches!(mode, EmitMode::Static { .. })
+    if matches!(mode, EmitMode::Static)
         && let Some(doc) = &ep.doc
     {
         out.push_str(&format!("    /// {doc}\n"));
@@ -101,7 +75,7 @@ pub fn emit_method(ep: &Endpoint, mode: &EmitMode<'_>, out: &mut String) {
     }
 
     let return_ty = match mode {
-        EmitMode::Static { .. } => crate::emit::common::response_return_type(ep, "crate"),
+        EmitMode::Static => crate::emit::common::response_return_type(ep, "crate"),
         EmitMode::Dynamic(_) => dynamic_response_type_for(ep),
     };
     let return_result = format!("Result<{return_ty}, NifiError>");
@@ -110,7 +84,7 @@ pub fn emit_method(ep: &Endpoint, mode: &EmitMode<'_>, out: &mut String) {
         .path_params
         .iter()
         .map(|p| match mode {
-            EmitMode::Static { .. } => format!(", {}: &str", escape_keyword(&p.name)),
+            EmitMode::Static => format!(", {}: &str", escape_keyword(&p.name)),
             EmitMode::Dynamic(_) => format!(", {}: &str", escape_keyword(&p.name)),
         })
         .collect();
@@ -122,7 +96,7 @@ pub fn emit_method(ep: &Endpoint, mode: &EmitMode<'_>, out: &mut String) {
     // becomes an unused argument for DELETE methods, silenced by the
     // struct-level `unused_variables` lint.
     let body_arg = match mode {
-        EmitMode::Static { .. } => {
+        EmitMode::Static => {
             if ep.method == HttpMethod::Delete {
                 String::new()
             } else if let Some(RequestBodyKind::Json) = &ep.body_kind {
@@ -151,7 +125,7 @@ pub fn emit_method(ep: &Endpoint, mode: &EmitMode<'_>, out: &mut String) {
         .iter()
         .map(|qp| {
             let rust_type = match mode {
-                EmitMode::Static { .. } => query_param_rust_type_static(qp),
+                EmitMode::Static => query_param_rust_type_static(qp),
                 EmitMode::Dynamic(_) => query_param_rust_type_dynamic(qp),
             };
             if qp.required {
@@ -182,7 +156,7 @@ pub fn emit_method(ep: &Endpoint, mode: &EmitMode<'_>, out: &mut String) {
     ));
 
     match mode {
-        EmitMode::Static { .. } => {
+        EmitMode::Static => {
             out.push_str(&emit_method_body_static(ep));
         }
         EmitMode::Dynamic(ctx) => {
