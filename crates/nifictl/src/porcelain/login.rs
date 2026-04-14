@@ -13,7 +13,7 @@ fn token_path(context_name: &str) -> PathBuf {
 
 pub async fn login(params: &ResolvedParams, context_name: &str) -> Result<(), CliError> {
     let client = params.build_client().await?;
-    if let Some(token) = client.inner().token().await {
+    if let Some(token) = client.token().await {
         std::fs::create_dir_all(token_dir())?;
         std::fs::write(token_path(context_name), &token)?;
         eprintln!("Logged in to {} (token cached)", params.url);

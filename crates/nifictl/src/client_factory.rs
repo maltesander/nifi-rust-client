@@ -130,7 +130,7 @@ impl ResolvedParams {
                 client.login(username, password).await?;
             }
             ResolvedAuth::Token(token) => {
-                client.inner().set_token(token.clone()).await;
+                client.set_token(token.clone()).await;
                 client.detect_version().await?;
             }
             ResolvedAuth::Mtls { .. } => {

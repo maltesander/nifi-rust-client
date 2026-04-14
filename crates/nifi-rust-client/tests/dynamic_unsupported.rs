@@ -53,7 +53,7 @@ async fn setting_unsupported_query_param_returns_unsupported_query_param_error()
     let client = DynamicClient::new(inner);
 
     // Set a fake token so authenticated helpers don't warn about missing credentials.
-    client.inner().set_token("fake-jwt".to_string()).await;
+    client.set_token("fake-jwt".to_string()).await;
 
     // Prime the version cache: this calls GET /flow/about and records "2.6.0".
     client.detect_version().await.expect("detect_version");

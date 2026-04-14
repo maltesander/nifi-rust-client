@@ -128,6 +128,28 @@ impl DynamicClient {
         self.client.logout().await
     }
 
+    /// Return the current bearer token, if any.
+    ///
+    /// Useful for persisting the token between process restarts.
+    /// See [`NifiClient::token`] for details.
+    pub async fn token(&self) -> Option<String> {
+        self.client.token().await
+    }
+
+    /// Restore a previously obtained bearer token.
+    ///
+    /// See [`NifiClient::set_token`] for details.
+    pub async fn set_token(&self, token: String) {
+        self.client.set_token(token).await;
+    }
+
+    /// Re-authenticate using the configured [`AuthProvider`](crate::config::auth::AuthProvider).
+    ///
+    /// See [`NifiClient::authenticate`] for details.
+    pub async fn authenticate(&self) -> Result<(), NifiError> {
+        self.client.authenticate().await
+    }
+
     /// Detect the NiFi server version via `GET /flow/about`. Idempotent —
     /// subsequent calls return the cached result. Honors the configured
     /// [`VersionResolutionStrategy`](crate::dynamic::strategy::VersionResolutionStrategy).
