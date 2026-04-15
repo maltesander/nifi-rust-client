@@ -53,11 +53,7 @@ pub fn emit_method(ep: &Endpoint, mode: &EmitMode<'_>, out: &mut String) {
         return;
     }
 
-    // Doc comments only in static mode. The dynamic emitter is
-    // intentionally docstring-free to keep per-tag files small.
-    if matches!(mode, EmitMode::Static)
-        && let Some(doc) = &ep.doc
-    {
+    if let Some(doc) = &ep.doc {
         out.push_str(&format!("    /// {doc}\n"));
         if let Some(desc) = &ep.description {
             out.push_str("    ///\n");
