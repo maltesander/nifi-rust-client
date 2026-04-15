@@ -1,5 +1,10 @@
 # nifictl
 
+[![CI](https://github.com/maltesander/nifictl/actions/workflows/ci.yml/badge.svg)](https://github.com/maltesander/nifictl/actions/workflows/ci.yml)
+[![Crates.io](https://img.shields.io/crates/v/nifictl.svg)](https://crates.io/crates/nifictl)
+[![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](https://github.com/maltesander/nifictl/blob/main/LICENSE)
+![MSRV: 1.88](https://img.shields.io/badge/MSRV-1.88-blue.svg)
+
 CLI tool for [Apache NiFi](https://nifi.apache.org) 2.x, built on
 [nifi-rust-client](../nifi-rust-client/).
 
