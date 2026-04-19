@@ -215,6 +215,17 @@ fn emit_dynamic_type_file(
     owner_tag: Option<&str>,
 ) -> String {
     let mut out = String::new();
+    let tag_label = owner_tag.unwrap_or("shared / cross-tag");
+    out.push_str(&format!(
+        "//! Generated dynamic types for the `{tag_label}` API tag.\n"
+    ));
+    out.push_str("//!\n");
+    out.push_str(
+        "//! Includes union DTOs, entity wrappers, standalone string enums, and\n",
+    );
+    out.push_str(
+        "//! field-level enum helpers (`Option<String>` + typed companion).\n",
+    );
     out.push_str("#![allow(dead_code, private_interfaces, unused_imports)]\n\n");
     out.push_str("use serde::{Deserialize, Serialize};\n");
     out.push_str("use super::*;\n\n");
@@ -1242,5 +1253,32 @@ mod tests {
         );
         // Helper still emitted.
         assert!(output.contains("pub enum ScheduleComponentsEntityState"));
+    }
+
+    #[test]
+    fn dynamic_type_files_have_module_level_doc() {
+        let dto = TypeDef {
+            name: "AboutDto".to_string(),
+            kind: TypeKind::Dto,
+            fields: vec![make_field("version", FieldType::Opt(Box::new(FieldType::Str)))],
+            doc: None,
+        };
+        let flow_tag = make_tag("flow", vec!["AboutDto"]);
+        let spec = make_spec_with_tags(vec![dto], vec![flow_tag]);
+        let files = emit_types_from_specs(&[("2.8.0", &spec)]);
+        for (name, content) in &files {
+            if name == "mod.rs" {
+                continue;
+            }
+            assert!(
+                content.starts_with("//!"),
+                "{name} should start with //! doc block; got:\n{}",
+                &content[..content.len().min(120)]
+            );
+            assert!(
+                content.contains("Generated dynamic types"),
+                "{name} module doc missing"
+            );
+        }
     }
 }
