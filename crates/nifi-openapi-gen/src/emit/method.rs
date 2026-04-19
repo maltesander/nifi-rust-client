@@ -54,11 +54,7 @@ pub fn endpoint_has_stream_variant(ep: &Endpoint) -> bool {
 /// the method itself (doc comment + signature + body).
 pub fn emit_method(ep: &Endpoint, mode: &EmitMode<'_>, out: &mut String) {
     emit_method_variant(ep, mode, false, out);
-    // Stream variant is emitted only in static mode for now; Task 7 adds
-    // dynamic-mode support. Without this gate, the dynamic body builder
-    // would emit a `get_bytes(...)` call into a function whose declared
-    // return type is `crate::BytesStream`, producing a type mismatch.
-    if endpoint_has_stream_variant(ep) && matches!(mode, EmitMode::Static) {
+    if endpoint_has_stream_variant(ep) {
         emit_method_variant(ep, mode, true, out);
     }
 }
@@ -102,7 +98,7 @@ fn emit_method_variant(ep: &Endpoint, mode: &EmitMode<'_>, stream: bool, out: &m
     } else {
         match mode {
             EmitMode::Static => crate::emit::common::response_return_type(ep, "crate"),
-            EmitMode::Dynamic(_) => dynamic_response_type_for(ep, false),
+            EmitMode::Dynamic(_) => dynamic_response_type_for(ep, stream),
         }
     };
     let return_result = format!("Result<{return_ty}, NifiError>");
@@ -690,12 +686,17 @@ fn emit_simple_method_body_static(
 
 // ──────────────────────────── Dynamic body ────────────────────────────
 
-fn dynamic_response_type_for(ep: &Endpoint, _stream: bool) -> String {
+fn dynamic_response_type_for(ep: &Endpoint, stream: bool) -> String {
     use crate::content_type::ResponseBodyKind;
     match (&ep.response_kind, &ep.response_inner, &ep.response_type) {
         (ResponseBodyKind::Empty, _, _) => "()".to_string(),
         (ResponseBodyKind::Text | ResponseBodyKind::Xml, _, _) => "String".to_string(),
-        (ResponseBodyKind::OctetStream | ResponseBodyKind::Wildcard, _, _) => "Vec<u8>".to_string(),
+        (ResponseBodyKind::OctetStream | ResponseBodyKind::Wildcard, _, _) if stream => {
+            "crate::BytesStream".to_string()
+        }
+        (ResponseBodyKind::OctetStream | ResponseBodyKind::Wildcard, _, _) => {
+            "Vec<u8>".to_string()
+        }
         (_, Some(inner), _) => format!("crate::dynamic::types::{inner}"),
         (_, _, Some(rt)) => format!("crate::dynamic::types::{rt}"),
         _ => "()".to_string(),
@@ -705,7 +706,7 @@ fn dynamic_response_type_for(ep: &Endpoint, _stream: bool) -> String {
 fn emit_method_body_dynamic(
     ep: &Endpoint,
     ctx: &DynamicMethodCtx<'_>,
-    _stream: bool,
+    stream: bool,
     out: &mut String,
 ) {
     // 1. require_endpoint prelude
@@ -750,7 +751,7 @@ fn emit_method_body_dynamic(
     ));
 
     // 6. Dispatch
-    emit_dispatch_dynamic(out, ep, has_query, &header_arg);
+    emit_dispatch_dynamic(out, ep, has_query, &header_arg, stream);
 }
 
 fn emit_headers_setup_dynamic(out: &mut String, ep: &Endpoint) -> String {
@@ -831,7 +832,13 @@ fn emit_guard(
     out.push_str(&format!("{indent}}}\n"));
 }
 
-fn emit_dispatch_dynamic(out: &mut String, ep: &Endpoint, has_query: bool, header_arg: &str) {
+fn emit_dispatch_dynamic(
+    out: &mut String,
+    ep: &Endpoint,
+    has_query: bool,
+    header_arg: &str,
+    stream: bool,
+) {
     use crate::content_type::{RequestBodyKind, ResponseBodyKind};
 
     let return_kind = &ep.response_kind;
@@ -908,13 +915,18 @@ fn emit_dispatch_dynamic(out: &mut String, ep: &Endpoint, has_query: bool, heade
     }
 
     if returns_bytes {
+        let (no_q_helper, q_helper) = if stream {
+            ("get_bytes_stream", "get_bytes_stream_with_query")
+        } else {
+            ("get_bytes", "get_bytes_with_query")
+        };
         if use_query {
             out.push_str(&format!(
-                "        self.client.inner().get_bytes_with_query({path_arg}, {header_arg}, &query).await\n"
+                "        self.client.inner().{q_helper}({path_arg}, {header_arg}, &query).await\n"
             ));
         } else {
             out.push_str(&format!(
-                "        self.client.inner().get_bytes({path_arg}, {header_arg}).await\n"
+                "        self.client.inner().{no_q_helper}({path_arg}, {header_arg}).await\n"
             ));
         }
         return;
