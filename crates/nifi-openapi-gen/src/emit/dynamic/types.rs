@@ -244,11 +244,24 @@ fn emit_dynamic_type_file(
         .filter(|(_, h)| h.owner_tag.as_deref() == owner_tag)
         .collect();
     helpers_for_file.sort_by(|a, b| a.0.cmp(b.0));
+    let first_helper_doc_marker = helpers_for_file
+        .first()
+        .map(|(_, h)| format!("/// Wire values for `{}::{}`", h.parent_dto, h.parent_field));
+
     for (name, helper) in helpers_for_file {
         emit_inline_enum_helper(&mut out, name, helper);
     }
 
-    crate::util::format_source(&out)
+    let mut formatted = crate::util::format_source(&out);
+
+    // Add section banner before helpers if any exist. This must happen AFTER
+    // format_source because prettyplease strips line comments, so we inject it
+    // into the formatted output by searching for the first helper's doc comment.
+    if let Some(pos) = first_helper_doc_marker.and_then(|marker| formatted.find(&marker)) {
+        formatted.insert_str(pos, "// ── Inline-enum helpers ──────────────────────────────────────────────\n\n");
+    }
+
+    formatted
 }
 
 /// Emit a complete inline-enum helper block: doc-comment preamble (with optional
@@ -1280,5 +1293,48 @@ mod tests {
                 "{name} module doc missing"
             );
         }
+    }
+
+    #[test]
+    fn helper_section_banner_emitted_when_helpers_present() {
+        // DTO not referenced by any tag ⇒ lands in common.rs with its helper.
+        let dto = TypeDef {
+            name: "DtoWithHelper".to_string(),
+            kind: TypeKind::Dto,
+            fields: vec![Field {
+                rust_name: "state".to_string(),
+                serde_name: "state".to_string(),
+                ty: FieldType::Opt(Box::new(FieldType::Enum(vec!["A".into()]))),
+                doc: None,
+                read_only: false,
+                deprecated: false,
+            }],
+            doc: None,
+        };
+        let spec = make_spec(vec![dto]);
+        let files = emit_types_from_specs(&[("2.8.0", &spec)]);
+        let common = files.iter().find(|(n, _)| n == "common.rs").unwrap().1.as_str();
+        assert!(
+            common.contains("// ── Inline-enum helpers"),
+            "banner missing; got:\n{common}"
+        );
+    }
+
+    #[test]
+    fn helper_section_banner_skipped_when_no_helpers() {
+        // DTO not referenced by any tag, no enum fields ⇒ lands in common.rs with NO helpers.
+        let dto = TypeDef {
+            name: "DtoNoHelper".to_string(),
+            kind: TypeKind::Dto,
+            fields: vec![make_field("version", FieldType::Opt(Box::new(FieldType::Str)))],
+            doc: None,
+        };
+        let spec = make_spec(vec![dto]);
+        let files = emit_types_from_specs(&[("2.8.0", &spec)]);
+        let common = files.iter().find(|(n, _)| n == "common.rs").unwrap().1.as_str();
+        assert!(
+            !common.contains("// ── Inline-enum helpers"),
+            "banner should not appear when there are no helpers"
+        );
     }
 }
