@@ -19,7 +19,6 @@ pub struct NifiClient {
     auth_provider: Option<Arc<dyn AuthProvider>>,
     proxied_entities_chain: Option<String>,
     retry_policy: Option<crate::config::retry::RetryPolicy>,
-    #[allow(dead_code)]
     request_id_header: Option<String>,
 }
 
@@ -937,6 +936,22 @@ impl NifiClient {
         Self::check_void("DELETE", path, resp).await
     }
 
+    /// Attach a fresh UUIDv4 to the request as the configured request-id
+    /// header AND record it on the current tracing span. No-op if the client
+    /// has not been configured with `request_id_header`.
+    ///
+    /// Called from `build_request` and from the request paths that bypass
+    /// `build_request` (`login`, `delete_inner`) so all outgoing requests are
+    /// covered.
+    fn apply_request_id(&self, req: reqwest::RequestBuilder) -> reqwest::RequestBuilder {
+        let Some(header) = self.request_id_header.as_deref() else {
+            return req;
+        };
+        let id = uuid::Uuid::new_v4().to_string();
+        tracing::Span::current().record("request_id", id.as_str());
+        req.header(header, id)
+    }
+
     /// Apply the auth header, proxied-entities chain, and per-request debug
     /// log to a `RequestBuilder`. All HTTP helpers route through this method so
     /// the plumbing lives in exactly one place.
@@ -946,6 +961,7 @@ impl NifiClient {
         path: &str,
         req: reqwest::RequestBuilder,
     ) -> reqwest::RequestBuilder {
+        let req = self.apply_request_id(req);
         tracing::debug!(method, path, "NiFi API request");
 
         let guard = self.token.read().await;
