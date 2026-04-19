@@ -149,3 +149,138 @@ where
         tokio::time::sleep(next).await;
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::sync::Arc;
+    use std::sync::atomic::{AtomicUsize, Ordering};
+
+    #[tokio::test]
+    async fn poll_until_returns_ok_on_first_ready() {
+        let config = WaitConfig {
+            timeout: Duration::from_secs(1),
+            poll_interval: Duration::from_millis(10),
+            initial_delay: Duration::ZERO,
+            cleanup: true,
+        };
+        let fetch = || async { Ok::<i32, NifiError>(42) };
+        let done = |v: &i32| {
+            if *v == 42 {
+                PollOutcome::Ready(())
+            } else {
+                PollOutcome::Pending
+            }
+        };
+        let result = poll_until(&config, "op", fetch, done).await.unwrap();
+        assert_eq!(result, 42);
+    }
+
+    #[tokio::test]
+    async fn poll_until_polls_until_ready() {
+        let counter = Arc::new(AtomicUsize::new(0));
+        let config = WaitConfig {
+            timeout: Duration::from_secs(1),
+            poll_interval: Duration::from_millis(5),
+            initial_delay: Duration::ZERO,
+            cleanup: true,
+        };
+        let c = Arc::clone(&counter);
+        let fetch = move || {
+            let c = Arc::clone(&c);
+            async move {
+                let n = c.fetch_add(1, Ordering::SeqCst);
+                Ok::<usize, NifiError>(n)
+            }
+        };
+        let done = |v: &usize| {
+            if *v >= 3 {
+                PollOutcome::Ready(())
+            } else {
+                PollOutcome::Pending
+            }
+        };
+        let result = poll_until(&config, "op", fetch, done).await.unwrap();
+        assert_eq!(result, 3);
+        assert_eq!(counter.load(Ordering::SeqCst), 4);
+    }
+
+    #[tokio::test]
+    async fn poll_until_times_out() {
+        let config = WaitConfig {
+            timeout: Duration::from_millis(50),
+            poll_interval: Duration::from_millis(10),
+            initial_delay: Duration::ZERO,
+            cleanup: true,
+        };
+        let fetch = || async { Ok::<i32, NifiError>(0) };
+        let done = |_: &i32| PollOutcome::Pending;
+        let err = poll_until(&config, "test_op", fetch, done).await.unwrap_err();
+        match err {
+            NifiError::Timeout { operation } => assert_eq!(operation, "test_op"),
+            other => panic!("expected Timeout, got {other:?}"),
+        }
+    }
+
+    #[tokio::test]
+    async fn poll_until_propagates_failed_outcome() {
+        let config = WaitConfig::default();
+        let fetch = || async { Ok::<i32, NifiError>(1) };
+        let done = |_: &i32| {
+            PollOutcome::Failed(NifiError::Api {
+                status: 500,
+                message: "boom".to_string(),
+            })
+        };
+        let err = poll_until(&config, "op", fetch, done).await.unwrap_err();
+        match err {
+            NifiError::Api { status, message } => {
+                assert_eq!(status, 500);
+                assert_eq!(message, "boom");
+            }
+            other => panic!("expected Api, got {other:?}"),
+        }
+    }
+
+    #[tokio::test]
+    async fn poll_until_propagates_fetch_error() {
+        let config = WaitConfig::default();
+        let fetch = || async {
+            Err::<i32, NifiError>(NifiError::Api {
+                status: 404,
+                message: "not found".to_string(),
+            })
+        };
+        let done = |_: &i32| PollOutcome::Pending;
+        let err = poll_until(&config, "op", fetch, done).await.unwrap_err();
+        assert!(matches!(err, NifiError::Api { status: 404, .. }));
+    }
+
+    #[tokio::test]
+    async fn poll_until_honors_initial_delay() {
+        let config = WaitConfig {
+            timeout: Duration::from_secs(1),
+            poll_interval: Duration::from_millis(10),
+            initial_delay: Duration::from_millis(30),
+            cleanup: true,
+        };
+        let counter = Arc::new(AtomicUsize::new(0));
+        let start = tokio::time::Instant::now();
+        let c = Arc::clone(&counter);
+        let fetch = move || {
+            let c = Arc::clone(&c);
+            async move {
+                c.fetch_add(1, Ordering::SeqCst);
+                Ok::<i32, NifiError>(1)
+            }
+        };
+        let done = |_: &i32| PollOutcome::Ready(());
+        let _ = poll_until(&config, "op", fetch, done).await.unwrap();
+        let elapsed = start.elapsed();
+        assert!(
+            elapsed >= Duration::from_millis(25),
+            "initial_delay not honored, elapsed = {elapsed:?}"
+        );
+        assert_eq!(counter.load(Ordering::SeqCst), 1);
+    }
+}
