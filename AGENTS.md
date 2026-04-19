@@ -219,6 +219,34 @@ For endpoints that return a JSON envelope wrapping the real payload (e.g. `{ "ab
 - Define a `pub` DTO struct (e.g. `AboutDto`) with the actual fields.
 - The API method unwraps the envelope and returns the DTO directly.
 
+#### Field-level enum helpers (dynamic mode)
+
+In dynamic mode, DTO fields whose OpenAPI schema declares a string enum
+keep their wire type as `Option<String>` (so unknown server values still
+deserialize), and a sibling helper enum is generated alongside the DTO:
+
+```rust
+let body = ScheduleComponentsEntity {
+    id: Some(group_id.to_string()),
+    state: Some(ScheduleComponentsEntityState::Running.into()),
+    ..Default::default()
+};
+
+if let Some(state) = entity.state.as_deref()
+    .and_then(ScheduleComponentsEntityState::from_wire)
+{
+    // typed match
+}
+```
+
+Helpers are `#[non_exhaustive]`, carry no serde derives, and provide
+`as_str` / `from_wire` / `Display` / `From<T> for String`. Variants are
+the union across supported NiFi versions, sorted alphabetically by wire
+value.
+
+Static mode also exposes `as_str()` on its (typed) field-level enums for
+cross-mode parity.
+
 ### Authentication
 
 NiFi 2.x uses JWT tokens. The client supports multiple authentication strategies
