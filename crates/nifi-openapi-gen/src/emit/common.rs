@@ -44,6 +44,16 @@ pub(crate) fn response_return_type(ep: &Endpoint, types_prefix: &str) -> String 
     }
 }
 
+/// Streaming-variant return type. Only valid for endpoints where
+/// `response_kind` is `OctetStream` or `Wildcard`.
+pub(crate) fn response_stream_return_type(types_prefix: &str) -> String {
+    if types_prefix.is_empty() {
+        "crate::BytesStream".into()
+    } else {
+        format!("{types_prefix}::BytesStream")
+    }
+}
+
 /// Body parameter signature fragment for non-JSON request bodies.
 ///
 /// Returns the static `, name: type` fragment (including the leading `, `) that

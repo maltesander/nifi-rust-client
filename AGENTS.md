@@ -71,6 +71,8 @@ async fn put_void_no_body(&self, path: &str) -> Result<(), NifiError>
 async fn delete(&self, path: &str) -> Result<(), NifiError>
 async fn post_octet_stream<T: DeserializeOwned>(&self, path: &str, filename: Option<&str>, data: Vec<u8>) -> Result<T, NifiError>
 async fn post_void_octet_stream(&self, path: &str, filename: Option<&str>, data: Vec<u8>) -> Result<(), NifiError>
+async fn get_bytes_stream(&self, path: &str, extra_headers: &[(&str, &str)]) -> Result<BytesStream, NifiError>
+async fn get_bytes_stream_with_query(&self, path: &str, extra_headers: &[(&str, &str)], query: &[(&str, String)]) -> Result<BytesStream, NifiError>
 ```
 
 These helpers attach the JWT auth token, map HTTP errors to `NifiError`, and deserialize responses.
@@ -88,6 +90,30 @@ Use the literal method name string and the `path` variable. This applies to all 
 Resource struct methods (e.g. `Flow::get_about_info`) that delegate to a generic helper do **not** add their
 own `tracing::debug!` call — the helper already emits it. Only methods that send requests directly
 (bypassing the helpers) need their own debug line.
+
+### Streaming binary downloads
+
+Every endpoint whose OpenAPI response body is `application/octet-stream`
+or `*/*` is emitted in two variants:
+
+- `download_nar(id) -> Result<Vec<u8>, NifiError>` — buffered.
+- `download_nar_stream(id) -> Result<BytesStream, NifiError>` — streaming.
+
+`BytesStream = Pin<Box<dyn futures_core::Stream<Item = Result<Bytes, NifiError>> + Send>>`
+is re-exported from the crate root alongside `bytes::Bytes`.
+
+Use the streaming variant for provenance content, flowfile content, and
+NAR / asset downloads where buffering into memory is undesirable. Adapt
+to `tokio::io::AsyncRead` via `tokio_util::io::StreamReader`.
+
+**Retry semantics:** the initial request (status-line exchange) is
+auth-retry and transient-retry eligible. Once the stream has started
+producing chunks, transport errors during body delivery terminate the
+stream and are not retried.
+
+The streaming variant lives on the same `Endpoint::FOO` availability
+entry as its buffered sibling — dynamic mode's `require_endpoint` gate
+applies identically.
 
 #### Pagination helpers
 

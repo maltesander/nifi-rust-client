@@ -654,6 +654,54 @@ impl NifiClient {
         .await
     }
 
+    /// GET returning a stream of body chunks.
+    ///
+    /// The initial request is subject to the configured `AuthProvider`
+    /// (401→re-auth-once) and `RetryPolicy`. Once the response has been
+    /// accepted (status-line read, 2xx/206), the stream takes over and
+    /// transport errors during body delivery propagate directly to the
+    /// caller — they are not retried.
+    #[tracing::instrument(skip(self))]
+    pub(crate) async fn get_bytes_stream(
+        &self,
+        path: &str,
+        extra_headers: &[(&str, &str)],
+    ) -> Result<crate::BytesStream, NifiError> {
+        self.with_retry(|| async {
+            tracing::debug!(method = "GET", path, "NiFi API request");
+            let url = self.api_url(path);
+            let mut req = self.authenticated(self.http.get(url)).await;
+            for (name, value) in extra_headers {
+                req = req.header(*name, *value);
+            }
+            let resp = req.send().await.context(HttpSnafu)?;
+            Self::bytes_stream("GET", path, resp).await
+        })
+        .await
+    }
+
+    /// GET with query parameters returning a stream of body chunks.
+    /// See [`Self::get_bytes_stream`] for retry/streaming semantics.
+    #[tracing::instrument(skip(self, query))]
+    pub(crate) async fn get_bytes_stream_with_query(
+        &self,
+        path: &str,
+        extra_headers: &[(&str, &str)],
+        query: &[(&str, String)],
+    ) -> Result<crate::BytesStream, NifiError> {
+        self.with_retry(|| async {
+            tracing::debug!(method = "GET", path, "NiFi API request");
+            let url = self.api_url(path);
+            let mut req = self.authenticated(self.http.get(url).query(query)).await;
+            for (name, value) in extra_headers {
+                req = req.header(*name, *value);
+            }
+            let resp = req.send().await.context(HttpSnafu)?;
+            Self::bytes_stream("GET", path, resp).await
+        })
+        .await
+    }
+
     /// POST with `application/octet-stream` body; ignores the response body.
     ///
     /// Kept available for forward compatibility — the emitter dispatch table at
@@ -1023,6 +1071,30 @@ impl NifiClient {
         if status.is_success() {
             let b = resp.bytes().await.context(HttpSnafu)?;
             return Ok(b.to_vec());
+        }
+        let body = resp.text().await.unwrap_or_else(|_| status.to_string());
+        tracing::debug!(method, path, status = status.as_u16(), %body, "NiFi API raw error body");
+        let message = extract_error_message(&body);
+        tracing::warn!(method, path, status = status.as_u16(), %message, "NiFi API error");
+        Err(crate::error::api_error(status.as_u16(), message))
+    }
+
+    /// Turn a successful `application/octet-stream` (or `*/*`) response into
+    /// a [`crate::BytesStream`]. Non-2xx status codes are converted into the
+    /// same `NifiError` shape that [`Self::bytes`] produces.
+    async fn bytes_stream(
+        method: &str,
+        path: &str,
+        resp: reqwest::Response,
+    ) -> Result<crate::BytesStream, NifiError> {
+        use futures_util::TryStreamExt;
+        let status = resp.status();
+        tracing::debug!(method, path, status = status.as_u16(), "NiFi API response");
+        if status.is_success() {
+            let s = resp
+                .bytes_stream()
+                .map_err(|source| NifiError::Http { source });
+            return Ok(Box::pin(s));
         }
         let body = resp.text().await.unwrap_or_else(|_| status.to_string());
         tracing::debug!(method, path, status = status.as_u16(), %body, "NiFi API raw error body");

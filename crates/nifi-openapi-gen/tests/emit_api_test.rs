@@ -792,3 +792,163 @@ fn no_permissions_section_when_security_absent() {
         "should not emit Permissions when security absent: {out}"
     );
 }
+
+#[test]
+fn emits_stream_variant_for_octet_stream_response() {
+    use nifi_openapi_gen::content_type::ResponseBodyKind;
+    use nifi_openapi_gen::emit::emit_api;
+    use nifi_openapi_gen::parser::*;
+
+    let ep = Endpoint {
+        method: HttpMethod::Get,
+        path: "/x/{id}/content".into(),
+        fn_name: "download".into(),
+        raw_operation_id: "download".into(),
+        doc: Some("Download".into()),
+        description: None,
+        path_params: vec![PathParam {
+            name: "id".into(),
+            doc: None,
+        }],
+        request_type: None,
+        body_kind: None,
+        body_doc: None,
+        response_type: None,
+        response_inner: None,
+        response_field: None,
+        response_kind: ResponseBodyKind::OctetStream,
+        query_params: vec![],
+        header_params: vec![],
+        success_responses: vec![],
+        error_responses: vec![],
+        security: None,
+    };
+    let tag = TagGroup {
+        tag: "X".into(),
+        module_name: "x".into(),
+        struct_name: "X".into(),
+        accessor_fn: "x".into(),
+        types: vec![],
+        endpoints: vec![ep],
+    };
+    let spec = ApiSpec {
+        tags: vec![tag],
+        all_types: vec![],
+    };
+    let files = emit_api(&spec);
+    let x_rs = files
+        .iter()
+        .find(|(n, _)| n == "x.rs")
+        .expect("x.rs emitted")
+        .1
+        .clone();
+
+    // rustfmt wraps multi-arg signatures across lines, so check for the fn
+    // name and the `id: &str` param independently (matches the convention
+    // used by `emit_api_emits_flat_inherent_methods`).
+    assert!(
+        x_rs.contains("pub async fn download("),
+        "buffered variant missing; got:\n{x_rs}"
+    );
+    assert!(
+        x_rs.contains("pub async fn download_stream("),
+        "stream variant missing; got:\n{x_rs}"
+    );
+    assert!(x_rs.contains("id: &str"));
+    assert!(x_rs.contains("-> Result<Vec<u8>, NifiError>"));
+    assert!(x_rs.contains("-> Result<crate::BytesStream, NifiError>"));
+    assert!(x_rs.contains("self.client.get_bytes("));
+    assert!(x_rs.contains("self.client.get_bytes_stream("));
+    assert!(
+        x_rs.contains("/// Streaming variant: yields body chunks"),
+        "stream doc prefix missing; got:\n{x_rs}"
+    );
+    // The `_stream` variant must carry its path-param (the buffered
+    // variant already satisfies a bare `id: &str` check on its own).
+    assert!(
+        x_rs.matches("id: &str").count() >= 2,
+        "path-param not threaded to both variants; got:\n{x_rs}"
+    );
+}
+
+#[test]
+fn emits_stream_variant_for_wildcard_with_query() {
+    use nifi_openapi_gen::content_type::ResponseBodyKind;
+    use nifi_openapi_gen::emit::emit_api;
+    use nifi_openapi_gen::parser::*;
+
+    // Endpoint with `*/*` response and one query parameter — exercises
+    // the `emit_method_body_static` (with-query) path and its
+    // `get_bytes_stream_with_query` helper selection.
+    let ep = Endpoint {
+        method: HttpMethod::Get,
+        path: "/y/{id}/content".into(),
+        fn_name: "fetch".into(),
+        raw_operation_id: "fetch".into(),
+        doc: Some("Fetch".into()),
+        description: None,
+        path_params: vec![PathParam {
+            name: "id".into(),
+            doc: None,
+        }],
+        request_type: None,
+        body_kind: None,
+        body_doc: None,
+        response_type: None,
+        response_inner: None,
+        response_field: None,
+        response_kind: ResponseBodyKind::Wildcard,
+        query_params: vec![QueryParam {
+            name: "clusterNodeId".into(),
+            rust_name: "cluster_node_id".into(),
+            ty: QueryParamType::Str,
+            required: false,
+            doc: None,
+            enum_type_name: None,
+        }],
+        header_params: vec![],
+        success_responses: vec![],
+        error_responses: vec![],
+        security: None,
+    };
+    let tag = TagGroup {
+        tag: "Y".into(),
+        module_name: "y".into(),
+        struct_name: "Y".into(),
+        accessor_fn: "y".into(),
+        types: vec![],
+        endpoints: vec![ep],
+    };
+    let spec = ApiSpec {
+        tags: vec![tag],
+        all_types: vec![],
+    };
+    let files = emit_api(&spec);
+    let y_rs = files
+        .iter()
+        .find(|(n, _)| n == "y.rs")
+        .expect("y.rs emitted")
+        .1
+        .clone();
+
+    assert!(
+        y_rs.contains("pub async fn fetch("),
+        "buffered variant missing; got:\n{y_rs}"
+    );
+    assert!(
+        y_rs.contains("pub async fn fetch_stream("),
+        "stream variant missing; got:\n{y_rs}"
+    );
+    assert!(
+        y_rs.contains("get_bytes_with_query("),
+        "buffered get_bytes_with_query helper missing; got:\n{y_rs}"
+    );
+    assert!(
+        y_rs.contains("get_bytes_stream_with_query("),
+        "stream get_bytes_stream_with_query helper missing; got:\n{y_rs}"
+    );
+    assert!(
+        y_rs.contains("-> Result<crate::BytesStream, NifiError>"),
+        "stream return type missing; got:\n{y_rs}"
+    );
+}
