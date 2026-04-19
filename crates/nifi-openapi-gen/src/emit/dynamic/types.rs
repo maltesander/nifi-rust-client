@@ -68,10 +68,12 @@ pub(super) fn merge_inline_enum(
             panic!(
                 "nifi-openapi-gen: inline-enum helper name collision\n  \
                  helper: {helper_name}\n  \
-                 parents: [{} (tag={:?}), {} (tag={:?})]\n\
-                 Either rename one DTO's field or extend naming_overrides.",
-                existing.parent_dto, existing.owner_tag,
-                parent_dto, owner_tag,
+                 parents: [{}.{} (tag={:?}), {}.{} (tag={:?})]\n\
+                 A DTO-field override table does not exist yet — rename one of the \
+                 conflicting field declarations in the OpenAPI spec, or open an \
+                 issue to add field-level naming_overrides support.",
+                existing.parent_dto, existing.parent_field, existing.owner_tag,
+                parent_dto, parent_field, owner_tag,
             );
         }
         Some(existing) => {
