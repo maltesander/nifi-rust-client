@@ -63,7 +63,6 @@ pub enum ProcessorTargetState {
 impl ProcessorTargetState {
     /// The server wire value (e.g. `"RUNNING"`). Used by dynamic-mode
     /// helpers for string comparison; not part of the public API shape.
-    #[allow(dead_code)]
     pub(crate) fn wire_value(&self) -> &'static str {
         match self {
             Self::Running => "RUNNING",
@@ -115,7 +114,6 @@ enum PollOutcome<T> {
 ///
 /// Deadline is `Instant::now() + config.timeout`. The final sleep is
 /// clamped to the remaining time so we don't overshoot.
-#[allow(dead_code)]
 async fn poll_until<T, FetchFn, FetchFut>(
     config: &WaitConfig,
     operation: &str,
@@ -148,6 +146,94 @@ where
         let next = core::cmp::min(config.poll_interval, remaining);
         tokio::time::sleep(next).await;
     }
+}
+
+// ── wait::processor_state ──────────────────────────────────────────────────
+
+#[cfg(not(feature = "dynamic"))]
+use crate::types::ProcessorEntity;
+
+/// Poll a processor until its state matches `target`.
+///
+/// Fetches `GET /processors/{id}` on each tick. Returns the final
+/// `ProcessorEntity` on success, [`NifiError::Timeout`] on timeout, or
+/// the underlying fetch error if NiFi returns a non-2xx response.
+///
+/// # Example
+///
+/// ```no_run
+/// use std::time::Duration;
+/// use nifi_rust_client::wait::{self, ProcessorTargetState, WaitConfig};
+///
+/// # async fn example(client: nifi_rust_client::NifiClient) -> Result<(), nifi_rust_client::NifiError> {
+/// let config = WaitConfig {
+///     timeout: Duration::from_secs(60),
+///     poll_interval: Duration::from_millis(250),
+///     ..Default::default()
+/// };
+/// let processor = wait::processor_state(
+///     &client,
+///     "processor-id",
+///     ProcessorTargetState::Running,
+///     config,
+/// ).await?;
+/// # let _ = processor;
+/// # Ok(()) }
+/// ```
+#[cfg(not(feature = "dynamic"))]
+pub async fn processor_state(
+    client: &crate::NifiClient,
+    processor_id: &str,
+    target: ProcessorTargetState,
+    config: WaitConfig,
+) -> Result<ProcessorEntity, NifiError> {
+    use crate::types::ProcessorDtoState;
+    let op = format!(
+        "wait_for_processor_state({processor_id}, {})",
+        target.wire_value()
+    );
+    let fetch = || async { client.processors().get_processor(processor_id).await };
+    let done = move |entity: &ProcessorEntity| {
+        let matches = entity.component.as_ref().and_then(|c| c.state.as_ref()).is_some_and(|s| {
+            matches!(
+                (target, s),
+                (ProcessorTargetState::Running, ProcessorDtoState::Running)
+                    | (ProcessorTargetState::Stopped, ProcessorDtoState::Stopped)
+                    | (ProcessorTargetState::Disabled, ProcessorDtoState::Disabled)
+            )
+        });
+        if matches {
+            PollOutcome::Ready(())
+        } else {
+            PollOutcome::Pending
+        }
+    };
+    poll_until(&config, &op, fetch, done).await
+}
+
+#[cfg(feature = "dynamic")]
+use crate::dynamic::types::ProcessorEntity;
+
+/// Dynamic-mode counterpart of [`processor_state`].
+#[cfg(feature = "dynamic")]
+pub async fn processor_state_dynamic(
+    client: &crate::dynamic::DynamicClient,
+    processor_id: &str,
+    target: ProcessorTargetState,
+    config: WaitConfig,
+) -> Result<ProcessorEntity, NifiError> {
+    let target_wire = target.wire_value();
+    let op = format!("wait_for_processor_state({processor_id}, {target_wire})");
+    let fetch = || async { client.processors().get_processor(processor_id).await };
+    let done = move |entity: &ProcessorEntity| {
+        let state = entity.component.as_ref().and_then(|c| c.state.as_deref());
+        if state == Some(target_wire) {
+            PollOutcome::Ready(())
+        } else {
+            PollOutcome::Pending
+        }
+    };
+    poll_until(&config, &op, fetch, done).await
 }
 
 #[cfg(test)]
