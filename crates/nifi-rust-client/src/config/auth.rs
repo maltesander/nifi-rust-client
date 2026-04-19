@@ -68,11 +68,12 @@ impl AuthProvider for Arc<dyn AuthProvider> {
 /// Authenticates with a fixed username and password via [`NifiClient::login`].
 ///
 /// Useful for tests or simple deployments where credentials are known at
-/// build time.
+/// build time. The password is stored in a [`zeroize::Zeroizing`] wrapper
+/// so it is zeroed on drop.
 #[derive(Clone)]
 pub struct PasswordAuth {
     username: String,
-    password: Redacted<String>,
+    password: zeroize::Zeroizing<String>,
 }
 
 impl PasswordAuth {
@@ -80,7 +81,7 @@ impl PasswordAuth {
     pub fn new(username: impl Into<String>, password: impl Into<String>) -> Self {
         Self {
             username: username.into(),
-            password: Redacted::new(password.into()),
+            password: zeroize::Zeroizing::new(password.into()),
         }
     }
 }
@@ -89,7 +90,7 @@ impl fmt::Debug for PasswordAuth {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("PasswordAuth")
             .field("username", &self.username)
-            .field("password", &self.password)
+            .field("password", &"[REDACTED]")
             .finish()
     }
 }
@@ -97,7 +98,7 @@ impl fmt::Debug for PasswordAuth {
 #[async_trait::async_trait]
 impl AuthProvider for PasswordAuth {
     async fn authenticate(&self, client: &NifiClient) -> Result<(), NifiError> {
-        client.login(&self.username, self.password.inner()).await
+        client.login(&self.username, &self.password).await
     }
 }
 
