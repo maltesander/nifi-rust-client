@@ -19,7 +19,7 @@ nifi-openapi-gen = { path = "crates/nifi-openapi-gen" }
 nifi-rust-client = { path = "crates/nifi-rust-client", default-features = false }
 clap = { version = "4", features = ["derive", "env"] }
 prettyplease = "0.2"
-reqwest = { version = "0.13", default-features = false, features = ["form", "json", "multipart", "query", "rustls"] }
+reqwest = { version = "0.13", default-features = false, features = ["form", "json", "multipart", "query", "rustls", "stream"] }
 semver = "1"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
