@@ -150,3 +150,123 @@ async fn controller_service_state_times_out() {
     .unwrap_err();
     assert!(matches!(err, NifiError::Timeout { .. }));
 }
+
+// ── parameter_context_update ────────────────────────────────────────────────
+
+fn update_request_entity(complete: bool, failure: Option<&str>) -> serde_json::Value {
+    let mut req = json!({ "complete": complete });
+    if let Some(reason) = failure {
+        req["failureReason"] = json!(reason);
+    }
+    json!({ "request": req })
+}
+
+#[tokio::test]
+async fn parameter_context_update_succeeds_and_cleans_up() {
+    let mock_server = MockServer::start().await;
+
+    // First GET: incomplete. Second: complete.
+    Mock::given(method("GET"))
+        .and(path("/nifi-api/parameter-contexts/ctx-1/update-requests/req-1"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(update_request_entity(false, None)))
+        .up_to_n_times(1)
+        .mount(&mock_server)
+        .await;
+    Mock::given(method("GET"))
+        .and(path("/nifi-api/parameter-contexts/ctx-1/update-requests/req-1"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(update_request_entity(true, None)))
+        .mount(&mock_server)
+        .await;
+
+    // DELETE expected exactly once (cleanup: true).
+    Mock::given(method("DELETE"))
+        .and(path("/nifi-api/parameter-contexts/ctx-1/update-requests/req-1"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(update_request_entity(true, None)))
+        .expect(1)
+        .mount(&mock_server)
+        .await;
+
+    let client = NifiClientBuilder::new(&mock_server.uri()).unwrap().build().unwrap();
+    client.set_token("jwt".to_string()).await;
+
+    let entity = wait::parameter_context_update(
+        &client,
+        "ctx-1",
+        "req-1",
+        fast_config(1000),
+    )
+    .await
+    .unwrap();
+    assert_eq!(entity.request.and_then(|r| r.complete), Some(true));
+}
+
+#[tokio::test]
+async fn parameter_context_update_reports_failure() {
+    let mock_server = MockServer::start().await;
+
+    Mock::given(method("GET"))
+        .and(path("/nifi-api/parameter-contexts/ctx-1/update-requests/req-1"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(update_request_entity(true, Some("validation failed"))))
+        .mount(&mock_server)
+        .await;
+
+    // DELETE still runs on failure when cleanup is on.
+    Mock::given(method("DELETE"))
+        .and(path("/nifi-api/parameter-contexts/ctx-1/update-requests/req-1"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(update_request_entity(true, None)))
+        .expect(1)
+        .mount(&mock_server)
+        .await;
+
+    let client = NifiClientBuilder::new(&mock_server.uri()).unwrap().build().unwrap();
+    client.set_token("jwt".to_string()).await;
+
+    let err = wait::parameter_context_update(
+        &client,
+        "ctx-1",
+        "req-1",
+        fast_config(1000),
+    )
+    .await
+    .unwrap_err();
+    match err {
+        NifiError::Api { status, message } => {
+            assert_eq!(status, 500);
+            assert!(message.contains("validation failed"));
+        }
+        other => panic!("expected Api, got {other:?}"),
+    }
+}
+
+#[tokio::test]
+async fn parameter_context_update_no_cleanup_when_disabled() {
+    let mock_server = MockServer::start().await;
+
+    Mock::given(method("GET"))
+        .and(path("/nifi-api/parameter-contexts/ctx-1/update-requests/req-1"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(update_request_entity(true, None)))
+        .mount(&mock_server)
+        .await;
+
+    // DELETE must NOT be called when cleanup: false.
+    Mock::given(method("DELETE"))
+        .and(path("/nifi-api/parameter-contexts/ctx-1/update-requests/req-1"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(update_request_entity(true, None)))
+        .expect(0)
+        .mount(&mock_server)
+        .await;
+
+    let client = NifiClientBuilder::new(&mock_server.uri()).unwrap().build().unwrap();
+    client.set_token("jwt".to_string()).await;
+
+    let config = WaitConfig {
+        timeout: Duration::from_millis(500),
+        poll_interval: Duration::from_millis(10),
+        initial_delay: Duration::ZERO,
+        cleanup: false,
+    };
+    let entity = wait::parameter_context_update(&client, "ctx-1", "req-1", config)
+        .await
+        .unwrap();
+    assert!(entity.request.and_then(|r| r.complete).unwrap_or(false));
+}
