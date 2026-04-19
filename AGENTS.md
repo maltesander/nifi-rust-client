@@ -125,6 +125,33 @@ two constructors: `flow_history(&NifiClient, ...)` for static mode and
 `#[cfg(feature = "dynamic")]`). Additional paged endpoints follow the
 same pattern — a new constructor in the same file, no generator work.
 
+#### Workflow helpers
+
+Hand-written helpers for common state-transition and async-query patterns
+live in `src/wait.rs`. Currently covers:
+
+- `wait::processor_state(&NifiClient, id, target, config)` — polls a
+  processor until `state` matches `ProcessorTargetState::{Running, Stopped,
+  Disabled}`.
+- `wait::controller_service_state(...)` — `Enabled` or `Disabled`.
+- `wait::parameter_context_update(...)` — async param-context update;
+  optional trailing DELETE via `WaitConfig::cleanup`.
+- `wait::provenance_query(...)` — async provenance query completion.
+
+Each has a `_dynamic` sibling under `#[cfg(feature = "dynamic")]`. On
+timeout, helpers return `NifiError::Timeout { operation }`.
+
+One-shot bulk actions live in `src/bulk.rs`:
+
+- `bulk::start_process_group` / `stop_process_group` — PUT
+  `/flow/process-groups/{id}`.
+- `bulk::enable_all_controller_services` /
+  `disable_all_controller_services` — PUT
+  `/flow/process-groups/{id}/controller-services`.
+
+Both modules follow the same free-fn + `_dynamic` sibling pattern as
+`pagination.rs`.
+
 ### Resource Struct Pattern
 
 The API surface is split into resource structs mirroring NiFi's own API grouping.

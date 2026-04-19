@@ -20,6 +20,7 @@ pub struct NifiClient {
     proxied_entities_chain: Option<String>,
     retry_policy: Option<crate::config::retry::RetryPolicy>,
     request_id_header: Option<String>,
+    auth_lock: Arc<tokio::sync::Mutex<()>>,
 }
 
 impl Clone for NifiClient {
@@ -32,6 +33,7 @@ impl Clone for NifiClient {
             proxied_entities_chain: self.proxied_entities_chain.clone(),
             retry_policy: self.retry_policy.clone(),
             request_id_header: self.request_id_header.clone(),
+            auth_lock: Arc::clone(&self.auth_lock),
         }
     }
 }
@@ -69,6 +71,7 @@ impl NifiClient {
             proxied_entities_chain,
             retry_policy,
             request_id_header,
+            auth_lock: Arc::new(tokio::sync::Mutex::new(())),
         }
     }
 
@@ -182,16 +185,48 @@ impl NifiClient {
 
     /// Execute `f`, and if it returns `NifiError::Unauthorized` and a credential
     /// provider is configured, refresh the token and retry once.
+    ///
+    /// Uses a mutex + token-snapshot check to ensure that concurrent 401
+    /// responses only trigger a single re-authentication: whichever task wins
+    /// the lock re-auths; tasks that arrive later skip re-auth because they
+    /// observe a changed token.
     #[tracing::instrument(skip_all)]
     async fn with_auth_retry<T, F, Fut>(&self, f: F) -> Result<T, NifiError>
     where
         F: Fn() -> Fut,
         Fut: std::future::Future<Output = Result<T, NifiError>>,
     {
+        // Snapshot the token at entry so we can detect whether a concurrent
+        // task already re-authed while we were waiting on the lock.
+        let token_before = self
+            .token
+            .read()
+            .await
+            .as_ref()
+            .map(|t| (**t).clone());
+
         match f().await {
             Err(NifiError::Unauthorized { .. }) if self.auth_provider.is_some() => {
-                tracing::info!("received 401, refreshing token via auth provider");
-                self.authenticate().await?;
+                let _guard = self.auth_lock.lock().await;
+                let token_now = self
+                    .token
+                    .read()
+                    .await
+                    .as_ref()
+                    .map(|t| (**t).clone());
+                if token_now == token_before {
+                    tracing::info!("received 401, refreshing token via auth provider");
+                    self.authenticate().await?;
+                } else {
+                    tracing::debug!(
+                        "token already refreshed by concurrent task, skipping re-auth"
+                    );
+                }
+                // Release the auth lock BEFORE retrying the request — otherwise
+                // the retry's `f().await` would hold the lock across its entire
+                // HTTP round-trip, serializing every concurrent request through
+                // a single critical section.
+                drop(_guard);
                 f().await
             }
             other => other,
