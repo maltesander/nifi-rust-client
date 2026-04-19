@@ -38,10 +38,6 @@ enum MergedType {
 /// Sibling helper emitted alongside a DTO when one of its fields is an inline
 /// string enum. The parent field stays `Option<String>` (wire-tolerant); this
 /// type gives callers a typed companion via `as_str` / `from_wire`.
-// Fields are consumed by emit_inline_enum_helper (added in a later task).
-// Until that consumer lands, suppress dead_code in non-test builds — tests
-// already exercise every field via assertions.
-#[cfg_attr(not(test), allow(dead_code))]
 pub(super) struct InlineEnumHelper {
     pub(super) parent_dto: String,
     pub(super) parent_field: String,
@@ -125,7 +121,7 @@ pub fn emit_types(canonical: &CanonicalSpec) -> Vec<(String, String)> {
 /// - `"<tag>.rs"` — one file per tag for types used exclusively by that tag
 fn emit_types_from_specs(specs: &[(&str, &ApiSpec)]) -> Vec<(String, String)> {
     let type_to_tags = build_type_to_tags(specs);
-    let (merged, _inline_enums) = merge_all_types(specs, &type_to_tags);
+    let (merged, inline_enums) = merge_all_types(specs, &type_to_tags);
 
     // Assign each merged type to exactly one tag or common.
     // BTreeMap for deterministic file order.
@@ -147,7 +143,7 @@ fn emit_types_from_specs(specs: &[(&str, &ApiSpec)]) -> Vec<(String, String)> {
     // common.rs
     files.push((
         "common.rs".into(),
-        emit_dynamic_type_file(&common_names, &merged),
+        emit_dynamic_type_file(&common_names, &merged, &inline_enums, None),
     ));
 
     // per-tag files
@@ -156,7 +152,7 @@ fn emit_types_from_specs(specs: &[(&str, &ApiSpec)]) -> Vec<(String, String)> {
         let names = tag_types.get(tag_name).unwrap();
         files.push((
             format!("{tag_name}.rs"),
-            emit_dynamic_type_file(names, &merged),
+            emit_dynamic_type_file(names, &merged, &inline_enums, Some(tag_name)),
         ));
     }
 
@@ -212,7 +208,12 @@ fn types_referenced_by_tag(tag: &TagGroup) -> HashSet<String> {
     names
 }
 
-fn emit_dynamic_type_file(names: &[&str], merged: &BTreeMap<String, MergedType>) -> String {
+fn emit_dynamic_type_file(
+    names: &[&str],
+    merged: &BTreeMap<String, MergedType>,
+    inline_enums: &BTreeMap<String, InlineEnumHelper>,
+    owner_tag: Option<&str>,
+) -> String {
     let mut out = String::new();
     out.push_str("#![allow(dead_code, private_interfaces, unused_imports)]\n\n");
     out.push_str("use serde::{Deserialize, Serialize};\n");
@@ -226,6 +227,16 @@ fn emit_dynamic_type_file(names: &[&str], merged: &BTreeMap<String, MergedType>)
         emit_merged_type(&mut out, name, mt);
     }
 
+    // Helper enums whose owner_tag matches this file.
+    let mut helpers_for_file: Vec<(&String, &InlineEnumHelper)> = inline_enums
+        .iter()
+        .filter(|(_, h)| h.owner_tag.as_deref() == owner_tag)
+        .collect();
+    helpers_for_file.sort_by(|a, b| a.0.cmp(b.0));
+    for (name, helper) in helpers_for_file {
+        emit_inline_enum_helper(&mut out, name, helper);
+    }
+
     crate::util::format_source(&out)
 }
 
@@ -233,7 +244,6 @@ fn emit_dynamic_type_file(names: &[&str], merged: &BTreeMap<String, MergedType>)
 /// field-doc passthrough), `#[non_exhaustive]` enum, `as_str`, `from_wire`,
 /// `Display`, and `From<T> for String`. Variants iterate in BTreeSet order
 /// (alphabetic by wire value).
-#[cfg_attr(not(test), allow(dead_code))]
 pub(super) fn emit_inline_enum_helper(out: &mut String, name: &str, helper: &InlineEnumHelper) {
     // Doc preamble — always emitted
     out.push_str(&format!(
@@ -1136,5 +1146,101 @@ mod tests {
             !out.contains("Deserialize") && !out.contains("Serialize"),
             "helper must not have serde derives"
         );
+    }
+
+    #[test]
+    fn helpers_land_in_owner_tag_file() {
+        let dto = TypeDef {
+            name: "ScheduleComponentsEntity".to_string(),
+            kind: TypeKind::Dto,
+            fields: vec![Field {
+                rust_name: "state".to_string(),
+                serde_name: "state".to_string(),
+                ty: FieldType::Opt(Box::new(FieldType::Enum(vec![
+                    "RUNNING".into(),
+                    "STOPPED".into(),
+                ]))),
+                doc: None,
+                read_only: false,
+                deprecated: false,
+            }],
+            doc: None,
+        };
+        let flow_tag = make_tag("flow", vec!["ScheduleComponentsEntity"]);
+        let spec = make_spec_with_tags(vec![dto], vec![flow_tag]);
+        let files = emit_types_from_specs(&[("2.8.0", &spec)]);
+        let flow = files
+            .iter()
+            .find(|(n, _)| n == "flow.rs")
+            .expect("flow.rs missing")
+            .1
+            .as_str();
+        assert!(
+            flow.contains("pub enum ScheduleComponentsEntityState"),
+            "helper enum should land in flow.rs"
+        );
+        let common = files
+            .iter()
+            .find(|(n, _)| n == "common.rs")
+            .expect("common.rs missing")
+            .1
+            .as_str();
+        assert!(
+            !common.contains("pub enum ScheduleComponentsEntityState"),
+            "helper enum should NOT land in common.rs"
+        );
+    }
+
+    #[test]
+    fn helper_for_unreferenced_dto_lands_in_common_rs() {
+        let dto = TypeDef {
+            name: "OrphanDto".to_string(),
+            kind: TypeKind::Dto,
+            fields: vec![Field {
+                rust_name: "kind".to_string(),
+                serde_name: "kind".to_string(),
+                ty: FieldType::Opt(Box::new(FieldType::Enum(vec!["A".into(), "B".into()]))),
+                doc: None,
+                read_only: false,
+                deprecated: false,
+            }],
+            doc: None,
+        };
+        let spec = make_spec(vec![dto]); // no tags reference OrphanDto
+        let files = emit_types_from_specs(&[("2.8.0", &spec)]);
+        let common = files
+            .iter()
+            .find(|(n, _)| n == "common.rs")
+            .expect("common.rs missing")
+            .1
+            .as_str();
+        assert!(common.contains("pub enum OrphanDtoKind"));
+    }
+
+    #[test]
+    fn dto_field_stays_option_string_alongside_helper() {
+        let dto = TypeDef {
+            name: "ScheduleComponentsEntity".to_string(),
+            kind: TypeKind::Dto,
+            fields: vec![Field {
+                rust_name: "state".to_string(),
+                serde_name: "state".to_string(),
+                ty: FieldType::Opt(Box::new(FieldType::Enum(vec!["RUNNING".into()]))),
+                doc: None,
+                read_only: false,
+                deprecated: false,
+            }],
+            doc: None,
+        };
+        let spec = make_spec(vec![dto]);
+        let files = emit_types_from_specs(&[("2.8.0", &spec)]);
+        let output = all_content(&files);
+        // The struct field MUST remain Option<String>, not Option<HelperEnum>.
+        assert!(
+            output.contains("pub state: Option<String>"),
+            "DTO field should be Option<String>; got:\n{output}"
+        );
+        // Helper still emitted.
+        assert!(output.contains("pub enum ScheduleComponentsEntityState"));
     }
 }
