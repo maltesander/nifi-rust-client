@@ -1028,6 +1028,9 @@ name = "nifi-rust-client"
 version = "0.10.1"
 dependencies = [
  "async-trait",
+ "bytes",
+ "futures-core",
+ "futures-util",
  "nifi-openapi-gen 0.10.1",
  "reqwest",
  "semver",
