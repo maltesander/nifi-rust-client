@@ -11,33 +11,6 @@ use std::sync::Arc;
 use crate::NifiClient;
 use crate::error::NifiError;
 
-// ── Redacted<T> ──────────────────────────────────────────────────────────────
-
-/// Wraps a value and masks it in [`fmt::Debug`] output as `[REDACTED]`.
-///
-/// Use this for sensitive fields (e.g. passwords, tokens) to prevent them from
-/// leaking into logs or debug output.
-#[derive(Clone)]
-pub struct Redacted<T>(T);
-
-impl<T> Redacted<T> {
-    /// Wrap `value` so its debug representation is hidden.
-    pub fn new(value: T) -> Self {
-        Self(value)
-    }
-
-    /// Return a reference to the wrapped value.
-    pub fn inner(&self) -> &T {
-        &self.0
-    }
-}
-
-impl<T> fmt::Debug for Redacted<T> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str("[REDACTED]")
-    }
-}
-
 // ── AuthProvider trait ───────────────────────────────────────────────────────
 
 /// Provides authentication for a [`NifiClient`].
