@@ -18,7 +18,6 @@ pub struct NifiClient {
     token: Arc<RwLock<Option<zeroize::Zeroizing<String>>>>,
     auth_provider: Option<Arc<dyn AuthProvider>>,
     proxied_entities_chain: Option<String>,
-    #[allow(dead_code)]
     retry_policy: Option<crate::config::retry::RetryPolicy>,
 }
 
