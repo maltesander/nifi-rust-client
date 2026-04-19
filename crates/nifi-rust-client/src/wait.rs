@@ -85,7 +85,6 @@ pub enum ControllerServiceTargetState {
 }
 
 impl ControllerServiceTargetState {
-    #[allow(dead_code)]
     pub(crate) fn wire_value(&self) -> &'static str {
         match self {
             Self::Enabled => "ENABLED",
@@ -203,6 +202,73 @@ pub async fn processor_state(
             )
         });
         if matches {
+            PollOutcome::Ready(())
+        } else {
+            PollOutcome::Pending
+        }
+    };
+    poll_until(&config, &op, fetch, done).await
+}
+
+// ── wait::controller_service_state ─────────────────────────────────────────
+
+#[cfg(not(feature = "dynamic"))]
+use crate::types::ControllerServiceEntity;
+
+/// Poll a controller service until its state matches `target`.
+///
+/// Fetches `GET /controller-services/{id}` on each tick. Returns the final
+/// `ControllerServiceEntity` on success. The transient `ENABLING` and
+/// `DISABLING` server states are polled through (they are not valid targets).
+#[cfg(not(feature = "dynamic"))]
+pub async fn controller_service_state(
+    client: &crate::NifiClient,
+    service_id: &str,
+    target: ControllerServiceTargetState,
+    config: WaitConfig,
+) -> Result<ControllerServiceEntity, NifiError> {
+    use crate::types::ControllerServiceDtoState;
+    let op = format!(
+        "wait_for_controller_service_state({service_id}, {})",
+        target.wire_value()
+    );
+    let fetch =
+        || async { client.controller_services().get_controller_service(service_id, None).await };
+    let done = move |entity: &ControllerServiceEntity| {
+        let matches = entity.component.as_ref().and_then(|c| c.state.as_ref()).is_some_and(|s| {
+            matches!(
+                (target, s),
+                (ControllerServiceTargetState::Enabled, ControllerServiceDtoState::Enabled)
+                    | (ControllerServiceTargetState::Disabled, ControllerServiceDtoState::Disabled)
+            )
+        });
+        if matches {
+            PollOutcome::Ready(())
+        } else {
+            PollOutcome::Pending
+        }
+    };
+    poll_until(&config, &op, fetch, done).await
+}
+
+#[cfg(feature = "dynamic")]
+use crate::dynamic::types::ControllerServiceEntity;
+
+/// Dynamic-mode counterpart of [`controller_service_state`].
+#[cfg(feature = "dynamic")]
+pub async fn controller_service_state_dynamic(
+    client: &crate::dynamic::DynamicClient,
+    service_id: &str,
+    target: ControllerServiceTargetState,
+    config: WaitConfig,
+) -> Result<ControllerServiceEntity, NifiError> {
+    let target_wire = target.wire_value();
+    let op = format!("wait_for_controller_service_state({service_id}, {target_wire})");
+    let fetch =
+        || async { client.controller_services().get_controller_service(service_id, None).await };
+    let done = move |entity: &ControllerServiceEntity| {
+        let state = entity.component.as_ref().and_then(|c| c.state.as_deref());
+        if state == Some(target_wire) {
             PollOutcome::Ready(())
         } else {
             PollOutcome::Pending
