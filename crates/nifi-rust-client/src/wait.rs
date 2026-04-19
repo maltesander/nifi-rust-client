@@ -27,10 +27,13 @@ pub struct WaitConfig {
     /// Delay before the first poll. Useful when a state transition is
     /// known to take a minimum amount of time.
     pub initial_delay: Duration,
-    /// For async-query helpers only: if `true`, issue the trailing
-    /// `DELETE` to free NiFi-side state after the query resolves,
-    /// regardless of success or failure. Ignored by helpers where it
-    /// doesn't apply.
+    /// Controls the trailing DELETE on async-query helpers. Honored by
+    /// [`parameter_context_update`] and [`provenance_query`] only; ignored by
+    /// [`processor_state`] and [`controller_service_state`] (which have no
+    /// server-side state to clean up). When `true`, the helper issues a
+    /// `DELETE` after the query resolves, regardless of success or failure,
+    /// and swallows any error from that DELETE so it cannot mask the poll
+    /// result.
     pub cleanup: bool,
 }
 
@@ -95,12 +98,14 @@ impl ControllerServiceTargetState {
 
 // ── Polling primitive ──────────────────────────────────────────────────────
 
-/// Internal outcome of a single poll check.
-enum PollOutcome<T> {
+/// Internal outcome of a single poll check. The fetched value itself flows
+/// back to the caller through [`poll_until`]'s `Result<T, _>` return — this
+/// enum just signals the control flow.
+enum PollOutcome {
     /// State not satisfied yet — keep polling.
     Pending,
-    /// Terminal success; return the current value with `Ok`.
-    Ready(T),
+    /// Terminal success; return the current `fetch` value with `Ok`.
+    Ready,
     /// Terminal failure; return this error without further polling.
     Failed(NifiError),
 }
@@ -108,7 +113,7 @@ enum PollOutcome<T> {
 /// Private polling primitive.
 ///
 /// `fetch` returns the current resource state. `done` inspects it and
-/// returns one of `PollOutcome::{Pending, Ready(()), Failed(err)}`.
+/// returns one of `PollOutcome::{Pending, Ready, Failed(err)}`.
 ///
 /// Deadline is `Instant::now() + config.timeout`. The final sleep is
 /// clamped to the remaining time so we don't overshoot.
@@ -116,7 +121,7 @@ async fn poll_until<T, FetchFn, FetchFut>(
     config: &WaitConfig,
     operation: &str,
     fetch: FetchFn,
-    done: impl Fn(&T) -> PollOutcome<()>,
+    done: impl Fn(&T) -> PollOutcome,
 ) -> Result<T, NifiError>
 where
     FetchFn: Fn() -> FetchFut,
@@ -131,7 +136,7 @@ where
     loop {
         let value = fetch().await?;
         match done(&value) {
-            PollOutcome::Ready(()) => return Ok(value),
+            PollOutcome::Ready => return Ok(value),
             PollOutcome::Failed(e) => return Err(e),
             PollOutcome::Pending => {}
         }
@@ -201,7 +206,7 @@ pub async fn processor_state(
             )
         });
         if matches {
-            PollOutcome::Ready(())
+            PollOutcome::Ready
         } else {
             PollOutcome::Pending
         }
@@ -242,7 +247,7 @@ pub async fn controller_service_state(
             )
         });
         if matches {
-            PollOutcome::Ready(())
+            PollOutcome::Ready
         } else {
             PollOutcome::Pending
         }
@@ -268,7 +273,7 @@ pub async fn controller_service_state_dynamic(
     let done = move |entity: &ControllerServiceEntity| {
         let state = entity.component.as_ref().and_then(|c| c.state.as_deref());
         if state == Some(target_wire) {
-            PollOutcome::Ready(())
+            PollOutcome::Ready
         } else {
             PollOutcome::Pending
         }
@@ -293,7 +298,7 @@ pub async fn processor_state_dynamic(
     let done = move |entity: &ProcessorEntity| {
         let state = entity.component.as_ref().and_then(|c| c.state.as_deref());
         if state == Some(target_wire) {
-            PollOutcome::Ready(())
+            PollOutcome::Ready
         } else {
             PollOutcome::Pending
         }
@@ -340,7 +345,7 @@ pub async fn parameter_context_update(
                 status: 500,
                 message: format!("parameter context update failed: {reason}"),
             }),
-            (true, None) => PollOutcome::Ready(()),
+            (true, None) => PollOutcome::Ready,
             (false, _) => PollOutcome::Pending,
         }
     };
@@ -382,7 +387,7 @@ pub async fn parameter_context_update_dynamic(
                 status: 500,
                 message: format!("parameter context update failed: {reason}"),
             }),
-            (true, None) => PollOutcome::Ready(()),
+            (true, None) => PollOutcome::Ready,
             (false, _) => PollOutcome::Pending,
         }
     };
@@ -426,7 +431,7 @@ pub async fn provenance_query(
     };
     let done = |dto: &ProvenanceDto| {
         if dto.finished.unwrap_or(false) {
-            PollOutcome::Ready(())
+            PollOutcome::Ready
         } else {
             PollOutcome::Pending
         }
@@ -458,7 +463,7 @@ pub async fn provenance_query_dynamic(
     };
     let done = |dto: &ProvenanceDto| {
         if dto.finished.unwrap_or(false) {
-            PollOutcome::Ready(())
+            PollOutcome::Ready
         } else {
             PollOutcome::Pending
         }
@@ -488,7 +493,7 @@ mod tests {
         let fetch = || async { Ok::<i32, NifiError>(42) };
         let done = |v: &i32| {
             if *v == 42 {
-                PollOutcome::Ready(())
+                PollOutcome::Ready
             } else {
                 PollOutcome::Pending
             }
@@ -516,7 +521,7 @@ mod tests {
         };
         let done = |v: &usize| {
             if *v >= 3 {
-                PollOutcome::Ready(())
+                PollOutcome::Ready
             } else {
                 PollOutcome::Pending
             }
@@ -595,7 +600,7 @@ mod tests {
                 Ok::<i32, NifiError>(1)
             }
         };
-        let done = |_: &i32| PollOutcome::Ready(());
+        let done = |_: &i32| PollOutcome::Ready;
         let _ = poll_until(&config, "op", fetch, done).await.unwrap();
         let elapsed = start.elapsed();
         assert!(

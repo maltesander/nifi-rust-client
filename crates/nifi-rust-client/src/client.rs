@@ -222,6 +222,10 @@ impl NifiClient {
                         "token already refreshed by concurrent task, skipping re-auth"
                     );
                 }
+                // Release the auth lock BEFORE retrying the request — otherwise
+                // the retry's `f().await` would hold the lock across its entire
+                // HTTP round-trip, serializing every concurrent request through
+                // a single critical section.
                 drop(_guard);
                 f().await
             }
