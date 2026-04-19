@@ -15,7 +15,7 @@ use crate::error::{AuthSnafu, HttpSnafu};
 pub struct NifiClient {
     base_url: Url,
     http: Client,
-    token: Arc<RwLock<Option<String>>>,
+    token: Arc<RwLock<Option<zeroize::Zeroizing<String>>>>,
     auth_provider: Option<Arc<dyn AuthProvider>>,
     proxied_entities_chain: Option<String>,
     #[allow(dead_code)]
@@ -70,13 +70,12 @@ impl NifiClient {
 
     /// Return the current bearer token, if one has been set.
     ///
-    /// The token is a NiFi-issued JWT. You can persist it between process restarts
-    /// and restore it with [`set_token`][Self::set_token] to avoid re-authenticating.
-    /// The token will eventually expire (NiFi default: 12 hours); when it does, any
-    /// API call returns [`NifiError::Unauthorized`]. Re-call
-    /// [`login`][Self::login] to obtain a fresh token.
+    /// The token is a NiFi-issued JWT. The returned `String` is a clone that is
+    /// **not** zeroized on drop — it is your responsibility to persist or destroy
+    /// it securely. The in-client copy is zeroized when cleared or when the
+    /// client is dropped.
     pub async fn token(&self) -> Option<String> {
-        self.token.read().await.clone()
+        self.token.read().await.as_ref().map(|t| (**t).clone())
     }
 
     /// Restore a previously obtained bearer token.
@@ -86,7 +85,7 @@ impl NifiClient {
     /// [`NifiError::Unauthorized`]; re-call [`login`][Self::login]
     /// to obtain a fresh one.
     pub async fn set_token(&self, token: String) {
-        *self.token.write().await = Some(token);
+        *self.token.write().await = Some(zeroize::Zeroizing::new(token));
     }
 
     /// Invalidate the current bearer token and clear it from the client.
@@ -160,7 +159,7 @@ impl NifiClient {
         }
 
         let token = resp.text().await.context(HttpSnafu)?;
-        *self.token.write().await = Some(token);
+        *self.token.write().await = Some(zeroize::Zeroizing::new(token));
         tracing::info!("NiFi login successful for {username}");
         Ok(())
     }
