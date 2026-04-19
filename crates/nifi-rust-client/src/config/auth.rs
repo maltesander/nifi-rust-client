@@ -168,17 +168,18 @@ impl AuthProvider for EnvPasswordAuth {
 /// Authenticates by installing a pre-obtained JWT token directly.
 ///
 /// Useful when a token has been acquired externally (e.g. from a vault or
-/// a previous session) and does not require a login round-trip.
+/// a previous session) and does not require a login round-trip. The token
+/// is stored in a [`zeroize::Zeroizing`] wrapper so it is zeroed on drop.
 #[derive(Clone)]
 pub struct StaticTokenAuth {
-    token: Redacted<String>,
+    token: zeroize::Zeroizing<String>,
 }
 
 impl StaticTokenAuth {
     /// Create a new `StaticTokenAuth` with the given JWT token.
     pub fn new(token: impl Into<String>) -> Self {
         Self {
-            token: Redacted::new(token.into()),
+            token: zeroize::Zeroizing::new(token.into()),
         }
     }
 }
@@ -186,7 +187,7 @@ impl StaticTokenAuth {
 impl fmt::Debug for StaticTokenAuth {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("StaticTokenAuth")
-            .field("token", &self.token)
+            .field("token", &"[REDACTED]")
             .finish()
     }
 }
@@ -194,7 +195,7 @@ impl fmt::Debug for StaticTokenAuth {
 #[async_trait::async_trait]
 impl AuthProvider for StaticTokenAuth {
     async fn authenticate(&self, client: &NifiClient) -> Result<(), NifiError> {
-        client.set_token(self.token.inner().clone()).await;
+        client.set_token((*self.token).clone()).await;
         Ok(())
     }
 }
