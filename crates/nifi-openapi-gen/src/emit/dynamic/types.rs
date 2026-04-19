@@ -229,6 +229,89 @@ fn emit_dynamic_type_file(names: &[&str], merged: &BTreeMap<String, MergedType>)
     crate::util::format_source(&out)
 }
 
+/// Emit a complete inline-enum helper block: doc-comment preamble (with optional
+/// field-doc passthrough), `#[non_exhaustive]` enum, `as_str`, `from_wire`,
+/// `Display`, and `From<T> for String`. Variants iterate in BTreeSet order
+/// (alphabetic by wire value).
+#[cfg_attr(not(test), allow(dead_code))]
+pub(super) fn emit_inline_enum_helper(out: &mut String, name: &str, helper: &InlineEnumHelper) {
+    // Doc preamble — always emitted
+    out.push_str(&format!(
+        "/// Wire values for `{}::{}`.\n",
+        helper.parent_dto, helper.parent_field
+    ));
+    out.push_str("///\n");
+    out.push_str(
+        "/// Helper enum — the parent field is `Option<String>` so unknown\n",
+    );
+    out.push_str(
+        "/// server values still deserialize. Convert via [`as_str`] / [`from_wire`].\n",
+    );
+    if let Some(doc) = &helper.field_doc {
+        out.push_str("///\n");
+        for line in doc.lines() {
+            out.push_str(&format!("/// {line}\n"));
+        }
+    }
+
+    // Enum
+    out.push_str("#[non_exhaustive]\n");
+    out.push_str("#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]\n");
+    out.push_str(&format!("pub enum {name} {{\n"));
+    for wire in &helper.variants {
+        out.push_str(&format!("    {},\n", wire_to_pascal(wire)));
+    }
+    out.push_str("}\n\n");
+
+    // impl block: as_str + from_wire
+    out.push_str(&format!("impl {name} {{\n"));
+    out.push_str("    /// Server wire value (e.g. `\"RUNNING\"`).\n");
+    out.push_str("    pub fn as_str(&self) -> &'static str {\n");
+    out.push_str("        match self {\n");
+    for wire in &helper.variants {
+        out.push_str(&format!(
+            "            Self::{} => \"{}\",\n",
+            wire_to_pascal(wire),
+            wire
+        ));
+    }
+    out.push_str("        }\n");
+    out.push_str("    }\n\n");
+    out.push_str(
+        "    /// Parse a wire string into the typed variant. Returns `None` for\n",
+    );
+    out.push_str("    /// values not present in any supported NiFi version's spec.\n");
+    out.push_str("    pub fn from_wire(s: &str) -> Option<Self> {\n");
+    out.push_str("        match s {\n");
+    for wire in &helper.variants {
+        out.push_str(&format!(
+            "            \"{}\" => Some(Self::{}),\n",
+            wire,
+            wire_to_pascal(wire)
+        ));
+    }
+    out.push_str("            _ => None,\n");
+    out.push_str("        }\n");
+    out.push_str("    }\n");
+    out.push_str("}\n\n");
+
+    // Display impl
+    out.push_str(&format!("impl std::fmt::Display for {name} {{\n"));
+    out.push_str(
+        "    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {\n",
+    );
+    out.push_str("        f.write_str(self.as_str())\n");
+    out.push_str("    }\n");
+    out.push_str("}\n\n");
+
+    // From<T> for String
+    out.push_str(&format!("impl From<{name}> for String {{\n"));
+    out.push_str(&format!("    fn from(v: {name}) -> String {{\n"));
+    out.push_str("        v.as_str().to_string()\n");
+    out.push_str("    }\n");
+    out.push_str("}\n\n");
+}
+
 fn emit_merged_type(out: &mut String, name: &str, mt: &MergedType) {
     match mt {
         MergedType::Dto {
@@ -1001,5 +1084,57 @@ mod tests {
         let all_content: String = files.iter().map(|(_, c)| c.as_str()).collect();
         assert!(all_content.contains("AboutDto"));
         assert!(all_content.contains("version"));
+    }
+
+    #[test]
+    fn emit_inline_enum_helper_renders_full_block() {
+        let helper = InlineEnumHelper {
+            parent_dto: "ScheduleComponentsEntity".into(),
+            parent_field: "state".into(),
+            field_doc: Some("The desired state of the descendant components".into()),
+            owner_tag: Some("flow".into()),
+            variants: BTreeSet::from([
+                "DISABLED".to_string(),
+                "ENABLED".to_string(),
+                "RUNNING".to_string(),
+                "STOPPED".to_string(),
+            ]),
+        };
+        let mut out = String::new();
+        super::emit_inline_enum_helper(&mut out, "ScheduleComponentsEntityState", &helper);
+        // doc preamble
+        assert!(out.contains("/// Wire values for `ScheduleComponentsEntity::state`."));
+        assert!(out.contains("/// Helper enum"));
+        // field-doc passthrough
+        assert!(out.contains("/// The desired state of the descendant components"));
+        // enum + non_exhaustive
+        assert!(out.contains("#[non_exhaustive]"));
+        assert!(out.contains("pub enum ScheduleComponentsEntityState {"));
+        // variants in BTreeSet (alphabetic) order
+        let disabled = out.find("Disabled,").unwrap();
+        let enabled = out.find("Enabled,").unwrap();
+        let running = out.find("Running,").unwrap();
+        let stopped = out.find("Stopped,").unwrap();
+        assert!(disabled < enabled && enabled < running && running < stopped);
+        // as_str
+        assert!(out.contains("pub fn as_str(&self) -> &'static str"));
+        assert!(out.contains("Self::Running => \"RUNNING\""));
+        // from_wire
+        assert!(out.contains("pub fn from_wire(s: &str) -> Option<Self>"));
+        assert!(out.contains("\"RUNNING\" => Some(Self::Running)"));
+        assert!(out.contains("_ => None,"));
+        // Display
+        assert!(out.contains(
+            "impl std::fmt::Display for ScheduleComponentsEntityState"
+        ));
+        // From<T> for String
+        assert!(out.contains(
+            "impl From<ScheduleComponentsEntityState> for String"
+        ));
+        // No serde derives — wire-detached
+        assert!(
+            !out.contains("Deserialize") && !out.contains("Serialize"),
+            "helper must not have serde derives"
+        );
     }
 }
