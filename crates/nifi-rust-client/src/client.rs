@@ -939,9 +939,10 @@ impl NifiClient {
     /// header AND record it on the current tracing span. No-op if the client
     /// has not been configured with `request_id_header`.
     ///
-    /// Called from `build_request` and from the request paths that bypass
-    /// `build_request` (`login`, `delete_inner`) so all outgoing requests are
-    /// covered.
+    /// Called from `build_request` (which covers every HTTP helper including
+    /// `delete_inner`) and directly from `login`, which bypasses
+    /// `build_request` because it runs pre-authentication with a form-encoded
+    /// body.
     fn apply_request_id(&self, req: reqwest::RequestBuilder) -> reqwest::RequestBuilder {
         let Some(header) = self.request_id_header.as_deref() else {
             return req;
