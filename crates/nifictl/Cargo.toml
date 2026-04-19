@@ -10,10 +10,10 @@ homepage.workspace = true
 description = "CLI tool for Apache NiFi 2.x"
 
 [dependencies]
-nifi-rust-client = { version = "0.10.1", features = ["dynamic"] }
 clap = { workspace = true }
 clap_complete.workspace = true
 comfy-table.workspace = true
+nifi-rust-client = { version = "0.10.1", features = ["dynamic"] }
 serde = { workspace = true }
 serde_json.workspace = true
 serde_yaml.workspace = true

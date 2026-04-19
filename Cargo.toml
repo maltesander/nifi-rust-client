@@ -15,30 +15,30 @@ homepage = "https://github.com/maltesander/nifi-rust-client"
 documentation = "https://docs.rs/nifi-rust-client"
 
 [workspace.dependencies]
+async-trait = "0.1"
+bytes = "1"
+clap = { version = "4", features = ["derive", "env"] }
+clap_complete = "4"
+comfy-table = "7"
+futures-core = "0.3"
+futures-util = { version = "0.3", default-features = false }
 nifi-openapi-gen = { path = "crates/nifi-openapi-gen" }
 nifi-rust-client = { path = "crates/nifi-rust-client", default-features = false }
-clap = { version = "4", features = ["derive", "env"] }
 prettyplease = "0.2"
 reqwest = { version = "0.13", default-features = false, features = ["form", "json", "multipart", "query", "rustls", "stream"] }
 semver = "1"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+serde_yaml = "0.9"
 snafu = "0.9"
 syn = { version = "2", features = ["full"] }
-toml_edit = "0.25"
-async-trait = "0.1"
-bytes = "1"
-futures-core = "0.3"
-futures-util = { version = "0.3", default-features = false }
 tokio = { version = "1", features = ["rt", "rt-multi-thread", "macros"] }
+toml = "1"
+toml_edit = "0.25"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 url = "2"
 wiremock = "0.6"
-toml = "1"
-serde_yaml = "0.9"
-clap_complete = "4"
-comfy-table = "7"
 
 [workspace.lints.clippy]
 unwrap_in_result = "deny"
