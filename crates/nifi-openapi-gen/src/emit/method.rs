@@ -37,12 +37,33 @@ pub enum EmitMode<'a> {
     Dynamic(DynamicMethodCtx<'a>),
 }
 
+/// Whether this endpoint should also be emitted in a streaming variant.
+/// True iff the response body is a raw byte payload.
+pub fn endpoint_has_stream_variant(ep: &Endpoint) -> bool {
+    use crate::content_type::ResponseBodyKind;
+    matches!(
+        ep.response_kind,
+        ResponseBodyKind::OctetStream | ResponseBodyKind::Wildcard
+    )
+}
+
 /// Emit the body of a method for the given endpoint into `out`.
 ///
 /// The caller is responsible for emitting the enclosing `impl`
 /// block and the struct declaration; this function only appends
 /// the method itself (doc comment + signature + body).
 pub fn emit_method(ep: &Endpoint, mode: &EmitMode<'_>, out: &mut String) {
+    emit_method_variant(ep, mode, false, out);
+    // Stream variant is emitted only in static mode for now; Task 7 adds
+    // dynamic-mode support. Without this gate, the dynamic body builder
+    // would emit a `get_bytes(...)` call into a function whose declared
+    // return type is `crate::BytesStream`, producing a type mismatch.
+    if endpoint_has_stream_variant(ep) && matches!(mode, EmitMode::Static) {
+        emit_method_variant(ep, mode, true, out);
+    }
+}
+
+fn emit_method_variant(ep: &Endpoint, mode: &EmitMode<'_>, stream: bool, out: &mut String) {
     // Skip form-encoded endpoints for static — they require manual
     // implementations (e.g. NifiClient::login). Dynamic preserves its
     // existing (somewhat quirky) behavior of emitting a stub that
@@ -54,6 +75,9 @@ pub fn emit_method(ep: &Endpoint, mode: &EmitMode<'_>, out: &mut String) {
     }
 
     if let Some(doc) = &ep.doc {
+        if stream {
+            out.push_str("    /// Streaming variant: yields body chunks as they arrive instead of buffering the whole response.\n    ///\n");
+        }
         out.push_str(&format!("    /// {doc}\n"));
         if let Some(desc) = &ep.description {
             out.push_str("    ///\n");
@@ -70,9 +94,16 @@ pub fn emit_method(ep: &Endpoint, mode: &EmitMode<'_>, out: &mut String) {
         emit_error_and_permission_docs(out, ep);
     }
 
-    let return_ty = match mode {
-        EmitMode::Static => crate::emit::common::response_return_type(ep, "crate"),
-        EmitMode::Dynamic(_) => dynamic_response_type_for(ep),
+    let return_ty = if stream {
+        crate::emit::common::response_stream_return_type(match mode {
+            EmitMode::Static => "crate",
+            EmitMode::Dynamic(_) => "crate",
+        })
+    } else {
+        match mode {
+            EmitMode::Static => crate::emit::common::response_return_type(ep, "crate"),
+            EmitMode::Dynamic(_) => dynamic_response_type_for(ep, false),
+        }
     };
     let return_result = format!("Result<{return_ty}, NifiError>");
 
@@ -148,15 +179,19 @@ pub fn emit_method(ep: &Endpoint, mode: &EmitMode<'_>, out: &mut String) {
     // Dynamic's existing output puts query before header which matches static.
     out.push_str(&format!(
         "    pub async fn {fn_name}(&self{path_param_args}{query_param_args}{header_param_args}{body_arg}) -> {return_result} {{\n",
-        fn_name = ep.fn_name,
+        fn_name = if stream {
+            format!("{}_stream", ep.fn_name)
+        } else {
+            ep.fn_name.clone()
+        },
     ));
 
     match mode {
         EmitMode::Static => {
-            out.push_str(&emit_method_body_static(ep));
+            out.push_str(&emit_method_body_static(ep, stream));
         }
         EmitMode::Dynamic(ctx) => {
-            emit_method_body_dynamic(ep, ctx, out);
+            emit_method_body_dynamic(ep, ctx, stream, out);
         }
     }
 
@@ -341,7 +376,7 @@ fn emit_headers_setup(ep: &Endpoint, indent: &str) -> (String, String) {
 
 // ───────────────────────────── Static body ─────────────────────────────
 
-fn emit_method_body_static(ep: &Endpoint) -> String {
+fn emit_method_body_static(ep: &Endpoint, stream: bool) -> String {
     let path_expr = if ep.path_params.is_empty() {
         format!("\"{}\"", ep.path)
     } else {
@@ -354,7 +389,7 @@ fn emit_method_body_static(ep: &Endpoint) -> String {
 
     // If no query params, use the existing simple helpers.
     if ep.query_params.is_empty() {
-        return emit_simple_method_body_static(ep, &path_expr, has_inner, inner_field);
+        return emit_simple_method_body_static(ep, &path_expr, has_inner, inner_field, stream);
     }
 
     // Build query vec construction code.
@@ -402,8 +437,13 @@ fn emit_method_body_static(ep: &Endpoint) -> String {
                 }
             }
             ResponseBodyKind::OctetStream | ResponseBodyKind::Wildcard => {
+                let helper = if stream {
+                    "get_bytes_stream_with_query"
+                } else {
+                    "get_bytes_with_query"
+                };
                 format!(
-                    "{setup}\n        self.client.get_bytes_with_query({path_expr}, {header_arg}, &query).await\n"
+                    "{setup}\n        self.client.{helper}({path_expr}, {header_arg}, &query).await\n"
                 )
             }
             ResponseBodyKind::Text | ResponseBodyKind::Xml => {
@@ -463,7 +503,7 @@ fn emit_method_body_static(ep: &Endpoint) -> String {
         HttpMethod::Put => {
             // No PUT endpoints with query params in the current spec.
             // Fall back to the simple helpers.
-            emit_simple_method_body_static(ep, &path_expr, has_inner, inner_field)
+            emit_simple_method_body_static(ep, &path_expr, has_inner, inner_field, stream)
         }
     }
 }
@@ -474,6 +514,7 @@ fn emit_simple_method_body_static(
     path_expr: &str,
     has_inner: bool,
     inner_field: &str,
+    stream: bool,
 ) -> String {
     use crate::content_type::ResponseBodyKind;
     let entity_ty = ep.response_type.as_deref().unwrap_or("_");
@@ -498,8 +539,13 @@ fn emit_simple_method_body_static(
                 )
             }
             ResponseBodyKind::OctetStream | ResponseBodyKind::Wildcard => {
+                let helper = if stream {
+                    "get_bytes_stream"
+                } else {
+                    "get_bytes"
+                };
                 format!(
-                    "{headers_prelude}        self.client.get_bytes({path_expr}, {header_arg}).await\n"
+                    "{headers_prelude}        self.client.{helper}({path_expr}, {header_arg}).await\n"
                 )
             }
             ResponseBodyKind::Empty => {
@@ -644,7 +690,7 @@ fn emit_simple_method_body_static(
 
 // ──────────────────────────── Dynamic body ────────────────────────────
 
-fn dynamic_response_type_for(ep: &Endpoint) -> String {
+fn dynamic_response_type_for(ep: &Endpoint, _stream: bool) -> String {
     use crate::content_type::ResponseBodyKind;
     match (&ep.response_kind, &ep.response_inner, &ep.response_type) {
         (ResponseBodyKind::Empty, _, _) => "()".to_string(),
@@ -656,7 +702,12 @@ fn dynamic_response_type_for(ep: &Endpoint) -> String {
     }
 }
 
-fn emit_method_body_dynamic(ep: &Endpoint, ctx: &DynamicMethodCtx<'_>, out: &mut String) {
+fn emit_method_body_dynamic(
+    ep: &Endpoint,
+    ctx: &DynamicMethodCtx<'_>,
+    _stream: bool,
+    out: &mut String,
+) {
     // 1. require_endpoint prelude
     out.push_str(&format!(
         "        self.client.require_endpoint(Endpoint::{variant}).await?;\n",

@@ -792,3 +792,71 @@ fn no_permissions_section_when_security_absent() {
         "should not emit Permissions when security absent: {out}"
     );
 }
+
+#[test]
+fn emits_stream_variant_for_octet_stream_response() {
+    use nifi_openapi_gen::content_type::ResponseBodyKind;
+    use nifi_openapi_gen::emit::emit_api;
+    use nifi_openapi_gen::parser::*;
+
+    let ep = Endpoint {
+        method: HttpMethod::Get,
+        path: "/x/{id}/content".into(),
+        fn_name: "download".into(),
+        raw_operation_id: "download".into(),
+        doc: Some("Download".into()),
+        description: None,
+        path_params: vec![PathParam {
+            name: "id".into(),
+            doc: None,
+        }],
+        request_type: None,
+        body_kind: None,
+        body_doc: None,
+        response_type: None,
+        response_inner: None,
+        response_field: None,
+        response_kind: ResponseBodyKind::OctetStream,
+        query_params: vec![],
+        header_params: vec![],
+        success_responses: vec![],
+        error_responses: vec![],
+        security: None,
+    };
+    let tag = TagGroup {
+        tag: "X".into(),
+        module_name: "x".into(),
+        struct_name: "X".into(),
+        accessor_fn: "x".into(),
+        types: vec![],
+        endpoints: vec![ep],
+    };
+    let spec = ApiSpec {
+        tags: vec![tag],
+        all_types: vec![],
+    };
+    let files = emit_api(&spec);
+    let x_rs = files
+        .iter()
+        .find(|(n, _)| n == "x.rs")
+        .expect("x.rs emitted")
+        .1
+        .clone();
+
+    // rustfmt wraps multi-arg signatures across lines, so check for the fn
+    // name and the `id: &str` param independently (matches the convention
+    // used by `emit_api_emits_flat_inherent_methods`).
+    assert!(
+        x_rs.contains("pub async fn download("),
+        "buffered variant missing; got:\n{x_rs}"
+    );
+    assert!(
+        x_rs.contains("pub async fn download_stream("),
+        "stream variant missing; got:\n{x_rs}"
+    );
+    assert!(x_rs.contains("id: &str"));
+    assert!(x_rs.contains("-> Result<Vec<u8>, NifiError>"));
+    assert!(x_rs.contains("-> Result<crate::BytesStream, NifiError>"));
+    assert!(x_rs.contains("self.client.get_bytes("));
+    assert!(x_rs.contains("self.client.get_bytes_stream("));
+}
