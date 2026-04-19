@@ -52,6 +52,52 @@ pub(super) struct InlineEnumHelper {
     pub(super) variants: BTreeSet<String>,
 }
 
+/// Insert or merge an inline-enum helper. Panics with an actionable message
+/// when two distinct parent DTOs would produce the same helper name.
+pub(super) fn merge_inline_enum(
+    inline_enums: &mut BTreeMap<String, InlineEnumHelper>,
+    helper_name: String,
+    parent_dto: &str,
+    parent_field: &str,
+    field_doc: Option<String>,
+    owner_tag: Option<String>,
+    variants: Vec<String>,
+) {
+    match inline_enums.get_mut(&helper_name) {
+        Some(existing) if existing.parent_dto != parent_dto => {
+            panic!(
+                "nifi-openapi-gen: inline-enum helper name collision\n  \
+                 helper: {helper_name}\n  \
+                 parents: [{} (tag={:?}), {} (tag={:?})]\n\
+                 Either rename one DTO's field or extend naming_overrides.",
+                existing.parent_dto, existing.owner_tag,
+                parent_dto, owner_tag,
+            );
+        }
+        Some(existing) => {
+            for v in variants {
+                existing.variants.insert(v);
+            }
+        }
+        None => {
+            let mut variant_set = BTreeSet::new();
+            for v in variants {
+                variant_set.insert(v);
+            }
+            inline_enums.insert(
+                helper_name,
+                InlineEnumHelper {
+                    parent_dto: parent_dto.to_string(),
+                    parent_field: parent_field.to_string(),
+                    field_doc,
+                    owner_tag,
+                    variants: variant_set,
+                },
+            );
+        }
+    }
+}
+
 /// Entry point: merge type definitions from all API versions in the canonical spec
 /// and emit per-tag Rust source files containing union types.
 ///
@@ -341,18 +387,15 @@ fn merge_all_types(
                             }
                             _ => None,
                         };
-                        let entry = inline_enums
-                            .entry(helper_name.clone())
-                            .or_insert_with(|| InlineEnumHelper {
-                                parent_dto: td.name.clone(),
-                                parent_field: field.rust_name.clone(),
-                                field_doc: field.doc.clone(),
-                                owner_tag,
-                                variants: BTreeSet::new(),
-                            });
-                        for v in variants {
-                            entry.variants.insert(v);
-                        }
+                        merge_inline_enum(
+                            &mut inline_enums,
+                            helper_name,
+                            &td.name,
+                            &field.rust_name,
+                            field.doc.clone(),
+                            owner_tag,
+                            variants,
+                        );
                     }
                 }
                 TypeKind::Entity { field, inner } => {
@@ -913,6 +956,36 @@ mod tests {
         assert_eq!(
             shared_kind.owner_tag, None,
             "multi-tag-referenced parent should set owner_tag = None"
+        );
+    }
+
+    #[test]
+    #[should_panic(expected = "inline-enum helper name collision")]
+    fn merge_panics_when_two_dtos_resolve_to_same_helper_name() {
+        // Drive a collision by calling merge_inline_enum directly with two
+        // distinct parent_dto values for the same helper_name. Production
+        // code computes helper_name = format!("{ParentDto}{PascalCase(field)}"),
+        // so two DTOs would only collide if a naming_overrides rename forced it —
+        // but the panic logic is independent of how the collision arose.
+        let mut inline_enums: BTreeMap<String, InlineEnumHelper> = BTreeMap::new();
+        inline_enums.insert(
+            "FooState".to_string(),
+            InlineEnumHelper {
+                parent_dto: "Foo".into(),
+                parent_field: "state".into(),
+                field_doc: None,
+                owner_tag: None,
+                variants: BTreeSet::from(["A".to_string()]),
+            },
+        );
+        super::merge_inline_enum(
+            &mut inline_enums,
+            "FooState".to_string(),
+            "Bar", // different parent — should panic
+            "state",
+            None,
+            None,
+            vec!["B".to_string()],
         );
     }
 
