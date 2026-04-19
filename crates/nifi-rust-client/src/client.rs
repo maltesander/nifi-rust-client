@@ -680,6 +680,30 @@ impl NifiClient {
         .await
     }
 
+    /// GET with query parameters returning a stream of body chunks.
+    /// See [`Self::get_bytes_stream`] for retry/streaming semantics.
+    #[tracing::instrument(skip(self, query))]
+    pub(crate) async fn get_bytes_stream_with_query(
+        &self,
+        path: &str,
+        extra_headers: &[(&str, &str)],
+        query: &[(&str, String)],
+    ) -> Result<crate::BytesStream, NifiError> {
+        self.with_retry(|| async {
+            tracing::debug!(method = "GET", path, "NiFi API request");
+            let url = self.api_url(path);
+            let mut req = self
+                .authenticated(self.http.get(url).query(query))
+                .await;
+            for (name, value) in extra_headers {
+                req = req.header(*name, *value);
+            }
+            let resp = req.send().await.context(HttpSnafu)?;
+            Self::bytes_stream("GET", path, resp).await
+        })
+        .await
+    }
+
     /// POST with `application/octet-stream` body; ignores the response body.
     ///
     /// Kept available for forward compatibility — the emitter dispatch table at
