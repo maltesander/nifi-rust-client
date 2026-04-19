@@ -96,7 +96,6 @@ impl ControllerServiceTargetState {
 // ── Polling primitive ──────────────────────────────────────────────────────
 
 /// Internal outcome of a single poll check.
-#[allow(dead_code)]
 enum PollOutcome<T> {
     /// State not satisfied yet — keep polling.
     Pending,
@@ -300,6 +299,102 @@ pub async fn processor_state_dynamic(
         }
     };
     poll_until(&config, &op, fetch, done).await
+}
+
+// ── wait::parameter_context_update ─────────────────────────────────────────
+
+#[cfg(not(feature = "dynamic"))]
+use crate::types::ParameterContextUpdateRequestEntity;
+
+/// Poll a parameter-context update request until it reaches a terminal state.
+///
+/// Fetches `GET /parameter-contexts/{context_id}/update-requests/{request_id}`.
+/// Returns the final entity on success. If the request completes with a
+/// `failureReason`, returns [`NifiError::Api`] with status 500 and the
+/// failure reason in the message. On timeout, returns [`NifiError::Timeout`].
+///
+/// If [`WaitConfig::cleanup`] is `true` (default), issues a trailing
+/// `DELETE /parameter-contexts/{context_id}/update-requests/{request_id}`
+/// to free server-side state regardless of success or failure. The DELETE
+/// is best-effort — its errors are swallowed.
+#[cfg(not(feature = "dynamic"))]
+pub async fn parameter_context_update(
+    client: &crate::NifiClient,
+    context_id: &str,
+    request_id: &str,
+    config: WaitConfig,
+) -> Result<ParameterContextUpdateRequestEntity, NifiError> {
+    let op = format!("wait_for_parameter_context_update({context_id}/{request_id})");
+    let fetch = || async {
+        client
+            .parametercontexts()
+            .get_parameter_context_update(context_id, request_id)
+            .await
+    };
+    let done = |entity: &ParameterContextUpdateRequestEntity| {
+        let req = entity.request.as_ref();
+        let complete = req.and_then(|r| r.complete).unwrap_or(false);
+        let failure = req.and_then(|r| r.failure_reason.as_ref());
+        match (complete, failure) {
+            (true, Some(reason)) => PollOutcome::Failed(NifiError::Api {
+                status: 500,
+                message: format!("parameter context update failed: {reason}"),
+            }),
+            (true, None) => PollOutcome::Ready(()),
+            (false, _) => PollOutcome::Pending,
+        }
+    };
+    let result = poll_until(&config, &op, fetch, done).await;
+
+    if config.cleanup {
+        let _ = client
+            .parametercontexts()
+            .delete_update_request(context_id, request_id, None)
+            .await;
+    }
+    result
+}
+
+#[cfg(feature = "dynamic")]
+use crate::dynamic::types::ParameterContextUpdateRequestEntity;
+
+/// Dynamic-mode counterpart of [`parameter_context_update`].
+#[cfg(feature = "dynamic")]
+pub async fn parameter_context_update_dynamic(
+    client: &crate::dynamic::DynamicClient,
+    context_id: &str,
+    request_id: &str,
+    config: WaitConfig,
+) -> Result<ParameterContextUpdateRequestEntity, NifiError> {
+    let op = format!("wait_for_parameter_context_update({context_id}/{request_id})");
+    let fetch = || async {
+        client
+            .parametercontexts()
+            .get_parameter_context_update(context_id, request_id)
+            .await
+    };
+    let done = |entity: &ParameterContextUpdateRequestEntity| {
+        let req = entity.request.as_ref();
+        let complete = req.and_then(|r| r.complete).unwrap_or(false);
+        let failure = req.and_then(|r| r.failure_reason.as_ref());
+        match (complete, failure) {
+            (true, Some(reason)) => PollOutcome::Failed(NifiError::Api {
+                status: 500,
+                message: format!("parameter context update failed: {reason}"),
+            }),
+            (true, None) => PollOutcome::Ready(()),
+            (false, _) => PollOutcome::Pending,
+        }
+    };
+    let result = poll_until(&config, &op, fetch, done).await;
+
+    if config.cleanup {
+        let _ = client
+            .parametercontexts()
+            .delete_update_request(context_id, request_id, None)
+            .await;
+    }
+    result
 }
 
 #[cfg(test)]
