@@ -1,7 +1,7 @@
 use std::collections::{BTreeMap, HashMap, HashSet};
 
 use crate::emit::common::{InlineEnumMode, emit_doc_comment, field_type_to_rust};
-use crate::parser::{ApiSpec, FieldType, TagGroup, TypeDef, TypeKind};
+use crate::parser::{ApiSpec, TagGroup, TypeDef, TypeKind};
 use crate::util::{escape_keyword, pascal_case};
 
 /// Returns a list of `(filename, content)` pairs to write into `src/types/`.
@@ -111,7 +111,7 @@ fn emit_type(t: &TypeDef) -> String {
 fn emit_dto(t: &TypeDef) -> String {
     let mut out = String::new();
     for field in &t.fields {
-        if let Some(variants) = extract_enum(&field.ty) {
+        if let Some(variants) = crate::emit::common::extract_inline_enum_variants(&field.ty) {
             let enum_name = format!("{}{}", t.name, pascal_case(&field.rust_name));
             out.push_str(&emit_string_enum(&enum_name, &variants));
             out.push('\n');
@@ -221,12 +221,3 @@ fn emit_standalone_string_enum(name: &str, variants: &[String]) -> String {
     out
 }
 
-fn extract_enum(ty: &FieldType) -> Option<Vec<String>> {
-    match ty {
-        FieldType::Enum(v) => Some(v.clone()),
-        FieldType::Opt(inner) => extract_enum(inner),
-        FieldType::List(inner) => extract_enum(inner),
-        FieldType::Map(inner) => extract_enum(inner),
-        _ => None,
-    }
-}

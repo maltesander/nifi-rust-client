@@ -78,6 +78,19 @@ pub(crate) fn body_kind_signature(body_kind: Option<&RequestBodyKind>) -> &'stat
     }
 }
 
+/// Descend through `Opt`/`List`/`Map` wrappers to find an inline string enum.
+/// Returns the cloned variant list if found, `None` otherwise. Used by both
+/// the static (per-version) and dynamic (canonical-superset) emitters.
+pub(crate) fn extract_inline_enum_variants(ty: &FieldType) -> Option<Vec<String>> {
+    match ty {
+        FieldType::Enum(v) => Some(v.clone()),
+        FieldType::Opt(inner) => extract_inline_enum_variants(inner),
+        FieldType::List(inner) => extract_inline_enum_variants(inner),
+        FieldType::Map(inner) => extract_inline_enum_variants(inner),
+        _ => None,
+    }
+}
+
 /// Controls how `FieldType::Enum` is mapped to a Rust type name.
 pub(crate) enum InlineEnumMode<'a> {
     /// Static mode: generate an inline enum type named `{struct_name}{PascalCase(field_name)}`.
@@ -304,5 +317,34 @@ mod tests {
         assert_eq!(body_kind_signature(None), "");
         assert_eq!(body_kind_signature(Some(&RequestBodyKind::Wildcard)), "");
         assert_eq!(body_kind_signature(Some(&RequestBodyKind::FormEncoded)), "");
+    }
+
+    #[test]
+    fn extract_inline_enum_variants_finds_through_opt() {
+        let ty = FieldType::Opt(Box::new(FieldType::Enum(vec![
+            "RUNNING".into(),
+            "STOPPED".into(),
+        ])));
+        let got = extract_inline_enum_variants(&ty);
+        assert_eq!(got, Some(vec!["RUNNING".to_string(), "STOPPED".to_string()]));
+    }
+
+    #[test]
+    fn extract_inline_enum_variants_finds_through_list() {
+        let ty = FieldType::List(Box::new(FieldType::Enum(vec!["A".into()])));
+        let got = extract_inline_enum_variants(&ty);
+        assert_eq!(got, Some(vec!["A".to_string()]));
+    }
+
+    #[test]
+    fn extract_inline_enum_variants_finds_through_map() {
+        let ty = FieldType::Map(Box::new(FieldType::Enum(vec!["K".into()])));
+        let got = extract_inline_enum_variants(&ty);
+        assert_eq!(got, Some(vec!["K".to_string()]));
+    }
+
+    #[test]
+    fn extract_inline_enum_variants_returns_none_for_str() {
+        assert_eq!(extract_inline_enum_variants(&FieldType::Str), None);
     }
 }
