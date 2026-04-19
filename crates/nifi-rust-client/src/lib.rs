@@ -129,6 +129,10 @@ pub mod config;
 pub mod error;
 /// Pagination helpers for NiFi REST endpoints that support offset/count paging.
 pub mod pagination;
+/// Polling helpers for state transitions and async queries.
+pub mod wait;
+/// One-shot bulk-control helpers for process groups.
+pub mod bulk;
 mod require;
 /// Streaming byte responses for large binary downloads.
 pub mod streaming;
