@@ -390,6 +390,50 @@ In dynamic mode, use `flow_history_dynamic(&dyn_client, filter, page_size)` inst
 
 On a missing `actions` or `total` field in the response, the paginator surfaces `NifiError::MissingField { path }` via the same `require!` machinery used elsewhere in the crate. Transient HTTP errors are retried per-page by `NifiClient`'s existing retry policy; the paginator adds no retry logic of its own.
 
+## Waiting and bulk actions
+
+For state transitions that aren't synchronous, `nifi_rust_client::wait`
+provides polling helpers with configurable timeout and backoff:
+
+```rust,no_run
+use std::time::Duration;
+use nifi_rust_client::wait::{self, ProcessorTargetState, WaitConfig};
+
+async fn example(client: nifi_rust_client::NifiClient) -> Result<(), nifi_rust_client::NifiError> {
+    let processor = wait::processor_state(
+        &client,
+        "processor-id",
+        ProcessorTargetState::Running,
+        WaitConfig {
+            timeout: Duration::from_secs(60),
+            poll_interval: Duration::from_millis(250),
+            ..Default::default()
+        },
+    ).await?;
+    Ok(())
+}
+```
+
+Four helpers are available: `processor_state`, `controller_service_state`,
+`parameter_context_update`, and `provenance_query`. On timeout, all return
+`NifiError::Timeout { operation }`.
+
+For bulk control of a process group, `nifi_rust_client::bulk` wraps the
+native NiFi bulk endpoints:
+
+```rust,no_run
+use nifi_rust_client::bulk;
+
+async fn example(client: nifi_rust_client::NifiClient) -> Result<(), nifi_rust_client::NifiError> {
+    bulk::start_process_group(&client, "group-id").await?;
+    bulk::enable_all_controller_services(&client, "group-id").await?;
+    Ok(())
+}
+```
+
+Both modules expose `*_dynamic` siblings under the `dynamic` feature flag
+for use with `DynamicClient`.
+
 ## Resource accessors
 
 All API methods are grouped into resource structs mirroring NiFi's own API grouping. Access them via the client:
