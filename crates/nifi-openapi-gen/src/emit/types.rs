@@ -192,6 +192,20 @@ fn emit_string_enum(name: &str, variants: &[String]) -> String {
         out.push_str(&format!("    #[serde(rename = \"{v}\")]\n    {variant},\n"));
     }
     out.push_str("}\n");
+
+    // as_str() helper — feature-agnostic alternative to matching variants.
+    out.push('\n');
+    out.push_str(&format!("impl {name} {{\n"));
+    out.push_str("    /// Server wire value for this variant.\n");
+    out.push_str("    pub fn as_str(&self) -> &'static str {\n");
+    out.push_str("        match self {\n");
+    for v in variants {
+        let variant = pascal_case(v);
+        out.push_str(&format!("            {name}::{variant} => \"{v}\",\n"));
+    }
+    out.push_str("        }\n");
+    out.push_str("    }\n");
+    out.push_str("}\n");
     out
 }
 
@@ -219,5 +233,25 @@ fn emit_standalone_string_enum(name: &str, variants: &[String]) -> String {
     out.push_str("    }\n");
     out.push_str("}\n");
     out
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn static_string_enum_emits_as_str() {
+        let out = super::emit_string_enum(
+            "ScheduleComponentsEntityState",
+            &["RUNNING".into(), "STOPPED".into(), "DISABLED".into()],
+        );
+        assert!(
+            out.contains("pub fn as_str(&self) -> &'static str"),
+            "missing as_str method: {out}"
+        );
+        assert!(out.contains("ScheduleComponentsEntityState::Running => \"RUNNING\""));
+        assert!(out.contains("ScheduleComponentsEntityState::Stopped => \"STOPPED\""));
+        assert!(out.contains("ScheduleComponentsEntityState::Disabled => \"DISABLED\""));
+    }
 }
 
