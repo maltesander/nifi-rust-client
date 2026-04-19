@@ -237,8 +237,6 @@ fn emit_standalone_string_enum(name: &str, variants: &[String]) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
     #[test]
     fn static_string_enum_emits_as_str() {
         let out = super::emit_string_enum(

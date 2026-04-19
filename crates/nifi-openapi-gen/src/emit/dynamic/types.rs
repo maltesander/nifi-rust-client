@@ -38,6 +38,10 @@ enum MergedType {
 /// Sibling helper emitted alongside a DTO when one of its fields is an inline
 /// string enum. The parent field stays `Option<String>` (wire-tolerant); this
 /// type gives callers a typed companion via `as_str` / `from_wire`.
+// Fields are consumed by emit_inline_enum_helper (added in a later task).
+// Until that consumer lands, suppress dead_code in non-test builds — tests
+// already exercise every field via assertions.
+#[cfg_attr(not(test), allow(dead_code))]
 pub(super) struct InlineEnumHelper {
     pub(super) parent_dto: String,
     pub(super) parent_field: String,
@@ -849,6 +853,66 @@ mod tests {
         assert_eq!(
             helper.variants.iter().cloned().collect::<Vec<_>>(),
             vec!["A".to_string(), "B".to_string(), "C".to_string()],
+        );
+    }
+
+    #[test]
+    fn merge_resolves_owner_tag_from_single_referencing_tag() {
+        let td_single = TypeDef {
+            name: "Dto".to_string(),
+            kind: TypeKind::Dto,
+            fields: vec![Field {
+                rust_name: "state".to_string(),
+                serde_name: "state".to_string(),
+                ty: FieldType::Opt(Box::new(FieldType::Enum(vec!["A".into()]))),
+                doc: None,
+                read_only: false,
+                deprecated: false,
+            }],
+            doc: None,
+        };
+        let td_shared = TypeDef {
+            name: "Shared".to_string(),
+            kind: TypeKind::Dto,
+            fields: vec![Field {
+                rust_name: "kind".to_string(),
+                serde_name: "kind".to_string(),
+                ty: FieldType::Opt(Box::new(FieldType::Enum(vec!["X".into()]))),
+                doc: None,
+                read_only: false,
+                deprecated: false,
+            }],
+            doc: None,
+        };
+        let spec = make_spec(vec![td_single, td_shared]);
+        let mut type_to_tags: HashMap<String, HashSet<String>> = HashMap::new();
+        type_to_tags
+            .entry("Dto".to_string())
+            .or_default()
+            .insert("flow".to_string());
+        // "Shared" referenced by two tags ⇒ should land in common.rs.
+        type_to_tags
+            .entry("Shared".to_string())
+            .or_default()
+            .insert("flow".to_string());
+        type_to_tags
+            .entry("Shared".to_string())
+            .or_default()
+            .insert("processors".to_string());
+
+        let (_merged, inline_enums) = merge_all_types(&[("2.8.0", &spec)], &type_to_tags);
+
+        let dto_state = inline_enums.get("DtoState").expect("DtoState helper missing");
+        assert_eq!(
+            dto_state.owner_tag.as_deref(),
+            Some("flow"),
+            "single-tag-referenced parent should set owner_tag = Some(tag)"
+        );
+
+        let shared_kind = inline_enums.get("SharedKind").expect("SharedKind helper missing");
+        assert_eq!(
+            shared_kind.owner_tag, None,
+            "multi-tag-referenced parent should set owner_tag = None"
         );
     }
 
