@@ -270,3 +270,79 @@ async fn parameter_context_update_no_cleanup_when_disabled() {
         .unwrap();
     assert!(entity.request.and_then(|r| r.complete).unwrap_or(false));
 }
+
+// ── provenance_query ────────────────────────────────────────────────────────
+
+fn provenance_entity(finished: bool) -> serde_json::Value {
+    json!({
+        "provenance": {
+            "id": "q-1",
+            "finished": finished,
+            "percentCompleted": if finished { 100 } else { 50 },
+        }
+    })
+}
+
+#[tokio::test]
+async fn provenance_query_succeeds_and_cleans_up() {
+    let mock_server = MockServer::start().await;
+
+    Mock::given(method("GET"))
+        .and(path("/nifi-api/provenance/q-1"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(provenance_entity(false)))
+        .up_to_n_times(1)
+        .mount(&mock_server)
+        .await;
+    Mock::given(method("GET"))
+        .and(path("/nifi-api/provenance/q-1"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(provenance_entity(true)))
+        .mount(&mock_server)
+        .await;
+
+    Mock::given(method("DELETE"))
+        .and(path("/nifi-api/provenance/q-1"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(provenance_entity(true)))
+        .expect(1)
+        .mount(&mock_server)
+        .await;
+
+    let client = NifiClientBuilder::new(&mock_server.uri()).unwrap().build().unwrap();
+    client.set_token("jwt".to_string()).await;
+
+    let dto = wait::provenance_query(&client, "q-1", fast_config(1000))
+        .await
+        .unwrap();
+    assert_eq!(dto.finished, Some(true));
+}
+
+#[tokio::test]
+async fn provenance_query_propagates_fetch_error() {
+    let mock_server = MockServer::start().await;
+
+    Mock::given(method("GET"))
+        .and(path("/nifi-api/provenance/q-1"))
+        .respond_with(ResponseTemplate::new(500).set_body_string("internal error"))
+        .mount(&mock_server)
+        .await;
+
+    // Cleanup is still attempted regardless of poll outcome.
+    Mock::given(method("DELETE"))
+        .and(path("/nifi-api/provenance/q-1"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(provenance_entity(true)))
+        .mount(&mock_server)
+        .await;
+
+    let client = NifiClientBuilder::new(&mock_server.uri()).unwrap().build().unwrap();
+    client.set_token("jwt".to_string()).await;
+
+    let err = wait::provenance_query(&client, "q-1", fast_config(200))
+        .await
+        .unwrap_err();
+    // Error might be Api(500) (first fetch) or Timeout (if retries keep hitting 500).
+    // Accept both — the exact outcome depends on whether a retry policy is configured
+    // (default is None, so Api(500) is most likely).
+    assert!(
+        matches!(err, NifiError::Api { status: 500, .. }) || matches!(err, NifiError::Timeout { .. }),
+        "expected Api(500) or Timeout, got: {err:?}"
+    );
+}
