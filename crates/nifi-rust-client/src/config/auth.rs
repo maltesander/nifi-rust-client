@@ -156,9 +156,12 @@ impl AuthProvider for EnvPasswordAuth {
         let username = std::env::var(&self.username_var).map_err(|_| NifiError::Auth {
             message: format!("environment variable {} is not set", self.username_var),
         })?;
-        let password = std::env::var(&self.password_var).map_err(|_| NifiError::Auth {
-            message: format!("environment variable {} is not set", self.password_var),
-        })?;
+        let password =
+            zeroize::Zeroizing::new(std::env::var(&self.password_var).map_err(|_| {
+                NifiError::Auth {
+                    message: format!("environment variable {} is not set", self.password_var),
+                }
+            })?);
         client.login(&username, &password).await
     }
 }
