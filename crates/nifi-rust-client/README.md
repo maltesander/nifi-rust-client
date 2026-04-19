@@ -294,6 +294,27 @@ No per-node token cache or special routing headers are needed. The existing retr
 | `client.token()` | Return the current bearer token as `Option<String>` (async) |
 | `client.set_token(token)` | Restore a previously obtained token (async) |
 
+
+### Request correlation
+
+Optionally emit a fresh UUIDv4 per request, both on the outgoing HTTP header and
+the per-request tracing span:
+
+```rust
+use nifi_rust_client::NifiClientBuilder;
+
+# async fn example() -> Result<(), nifi_rust_client::NifiError> {
+let client = NifiClientBuilder::new("https://nifi.example.com:8443")?
+    .request_id_header(Some("X-Request-Id"))
+    .build()?;
+# Ok(())
+# }
+```
+
+When not configured (the default), no header is sent and no span field is recorded —
+byte-identical behavior for users who don't opt in. Useful names are
+`"X-Request-Id"`, `"X-Correlation-Id"`, or any other name your observability
+stack expects.
 ## Streaming binary downloads
 
 Endpoints returning `application/octet-stream` or `*/*` are emitted in
