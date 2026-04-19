@@ -10,7 +10,14 @@
 
 use std::time::Duration;
 
+use reqwest::StatusCode;
+
 use crate::NifiError;
+
+/// Synthetic status code used when a NiFi async query reports a
+/// `failureReason` — there is no real HTTP error to forward, so we
+/// surface the failure as `Api { status: 500, .. }`.
+const STATUS_OPERATION_FAILED: u16 = StatusCode::INTERNAL_SERVER_ERROR.as_u16();
 
 // ── Configuration ──────────────────────────────────────────────────────────
 
@@ -342,7 +349,7 @@ pub async fn parameter_context_update(
         let failure = req.and_then(|r| r.failure_reason.as_ref());
         match (complete, failure) {
             (true, Some(reason)) => PollOutcome::Failed(NifiError::Api {
-                status: 500,
+                status: STATUS_OPERATION_FAILED,
                 message: format!("parameter context update failed: {reason}"),
             }),
             (true, None) => PollOutcome::Ready,
@@ -384,7 +391,7 @@ pub async fn parameter_context_update_dynamic(
         let failure = req.and_then(|r| r.failure_reason.as_ref());
         match (complete, failure) {
             (true, Some(reason)) => PollOutcome::Failed(NifiError::Api {
-                status: 500,
+                status: STATUS_OPERATION_FAILED,
                 message: format!("parameter context update failed: {reason}"),
             }),
             (true, None) => PollOutcome::Ready,

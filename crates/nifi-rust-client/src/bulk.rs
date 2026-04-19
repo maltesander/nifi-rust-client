@@ -8,6 +8,20 @@
 
 use crate::NifiError;
 
+// Wire values for the `state` field of `ScheduleComponentsEntity` /
+// `ActivateControllerServicesEntity`. Used only by the dynamic-mode helpers
+// (`*_dynamic`) below — static-mode helpers reach for the generated
+// `*EntityState` enums directly. These constants disappear once the dynamic
+// generator emits field-level string enums (tracked separately).
+#[cfg(feature = "dynamic")]
+const STATE_RUNNING: &str = "RUNNING";
+#[cfg(feature = "dynamic")]
+const STATE_STOPPED: &str = "STOPPED";
+#[cfg(feature = "dynamic")]
+const STATE_ENABLED: &str = "ENABLED";
+#[cfg(feature = "dynamic")]
+const STATE_DISABLED: &str = "DISABLED";
+
 // ── bulk::{start,stop}_process_group ───────────────────────────────────────
 
 #[cfg(not(feature = "dynamic"))]
@@ -90,7 +104,7 @@ pub async fn start_process_group_dynamic(
 ) -> Result<ScheduleComponentsEntity, NifiError> {
     let body = ScheduleComponentsEntity {
         id: Some(group_id.to_string()),
-        state: Some("RUNNING".to_string()),
+        state: Some(STATE_RUNNING.to_string()),
         ..Default::default()
     };
     client.flow().schedule_components(group_id, &body).await
@@ -104,7 +118,7 @@ pub async fn stop_process_group_dynamic(
 ) -> Result<ScheduleComponentsEntity, NifiError> {
     let body = ScheduleComponentsEntity {
         id: Some(group_id.to_string()),
-        state: Some("STOPPED".to_string()),
+        state: Some(STATE_STOPPED.to_string()),
         ..Default::default()
     };
     client.flow().schedule_components(group_id, &body).await
@@ -118,7 +132,7 @@ pub async fn enable_all_controller_services_dynamic(
 ) -> Result<ActivateControllerServicesEntity, NifiError> {
     let body = ActivateControllerServicesEntity {
         id: Some(group_id.to_string()),
-        state: Some("ENABLED".to_string()),
+        state: Some(STATE_ENABLED.to_string()),
         ..Default::default()
     };
     client.flow().activate_controller_services(group_id, &body).await
@@ -132,7 +146,7 @@ pub async fn disable_all_controller_services_dynamic(
 ) -> Result<ActivateControllerServicesEntity, NifiError> {
     let body = ActivateControllerServicesEntity {
         id: Some(group_id.to_string()),
-        state: Some("DISABLED".to_string()),
+        state: Some(STATE_DISABLED.to_string()),
         ..Default::default()
     };
     client.flow().activate_controller_services(group_id, &body).await

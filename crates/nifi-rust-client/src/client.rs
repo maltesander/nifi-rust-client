@@ -1,7 +1,8 @@
 #![deny(missing_docs)]
 use std::sync::Arc;
 
-use reqwest::Client;
+use reqwest::header::{CONTENT_TYPE, HeaderName};
+use reqwest::{Client, Method, StatusCode};
 use serde::de::DeserializeOwned;
 use snafu::ResultExt as _;
 use tokio::sync::RwLock;
@@ -10,6 +11,14 @@ use url::Url;
 use crate::NifiError;
 use crate::config::auth::AuthProvider;
 use crate::error::{AuthSnafu, HttpSnafu};
+
+/// `application/octet-stream` MIME type for binary upload bodies.
+const APPLICATION_OCTET_STREAM: &str = "application/octet-stream";
+
+/// HTTP header NiFi reads behind a trusted proxy to identify the end user.
+/// Stored lowercased because [`HeaderName::from_static`] requires it; HTTP
+/// header names are case-insensitive on the wire.
+const PROXIED_ENTITIES_CHAIN: HeaderName = HeaderName::from_static("x-proxiedentitieschain");
 
 /// Client for the Apache NiFi REST API.
 pub struct NifiClient {
@@ -128,7 +137,8 @@ impl NifiClient {
     /// automatic token refresh on 401 responses.
     #[tracing::instrument(skip(self, username, password), fields(request_id = tracing::field::Empty))]
     pub async fn login(&self, username: &str, password: &str) -> Result<(), NifiError> {
-        tracing::debug!(method = "POST", path = "/access/token", "NiFi API request");
+        let method = Method::POST;
+        tracing::debug!(method = %method, path = "/access/token", "NiFi API request");
         let url = self.api_url("/access/token");
         let req = self.apply_request_id(self.http.post(url));
         let resp = req
@@ -139,7 +149,7 @@ impl NifiClient {
 
         let status = resp.status();
         tracing::debug!(
-            method = "POST",
+            method = %method,
             path = "/access/token",
             status = status.as_u16(),
             "NiFi API response"
@@ -147,7 +157,7 @@ impl NifiClient {
         if !status.is_success() {
             let body = resp.text().await.unwrap_or_else(|_| status.to_string());
             tracing::debug!(
-                method = "POST",
+                method = %method,
                 path = "/access/token",
                 status = status.as_u16(),
                 %body,
@@ -155,7 +165,7 @@ impl NifiClient {
             );
             let message = extract_error_message(&body);
             tracing::warn!(
-                method = "POST",
+                method = %method,
                 path = "/access/token",
                 status = status.as_u16(),
                 %message,
@@ -289,11 +299,11 @@ impl NifiClient {
     ) -> Result<T, NifiError> {
         self.with_retry(|| async {
             let req = self
-                .build_request("GET", path, self.http.get(self.api_url(path)))
+                .build_request(&Method::GET, path, self.http.get(self.api_url(path)))
                 .await;
             let req = apply_extra_headers(req, extra_headers);
             let resp = req.send().await.context(HttpSnafu)?;
-            Self::deserialize("GET", path, resp).await
+            Self::deserialize(&Method::GET, path, resp).await
         })
         .await
     }
@@ -311,11 +321,11 @@ impl NifiClient {
     {
         self.with_retry(|| async {
             let req = self
-                .build_request("POST", path, self.http.post(self.api_url(path)))
+                .build_request(&Method::POST, path, self.http.post(self.api_url(path)))
                 .await;
             let req = apply_extra_headers(req, extra_headers);
             let resp = req.json(body).send().await.context(HttpSnafu)?;
-            Self::deserialize("POST", path, resp).await
+            Self::deserialize(&Method::POST, path, resp).await
         })
         .await
     }
@@ -333,11 +343,11 @@ impl NifiClient {
     {
         self.with_retry(|| async {
             let req = self
-                .build_request("PUT", path, self.http.put(self.api_url(path)))
+                .build_request(&Method::PUT, path, self.http.put(self.api_url(path)))
                 .await;
             let req = apply_extra_headers(req, extra_headers);
             let resp = req.json(body).send().await.context(HttpSnafu)?;
-            Self::deserialize("PUT", path, resp).await
+            Self::deserialize(&Method::PUT, path, resp).await
         })
         .await
     }
@@ -351,11 +361,11 @@ impl NifiClient {
     ) -> Result<T, NifiError> {
         self.with_retry(|| async {
             let req = self
-                .build_request("POST", path, self.http.post(self.api_url(path)))
+                .build_request(&Method::POST, path, self.http.post(self.api_url(path)))
                 .await;
             let req = apply_extra_headers(req, extra_headers);
             let resp = req.send().await.context(HttpSnafu)?;
-            Self::deserialize("POST", path, resp).await
+            Self::deserialize(&Method::POST, path, resp).await
         })
         .await
     }
@@ -377,11 +387,11 @@ impl NifiClient {
     ) -> Result<(), NifiError> {
         self.with_retry(|| async {
             let req = self
-                .build_request("POST", path, self.http.post(self.api_url(path)))
+                .build_request(&Method::POST, path, self.http.post(self.api_url(path)))
                 .await;
             let req = apply_extra_headers(req, extra_headers);
             let resp = req.send().await.context(HttpSnafu)?;
-            Self::check_void("POST", path, resp).await
+            Self::check_void(&Method::POST, path, resp).await
         })
         .await
     }
@@ -401,11 +411,11 @@ impl NifiClient {
     ) -> Result<(), NifiError> {
         self.with_retry(|| async {
             let req = self
-                .build_request("POST", path, self.http.post(self.api_url(path)))
+                .build_request(&Method::POST, path, self.http.post(self.api_url(path)))
                 .await;
             let req = apply_extra_headers(req, extra_headers);
             let resp = req.json(body).send().await.context(HttpSnafu)?;
-            Self::check_void("POST", path, resp).await
+            Self::check_void(&Method::POST, path, resp).await
         })
         .await
     }
@@ -419,11 +429,11 @@ impl NifiClient {
     ) -> Result<T, NifiError> {
         self.with_retry(|| async {
             let req = self
-                .build_request("PUT", path, self.http.put(self.api_url(path)))
+                .build_request(&Method::PUT, path, self.http.put(self.api_url(path)))
                 .await;
             let req = apply_extra_headers(req, extra_headers);
             let resp = req.send().await.context(HttpSnafu)?;
-            Self::deserialize("PUT", path, resp).await
+            Self::deserialize(&Method::PUT, path, resp).await
         })
         .await
     }
@@ -443,11 +453,11 @@ impl NifiClient {
     ) -> Result<(), NifiError> {
         self.with_retry(|| async {
             let req = self
-                .build_request("PUT", path, self.http.put(self.api_url(path)))
+                .build_request(&Method::PUT, path, self.http.put(self.api_url(path)))
                 .await;
             let req = apply_extra_headers(req, extra_headers);
             let resp = req.json(body).send().await.context(HttpSnafu)?;
-            Self::check_void("PUT", path, resp).await
+            Self::check_void(&Method::PUT, path, resp).await
         })
         .await
     }
@@ -466,11 +476,11 @@ impl NifiClient {
     ) -> Result<(), NifiError> {
         self.with_retry(|| async {
             let req = self
-                .build_request("PUT", path, self.http.put(self.api_url(path)))
+                .build_request(&Method::PUT, path, self.http.put(self.api_url(path)))
                 .await;
             let req = apply_extra_headers(req, extra_headers);
             let resp = req.send().await.context(HttpSnafu)?;
-            Self::check_void("PUT", path, resp).await
+            Self::check_void(&Method::PUT, path, resp).await
         })
         .await
     }
@@ -489,13 +499,13 @@ impl NifiClient {
     ) -> Result<T, NifiError> {
         self.with_retry(|| async {
             let req = self
-                .build_request("POST", path, self.http.post(self.api_url(path)))
+                .build_request(&Method::POST, path, self.http.post(self.api_url(path)))
                 .await
-                .header("Content-Type", "application/octet-stream")
+                .header(CONTENT_TYPE, APPLICATION_OCTET_STREAM)
                 .body(data.clone());
             let req = apply_extra_headers(req, extra_headers);
             let resp = req.send().await.context(HttpSnafu)?;
-            Self::deserialize("POST", path, resp).await
+            Self::deserialize(&Method::POST, path, resp).await
         })
         .await
     }
@@ -517,14 +527,14 @@ impl NifiClient {
     ) -> Result<T, NifiError> {
         self.with_retry(|| async {
             let req = self
-                .build_request("POST", path, self.http.post(self.api_url(path)))
+                .build_request(&Method::POST, path, self.http.post(self.api_url(path)))
                 .await;
             let req = apply_extra_headers(req, extra_headers);
             let part =
                 reqwest::multipart::Part::bytes(data.clone()).file_name(filename.to_string());
             let form = reqwest::multipart::Form::new().part("file", part);
             let resp = req.multipart(form).send().await.context(HttpSnafu)?;
-            Self::deserialize("POST", path, resp).await
+            Self::deserialize(&Method::POST, path, resp).await
         })
         .await
     }
@@ -546,11 +556,11 @@ impl NifiClient {
     ) -> Result<(), NifiError> {
         self.with_retry(|| async {
             let req = self
-                .build_request("GET", path, self.http.get(self.api_url(path)))
+                .build_request(&Method::GET, path, self.http.get(self.api_url(path)))
                 .await;
             let req = apply_extra_headers(req, extra_headers);
             let resp = req.send().await.context(HttpSnafu)?;
-            Self::check_void_with_redirect("GET", path, resp).await
+            Self::check_void_with_redirect(&Method::GET, path, resp).await
         })
         .await
     }
@@ -573,11 +583,11 @@ impl NifiClient {
     ) -> Result<(), NifiError> {
         self.with_retry(|| async {
             let req = self
-                .build_request("GET", path, self.http.get(self.api_url(path)).query(query))
+                .build_request(&Method::GET, path, self.http.get(self.api_url(path)).query(query))
                 .await;
             let req = apply_extra_headers(req, extra_headers);
             let resp = req.send().await.context(HttpSnafu)?;
-            Self::check_void_with_redirect("GET", path, resp).await
+            Self::check_void_with_redirect(&Method::GET, path, resp).await
         })
         .await
     }
@@ -591,11 +601,11 @@ impl NifiClient {
     ) -> Result<T, NifiError> {
         self.with_retry(|| async {
             let req = self
-                .build_request("GET", path, self.http.get(self.api_url(path)).query(query))
+                .build_request(&Method::GET, path, self.http.get(self.api_url(path)).query(query))
                 .await;
             let req = apply_extra_headers(req, extra_headers);
             let resp = req.send().await.context(HttpSnafu)?;
-            Self::deserialize("GET", path, resp).await
+            Self::deserialize(&Method::GET, path, resp).await
         })
         .await
     }
@@ -609,11 +619,11 @@ impl NifiClient {
     ) -> Result<String, NifiError> {
         self.with_retry(|| async {
             let req = self
-                .build_request("GET", path, self.http.get(self.api_url(path)))
+                .build_request(&Method::GET, path, self.http.get(self.api_url(path)))
                 .await;
             let req = apply_extra_headers(req, extra_headers);
             let resp = req.send().await.context(HttpSnafu)?;
-            Self::text("GET", path, resp).await
+            Self::text(&Method::GET, path, resp).await
         })
         .await
     }
@@ -627,11 +637,11 @@ impl NifiClient {
     ) -> Result<Vec<u8>, NifiError> {
         self.with_retry(|| async {
             let req = self
-                .build_request("GET", path, self.http.get(self.api_url(path)))
+                .build_request(&Method::GET, path, self.http.get(self.api_url(path)))
                 .await;
             let req = apply_extra_headers(req, extra_headers);
             let resp = req.send().await.context(HttpSnafu)?;
-            Self::bytes("GET", path, resp).await
+            Self::bytes(&Method::GET, path, resp).await
         })
         .await
     }
@@ -646,11 +656,11 @@ impl NifiClient {
     ) -> Result<Vec<u8>, NifiError> {
         self.with_retry(|| async {
             let req = self
-                .build_request("GET", path, self.http.get(self.api_url(path)).query(query))
+                .build_request(&Method::GET, path, self.http.get(self.api_url(path)).query(query))
                 .await;
             let req = apply_extra_headers(req, extra_headers);
             let resp = req.send().await.context(HttpSnafu)?;
-            Self::bytes("GET", path, resp).await
+            Self::bytes(&Method::GET, path, resp).await
         })
         .await
     }
@@ -670,11 +680,11 @@ impl NifiClient {
     ) -> Result<crate::BytesStream, NifiError> {
         self.with_retry(|| async {
             let req = self
-                .build_request("GET", path, self.http.get(self.api_url(path)))
+                .build_request(&Method::GET, path, self.http.get(self.api_url(path)))
                 .await;
             let req = apply_extra_headers(req, extra_headers);
             let resp = req.send().await.context(HttpSnafu)?;
-            Self::bytes_stream("GET", path, resp).await
+            Self::bytes_stream(&Method::GET, path, resp).await
         })
         .await
     }
@@ -690,11 +700,11 @@ impl NifiClient {
     ) -> Result<crate::BytesStream, NifiError> {
         self.with_retry(|| async {
             let req = self
-                .build_request("GET", path, self.http.get(self.api_url(path)).query(query))
+                .build_request(&Method::GET, path, self.http.get(self.api_url(path)).query(query))
                 .await;
             let req = apply_extra_headers(req, extra_headers);
             let resp = req.send().await.context(HttpSnafu)?;
-            Self::bytes_stream("GET", path, resp).await
+            Self::bytes_stream(&Method::GET, path, resp).await
         })
         .await
     }
@@ -714,13 +724,13 @@ impl NifiClient {
     ) -> Result<(), NifiError> {
         self.with_retry(|| async {
             let req = self
-                .build_request("POST", path, self.http.post(self.api_url(path)))
+                .build_request(&Method::POST, path, self.http.post(self.api_url(path)))
                 .await
-                .header("Content-Type", "application/octet-stream")
+                .header(CONTENT_TYPE, APPLICATION_OCTET_STREAM)
                 .body(data.clone());
             let req = apply_extra_headers(req, extra_headers);
             let resp = req.send().await.context(HttpSnafu)?;
-            Self::check_void("POST", path, resp).await
+            Self::check_void(&Method::POST, path, resp).await
         })
         .await
     }
@@ -741,14 +751,14 @@ impl NifiClient {
     ) -> Result<(), NifiError> {
         self.with_retry(|| async {
             let req = self
-                .build_request("POST", path, self.http.post(self.api_url(path)))
+                .build_request(&Method::POST, path, self.http.post(self.api_url(path)))
                 .await;
             let req = apply_extra_headers(req, extra_headers);
             let part =
                 reqwest::multipart::Part::bytes(data.clone()).file_name(filename.to_string());
             let form = reqwest::multipart::Form::new().part("file", part);
             let resp = req.multipart(form).send().await.context(HttpSnafu)?;
-            Self::check_void("POST", path, resp).await
+            Self::check_void(&Method::POST, path, resp).await
         })
         .await
     }
@@ -768,11 +778,11 @@ impl NifiClient {
     ) -> Result<String, NifiError> {
         self.with_retry(|| async {
             let req = self
-                .build_request("POST", path, self.http.post(self.api_url(path)))
+                .build_request(&Method::POST, path, self.http.post(self.api_url(path)))
                 .await;
             let req = apply_extra_headers(req, extra_headers);
             let resp = req.json(body).send().await.context(HttpSnafu)?;
-            Self::text("POST", path, resp).await
+            Self::text(&Method::POST, path, resp).await
         })
         .await
     }
@@ -792,13 +802,13 @@ impl NifiClient {
     ) -> Result<String, NifiError> {
         self.with_retry(|| async {
             let req = self
-                .build_request("POST", path, self.http.post(self.api_url(path)))
+                .build_request(&Method::POST, path, self.http.post(self.api_url(path)))
                 .await
-                .header("Content-Type", "application/octet-stream")
+                .header(CONTENT_TYPE, APPLICATION_OCTET_STREAM)
                 .body(data.clone());
             let req = apply_extra_headers(req, extra_headers);
             let resp = req.send().await.context(HttpSnafu)?;
-            Self::text("POST", path, resp).await
+            Self::text(&Method::POST, path, resp).await
         })
         .await
     }
@@ -813,14 +823,14 @@ impl NifiClient {
         self.with_retry(|| async {
             let req = self
                 .build_request(
-                    "DELETE",
+                    &Method::DELETE,
                     path,
                     self.http.delete(self.api_url(path)).query(query),
                 )
                 .await;
             let req = apply_extra_headers(req, extra_headers);
             let resp = req.send().await.context(HttpSnafu)?;
-            Self::deserialize("DELETE", path, resp).await
+            Self::deserialize(&Method::DELETE, path, resp).await
         })
         .await
     }
@@ -835,14 +845,14 @@ impl NifiClient {
         self.with_retry(|| async {
             let req = self
                 .build_request(
-                    "DELETE",
+                    &Method::DELETE,
                     path,
                     self.http.delete(self.api_url(path)).query(query),
                 )
                 .await;
             let req = apply_extra_headers(req, extra_headers);
             let resp = req.send().await.context(HttpSnafu)?;
-            Self::check_void("DELETE", path, resp).await
+            Self::check_void(&Method::DELETE, path, resp).await
         })
         .await
     }
@@ -863,11 +873,11 @@ impl NifiClient {
     ) -> Result<(), NifiError> {
         self.with_retry(|| async {
             let req = self
-                .build_request("POST", path, self.http.post(self.api_url(path)).query(query))
+                .build_request(&Method::POST, path, self.http.post(self.api_url(path)).query(query))
                 .await;
             let req = apply_extra_headers(req, extra_headers);
             let resp = req.json(body).send().await.context(HttpSnafu)?;
-            Self::check_void("POST", path, resp).await
+            Self::check_void(&Method::POST, path, resp).await
         })
         .await
     }
@@ -886,11 +896,11 @@ impl NifiClient {
     {
         self.with_retry(|| async {
             let req = self
-                .build_request("POST", path, self.http.post(self.api_url(path)).query(query))
+                .build_request(&Method::POST, path, self.http.post(self.api_url(path)).query(query))
                 .await;
             let req = apply_extra_headers(req, extra_headers);
             let resp = req.json(body).send().await.context(HttpSnafu)?;
-            Self::deserialize("POST", path, resp).await
+            Self::deserialize(&Method::POST, path, resp).await
         })
         .await
     }
@@ -915,11 +925,11 @@ impl NifiClient {
     {
         self.with_retry(|| async {
             let req = self
-                .build_request("PUT", path, self.http.put(self.api_url(path)).query(query))
+                .build_request(&Method::PUT, path, self.http.put(self.api_url(path)).query(query))
                 .await;
             let req = apply_extra_headers(req, extra_headers);
             let resp = req.json(body).send().await.context(HttpSnafu)?;
-            Self::deserialize("PUT", path, resp).await
+            Self::deserialize(&Method::PUT, path, resp).await
         })
         .await
     }
@@ -932,11 +942,11 @@ impl NifiClient {
     ) -> Result<T, NifiError> {
         self.with_retry(|| async {
             let req = self
-                .build_request("DELETE", path, self.http.delete(self.api_url(path)))
+                .build_request(&Method::DELETE, path, self.http.delete(self.api_url(path)))
                 .await;
             let req = apply_extra_headers(req, extra_headers);
             let resp = req.send().await.context(HttpSnafu)?;
-            Self::deserialize("DELETE", path, resp).await
+            Self::deserialize(&Method::DELETE, path, resp).await
         })
         .await
     }
@@ -949,11 +959,11 @@ impl NifiClient {
     ) -> Result<(), NifiError> {
         self.with_retry(|| async {
             let req = self
-                .build_request("DELETE", path, self.http.delete(self.api_url(path)))
+                .build_request(&Method::DELETE, path, self.http.delete(self.api_url(path)))
                 .await;
             let req = apply_extra_headers(req, extra_headers);
             let resp = req.send().await.context(HttpSnafu)?;
-            Self::check_void("DELETE", path, resp).await
+            Self::check_void(&Method::DELETE, path, resp).await
         })
         .await
     }
@@ -962,12 +972,12 @@ impl NifiClient {
     /// the logout call itself.
     async fn delete_inner(&self, path: &str) -> Result<(), NifiError> {
         let resp = self
-            .build_request("DELETE", path, self.http.delete(self.api_url(path)))
+            .build_request(&Method::DELETE, path, self.http.delete(self.api_url(path)))
             .await
             .send()
             .await
             .context(HttpSnafu)?;
-        Self::check_void("DELETE", path, resp).await
+        Self::check_void(&Method::DELETE, path, resp).await
     }
 
     /// Attach a fresh UUIDv4 to the request as the configured request-id
@@ -992,12 +1002,12 @@ impl NifiClient {
     /// the plumbing lives in exactly one place.
     async fn build_request(
         &self,
-        method: &'static str,
+        method: &Method,
         path: &str,
         req: reqwest::RequestBuilder,
     ) -> reqwest::RequestBuilder {
         let req = self.apply_request_id(req);
-        tracing::debug!(method, path, "NiFi API request");
+        tracing::debug!(method = %method, path, "NiFi API request");
 
         let guard = self.token.read().await;
         let mut req = match guard.as_deref() {
@@ -1010,77 +1020,81 @@ impl NifiClient {
             }
         };
         if let Some(chain) = &self.proxied_entities_chain {
-            req = req.header("X-ProxiedEntitiesChain", chain);
+            req = req.header(PROXIED_ENTITIES_CHAIN, chain);
         }
         req
     }
 
     async fn deserialize<T: DeserializeOwned>(
-        method: &str,
+        method: &Method,
         path: &str,
         resp: reqwest::Response,
     ) -> Result<T, NifiError> {
         let status = resp.status();
-        tracing::debug!(method, path, status = status.as_u16(), "NiFi API response");
+        tracing::debug!(method = %method, path, status = status.as_u16(), "NiFi API response");
         if status.is_success() {
             return resp.json::<T>().await.context(HttpSnafu);
         }
         let body = resp.text().await.unwrap_or_else(|_| status.to_string());
-        tracing::debug!(method, path, status = status.as_u16(), %body, "NiFi API raw error body");
+        tracing::debug!(method = %method, path, status = status.as_u16(), %body, "NiFi API raw error body");
         let message = extract_error_message(&body);
-        tracing::warn!(method, path, status = status.as_u16(), %message, "NiFi API error");
+        tracing::warn!(method = %method, path, status = status.as_u16(), %message, "NiFi API error");
         Err(crate::error::api_error(status.as_u16(), message))
     }
 
     /// Check a void response (no JSON body expected). Returns `Ok(())` on success,
     /// or the appropriate error.
     async fn check_void(
-        method: &str,
+        method: &Method,
         path: &str,
         resp: reqwest::Response,
     ) -> Result<(), NifiError> {
         let status = resp.status();
-        tracing::debug!(method, path, status = status.as_u16(), "NiFi API response");
+        tracing::debug!(method = %method, path, status = status.as_u16(), "NiFi API response");
         if status.is_success() {
             return Ok(());
         }
         let body = resp.text().await.unwrap_or_else(|_| status.to_string());
-        tracing::debug!(method, path, status = status.as_u16(), %body, "NiFi API raw error body");
+        tracing::debug!(method = %method, path, status = status.as_u16(), %body, "NiFi API raw error body");
         let message = extract_error_message(&body);
-        tracing::warn!(method, path, status = status.as_u16(), %message, "NiFi API error");
+        tracing::warn!(method = %method, path, status = status.as_u16(), %message, "NiFi API error");
         Err(crate::error::api_error(status.as_u16(), message))
     }
 
     /// Read a raw `text/plain` (or equivalent) response body as a `String`.
-    async fn text(method: &str, path: &str, resp: reqwest::Response) -> Result<String, NifiError> {
+    async fn text(
+        method: &Method,
+        path: &str,
+        resp: reqwest::Response,
+    ) -> Result<String, NifiError> {
         let status = resp.status();
-        tracing::debug!(method, path, status = status.as_u16(), "NiFi API response");
+        tracing::debug!(method = %method, path, status = status.as_u16(), "NiFi API response");
         if status.is_success() {
             return resp.text().await.context(HttpSnafu);
         }
         let body = resp.text().await.unwrap_or_else(|_| status.to_string());
-        tracing::debug!(method, path, status = status.as_u16(), %body, "NiFi API raw error body");
+        tracing::debug!(method = %method, path, status = status.as_u16(), %body, "NiFi API raw error body");
         let message = extract_error_message(&body);
-        tracing::warn!(method, path, status = status.as_u16(), %message, "NiFi API error");
+        tracing::warn!(method = %method, path, status = status.as_u16(), %message, "NiFi API error");
         Err(crate::error::api_error(status.as_u16(), message))
     }
 
     /// Read a raw `application/octet-stream` (or equivalent) response body as bytes.
     async fn bytes(
-        method: &str,
+        method: &Method,
         path: &str,
         resp: reqwest::Response,
     ) -> Result<Vec<u8>, NifiError> {
         let status = resp.status();
-        tracing::debug!(method, path, status = status.as_u16(), "NiFi API response");
+        tracing::debug!(method = %method, path, status = status.as_u16(), "NiFi API response");
         if status.is_success() {
             let b = resp.bytes().await.context(HttpSnafu)?;
             return Ok(b.to_vec());
         }
         let body = resp.text().await.unwrap_or_else(|_| status.to_string());
-        tracing::debug!(method, path, status = status.as_u16(), %body, "NiFi API raw error body");
+        tracing::debug!(method = %method, path, status = status.as_u16(), %body, "NiFi API raw error body");
         let message = extract_error_message(&body);
-        tracing::warn!(method, path, status = status.as_u16(), %message, "NiFi API error");
+        tracing::warn!(method = %method, path, status = status.as_u16(), %message, "NiFi API error");
         Err(crate::error::api_error(status.as_u16(), message))
     }
 
@@ -1088,13 +1102,13 @@ impl NifiClient {
     /// a [`crate::BytesStream`]. Non-2xx status codes are converted into the
     /// same `NifiError` shape that [`Self::bytes`] produces.
     async fn bytes_stream(
-        method: &str,
+        method: &Method,
         path: &str,
         resp: reqwest::Response,
     ) -> Result<crate::BytesStream, NifiError> {
         use futures_util::TryStreamExt;
         let status = resp.status();
-        tracing::debug!(method, path, status = status.as_u16(), "NiFi API response");
+        tracing::debug!(method = %method, path, status = status.as_u16(), "NiFi API response");
         if status.is_success() {
             let s = resp
                 .bytes_stream()
@@ -1102,27 +1116,27 @@ impl NifiClient {
             return Ok(Box::pin(s));
         }
         let body = resp.text().await.unwrap_or_else(|_| status.to_string());
-        tracing::debug!(method, path, status = status.as_u16(), %body, "NiFi API raw error body");
+        tracing::debug!(method = %method, path, status = status.as_u16(), %body, "NiFi API raw error body");
         let message = extract_error_message(&body);
-        tracing::warn!(method, path, status = status.as_u16(), %message, "NiFi API error");
+        tracing::warn!(method = %method, path, status = status.as_u16(), %message, "NiFi API error");
         Err(crate::error::api_error(status.as_u16(), message))
     }
 
     /// Like `check_void`, but also treats 302 as success.
     async fn check_void_with_redirect(
-        method: &str,
+        method: &Method,
         path: &str,
         resp: reqwest::Response,
     ) -> Result<(), NifiError> {
         let status = resp.status();
-        tracing::debug!(method, path, status = status.as_u16(), "NiFi API response");
-        if status.is_success() || status.as_u16() == 302 {
+        tracing::debug!(method = %method, path, status = status.as_u16(), "NiFi API response");
+        if status.is_success() || status == StatusCode::FOUND {
             return Ok(());
         }
         let body = resp.text().await.unwrap_or_else(|_| status.to_string());
-        tracing::debug!(method, path, status = status.as_u16(), %body, "NiFi API raw error body");
+        tracing::debug!(method = %method, path, status = status.as_u16(), %body, "NiFi API raw error body");
         let message = extract_error_message(&body);
-        tracing::warn!(method, path, status = status.as_u16(), %message, "NiFi API error");
+        tracing::warn!(method = %method, path, status = status.as_u16(), %message, "NiFi API error");
         Err(crate::error::api_error(status.as_u16(), message))
     }
 

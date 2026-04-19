@@ -1,5 +1,17 @@
 #![deny(missing_docs)]
+use reqwest::StatusCode;
 use snafu::Snafu;
+
+// Concrete `u16`s mirrored from `StatusCode` so they can appear in `match`
+// arms (which require values, not associated consts). Source of truth is
+// `reqwest::StatusCode`; if a name drifts, this file fails to compile.
+const SC_UNAUTHORIZED: u16 = StatusCode::UNAUTHORIZED.as_u16();
+const SC_FORBIDDEN: u16 = StatusCode::FORBIDDEN.as_u16();
+const SC_NOT_FOUND: u16 = StatusCode::NOT_FOUND.as_u16();
+const SC_CONFLICT: u16 = StatusCode::CONFLICT.as_u16();
+const SC_REQUEST_TIMEOUT: u16 = StatusCode::REQUEST_TIMEOUT.as_u16();
+const SC_TOO_MANY_REQUESTS: u16 = StatusCode::TOO_MANY_REQUESTS.as_u16();
+const SC_SERVER_ERROR_RANGE: std::ops::RangeInclusive<u16> = 500..=599;
 
 /// All errors that can be returned by the NiFi client.
 ///
@@ -153,10 +165,10 @@ impl NifiError {
     /// Returns the HTTP status code if this is an API error variant.
     pub fn status_code(&self) -> Option<u16> {
         match self {
-            Self::Unauthorized { .. } => Some(401),
-            Self::Forbidden { .. } => Some(403),
-            Self::NotFound { .. } => Some(404),
-            Self::Conflict { .. } => Some(409),
+            Self::Unauthorized { .. } => Some(SC_UNAUTHORIZED),
+            Self::Forbidden { .. } => Some(SC_FORBIDDEN),
+            Self::NotFound { .. } => Some(SC_NOT_FOUND),
+            Self::Conflict { .. } => Some(SC_CONFLICT),
             Self::Api { status, .. } => Some(*status),
             _ => None,
         }
@@ -166,7 +178,11 @@ impl NifiError {
     pub fn is_retryable(&self) -> bool {
         match self {
             Self::Http { .. } => true,
-            Self::Api { status, .. } => matches!(*status, 408 | 429 | 500..=599),
+            Self::Api { status, .. } => {
+                *status == SC_REQUEST_TIMEOUT
+                    || *status == SC_TOO_MANY_REQUESTS
+                    || SC_SERVER_ERROR_RANGE.contains(status)
+            }
             Self::Timeout { .. } => false,
             _ => false,
         }
@@ -179,10 +195,10 @@ impl NifiError {
 /// to typed error variants.
 pub(crate) fn api_error(status: u16, message: String) -> NifiError {
     match status {
-        401 => NifiError::Unauthorized { message },
-        403 => NifiError::Forbidden { message },
-        404 => NifiError::NotFound { message },
-        409 => NifiError::Conflict { message },
+        SC_UNAUTHORIZED => NifiError::Unauthorized { message },
+        SC_FORBIDDEN => NifiError::Forbidden { message },
+        SC_NOT_FOUND => NifiError::NotFound { message },
+        SC_CONFLICT => NifiError::Conflict { message },
         _ => NifiError::Api { status, message },
     }
 }
