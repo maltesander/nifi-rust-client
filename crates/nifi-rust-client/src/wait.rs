@@ -397,6 +397,80 @@ pub async fn parameter_context_update_dynamic(
     result
 }
 
+// ── wait::provenance_query ─────────────────────────────────────────────────
+
+#[cfg(not(feature = "dynamic"))]
+use crate::types::ProvenanceDto;
+
+/// Poll a provenance query until it reports `finished == true`.
+///
+/// Fetches `GET /provenance/{id}` on each tick, passing no query
+/// parameters (the server defaults are used). Returns the final
+/// `ProvenanceDto` on success.
+///
+/// If [`WaitConfig::cleanup`] is `true` (default), issues a trailing
+/// `DELETE /provenance/{id}` to free server-side state. The DELETE is
+/// best-effort — its errors are swallowed.
+#[cfg(not(feature = "dynamic"))]
+pub async fn provenance_query(
+    client: &crate::NifiClient,
+    query_id: &str,
+    config: WaitConfig,
+) -> Result<ProvenanceDto, NifiError> {
+    let op = format!("wait_for_provenance_query({query_id})");
+    let fetch = || async {
+        client
+            .provenance()
+            .get_provenance(query_id, None, None, None)
+            .await
+    };
+    let done = |dto: &ProvenanceDto| {
+        if dto.finished.unwrap_or(false) {
+            PollOutcome::Ready(())
+        } else {
+            PollOutcome::Pending
+        }
+    };
+    let result = poll_until(&config, &op, fetch, done).await;
+
+    if config.cleanup {
+        let _ = client.provenance().delete_provenance(query_id, None).await;
+    }
+    result
+}
+
+#[cfg(feature = "dynamic")]
+use crate::dynamic::types::ProvenanceDto;
+
+/// Dynamic-mode counterpart of [`provenance_query`].
+#[cfg(feature = "dynamic")]
+pub async fn provenance_query_dynamic(
+    client: &crate::dynamic::DynamicClient,
+    query_id: &str,
+    config: WaitConfig,
+) -> Result<ProvenanceDto, NifiError> {
+    let op = format!("wait_for_provenance_query({query_id})");
+    let fetch = || async {
+        client
+            .provenance()
+            .get_provenance(query_id, None, None, None)
+            .await
+    };
+    let done = |dto: &ProvenanceDto| {
+        if dto.finished.unwrap_or(false) {
+            PollOutcome::Ready(())
+        } else {
+            PollOutcome::Pending
+        }
+    };
+    let result = poll_until(&config, &op, fetch, done).await;
+
+    if config.cleanup {
+        let _ = client.provenance().delete_provenance(query_id, None).await;
+    }
+    result
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
