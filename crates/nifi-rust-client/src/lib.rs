@@ -133,11 +133,11 @@ mod require;
 /// Streaming byte responses for large binary downloads.
 pub mod streaming;
 pub use builder::NifiClientBuilder;
+pub use bytes::Bytes;
 pub use client::NifiClient;
 pub use config::auth::AuthProvider;
 pub use error::NifiError;
 pub use require::RequireField;
-pub use bytes::Bytes;
 pub use streaming::BytesStream;
 
 // Generated: version modules, re-exports, dynamic module

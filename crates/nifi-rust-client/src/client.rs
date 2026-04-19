@@ -692,9 +692,7 @@ impl NifiClient {
         self.with_retry(|| async {
             tracing::debug!(method = "GET", path, "NiFi API request");
             let url = self.api_url(path);
-            let mut req = self
-                .authenticated(self.http.get(url).query(query))
-                .await;
+            let mut req = self.authenticated(self.http.get(url).query(query)).await;
             for (name, value) in extra_headers {
                 req = req.header(*name, *value);
             }
