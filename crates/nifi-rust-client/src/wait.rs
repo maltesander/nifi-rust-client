@@ -71,13 +71,19 @@ pub enum ProcessorTargetState {
 }
 
 impl ProcessorTargetState {
-    /// The server wire value (e.g. `"RUNNING"`). Used by dynamic-mode
-    /// helpers for string comparison; not part of the public API shape.
+    /// The server wire value (e.g. `"RUNNING"`). Sourced from the generated
+    /// `ProcessorDtoState` enum so the wire vocabulary lives in exactly one
+    /// place.
     pub(crate) fn wire_value(&self) -> &'static str {
+        #[cfg(not(feature = "dynamic"))]
+        use crate::types::ProcessorDtoState;
+        #[cfg(feature = "dynamic")]
+        use crate::dynamic::types::ProcessorDtoState;
+
         match self {
-            Self::Running => "RUNNING",
-            Self::Stopped => "STOPPED",
-            Self::Disabled => "DISABLED",
+            Self::Running => ProcessorDtoState::Running.as_str(),
+            Self::Stopped => ProcessorDtoState::Stopped.as_str(),
+            Self::Disabled => ProcessorDtoState::Disabled.as_str(),
         }
     }
 }
@@ -95,10 +101,18 @@ pub enum ControllerServiceTargetState {
 }
 
 impl ControllerServiceTargetState {
+    /// The server wire value (e.g. `"ENABLED"`). Sourced from the generated
+    /// `ControllerServiceDtoState` enum so the wire vocabulary lives in
+    /// exactly one place.
     pub(crate) fn wire_value(&self) -> &'static str {
+        #[cfg(not(feature = "dynamic"))]
+        use crate::types::ControllerServiceDtoState;
+        #[cfg(feature = "dynamic")]
+        use crate::dynamic::types::ControllerServiceDtoState;
+
         match self {
-            Self::Enabled => "ENABLED",
-            Self::Disabled => "DISABLED",
+            Self::Enabled => ControllerServiceDtoState::Enabled.as_str(),
+            Self::Disabled => ControllerServiceDtoState::Disabled.as_str(),
         }
     }
 }
