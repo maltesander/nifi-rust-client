@@ -19,6 +19,8 @@ pub struct NifiClient {
     auth_provider: Option<Arc<dyn AuthProvider>>,
     proxied_entities_chain: Option<String>,
     retry_policy: Option<crate::config::retry::RetryPolicy>,
+    #[allow(dead_code)]
+    request_id_header: Option<String>,
 }
 
 impl Clone for NifiClient {
@@ -30,6 +32,7 @@ impl Clone for NifiClient {
             auth_provider: self.auth_provider.clone(),
             proxied_entities_chain: self.proxied_entities_chain.clone(),
             retry_policy: self.retry_policy.clone(),
+            request_id_header: self.request_id_header.clone(),
         }
     }
 }
@@ -44,6 +47,7 @@ impl std::fmt::Debug for NifiClient {
             )
             .field("proxied_entities_chain", &self.proxied_entities_chain)
             .field("retry_policy", &self.retry_policy)
+            .field("request_id_header", &self.request_id_header)
             .finish_non_exhaustive()
     }
 }
@@ -56,6 +60,7 @@ impl NifiClient {
         auth_provider: Option<Arc<dyn AuthProvider>>,
         proxied_entities_chain: Option<String>,
         retry_policy: Option<crate::config::retry::RetryPolicy>,
+        request_id_header: Option<String>,
     ) -> Self {
         Self {
             base_url,
@@ -64,6 +69,7 @@ impl NifiClient {
             auth_provider,
             proxied_entities_chain,
             retry_policy,
+            request_id_header,
         }
     }
 

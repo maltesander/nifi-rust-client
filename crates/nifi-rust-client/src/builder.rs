@@ -46,6 +46,7 @@ pub struct NifiClientBuilder {
     client_identity: Option<reqwest::Identity>,
     proxied_entities_chain: Option<String>,
     retry_policy: Option<crate::config::retry::RetryPolicy>,
+    request_id_header: Option<String>,
     #[cfg(feature = "dynamic")]
     version_strategy: Option<crate::dynamic::VersionResolutionStrategy>,
 }
@@ -76,7 +77,8 @@ impl std::fmt::Debug for NifiClientBuilder {
                 &self.client_identity.as_ref().map(|_| "<identity>"),
             )
             .field("proxied_entities_chain", &self.proxied_entities_chain)
-            .field("retry_policy", &self.retry_policy);
+            .field("retry_policy", &self.retry_policy)
+            .field("request_id_header", &self.request_id_header);
         #[cfg(feature = "dynamic")]
         s.field("version_strategy", &self.version_strategy);
         s.finish()
@@ -102,6 +104,7 @@ impl NifiClientBuilder {
             client_identity: None,
             proxied_entities_chain: None,
             retry_policy: None,
+            request_id_header: None,
             #[cfg(feature = "dynamic")]
             version_strategy: None,
         })
@@ -194,6 +197,21 @@ impl NifiClientBuilder {
         self
     }
 
+    /// Enable per-request correlation IDs.
+    ///
+    /// When `Some(name)`, every outgoing request carries a fresh UUIDv4
+    /// in the given header, and the same id is attached to the per-request
+    /// tracing span as the `request_id` field.
+    ///
+    /// Example: `.request_id_header(Some("X-Request-Id"))`.
+    ///
+    /// When `None` (default), no header is sent and no `request_id` field
+    /// is recorded.
+    pub fn request_id_header(mut self, name: Option<impl Into<String>>) -> Self {
+        self.request_id_header = name.map(Into::into);
+        self
+    }
+
     /// Configure a [`VersionResolutionStrategy`](crate::dynamic::VersionResolutionStrategy)
     /// for the dynamic client.
     ///
@@ -246,6 +264,7 @@ impl NifiClientBuilder {
             self.auth_provider,
             self.proxied_entities_chain,
             self.retry_policy,
+            self.request_id_header,
         ))
     }
 
