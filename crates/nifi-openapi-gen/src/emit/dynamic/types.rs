@@ -35,6 +35,19 @@ enum MergedType {
     },
 }
 
+/// Sibling helper emitted alongside a DTO when one of its fields is an inline
+/// string enum. The parent field stays `Option<String>` (wire-tolerant); this
+/// type gives callers a typed companion via `as_str` / `from_wire`.
+pub(super) struct InlineEnumHelper {
+    pub(super) parent_dto: String,
+    pub(super) parent_field: String,
+    pub(super) field_doc: Option<String>,
+    /// `None` ⇒ helper lands in `common.rs`; `Some(tag)` ⇒ goes to that tag's file.
+    pub(super) owner_tag: Option<String>,
+    /// Union of variants across all versions. `BTreeSet` ⇒ deterministic, sorted.
+    pub(super) variants: BTreeSet<String>,
+}
+
 /// Entry point: merge type definitions from all API versions in the canonical spec
 /// and emit per-tag Rust source files containing union types.
 ///
@@ -59,20 +72,8 @@ pub fn emit_types(canonical: &CanonicalSpec) -> Vec<(String, String)> {
 /// - `"common.rs"` — types referenced by 0 or 2+ tags (across all versions)
 /// - `"<tag>.rs"` — one file per tag for types used exclusively by that tag
 fn emit_types_from_specs(specs: &[(&str, &ApiSpec)]) -> Vec<(String, String)> {
-    let merged = merge_all_types(specs);
-
-    // Build type_name -> set of tag module_names across ALL versions.
-    let mut type_to_tags: HashMap<String, HashSet<String>> = HashMap::new();
-    for (_version, spec) in specs {
-        for tag in &spec.tags {
-            for type_name in types_referenced_by_tag(tag) {
-                type_to_tags
-                    .entry(type_name)
-                    .or_default()
-                    .insert(tag.module_name.clone());
-            }
-        }
-    }
+    let type_to_tags = build_type_to_tags(specs);
+    let (merged, _inline_enums) = merge_all_types(specs, &type_to_tags);
 
     // Assign each merged type to exactly one tag or common.
     // BTreeMap for deterministic file order.
@@ -120,6 +121,21 @@ fn emit_types_from_specs(specs: &[(&str, &ApiSpec)]) -> Vec<(String, String)> {
     files.push(("mod.rs".into(), crate::util::format_source(&mod_out)));
 
     files
+}
+
+fn build_type_to_tags(specs: &[(&str, &ApiSpec)]) -> HashMap<String, HashSet<String>> {
+    let mut type_to_tags: HashMap<String, HashSet<String>> = HashMap::new();
+    for (_version, spec) in specs {
+        for tag in &spec.tags {
+            for type_name in types_referenced_by_tag(tag) {
+                type_to_tags
+                    .entry(type_name)
+                    .or_default()
+                    .insert(tag.module_name.clone());
+            }
+        }
+    }
+    type_to_tags
 }
 
 /// Collect all type names directly referenced by a tag's endpoints (shallow — no transitive follow).
@@ -248,8 +264,15 @@ fn emit_merged_type(out: &mut String, name: &str, mt: &MergedType) {
     }
 }
 
-fn merge_all_types(specs: &[(&str, &ApiSpec)]) -> BTreeMap<String, MergedType> {
+fn merge_all_types(
+    specs: &[(&str, &ApiSpec)],
+    type_to_tags: &HashMap<String, HashSet<String>>,
+) -> (
+    BTreeMap<String, MergedType>,
+    BTreeMap<String, InlineEnumHelper>,
+) {
     let mut merged: BTreeMap<String, MergedType> = BTreeMap::new();
+    let mut inline_enums: BTreeMap<String, InlineEnumHelper> = BTreeMap::new();
 
     // Pass 1: collect all fields from all versions (union)
     // Also track per-type: which versions contain this type, and per-field: presence count + type string
@@ -293,6 +316,38 @@ fn merge_all_types(specs: &[(&str, &ApiSpec)]) -> BTreeMap<String, MergedType> {
                         entry.0 += 1;
                         if entry.1 != rust_ty {
                             entry.2 = false; // type mismatch
+                        }
+                    }
+
+                    // Collect inline enum helpers (FieldType::Enum reached through Opt/List/Map).
+                    for field in &td.fields {
+                        let Some(variants) =
+                            crate::emit::common::extract_inline_enum_variants(&field.ty)
+                        else {
+                            continue;
+                        };
+                        let helper_name = format!(
+                            "{}{}",
+                            td.name,
+                            crate::util::pascal_case(&field.rust_name)
+                        );
+                        let owner_tag = match type_to_tags.get(&td.name) {
+                            Some(tags) if tags.len() == 1 => {
+                                Some(tags.iter().next().unwrap().clone())
+                            }
+                            _ => None,
+                        };
+                        let entry = inline_enums
+                            .entry(helper_name.clone())
+                            .or_insert_with(|| InlineEnumHelper {
+                                parent_dto: td.name.clone(),
+                                parent_field: field.rust_name.clone(),
+                                field_doc: field.doc.clone(),
+                                owner_tag,
+                                variants: BTreeSet::new(),
+                            });
+                        for v in variants {
+                            entry.variants.insert(v);
                         }
                     }
                 }
@@ -346,7 +401,7 @@ fn merge_all_types(specs: &[(&str, &ApiSpec)]) -> BTreeMap<String, MergedType> {
         }
     }
 
-    merged
+    (merged, inline_enums)
 }
 
 /// Wrap the type in `Option<T>` unless it is already `Option<T>` (i.e. `FieldType::Opt`).
@@ -360,6 +415,7 @@ fn wrap_in_option(ty: &FieldType, rust_str: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::collections::HashMap;
     use crate::canonical::canonicalize;
     use crate::parser::{
         ApiSpec, Endpoint, Field, FieldType, HttpMethod, TagGroup, TypeDef, TypeKind,
@@ -732,6 +788,68 @@ mod tests {
                 },
             ],
         }
+    }
+
+    #[test]
+    fn merge_collects_inline_enum_helper_from_field() {
+        let td = TypeDef {
+            name: "ScheduleComponentsEntity".to_string(),
+            kind: TypeKind::Dto,
+            fields: vec![Field {
+                rust_name: "state".to_string(),
+                serde_name: "state".to_string(),
+                ty: FieldType::Opt(Box::new(FieldType::Enum(vec![
+                    "RUNNING".into(),
+                    "STOPPED".into(),
+                ]))),
+                doc: Some("The desired state".to_string()),
+                read_only: false,
+                deprecated: false,
+            }],
+            doc: None,
+        };
+        let spec = make_spec(vec![td]);
+        let type_to_tags = HashMap::new();
+        let (_merged, inline_enums) =
+            merge_all_types(&[("2.8.0", &spec)], &type_to_tags);
+        let helper = inline_enums
+            .get("ScheduleComponentsEntityState")
+            .expect("helper not collected");
+        assert_eq!(helper.parent_dto, "ScheduleComponentsEntity");
+        assert_eq!(helper.parent_field, "state");
+        assert_eq!(
+            helper.variants.iter().cloned().collect::<Vec<_>>(),
+            vec!["RUNNING".to_string(), "STOPPED".to_string()],
+        );
+        assert_eq!(helper.field_doc.as_deref(), Some("The desired state"));
+        assert_eq!(helper.owner_tag, None); // empty type_to_tags ⇒ goes to common.rs
+    }
+
+    #[test]
+    fn merge_unions_inline_enum_variants_across_versions() {
+        let make = |variants: Vec<String>| TypeDef {
+            name: "Dto".to_string(),
+            kind: TypeKind::Dto,
+            fields: vec![Field {
+                rust_name: "state".to_string(),
+                serde_name: "state".to_string(),
+                ty: FieldType::Opt(Box::new(FieldType::Enum(variants))),
+                doc: None,
+                read_only: false,
+                deprecated: false,
+            }],
+            doc: None,
+        };
+        let spec_a = make_spec(vec![make(vec!["A".into(), "B".into()])]);
+        let spec_b = make_spec(vec![make(vec!["B".into(), "C".into()])]);
+        let type_to_tags = HashMap::new();
+        let (_merged, inline_enums) =
+            merge_all_types(&[("2.7.2", &spec_a), ("2.8.0", &spec_b)], &type_to_tags);
+        let helper = inline_enums.get("DtoState").expect("helper not collected");
+        assert_eq!(
+            helper.variants.iter().cloned().collect::<Vec<_>>(),
+            vec!["A".to_string(), "B".to_string(), "C".to_string()],
+        );
     }
 
     #[test]
