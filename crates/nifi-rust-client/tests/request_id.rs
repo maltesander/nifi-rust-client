@@ -143,3 +143,56 @@ async fn custom_header_name() {
         "default name should NOT appear when a custom one is set"
     );
 }
+
+#[tokio::test]
+async fn login_sends_request_id_header_when_configured() {
+    let mock_server = MockServer::start().await;
+
+    Mock::given(method("POST"))
+        .and(path("/nifi-api/access/token"))
+        .respond_with(ResponseTemplate::new(201).set_body_string("jwt-token"))
+        .expect(1)
+        .mount(&mock_server)
+        .await;
+
+    let client = NifiClientBuilder::new(&mock_server.uri())
+        .unwrap()
+        .request_id_header(Some("X-Request-Id"))
+        .build()
+        .unwrap();
+    client.login("admin", "pw").await.unwrap();
+
+    let received = mock_server.received_requests().await.unwrap();
+    let req: &Request = received.first().expect("one request");
+    assert!(
+        req.headers.get("x-request-id").is_some(),
+        "login must attach X-Request-Id when configured"
+    );
+}
+
+#[tokio::test]
+async fn logout_sends_request_id_header_when_configured() {
+    let mock_server = MockServer::start().await;
+
+    Mock::given(method("DELETE"))
+        .and(path("/nifi-api/access/logout"))
+        .respond_with(ResponseTemplate::new(200))
+        .expect(1)
+        .mount(&mock_server)
+        .await;
+
+    let client = NifiClientBuilder::new(&mock_server.uri())
+        .unwrap()
+        .request_id_header(Some("X-Request-Id"))
+        .build()
+        .unwrap();
+    client.set_token("jwt".to_string()).await;
+    client.logout().await.unwrap();
+
+    let received = mock_server.received_requests().await.unwrap();
+    let req: &Request = received.first().expect("one request");
+    assert!(
+        req.headers.get("x-request-id").is_some(),
+        "logout must attach X-Request-Id when configured"
+    );
+}

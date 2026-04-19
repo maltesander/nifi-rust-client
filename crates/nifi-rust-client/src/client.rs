@@ -127,9 +127,8 @@ impl NifiClient {
     pub async fn login(&self, username: &str, password: &str) -> Result<(), NifiError> {
         tracing::debug!(method = "POST", path = "/access/token", "NiFi API request");
         let url = self.api_url("/access/token");
-        let resp = self
-            .http
-            .post(url)
+        let req = self.apply_request_id(self.http.post(url));
+        let resp = req
             .form(&[("username", username), ("password", password)])
             .send()
             .await
