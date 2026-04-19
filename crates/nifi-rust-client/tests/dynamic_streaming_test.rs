@@ -13,11 +13,9 @@ async fn dynamic_stream_chunks_concat_match_payload() {
     // /flow/about for version detection
     Mock::given(method("GET"))
         .and(path_regex(r"^/nifi-api/flow/about$"))
-        .respond_with(
-            ResponseTemplate::new(200).set_body_json(serde_json::json!({
-                "about": { "version": "2.9.0" }
-            })),
-        )
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+            "about": { "version": "2.9.0" }
+        })))
         .mount(&server)
         .await;
 

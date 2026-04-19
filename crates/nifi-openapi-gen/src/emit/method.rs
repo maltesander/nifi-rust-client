@@ -694,9 +694,7 @@ fn dynamic_response_type_for(ep: &Endpoint, stream: bool) -> String {
         (ResponseBodyKind::OctetStream | ResponseBodyKind::Wildcard, _, _) if stream => {
             "crate::BytesStream".to_string()
         }
-        (ResponseBodyKind::OctetStream | ResponseBodyKind::Wildcard, _, _) => {
-            "Vec<u8>".to_string()
-        }
+        (ResponseBodyKind::OctetStream | ResponseBodyKind::Wildcard, _, _) => "Vec<u8>".to_string(),
         (_, Some(inner), _) => format!("crate::dynamic::types::{inner}"),
         (_, _, Some(rt)) => format!("crate::dynamic::types::{rt}"),
         _ => "()".to_string(),
