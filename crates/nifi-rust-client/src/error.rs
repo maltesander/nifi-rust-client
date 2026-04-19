@@ -140,6 +140,13 @@ pub enum NifiError {
         /// Dotted path identifying the missing field.
         path: String,
     },
+
+    /// A wait / poll operation exceeded its configured timeout.
+    #[snafu(display("NiFi operation {operation} timed out"))]
+    Timeout {
+        /// A description of the operation that timed out.
+        operation: String,
+    },
 }
 
 impl NifiError {
@@ -157,8 +164,12 @@ impl NifiError {
 
     /// True if this error is likely transient and worth retrying.
     pub fn is_retryable(&self) -> bool {
-        matches!(self.status_code(), Some(408 | 429 | 500 | 502 | 503 | 504))
-            || matches!(self, Self::Http { .. })
+        match self {
+            Self::Http { .. } => true,
+            Self::Api { status, .. } => matches!(*status, 408 | 429 | 500..=599),
+            Self::Timeout { .. } => false,
+            _ => false,
+        }
     }
 }
 
