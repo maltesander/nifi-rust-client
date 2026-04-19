@@ -64,3 +64,36 @@ impl RetryPolicy {
         std::cmp::min(backoff, self.max_backoff)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn backoff_for_handles_overflow() {
+        // attempt=1000 would overflow 2^attempt; saturating_pow + saturating_mul
+        // must yield max_backoff, not panic.
+        let policy = RetryPolicy::default();
+        assert_eq!(policy.backoff_for(1000), policy.max_backoff);
+    }
+
+    #[test]
+    fn default_policy_matches_documented_values() {
+        // Pins the documented defaults so changes require a deliberate update.
+        let policy = RetryPolicy::default();
+        assert_eq!(policy.max_retries, 3);
+        assert_eq!(policy.initial_backoff, Duration::from_millis(500));
+        assert_eq!(policy.max_backoff, Duration::from_secs(10));
+    }
+
+    #[test]
+    fn backoff_for_capped_at_max() {
+        let policy = RetryPolicy {
+            max_retries: 10,
+            initial_backoff: Duration::from_secs(1),
+            max_backoff: Duration::from_secs(5),
+        };
+        // 2^5 = 32s but capped to 5s.
+        assert_eq!(policy.backoff_for(5), Duration::from_secs(5));
+    }
+}

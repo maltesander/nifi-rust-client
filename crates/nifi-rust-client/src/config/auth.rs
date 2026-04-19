@@ -11,33 +11,6 @@ use std::sync::Arc;
 use crate::NifiClient;
 use crate::error::NifiError;
 
-// ── Redacted<T> ──────────────────────────────────────────────────────────────
-
-/// Wraps a value and masks it in [`fmt::Debug`] output as `[REDACTED]`.
-///
-/// Use this for sensitive fields (e.g. passwords, tokens) to prevent them from
-/// leaking into logs or debug output.
-#[derive(Clone)]
-pub struct Redacted<T>(T);
-
-impl<T> Redacted<T> {
-    /// Wrap `value` so its debug representation is hidden.
-    pub fn new(value: T) -> Self {
-        Self(value)
-    }
-
-    /// Return a reference to the wrapped value.
-    pub fn inner(&self) -> &T {
-        &self.0
-    }
-}
-
-impl<T> fmt::Debug for Redacted<T> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str("[REDACTED]")
-    }
-}
-
 // ── AuthProvider trait ───────────────────────────────────────────────────────
 
 /// Provides authentication for a [`NifiClient`].
@@ -68,11 +41,12 @@ impl AuthProvider for Arc<dyn AuthProvider> {
 /// Authenticates with a fixed username and password via [`NifiClient::login`].
 ///
 /// Useful for tests or simple deployments where credentials are known at
-/// build time.
+/// build time. The password is stored in a [`zeroize::Zeroizing`] wrapper
+/// so it is zeroed on drop.
 #[derive(Clone)]
 pub struct PasswordAuth {
     username: String,
-    password: Redacted<String>,
+    password: zeroize::Zeroizing<String>,
 }
 
 impl PasswordAuth {
@@ -80,7 +54,7 @@ impl PasswordAuth {
     pub fn new(username: impl Into<String>, password: impl Into<String>) -> Self {
         Self {
             username: username.into(),
-            password: Redacted::new(password.into()),
+            password: zeroize::Zeroizing::new(password.into()),
         }
     }
 }
@@ -89,7 +63,7 @@ impl fmt::Debug for PasswordAuth {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("PasswordAuth")
             .field("username", &self.username)
-            .field("password", &self.password)
+            .field("password", &"[REDACTED]")
             .finish()
     }
 }
@@ -97,7 +71,7 @@ impl fmt::Debug for PasswordAuth {
 #[async_trait::async_trait]
 impl AuthProvider for PasswordAuth {
     async fn authenticate(&self, client: &NifiClient) -> Result<(), NifiError> {
-        client.login(&self.username, self.password.inner()).await
+        client.login(&self.username, &self.password).await
     }
 }
 
@@ -155,9 +129,12 @@ impl AuthProvider for EnvPasswordAuth {
         let username = std::env::var(&self.username_var).map_err(|_| NifiError::Auth {
             message: format!("environment variable {} is not set", self.username_var),
         })?;
-        let password = std::env::var(&self.password_var).map_err(|_| NifiError::Auth {
-            message: format!("environment variable {} is not set", self.password_var),
-        })?;
+        let password =
+            zeroize::Zeroizing::new(std::env::var(&self.password_var).map_err(|_| {
+                NifiError::Auth {
+                    message: format!("environment variable {} is not set", self.password_var),
+                }
+            })?);
         client.login(&username, &password).await
     }
 }
@@ -167,17 +144,18 @@ impl AuthProvider for EnvPasswordAuth {
 /// Authenticates by installing a pre-obtained JWT token directly.
 ///
 /// Useful when a token has been acquired externally (e.g. from a vault or
-/// a previous session) and does not require a login round-trip.
+/// a previous session) and does not require a login round-trip. The token
+/// is stored in a [`zeroize::Zeroizing`] wrapper so it is zeroed on drop.
 #[derive(Clone)]
 pub struct StaticTokenAuth {
-    token: Redacted<String>,
+    token: zeroize::Zeroizing<String>,
 }
 
 impl StaticTokenAuth {
     /// Create a new `StaticTokenAuth` with the given JWT token.
     pub fn new(token: impl Into<String>) -> Self {
         Self {
-            token: Redacted::new(token.into()),
+            token: zeroize::Zeroizing::new(token.into()),
         }
     }
 }
@@ -185,7 +163,7 @@ impl StaticTokenAuth {
 impl fmt::Debug for StaticTokenAuth {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("StaticTokenAuth")
-            .field("token", &self.token)
+            .field("token", &"[REDACTED]")
             .finish()
     }
 }
@@ -193,7 +171,7 @@ impl fmt::Debug for StaticTokenAuth {
 #[async_trait::async_trait]
 impl AuthProvider for StaticTokenAuth {
     async fn authenticate(&self, client: &NifiClient) -> Result<(), NifiError> {
-        client.set_token(self.token.inner().clone()).await;
+        client.set_token((*self.token).clone()).await;
         Ok(())
     }
 }

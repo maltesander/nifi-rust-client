@@ -1,19 +1,10 @@
 #![cfg(not(feature = "dynamic"))]
 #![allow(clippy::panic)]
 
-use nifi_rust_client::config::auth::{EnvPasswordAuth, PasswordAuth, Redacted, StaticTokenAuth};
+use nifi_rust_client::config::auth::{EnvPasswordAuth, PasswordAuth, StaticTokenAuth};
 use nifi_rust_client::{NifiClientBuilder, NifiError};
 use wiremock::matchers::{method, path};
 use wiremock::{Mock, MockServer, ResponseTemplate};
-
-// ── Redacted<T> ──────────────────────────────────────────────────────────────
-
-#[test]
-fn redacted_hides_value_in_debug() {
-    let secret = Redacted::new("super-secret");
-    assert_eq!(format!("{secret:?}"), "[REDACTED]");
-    assert_eq!(*secret.inner(), "super-secret");
-}
 
 // ── PasswordAuth ─────────────────────────────────────────────────────────────
 

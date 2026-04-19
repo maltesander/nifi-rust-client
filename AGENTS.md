@@ -78,18 +78,18 @@ async fn get_bytes_stream_with_query(&self, path: &str, extra_headers: &[(&str, 
 These helpers attach the JWT auth token, map HTTP errors to `NifiError`, and deserialize responses.
 All public endpoint methods are one-liners that delegate to these helpers.
 
-Every HTTP helper (`get`, `post`, `put`, `delete`) and every direct request (`login`, `connect`) must
-emit a `tracing::debug!` call before sending, using this exact format:
+Every HTTP helper (`get`, `post`, `put`, `delete`, and their variants) routes through the
+internal `NifiClient::build_request` helper, which emits a single
+`tracing::debug!(method, path, "NiFi API request")` line per call and attaches auth,
+`X-ProxiedEntitiesChain`, and the optional request-id header to the outgoing request.
+Helpers must NOT add their own `tracing::debug!` call for the request-side event.
 
-```rust
-tracing::debug!(method = "GET", path, "NiFi API request");
-```
+One method bypasses `build_request` by design: `login` (pre-authentication, form-encoded
+body, no bearer). It keeps its own inline `tracing::debug!` line and calls
+`apply_request_id` directly to still attach a request-id when configured.
 
-Use the literal method name string and the `path` variable. This applies to all future methods.
-
-Resource struct methods (e.g. `Flow::get_about_info`) that delegate to a generic helper do **not** add their
-own `tracing::debug!` call — the helper already emits it. Only methods that send requests directly
-(bypassing the helpers) need their own debug line.
+Resource struct methods (e.g. `Flow::get_about_info`) that delegate to a generic helper do
+not add their own `tracing::debug!` call — the helper already emits it.
 
 ### Streaming binary downloads
 
@@ -223,6 +223,14 @@ For integration tests, credentials are read from `NIFI_USERNAME` / `NIFI_PASSWOR
 - `.client_identity_pem(pem)` — mutual TLS client certificate (PEM-encoded cert+key).
 - `.proxied_entities_chain("<user1><user2>")` — sets the `X-ProxiedEntitiesChain`
   header on every request, used behind trusted proxies (Knox, nginx with mTLS).
+
+#### Per-request correlation
+
+Enable `NifiClientBuilder::request_id_header(Some(name))` to attach a fresh
+UUIDv4 to every outgoing request. The id is sent as the chosen header
+(`"X-Request-Id"`, `"X-Correlation-Id"`, or any other name your infrastructure
+expects) and recorded on the per-request `tracing` span as the
+`request_id` field. Off by default.
 
 #### Cluster / load balancer deployments
 
