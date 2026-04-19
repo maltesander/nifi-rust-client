@@ -89,6 +89,41 @@ When the detected NiFi version doesn't exactly match a supported version, the co
 
 See [`crates/nifi-rust-client/README.md`](crates/nifi-rust-client/README.md) for the full API reference, builder options, token management, and error handling.
 
+### Streaming large binary responses
+
+For endpoints that return potentially large binary payloads — NAR
+downloads, flowfile content, provenance input/output content, asset
+bytes — each buffered method also has a streaming sibling that yields
+chunks as they arrive from the server:
+
+```rust
+use futures_util::StreamExt;
+use nifi_rust_client::{NifiClientBuilder, Bytes};
+use tokio::io::AsyncWriteExt;
+
+async fn save_provenance_content(
+    dest: &str,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let client = NifiClientBuilder::new("https://nifi:8443")?.build()?;
+    client.login("admin", "adminpassword123").await?;
+
+    let mut stream = client
+        .provenanceevents()
+        .get_input_content_stream("event-id", None, None)
+        .await?;
+
+    let mut file = tokio::fs::File::create(dest).await?;
+    while let Some(chunk) = stream.next().await {
+        let chunk: Bytes = chunk?;
+        file.write_all(&chunk).await?;
+    }
+    Ok(())
+}
+```
+
+The same `Range` header semantics apply — pass `Some("bytes=0-1023")`
+as the last argument for a partial download.
+
 ## License
 
 Apache-2.0. See [`LICENSE`](LICENSE).

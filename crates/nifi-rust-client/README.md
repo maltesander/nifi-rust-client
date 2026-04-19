@@ -294,6 +294,13 @@ No per-node token cache or special routing headers are needed. The existing retr
 | `client.token()` | Return the current bearer token as `Option<String>` (async) |
 | `client.set_token(token)` | Restore a previously obtained token (async) |
 
+## Streaming binary downloads
+
+Endpoints returning `application/octet-stream` or `*/*` are emitted in
+two flavors: a buffered `Vec<u8>` method and a streaming `BytesStream`
+method named with a `_stream` suffix. See the top-level README for a
+worked example.
+
 ## Retry policy
 
 By default, failed requests are not retried (except for automatic token refresh when an auth
