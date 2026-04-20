@@ -1,6 +1,8 @@
 mod body;
 mod client_factory;
 mod config;
+mod confirm;
+mod dry_run;
 mod error;
 mod output;
 mod porcelain;
@@ -65,6 +67,14 @@ struct Cli {
     /// Timeout for --wait (e.g. "30s", "2m")
     #[arg(long = "wait-timeout", global = true, default_value = "30s")]
     wait_timeout: String,
+
+    /// Print the request that would be sent and exit; send nothing
+    #[arg(long = "dry-run", global = true)]
+    dry_run: bool,
+
+    /// Skip confirmation prompt on destructive commands
+    #[arg(long = "yes", short = 'y', global = true)]
+    yes: bool,
 
     #[command(subcommand)]
     command: Commands,
@@ -224,12 +234,61 @@ async fn run(cli: Cli) -> Result<(), error::CliError> {
                 cli.insecure,
                 context,
             )?;
-            let client = params.build_client().await?;
+            let base_url = params.url.clone();
+            let ctx = dry_run::CliCtx {
+                dry_run: cli.dry_run,
+                yes: cli.yes,
+                base_url: &base_url,
+            };
+
+            // For destructive commands, run the confirmation gate before
+            // attempting any network calls so that a non-TTY / missing --yes
+            // refuses immediately without touching the server.
+            if !ctx.dry_run {
+                match &cmd {
+                    OpsCommand::StopPg { pg_id } => {
+                        confirm::confirm_destructive(&porcelain::ops::stop_pg_what(pg_id), &ctx)?;
+                    }
+                    OpsCommand::DisableServices { pg_id } => {
+                        confirm::confirm_destructive(
+                            &porcelain::ops::disable_services_what(pg_id),
+                            &ctx,
+                        )?;
+                    }
+                    OpsCommand::StartPg { .. } | OpsCommand::EnableServices { .. } => {}
+                }
+            }
+
+            // On --dry-run, skip authentication: the handler short-circuits
+            // before touching the client, so we only need a constructed
+            // (not authenticated) DynamicClient for the signature.
+            let client = if ctx.dry_run {
+                nifi_rust_client::NifiClientBuilder::new(&base_url)?
+                    .danger_accept_invalid_certs(params.insecure)
+                    .build_dynamic()?
+            } else {
+                params.build_client().await?
+            };
+
             let result = match cmd {
-                OpsCommand::StartPg { pg_id } => porcelain::ops::start_pg(&client, &pg_id).await?,
-                OpsCommand::StopPg { pg_id } => porcelain::ops::stop_pg(&client, &pg_id).await?,
-                OpsCommand::EnableServices { pg_id } => porcelain::ops::enable_services(&client, &pg_id).await?,
-                OpsCommand::DisableServices { pg_id } => porcelain::ops::disable_services(&client, &pg_id).await?,
+                OpsCommand::StartPg { pg_id } => {
+                    porcelain::ops::start_pg(&client, &pg_id, &ctx).await?
+                }
+                OpsCommand::StopPg { pg_id } => {
+                    // confirm already ran above; pass yes=true to skip the
+                    // redundant check inside the porcelain helper.
+                    let ctx_yes = dry_run::CliCtx { yes: true, ..ctx };
+                    porcelain::ops::stop_pg(&client, &pg_id, &ctx_yes).await?
+                }
+                OpsCommand::EnableServices { pg_id } => {
+                    porcelain::ops::enable_services(&client, &pg_id, &ctx).await?
+                }
+                OpsCommand::DisableServices { pg_id } => {
+                    // confirm already ran above; pass yes=true to skip the
+                    // redundant check inside the porcelain helper.
+                    let ctx_yes = dry_run::CliCtx { yes: true, ..ctx };
+                    porcelain::ops::disable_services(&client, &pg_id, &ctx_yes).await?
+                }
             };
             let fmt = output::OutputFormat::parse(&cli.output).map_err(error::CliError::User)?;
             let resolved = fmt.resolve();
@@ -257,7 +316,23 @@ async fn run(cli: Cli) -> Result<(), error::CliError> {
                 cli.insecure,
                 context,
             )?;
-            let client = params.build_client().await?;
+            let base_url = params.url.clone();
+            let ctx = dry_run::CliCtx {
+                dry_run: cli.dry_run,
+                yes: cli.yes,
+                base_url: &base_url,
+            };
+
+            // Under --dry-run the handler short-circuits before touching
+            // the client, so we skip authentication and build only the
+            // wrapper.
+            let client = if ctx.dry_run {
+                nifi_rust_client::NifiClientBuilder::new(&base_url)?
+                    .danger_accept_invalid_certs(params.insecure)
+                    .build_dynamic()?
+            } else {
+                params.build_client().await?
+            };
 
             // Peek for a wait plan before dispatch consumes the resource.
             let wait_plan = if cli.wait {
@@ -266,15 +341,24 @@ async fn run(cli: Cli) -> Result<(), error::CliError> {
                 None
             };
 
-            let mut result = generated::dispatch_generated(*resource, &client).await?;
+            let mut result = generated::dispatch_generated(*resource, &client, &ctx).await?;
 
             if let Some(plan) = wait_plan {
-                let dispatch_value = match &result {
-                    output::CliOutput::Single(v) => v.clone(),
-                    _ => serde_json::Value::Null,
-                };
-                let timeout = wait_wire::parse_wait_timeout(&cli.wait_timeout)?;
-                result = wait_wire::run_wait_plan(plan, dispatch_value, &client, timeout).await?;
+                if ctx.dry_run {
+                    let timeout = wait_wire::parse_wait_timeout(&cli.wait_timeout)?;
+                    eprintln!(
+                        "  + would then {}",
+                        wait_wire::describe_wait_plan(&plan, timeout)
+                    );
+                } else {
+                    let dispatch_value = match &result {
+                        output::CliOutput::Single(v) => v.clone(),
+                        _ => serde_json::Value::Null,
+                    };
+                    let timeout = wait_wire::parse_wait_timeout(&cli.wait_timeout)?;
+                    result =
+                        wait_wire::run_wait_plan(plan, dispatch_value, &client, timeout).await?;
+                }
             } else if cli.wait {
                 return Err(error::CliError::User(
                     "--wait is not supported on this command".to_string(),

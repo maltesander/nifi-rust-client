@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use crate::content_type::RequestBodyKind;
-use crate::parser::{ApiSpec, Endpoint, HttpMethod, QueryParamType, TagGroup};
+use crate::parser::{ApiSpec, Endpoint, HttpMethod, PathParam, QueryParamType, TagGroup};
 use crate::util::format_source;
 
 /// Emit all generated CLI code.
@@ -127,13 +127,14 @@ fn emit_top_dispatch(out: &mut String, tags: &[&TagGroup]) {
     out.push_str("pub async fn dispatch_generated(\n");
     out.push_str("    resource: GeneratedResource,\n");
     out.push_str("    client: &nifi_rust_client::dynamic::DynamicClient,\n");
+    out.push_str("    ctx: &crate::dry_run::CliCtx<'_>,\n");
     out.push_str(") -> Result<crate::output::CliOutput, crate::error::CliError> {\n");
     out.push_str("    match resource {\n");
     for tag in tags {
         let variant = resource_name(tag);
         let dispatch_fn = format!("dispatch_{}", tag.module_name);
         out.push_str(&format!(
-            "        GeneratedResource::{variant} {{ command }} => {dispatch_fn}(command, client).await,\n"
+            "        GeneratedResource::{variant} {{ command }} => {dispatch_fn}(command, client, ctx).await,\n"
         ));
     }
     out.push_str("    }\n");
@@ -189,12 +190,13 @@ fn emit_tag_code(out: &mut String, tag: &TagGroup, canonical: &HashMap<Canonical
     out.push_str(&format!("async fn {dispatch_fn}(\n"));
     out.push_str(&format!("    command: {variant_base}Command,\n"));
     out.push_str("    client: &nifi_rust_client::dynamic::DynamicClient,\n");
+    out.push_str("    ctx: &crate::dry_run::CliCtx<'_>,\n");
     out.push_str(") -> Result<crate::output::CliOutput, crate::error::CliError> {\n");
     out.push_str("    match command {\n");
     for cmd in &commands {
         let handler = handler_fn_name(&tag.module_name, &cmd.command_name);
         out.push_str(&format!(
-            "        {variant_base}Command::{}(args) => {handler}(args, client).await,\n",
+            "        {variant_base}Command::{}(args) => {handler}(args, client, ctx).await,\n",
             cmd.variant_name
         ));
     }
@@ -290,6 +292,7 @@ fn emit_handler(
     out.push_str(&format!("async fn {handler_name}(\n"));
     out.push_str(&format!("    args: {},\n", cmd.args_name));
     out.push_str("    client: &nifi_rust_client::dynamic::DynamicClient,\n");
+    out.push_str("    ctx: &crate::dry_run::CliCtx<'_>,\n");
     out.push_str(") -> Result<crate::output::CliOutput, crate::error::CliError> {\n");
 
     // Canonical dynamic path has no traits — the concrete resource struct is
@@ -306,9 +309,49 @@ fn emit_handler(
     {
         out.push_str("    let body_json = crate::body::resolve_body(args.body.as_deref(), args.body_file.as_deref())?;\n");
         out.push_str(&format!(
-            "    let body: nifi_rust_client::dynamic::types::{req_type} = serde_json::from_value(body_json)\n"
+            "    let body: nifi_rust_client::dynamic::types::{req_type} = serde_json::from_value(body_json.clone())\n"
         ));
         out.push_str("        .map_err(|e| crate::error::CliError::User(format!(\"invalid request body: {e}\")))?;\n");
+    }
+
+    // --- Dry-run branch (mutating methods only) ---
+    if is_mutating(&ep.method) {
+        emit_path_substitution(out, ep);
+        emit_query_pairs(out, ep);
+        let method_str = match ep.method {
+            HttpMethod::Get => "GET",
+            HttpMethod::Post => "POST",
+            HttpMethod::Put => "PUT",
+            HttpMethod::Delete => "DELETE",
+        };
+        out.push_str("    if ctx.dry_run {\n");
+        out.push_str("        let url = crate::dry_run::format_url(ctx.base_url, &substituted_path, &query_pairs);\n");
+        if ep.request_type.is_some()
+            && (ep.method == HttpMethod::Post || ep.method == HttpMethod::Put)
+        {
+            out.push_str(&format!(
+                "        crate::dry_run::print(&mut std::io::stdout(), {method_str:?}, &url, Some(&body_json))\n"
+            ));
+        } else {
+            out.push_str(&format!(
+                "        crate::dry_run::print(&mut std::io::stdout(), {method_str:?}, &url, None)\n"
+            ));
+        }
+        out.push_str("            .map_err(crate::error::CliError::Io)?;\n");
+        out.push_str("        return Ok(crate::output::CliOutput::Empty);\n");
+        out.push_str("    }\n");
+    }
+
+    // --- Confirmation branch (DELETE only) ---
+    // Only the first path param is referenced in the prompt — see
+    // `emit_confirm_what_expr` for the rationale. Additional path
+    // segments (e.g. the {assetId} in /connectors/{id}/assets/{assetId})
+    // are intentionally omitted from the prompt to keep it readable.
+    if ep.method == HttpMethod::Delete {
+        let what_expr = emit_confirm_what_expr(&tag.tag, &ep.path_params);
+        out.push_str(&format!(
+            "    crate::confirm::confirm_destructive(&{what_expr}, ctx)?;\n"
+        ));
     }
 
     // Build method call arguments — all path params are passed in order.
@@ -449,6 +492,103 @@ fn rust_ident(name: &str) -> String {
             format!("r#{name}")
         }
         _ => name.to_string(),
+    }
+}
+
+fn is_mutating(method: &HttpMethod) -> bool {
+    matches!(
+        method,
+        HttpMethod::Post | HttpMethod::Put | HttpMethod::Delete
+    )
+}
+
+/// Emit a Rust fragment that builds `let substituted_path: String = ...`
+/// with each `{placeholder}` in `ep.path` replaced by the value of the
+/// corresponding `args.<field>` at runtime.
+fn emit_path_substitution(out: &mut String, ep: &Endpoint) {
+    if ep.path_params.is_empty() {
+        out.push_str(&format!(
+            "    let substituted_path = {:?}.to_string();\n",
+            ep.path
+        ));
+    } else {
+        out.push_str(&format!(
+            "    let mut substituted_path = {:?}.to_string();\n",
+            ep.path
+        ));
+        for pp in &ep.path_params {
+            let placeholder = format!("{{{}}}", pp.name);
+            let field = rust_ident(&pp.name);
+            out.push_str(&format!(
+                "    substituted_path = substituted_path.replace({placeholder:?}, &args.{field});\n"
+            ));
+        }
+    }
+}
+
+/// Emit a fragment that builds `let query_pairs: Vec<(&str, String)>` from
+/// the args' query params. Required params always push; optional ones push
+/// only when `Some`.
+fn emit_query_pairs(out: &mut String, ep: &Endpoint) {
+    if ep.query_params.is_empty() {
+        out.push_str("    let query_pairs: Vec<(&str, String)> = Vec::new();\n");
+    } else {
+        out.push_str("    let mut query_pairs: Vec<(&str, String)> = Vec::new();\n");
+    }
+    for qp in &ep.query_params {
+        let field = rust_ident(&qp.rust_name);
+        let wire_name = &qp.name;
+        let value_expr = match &qp.ty {
+            QueryParamType::Str => {
+                if qp.required {
+                    format!("args.{field}.clone()")
+                } else {
+                    "v.clone()".to_string()
+                }
+            }
+            QueryParamType::Bool
+            | QueryParamType::I32
+            | QueryParamType::I64
+            | QueryParamType::F64 => {
+                if qp.required {
+                    format!("args.{field}.to_string()")
+                } else {
+                    "v.to_string()".to_string()
+                }
+            }
+            QueryParamType::Enum(_) => {
+                if qp.required {
+                    format!("args.{field}.clone()")
+                } else {
+                    "v.clone()".to_string()
+                }
+            }
+        };
+        if qp.required {
+            out.push_str(&format!(
+                "    query_pairs.push(({wire_name:?}, {value_expr}));\n"
+            ));
+        } else {
+            out.push_str(&format!(
+                "    if let Some(v) = &args.{field} {{\n        query_pairs.push(({wire_name:?}, {value_expr}));\n    }}\n"
+            ));
+        }
+    }
+}
+
+/// Build the `format!(...)` expression embedded in a DELETE handler's
+/// `confirm_destructive` call. Only the first path param (if any) is
+/// included — by design, since that is always the primary-resource
+/// identifier and additional path segments (e.g. sub-resource UUIDs
+/// on two-param paths) add noise to the prompt.
+fn emit_confirm_what_expr(tag_name: &str, path_params: &[PathParam]) -> String {
+    match path_params.first() {
+        Some(first) => {
+            let field = rust_ident(&first.name);
+            let param_name = &first.name;
+            format!(r#"format!("delete {tag_name} resource '{param_name}={{}}'", args.{field})"#)
+        }
+        None => format!(r#"format!("delete {tag_name} resource")"#),
     }
 }
 
@@ -597,6 +737,120 @@ mod tests {
         assert!(
             src.contains("name = \"delete-processor\""),
             "missing delete-processor command name"
+        );
+    }
+
+    #[test]
+    fn emit_produces_dry_run_branch_for_put() {
+        let ep_put = make_endpoint(
+            HttpMethod::Put,
+            "update_processor",
+            "/processors/{id}",
+            vec![PathParam {
+                name: "id".to_string(),
+                doc: None,
+            }],
+            Some("ProcessorEntity"),
+        );
+        let spec = make_spec(vec![make_tag("Processors", vec![ep_put])]);
+        let files = emit_cli(&[("2.8.0".to_string(), spec)]);
+        let src = &files[0].1;
+
+        assert!(
+            src.contains("if ctx.dry_run"),
+            "mutating handler should emit dry-run branch"
+        );
+        assert!(
+            src.contains("crate::dry_run::print"),
+            "dry-run branch should call crate::dry_run::print"
+        );
+        assert!(
+            src.contains("crate::dry_run::CliCtx"),
+            "handler signature should take CliCtx"
+        );
+    }
+
+    #[test]
+    fn emit_get_has_no_dry_run_branch() {
+        let ep_get = make_endpoint(
+            HttpMethod::Get,
+            "get_processor",
+            "/processors/{id}",
+            vec![PathParam {
+                name: "id".to_string(),
+                doc: None,
+            }],
+            Some("ProcessorEntity"),
+        );
+        let spec = make_spec(vec![make_tag("Processors", vec![ep_get])]);
+        let files = emit_cli(&[("2.8.0".to_string(), spec)]);
+        let src = &files[0].1;
+
+        let get_handler_start = src
+            .find("async fn handle_processors_get_processor")
+            .expect("get handler missing");
+        let rest = &src[get_handler_start..];
+        let next_fn = rest[1..]
+            .find("\nasync fn ")
+            .map(|i| i + 1)
+            .unwrap_or(rest.len());
+        let handler_body = &rest[..next_fn];
+        assert!(
+            !handler_body.contains("if ctx.dry_run"),
+            "GET handler body must not contain dry-run branch: {handler_body}"
+        );
+    }
+
+    #[test]
+    fn emit_produces_confirm_branch_for_delete() {
+        let ep_delete = make_endpoint(
+            HttpMethod::Delete,
+            "delete_processor",
+            "/processors/{id}",
+            vec![PathParam {
+                name: "id".to_string(),
+                doc: None,
+            }],
+            None,
+        );
+        let spec = make_spec(vec![make_tag("Processors", vec![ep_delete])]);
+        let files = emit_cli(&[("2.8.0".to_string(), spec)]);
+        let src = &files[0].1;
+
+        assert!(
+            src.contains("crate::confirm::confirm_destructive"),
+            "DELETE handler should emit confirm branch"
+        );
+    }
+
+    #[test]
+    fn emit_does_not_emit_confirm_branch_for_put() {
+        let ep_put = make_endpoint(
+            HttpMethod::Put,
+            "update_processor",
+            "/processors/{id}",
+            vec![PathParam {
+                name: "id".to_string(),
+                doc: None,
+            }],
+            Some("ProcessorEntity"),
+        );
+        let spec = make_spec(vec![make_tag("Processors", vec![ep_put])]);
+        let files = emit_cli(&[("2.8.0".to_string(), spec)]);
+        let src = &files[0].1;
+
+        let put_start = src
+            .find("async fn handle_processors_update_processor")
+            .expect("PUT handler missing");
+        let rest = &src[put_start..];
+        let next_fn = rest[1..]
+            .find("\nasync fn ")
+            .map(|i| i + 1)
+            .unwrap_or(rest.len());
+        let handler_body = &rest[..next_fn];
+        assert!(
+            !handler_body.contains("confirm_destructive"),
+            "PUT handler must not emit confirm branch"
         );
     }
 }

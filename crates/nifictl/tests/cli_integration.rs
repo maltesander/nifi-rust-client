@@ -151,3 +151,72 @@ fn processors_help_shows_subcommands() {
     assert!(stdout.contains("get"), "should have get command");
     assert!(stdout.contains("delete"), "should have delete command");
 }
+
+/// `--dry-run` with `--url` pointed at localhost:1 (closed port) must still
+/// exit 0 and NOT attempt any HTTP call. If the command tried to connect,
+/// it would fail with a connection error.
+#[test]
+fn dry_run_on_ops_stop_pg_does_not_connect() {
+    let output = nifictl()
+        .args([
+            "--url",
+            "http://localhost:1",
+            "--username",
+            "admin",
+            "--password",
+            "x",
+            "--dry-run",
+            "ops",
+            "stop-pg",
+            "pg-1",
+        ])
+        .output()
+        .expect("failed to run nifictl");
+    assert!(
+        output.status.success(),
+        "dry-run should exit 0; stderr={}",
+        String::from_utf8_lossy(&output.stderr),
+    );
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(
+        stdout.contains("DRY RUN \u{2014} would send:"),
+        "stdout should contain dry-run preamble: {stdout}"
+    );
+    assert!(
+        stdout.contains("PUT http://localhost:1/nifi-api/flow/process-groups/pg-1"),
+        "stdout should contain the target URL: {stdout}"
+    );
+    assert!(
+        stdout.contains("\"state\": \"STOPPED\""),
+        "stdout should show STOPPED body: {stdout}"
+    );
+}
+
+/// `ops stop-pg` without `--yes` in non-TTY must refuse with a clear error.
+#[test]
+fn ops_stop_pg_without_yes_in_non_tty_refuses() {
+    let output = nifictl()
+        .args([
+            "--url",
+            "http://localhost:1",
+            "--username",
+            "admin",
+            "--password",
+            "x",
+            "ops",
+            "stop-pg",
+            "pg-1",
+        ])
+        .output()
+        .expect("failed to run nifictl");
+    assert!(
+        !output.status.success(),
+        "expected non-zero exit; stdout={}",
+        String::from_utf8_lossy(&output.stdout),
+    );
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(
+        stderr.contains("refusing to run destructive command without --yes"),
+        "stderr should contain refusal message: {stderr}"
+    );
+}
