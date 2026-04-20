@@ -67,7 +67,7 @@ impl CliError {
             CliError::Nifi(NifiError::InvalidCertificate { .. }) => {
                 Some("pass --insecure for dev environments only")
             }
-            CliError::Nifi(NifiError::Http { source }) if is_tls_handshake_error(source) => {
+            CliError::Nifi(NifiError::Http { source }) if is_tls_handshake_error(source as &dyn std::error::Error) => {
                 Some("pass --insecure for dev environments only")
             }
             _ => None,
@@ -75,12 +75,12 @@ impl CliError {
     }
 }
 
-/// Fuzzy sniff for TLS/handshake errors inside a `reqwest::Error` source
-/// chain. Walks the full chain and checks each layer's Display output
+/// Fuzzy sniff for TLS/handshake errors in an error source chain.
+/// Walks the full chain and checks each layer's Display output
 /// for common TLS keywords. Used only to decide whether to append the
 /// `--insecure` hint on a transport error.
 #[allow(dead_code)] // wired in Task 6 via hint()
-fn is_tls_handshake_error(err: &reqwest::Error) -> bool {
+fn is_tls_handshake_error(err: &dyn std::error::Error) -> bool {
     use std::error::Error;
     let mut current: Option<&dyn Error> = Some(err);
     while let Some(e) = current {
@@ -89,7 +89,6 @@ fn is_tls_handshake_error(err: &reqwest::Error) -> bool {
             || msg.contains("unknownissuer")
             || msg.contains("tls")
             || msg.contains("handshake")
-            || msg.contains("peer certificate")
         {
             return true;
         }
@@ -186,8 +185,6 @@ mod tests {
 
     #[test]
     fn is_tls_handshake_error_matches_keywords() {
-        // reqwest::Error has no public constructor, so unit-test the
-        // keyword sniff on a dyn Error proxy instead.
         use std::error::Error;
         use std::fmt;
 
@@ -200,20 +197,9 @@ mod tests {
         }
         impl Error for Fake {}
 
-        // Mirror the sniff logic inline so we exercise the same
-        // substring rules without needing a real reqwest::Error.
-        fn sniff(err: &dyn Error) -> bool {
-            let msg = err.to_string().to_lowercase();
-            msg.contains("certificate")
-                || msg.contains("unknownissuer")
-                || msg.contains("tls")
-                || msg.contains("handshake")
-                || msg.contains("peer certificate")
-        }
-
-        assert!(sniff(&Fake("invalid peer certificate")));
-        assert!(sniff(&Fake("TLS handshake failure")));
-        assert!(sniff(&Fake("UnknownIssuer")));
-        assert!(!sniff(&Fake("connection refused")));
+        assert!(is_tls_handshake_error(&Fake("invalid peer certificate")));
+        assert!(is_tls_handshake_error(&Fake("TLS handshake failure")));
+        assert!(is_tls_handshake_error(&Fake("UnknownIssuer")));
+        assert!(!is_tls_handshake_error(&Fake("connection refused")));
     }
 }
