@@ -3,6 +3,7 @@ mod client_factory;
 mod config;
 mod confirm;
 mod dry_run;
+mod jwt;
 mod error;
 mod output;
 mod porcelain;

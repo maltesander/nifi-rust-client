@@ -10,6 +10,7 @@ homepage.workspace = true
 description = "CLI tool for Apache NiFi 2.x"
 
 [dependencies]
+base64 = "0.22"
 clap = { workspace = true }
 clap_complete.workspace = true
 comfy-table.workspace = true

@@ -1044,6 +1044,7 @@ dependencies = [
 name = "nifictl"
 version = "0.1.1"
 dependencies = [
+ "base64",
  "clap",
  "clap_complete",
  "comfy-table",
