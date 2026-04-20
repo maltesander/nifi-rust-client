@@ -7,7 +7,7 @@ use std::path::Path;
 use std::time::Duration;
 
 use nifi_rust_client::dynamic::DynamicClient;
-use nifi_rust_client::wait::{self, ProcessorTargetState, WaitConfig};
+use nifi_rust_client::wait::{self, ControllerServiceTargetState, ProcessorTargetState, WaitConfig};
 use serde_json::Value;
 
 use crate::body;
@@ -29,16 +29,21 @@ pub enum WaitPlan {
         processor_id: String,
         target: ProcessorTargetState,
     },
+    /// Wait for a controller service to reach a target state.
+    ControllerServiceState {
+        service_id: String,
+        target: ControllerServiceTargetState,
+    },
 }
 
 /// Inspect a `processors update-run-status` body and extract the target state.
 ///
-/// Returns `Ok(Some(...))` for steady states: `RUNNING`, `STOPPED`, `DISABLED`.
+/// Returns `Ok(ProcessorTargetState)` for steady states: `RUNNING`, `STOPPED`, `DISABLED`.
 /// Rejects `RUN_ONCE` with a descriptive error since it has no steady state to converge on.
 pub fn processor_target_from_body(
     inline: Option<&str>,
     body_file: Option<&Path>,
-) -> Result<Option<ProcessorTargetState>, CliError> {
+) -> Result<ProcessorTargetState, CliError> {
     let value = body::resolve_body(inline, body_file)?;
     let Some(state) = value.get("state").and_then(Value::as_str) else {
         return Err(CliError::User(
@@ -46,9 +51,9 @@ pub fn processor_target_from_body(
         ));
     };
     match state {
-        "RUNNING" => Ok(Some(ProcessorTargetState::Running)),
-        "STOPPED" => Ok(Some(ProcessorTargetState::Stopped)),
-        "DISABLED" => Ok(Some(ProcessorTargetState::Disabled)),
+        "RUNNING" => Ok(ProcessorTargetState::Running),
+        "STOPPED" => Ok(ProcessorTargetState::Stopped),
+        "DISABLED" => Ok(ProcessorTargetState::Disabled),
         "RUN_ONCE" => Err(CliError::User(
             "--wait on 'RUN_ONCE' has no effect — RUN_ONCE is a transient state with no steady state to converge on; remove --wait"
                 .to_string(),
@@ -60,26 +65,67 @@ pub fn processor_target_from_body(
     }
 }
 
+/// Inspect a `controller-services update-run-status` body and extract the target state.
+///
+/// Returns `Ok(ControllerServiceTargetState)` for steady states: `ENABLED`, `DISABLED`.
+/// Rejects `ENABLING` and `DISABLING` — those are transient server states, not valid targets.
+pub fn controller_service_target_from_body(
+    inline: Option<&str>,
+    body_file: Option<&Path>,
+) -> Result<ControllerServiceTargetState, CliError> {
+    let value = body::resolve_body(inline, body_file)?;
+    let Some(state) = value.get("state").and_then(Value::as_str) else {
+        return Err(CliError::User(
+            "controller-services update-run-status --wait requires a body with a 'state' field"
+                .to_string(),
+        ));
+    };
+    match state {
+        "ENABLED" => Ok(ControllerServiceTargetState::Enabled),
+        "DISABLED" => Ok(ControllerServiceTargetState::Disabled),
+        "ENABLING" | "DISABLING" => Err(CliError::User(format!(
+            "--wait on '{state}' has no effect — '{state}' is a transient state; \
+             use ENABLED or DISABLED"
+        ))),
+        other => Err(CliError::User(format!(
+            "unsupported controller-service state for --wait: '{other}' \
+             (expected ENABLED or DISABLED)"
+        ))),
+    }
+}
+
 /// Inspect a `GeneratedResource` and produce a `WaitPlan` if the specific
 /// subcommand is one of the ones we support with `--wait`. Returns
 /// `Ok(None)` for any other subcommand.
 pub fn peek_wait_plan(
     resource: &crate::generated::GeneratedResource,
 ) -> Result<Option<WaitPlan>, CliError> {
-    use crate::generated::{GeneratedResource, ProcessorsCommand};
+    use crate::generated::{ControllerServicesCommand, GeneratedResource, ProcessorsCommand};
 
     if let GeneratedResource::Processors { command } = resource
         && let ProcessorsCommand::UpdateRunStatus(args) = command
     {
-        let target = processor_target_from_body(
-            args.body.as_deref(),
-            args.body_file.as_deref(),
-        )?;
-        return Ok(target.map(|t| WaitPlan::ProcessorState {
+        return Ok(Some(WaitPlan::ProcessorState {
             processor_id: args.id.clone(),
-            target: t,
+            target: processor_target_from_body(
+                args.body.as_deref(),
+                args.body_file.as_deref(),
+            )?,
         }));
     }
+
+    if let GeneratedResource::ControllerServices { command } = resource
+        && let ControllerServicesCommand::UpdateRunStatus(args) = command
+    {
+        return Ok(Some(WaitPlan::ControllerServiceState {
+            service_id: args.id.clone(),
+            target: controller_service_target_from_body(
+                args.body.as_deref(),
+                args.body_file.as_deref(),
+            )?,
+        }));
+    }
+
     Ok(None)
 }
 
@@ -97,6 +143,12 @@ pub async fn run_wait_plan(
     match plan {
         WaitPlan::ProcessorState { processor_id, target } => {
             let entity = wait::processor_state_dynamic(client, &processor_id, target, config).await?;
+            let value = serde_json::to_value(&entity)
+                .map_err(|e| CliError::User(format!("serialization error: {e}")))?;
+            Ok(CliOutput::Single(value))
+        }
+        WaitPlan::ControllerServiceState { service_id, target } => {
+            let entity = wait::controller_service_state_dynamic(client, &service_id, target, config).await?;
             let value = serde_json::to_value(&entity)
                 .map_err(|e| CliError::User(format!("serialization error: {e}")))?;
             Ok(CliOutput::Single(value))
@@ -154,7 +206,7 @@ mod tests {
         let out = super::processor_target_from_body(
             Some(r#"{"state":"RUNNING"}"#), None,
         ).unwrap();
-        assert_eq!(out, Some(super::ProcessorTargetState::Running));
+        assert_eq!(out, super::ProcessorTargetState::Running);
     }
 
     #[test]
@@ -162,7 +214,7 @@ mod tests {
         let out = super::processor_target_from_body(
             Some(r#"{"state":"STOPPED"}"#), None,
         ).unwrap();
-        assert_eq!(out, Some(super::ProcessorTargetState::Stopped));
+        assert_eq!(out, super::ProcessorTargetState::Stopped);
     }
 
     #[test]
@@ -170,7 +222,7 @@ mod tests {
         let out = super::processor_target_from_body(
             Some(r#"{"state":"DISABLED"}"#), None,
         ).unwrap();
-        assert_eq!(out, Some(super::ProcessorTargetState::Disabled));
+        assert_eq!(out, super::ProcessorTargetState::Disabled);
     }
 
     #[test]
@@ -203,6 +255,66 @@ mod tests {
         ).unwrap_err();
         match err {
             crate::error::CliError::User(msg) => assert!(msg.contains("SOMETHING_ELSE")),
+            other => panic!("expected User, got {other:?}"),
+        }
+    }
+
+    // --- controller_service_target_from_body ---
+
+    #[test]
+    fn controller_service_target_from_body_parses_enabled() {
+        let out = super::controller_service_target_from_body(
+            Some(r#"{"state":"ENABLED"}"#), None,
+        ).unwrap();
+        assert_eq!(out, super::ControllerServiceTargetState::Enabled);
+    }
+
+    #[test]
+    fn controller_service_target_from_body_parses_disabled() {
+        let out = super::controller_service_target_from_body(
+            Some(r#"{"state":"DISABLED"}"#), None,
+        ).unwrap();
+        assert_eq!(out, super::ControllerServiceTargetState::Disabled);
+    }
+
+    #[test]
+    fn controller_service_target_from_body_rejects_enabling() {
+        let err = super::controller_service_target_from_body(
+            Some(r#"{"state":"ENABLING"}"#), None,
+        ).unwrap_err();
+        match err {
+            crate::error::CliError::User(msg) => {
+                assert!(msg.contains("ENABLING"), "message should mention ENABLING: {msg}");
+                assert!(msg.contains("transient"), "message should mention transient: {msg}");
+            }
+            other => panic!("expected User, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn controller_service_target_from_body_rejects_disabling() {
+        let err = super::controller_service_target_from_body(
+            Some(r#"{"state":"DISABLING"}"#), None,
+        ).unwrap_err();
+        assert!(matches!(err, crate::error::CliError::User(_)));
+    }
+
+    #[test]
+    fn controller_service_target_from_body_rejects_missing_state() {
+        let err = super::controller_service_target_from_body(Some("{}"), None).unwrap_err();
+        match err {
+            crate::error::CliError::User(msg) => assert!(msg.contains("'state'")),
+            other => panic!("expected User, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn controller_service_target_from_body_rejects_unknown_state() {
+        let err = super::controller_service_target_from_body(
+            Some(r#"{"state":"WAT"}"#), None,
+        ).unwrap_err();
+        match err {
+            crate::error::CliError::User(msg) => assert!(msg.contains("WAT")),
             other => panic!("expected User, got {other:?}"),
         }
     }
@@ -249,6 +361,52 @@ mod tests {
                 assert_eq!(
                     v.pointer("/component/state").and_then(|s| s.as_str()),
                     Some("RUNNING")
+                );
+            }
+            _ => panic!("expected Single"),
+        }
+    }
+
+    #[tokio::test]
+    async fn run_wait_plan_controller_service_state_returns_final_entity() {
+        use nifi_rust_client::NifiClientBuilder;
+        use nifi_rust_client::dynamic::DynamicClient;
+        use serde_json::json;
+        use std::time::Duration;
+        use wiremock::matchers::{method, path};
+        use wiremock::{Mock, MockServer, ResponseTemplate};
+
+        let mock = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/nifi-api/flow/about"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+                "about": { "title": "NiFi", "version": "2.9.0" }
+            })))
+            .mount(&mock)
+            .await;
+        Mock::given(method("GET"))
+            .and(path("/nifi-api/controller-services/svc-1"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+                "component": { "state": "ENABLED" }
+            })))
+            .mount(&mock)
+            .await;
+
+        let client = NifiClientBuilder::new(&mock.uri()).unwrap().build().unwrap();
+        let dyn_client = DynamicClient::from_client(client).await.unwrap();
+
+        let plan = super::WaitPlan::ControllerServiceState {
+            service_id: "svc-1".to_string(),
+            target: super::ControllerServiceTargetState::Enabled,
+        };
+        let out = super::run_wait_plan(plan, &dyn_client, Duration::from_secs(2))
+            .await
+            .unwrap();
+        match out {
+            crate::output::CliOutput::Single(v) => {
+                assert_eq!(
+                    v.pointer("/component/state").and_then(|s| s.as_str()),
+                    Some("ENABLED")
                 );
             }
             _ => panic!("expected Single"),
