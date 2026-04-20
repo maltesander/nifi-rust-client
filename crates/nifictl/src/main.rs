@@ -7,6 +7,7 @@ mod error;
 mod jwt;
 mod output;
 mod porcelain;
+mod prompt;
 mod table;
 mod wait_wire;
 
