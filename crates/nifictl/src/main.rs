@@ -1,6 +1,7 @@
 mod body;
 mod client_factory;
 mod config;
+mod dry_run;
 mod error;
 mod output;
 mod porcelain;
@@ -65,6 +66,14 @@ struct Cli {
     /// Timeout for --wait (e.g. "30s", "2m")
     #[arg(long = "wait-timeout", global = true, default_value = "30s")]
     wait_timeout: String,
+
+    /// Print the request that would be sent and exit; send nothing
+    #[arg(long = "dry-run", global = true)]
+    dry_run: bool,
+
+    /// Skip confirmation prompt on destructive commands
+    #[arg(long = "yes", short = 'y', global = true)]
+    yes: bool,
 
     #[command(subcommand)]
     command: Commands,
