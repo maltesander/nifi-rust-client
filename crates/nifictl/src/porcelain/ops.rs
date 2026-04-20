@@ -38,6 +38,17 @@ pub async fn enable_services(
     Ok(CliOutput::Single(value))
 }
 
+/// Disable all controller services in a process group.
+pub async fn disable_services(
+    client: &DynamicClient,
+    pg_id: &str,
+) -> Result<CliOutput, CliError> {
+    let entity = bulk::disable_all_controller_services_dynamic(client, pg_id).await?;
+    let value = serde_json::to_value(&entity)
+        .map_err(|e| CliError::User(format!("serialization error: {e}")))?;
+    Ok(CliOutput::Single(value))
+}
+
 #[cfg(test)]
 mod tests {
     use nifi_rust_client::NifiClientBuilder;
@@ -122,6 +133,29 @@ mod tests {
         match result {
             crate::output::CliOutput::Single(v) => {
                 assert_eq!(v.get("state").and_then(|s| s.as_str()), Some("ENABLED"));
+            }
+            _ => panic!("expected Single"),
+        }
+    }
+
+    #[tokio::test]
+    async fn disable_services_sends_disabled_body() {
+        let mock = MockServer::start().await;
+        Mock::given(method("PUT"))
+            .and(path("/nifi-api/flow/process-groups/pg-4/controller-services"))
+            .and(body_partial_json(json!({ "id": "pg-4", "state": "DISABLED" })))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+                "id": "pg-4", "state": "DISABLED"
+            })))
+            .expect(1)
+            .mount(&mock)
+            .await;
+
+        let client = dynamic_client_on(&mock, "2.9.0").await;
+        let result = super::disable_services(&client, "pg-4").await.unwrap();
+        match result {
+            crate::output::CliOutput::Single(v) => {
+                assert_eq!(v.get("state").and_then(|s| s.as_str()), Some("DISABLED"));
             }
             _ => panic!("expected Single"),
         }
