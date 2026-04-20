@@ -62,7 +62,7 @@ struct Cli {
     #[arg(long, global = true)]
     wait: bool,
 
-    /// Timeout for --wait (e.g. "30s", "2m"). Default: 30s.
+    /// Timeout for --wait (e.g. "30s", "2m")
     #[arg(long = "wait-timeout", global = true, default_value = "30s")]
     wait_timeout: String,
 
