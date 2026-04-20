@@ -7,21 +7,17 @@ use std::io::{self, IsTerminal};
 
 use crate::error::CliError;
 
-#[allow(dead_code)]
 pub const NON_INTERACTIVE_ERROR: &str =
     "no password available and stdin is not a TTY";
 
-#[allow(dead_code)]
 pub const NON_INTERACTIVE_HINT: &str =
     "set NIFI_PASSWORD or pass --password";
 
-#[allow(dead_code)]
 pub(crate) fn format_prompt(username: &str, base_url: &str) -> String {
     format!("Password for {username}@{base_url}: ")
 }
 
 /// Prompt the user for a password (no echo). Errors off-TTY.
-#[allow(dead_code)]
 pub fn prompt_password(username: &str, base_url: &str) -> Result<String, CliError> {
     if !io::stdin().is_terminal() {
         return Err(CliError::User(format!(
