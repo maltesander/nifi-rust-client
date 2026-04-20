@@ -83,6 +83,10 @@ enum Commands {
     #[command(subcommand)]
     Config(ConfigCommand),
 
+    /// Operator porcelain — bulk state changes on a process group
+    #[command(subcommand)]
+    Ops(OpsCommand),
+
     /// Generate shell completions
     Completions {
         /// Shell type
@@ -109,6 +113,30 @@ enum ConfigCommand {
     DeleteContext {
         /// Context name to delete
         name: String,
+    },
+}
+
+#[derive(clap::Subcommand)]
+enum OpsCommand {
+    /// Start (schedule) all authorized processors in a process group
+    StartPg {
+        /// The process group id
+        pg_id: String,
+    },
+    /// Stop (unschedule) all processors in a process group
+    StopPg {
+        /// The process group id
+        pg_id: String,
+    },
+    /// Enable all authorized controller services in a process group
+    EnableServices {
+        /// The process group id
+        pg_id: String,
+    },
+    /// Disable all controller services in a process group
+    DisableServices {
+        /// The process group id
+        pg_id: String,
     },
 }
 
@@ -179,6 +207,40 @@ async fn run(cli: Cli) -> Result<(), error::CliError> {
                 .map_err(error::CliError::Io)
         }
         Commands::Config(cmd) => handle_config(cmd, cli.config.as_deref()).await,
+        Commands::Ops(cmd) => {
+            if cli.wait {
+                return Err(error::CliError::User(
+                    "--wait is not yet supported on 'ops' subcommands \
+                     (requires a process-group wait helper not yet in the client)"
+                        .to_string(),
+                ));
+            }
+            let cfg = load_config(cli.config.as_deref())?;
+            let context = resolve_context(&cfg, cli.context.as_deref())?;
+            let params = client_factory::ResolvedParams::resolve(
+                cli.url,
+                cli.username,
+                cli.password,
+                cli.token,
+                cli.insecure,
+                context,
+            )?;
+            let client = params.build_client().await?;
+            let result = match cmd {
+                OpsCommand::StartPg { pg_id } => porcelain::ops::start_pg(&client, &pg_id).await?,
+                OpsCommand::StopPg { pg_id } => porcelain::ops::stop_pg(&client, &pg_id).await?,
+                OpsCommand::EnableServices { pg_id } => {
+                    porcelain::ops::enable_services(&client, &pg_id).await?
+                }
+                OpsCommand::DisableServices { pg_id } => {
+                    porcelain::ops::disable_services(&client, &pg_id).await?
+                }
+            };
+            let fmt = output::OutputFormat::parse(&cli.output).map_err(error::CliError::User)?;
+            let resolved = fmt.resolve();
+            output::render(&result, &resolved, &[], &mut std::io::stdout())
+                .map_err(error::CliError::Io)
+        }
         Commands::Completions { shell } => {
             use clap::CommandFactory;
             clap_complete::generate(
