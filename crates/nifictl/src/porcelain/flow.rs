@@ -149,29 +149,58 @@ pub async fn replace(
     ctx: &CliCtx<'_>,
 ) -> Result<CliOutput, CliError> {
     if ctx.dry_run {
-        let _ = stop_first; // wired in Task 9
+        if stop_first {
+            // 0. stop
+            let stop_url = dry_run::format_url(
+                ctx.base_url,
+                &format!("/flow/process-groups/{pg_id}"),
+                &[],
+            );
+            let stop_body = serde_json::json!({ "id": pg_id, "state": "STOPPED" });
+            dry_run::print(&mut std::io::stdout(), "PUT", &stop_url, Some(&stop_body))
+                .map_err(CliError::Io)?;
+        }
         // 1. GET the target to show where the revision comes from.
-        let get_path = format!("/process-groups/{pg_id}");
-        let get_url = dry_run::format_url(ctx.base_url, &get_path, &[]);
+        let get_url =
+            dry_run::format_url(ctx.base_url, &format!("/process-groups/{pg_id}"), &[]);
         dry_run::print(&mut std::io::stdout(), "GET", &get_url, None).map_err(CliError::Io)?;
         // 2. PUT the replace — summarise rather than inlining the snapshot.
-        let put_path = format!("/process-groups/{pg_id}/flow-contents");
-        let put_url = dry_run::format_url(ctx.base_url, &put_path, &[]);
-        let body = serde_json::json!({
+        let put_url = dry_run::format_url(
+            ctx.base_url,
+            &format!("/process-groups/{pg_id}/flow-contents"),
+            &[],
+        );
+        let put_body = serde_json::json!({
             "disconnectedNodeAcknowledged": false,
             "processGroupRevision": { "version": "<fetched from GET above>" },
             "versionedFlowSnapshot": format!("<contents of {}>", file.display()),
         });
-        dry_run::print(&mut std::io::stdout(), "PUT", &put_url, Some(&body))
+        dry_run::print(&mut std::io::stdout(), "PUT", &put_url, Some(&put_body))
             .map_err(CliError::Io)?;
+        if stop_first {
+            // 3. start
+            let start_url = dry_run::format_url(
+                ctx.base_url,
+                &format!("/flow/process-groups/{pg_id}"),
+                &[],
+            );
+            let start_body = serde_json::json!({ "id": pg_id, "state": "RUNNING" });
+            dry_run::print(&mut std::io::stdout(), "PUT", &start_url, Some(&start_body))
+                .map_err(CliError::Io)?;
+        }
         return Ok(CliOutput::Empty);
     }
 
     confirm::confirm_destructive(&replace_what(pg_id), ctx)?;
 
+    // 0. Stop (if --stop-first).
+    if stop_first {
+        nifi_rust_client::bulk::stop_process_group_dynamic(client, pg_id).await?;
+    }
+
     // 1. Fetch current revision.
     let pg = client.processgroups().get_process_group(pg_id).await?;
-    let revision = pg.revision.clone().ok_or_else(|| {
+    let revision = pg.revision.ok_or_else(|| {
         CliError::User(format!(
             "process group '{pg_id}' response had no revision field"
         ))
@@ -197,10 +226,14 @@ pub async fn replace(
         .replace_process_group(pg_id, &body)
         .await?;
 
-    if stop_first {
-        return Err(CliError::User(
-            "internal: stop_first not yet implemented; see Task 9".to_string(),
-        ));
+    // 4. Restart (if --stop-first). A failure here does NOT undo the replace;
+    //    surface a distinct error so the operator sees the partial state.
+    if stop_first
+        && let Err(e) = nifi_rust_client::bulk::start_process_group_dynamic(client, pg_id).await
+    {
+        return Err(CliError::User(format!(
+            "flow replaced, but restart failed: {e}"
+        )));
     }
 
     let value = serde_json::to_value(&entity)
@@ -472,5 +505,160 @@ mod tests {
             }
             other => panic!("expected User, got {other:?}"),
         }
+    }
+
+    #[tokio::test]
+    async fn replace_stop_first_happy_path_sends_four_requests() {
+        let mock = MockServer::start().await;
+        // 1. stop
+        Mock::given(method("PUT"))
+            .and(path("/nifi-api/flow/process-groups/pg-1"))
+            .and(wiremock::matchers::body_partial_json(
+                json!({ "id": "pg-1", "state": "STOPPED" }),
+            ))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+                "id": "pg-1", "state": "STOPPED"
+            })))
+            .expect(1)
+            .mount(&mock)
+            .await;
+        // 2. GET revision
+        Mock::given(method("GET"))
+            .and(path("/nifi-api/process-groups/pg-1"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+                "id": "pg-1",
+                "revision": { "version": 7 },
+                "component": {}
+            })))
+            .expect(1)
+            .mount(&mock)
+            .await;
+        // 3. PUT replace
+        Mock::given(method("PUT"))
+            .and(path("/nifi-api/process-groups/pg-1/flow-contents"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+                "processGroupRevision": { "version": 8 }
+            })))
+            .expect(1)
+            .mount(&mock)
+            .await;
+        // 4. start
+        Mock::given(method("PUT"))
+            .and(path("/nifi-api/flow/process-groups/pg-1"))
+            .and(wiremock::matchers::body_partial_json(
+                json!({ "id": "pg-1", "state": "RUNNING" }),
+            ))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+                "id": "pg-1", "state": "RUNNING"
+            })))
+            .expect(1)
+            .mount(&mock)
+            .await;
+
+        let dir = tempfile::tempdir().unwrap();
+        let snap = dir.path().join("snap.json");
+        std::fs::write(&snap, r#"{"flowContents": {}}"#).unwrap();
+
+        let client = dynamic_client_on(&mock, "2.9.0").await;
+        let base_url = mock.uri();
+        let ctx = CliCtx {
+            dry_run: false,
+            yes: true,
+            base_url: &base_url,
+        };
+        let result = replace(&client, "pg-1", &snap, true, &ctx).await.unwrap();
+        assert!(matches!(result, CliOutput::Single(_)));
+    }
+
+    #[tokio::test]
+    async fn replace_stop_first_restart_failure_surfaces_clear_error() {
+        let mock = MockServer::start().await;
+        // stop OK
+        Mock::given(method("PUT"))
+            .and(path("/nifi-api/flow/process-groups/pg-2"))
+            .and(wiremock::matchers::body_partial_json(
+                json!({ "state": "STOPPED" }),
+            ))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+                "id": "pg-2", "state": "STOPPED"
+            })))
+            .expect(1)
+            .mount(&mock)
+            .await;
+        // GET revision OK
+        Mock::given(method("GET"))
+            .and(path("/nifi-api/process-groups/pg-2"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+                "id": "pg-2",
+                "revision": { "version": 1 }
+            })))
+            .expect(1)
+            .mount(&mock)
+            .await;
+        // PUT replace OK
+        Mock::given(method("PUT"))
+            .and(path("/nifi-api/process-groups/pg-2/flow-contents"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+                "processGroupRevision": { "version": 2 }
+            })))
+            .expect(1)
+            .mount(&mock)
+            .await;
+        // start FAILS with 409
+        Mock::given(method("PUT"))
+            .and(path("/nifi-api/flow/process-groups/pg-2"))
+            .and(wiremock::matchers::body_partial_json(
+                json!({ "state": "RUNNING" }),
+            ))
+            .respond_with(ResponseTemplate::new(409).set_body_string("some component invalid"))
+            .expect(1)
+            .mount(&mock)
+            .await;
+
+        let dir = tempfile::tempdir().unwrap();
+        let snap = dir.path().join("snap.json");
+        std::fs::write(&snap, r#"{"flowContents": {}}"#).unwrap();
+
+        let client = dynamic_client_on(&mock, "2.9.0").await;
+        let base_url = mock.uri();
+        let ctx = CliCtx {
+            dry_run: false,
+            yes: true,
+            base_url: &base_url,
+        };
+        let err = replace(&client, "pg-2", &snap, true, &ctx).await.unwrap_err();
+        match err {
+            CliError::User(msg) => {
+                assert!(
+                    msg.starts_with("flow replaced, but restart failed:"),
+                    "message should surface partial success: {msg}"
+                );
+            }
+            other => panic!("expected User, got {other:?}"),
+        }
+    }
+
+    #[tokio::test]
+    async fn replace_stop_first_dry_run_does_not_hit_server() {
+        let mock = MockServer::start().await;
+        Mock::given(method("PUT"))
+            .respond_with(ResponseTemplate::new(500))
+            .expect(0)
+            .mount(&mock)
+            .await;
+
+        let dir = tempfile::tempdir().unwrap();
+        let snap = dir.path().join("snap.json");
+        std::fs::write(&snap, r#"{}"#).unwrap();
+
+        let client = dynamic_client_on(&mock, "2.9.0").await;
+        let base_url = mock.uri();
+        let ctx = CliCtx {
+            dry_run: true,
+            yes: true,
+            base_url: &base_url,
+        };
+        let result = replace(&client, "pg-3", &snap, true, &ctx).await.unwrap();
+        assert!(matches!(result, CliOutput::Empty));
     }
 }
