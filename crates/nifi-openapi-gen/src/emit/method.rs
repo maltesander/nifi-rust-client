@@ -685,9 +685,16 @@ fn emit_simple_method_body_static(
                     } else {
                         // No Multipart endpoint currently has an empty
                         // response. If one appears, the `post_void_multipart`
-                        // helper would need a `_with_fields` sibling; flag
-                        // the gap loudly here so the build fails rather than
-                        // silently dropping the schema fields.
+                        // helper needs a `_with_fields` sibling. Fail loudly
+                        // at generation time when that day arrives — silently
+                        // dropping `multipart_fields` would send a form that
+                        // NiFi rejects.
+                        if !ep.multipart_fields.is_empty() {
+                            panic!(
+                                "nifi-openapi-gen: Multipart endpoint with empty response and schema fields is not yet supported (operationId={:?}). Add a `post_void_multipart_with_fields` helper to NifiClient and update the static emitter to pick it when multipart_fields is non-empty.",
+                                ep.raw_operation_id,
+                            );
+                        }
                         format!(
                             "{headers_prelude}{fields_preamble}        self.client.post_void_multipart({path_expr}, {header_arg}, filename, data).await\n"
                         )

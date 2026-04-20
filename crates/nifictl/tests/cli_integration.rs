@@ -234,9 +234,16 @@ fn help_lists_all_generated_resources() {
         "tenants",
         "versions",
     ] {
+        // Whole-word match anchored on clap's subcommand-listing format
+        // ("  <name>  <description>"). Substring matching would falsely
+        // pass on e.g. "system" if `systemdiagnostics` were the only
+        // listed variant.
+        let found = stdout
+            .lines()
+            .any(|l| l.trim_start().starts_with(&format!("{resource} ")));
         assert!(
-            stdout.contains(resource),
-            "top-level help missing '{resource}': {stdout}"
+            found,
+            "top-level help missing whole-word '{resource}': {stdout}"
         );
     }
 }
