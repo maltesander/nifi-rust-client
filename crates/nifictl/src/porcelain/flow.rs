@@ -20,8 +20,6 @@ use crate::output::CliOutput;
 /// Export a process group's flow snapshot to `output` (stdout if `None`).
 ///
 /// `--dry-run` prints the GET URL and exits with `CliOutput::Empty`.
-// Wired in by Task 10 (FlowCommand → main.rs); suppress dead_code until then.
-#[allow(dead_code)]
 pub async fn export(
     client: &DynamicClient,
     pg_id: &str,
@@ -63,8 +61,6 @@ pub async fn export(
 ///
 /// The new child's name is `name` if provided, else the file's stem.
 /// Non-destructive — no confirmation prompt.
-// Wired in by Task 10 (FlowCommand → main.rs); suppress dead_code until then.
-#[allow(dead_code)]
 pub async fn import(
     client: &DynamicClient,
     parent_pg_id: &str,
@@ -127,8 +123,6 @@ pub async fn import(
 }
 
 /// Short prompt description, shared with main.rs's pre-client confirm gate.
-// Wired in by Task 10 (FlowCommand → main.rs); suppress dead_code until then.
-#[allow(dead_code)]
 pub fn replace_what(pg_id: &str) -> String {
     format!("replace contents of process group '{pg_id}'")
 }
@@ -139,8 +133,6 @@ pub fn replace_what(pg_id: &str) -> String {
 /// defense-in-depth; production callers in `main.rs` run the confirm
 /// gate before touching the client so the internal call is a no-op when
 /// `ctx.yes = true`. `stop_first` handled in Task 9.
-// Wired in by Task 10 (FlowCommand → main.rs); suppress dead_code until then.
-#[allow(dead_code)]
 pub async fn replace(
     client: &DynamicClient,
     pg_id: &str,

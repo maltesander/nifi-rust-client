@@ -744,16 +744,20 @@ async fn run(cli: Cli) -> Result<(), error::CliError> {
             )
             .await
         }
-        Commands::Flow { command } => match command {
-            FlowCommand::Generated(inner) => {
-                dispatch_resource(
-                    generated::GeneratedResource::Flow { command: inner },
+        Commands::Flow { command } => {
+            // Generated flow subcommands fall through to the shared
+            // dispatch_resource helper (same as any other resource).
+            if let FlowCommand::Generated(generated_cmd) = command {
+                return dispatch_resource(
+                    generated::GeneratedResource::Flow {
+                        command: generated_cmd,
+                    },
                     cli.config.as_deref(),
                     cli.context.as_deref(),
-                    cli.url.clone(),
-                    cli.username.clone(),
-                    cli.password.clone(),
-                    cli.token.clone(),
+                    cli.url,
+                    cli.username,
+                    cli.password,
+                    cli.token,
                     cli.insecure,
                     cli.dry_run,
                     cli.yes,
@@ -761,12 +765,90 @@ async fn run(cli: Cli) -> Result<(), error::CliError> {
                     &cli.wait_timeout,
                     &cli.output,
                 )
-                .await
+                .await;
             }
-            FlowCommand::Export(_) | FlowCommand::Import(_) | FlowCommand::Replace(_) => {
-                todo!("flow porcelain lands in Task 10")
+
+            // Porcelain flow verbs — export, import, replace.
+            if cli.wait {
+                return Err(error::CliError::User(
+                    "--wait is not supported on flow porcelain commands".to_string(),
+                ));
             }
-        },
+
+            let cfg = load_config(cli.config.as_deref())?;
+            let context = resolve_context(&cfg, cli.context.as_deref())?;
+            let params = client_factory::ResolvedParams::resolve(
+                cli.url,
+                cli.username,
+                cli.password,
+                cli.token,
+                cli.insecure,
+                context,
+            )?;
+            let base_url = params.url.clone();
+            let ctx = dry_run::CliCtx {
+                dry_run: cli.dry_run,
+                yes: cli.yes,
+                base_url: &base_url,
+            };
+
+            // Pre-client confirm gate for `replace` — matches the Ops arm.
+            if !ctx.dry_run
+                && let FlowCommand::Replace(args) = &command
+            {
+                confirm::confirm_destructive(&porcelain::flow::replace_what(&args.pg_id), &ctx)?;
+            }
+
+            let client = if ctx.dry_run {
+                nifi_rust_client::NifiClientBuilder::new(&base_url)?
+                    .danger_accept_invalid_certs(params.insecure)
+                    .build_dynamic()?
+            } else {
+                params.build_client().await?
+            };
+
+            let result = match command {
+                FlowCommand::Export(args) => {
+                    porcelain::flow::export(
+                        &client,
+                        &args.pg_id,
+                        args.output.as_deref(),
+                        args.include_referenced_services,
+                        &ctx,
+                    )
+                    .await?
+                }
+                FlowCommand::Import(args) => {
+                    porcelain::flow::import(
+                        &client,
+                        &args.parent_pg_id,
+                        &args.file,
+                        args.name.as_deref(),
+                        &ctx,
+                    )
+                    .await?
+                }
+                FlowCommand::Replace(args) => {
+                    // Confirm already ran above; pass yes=true so the porcelain's
+                    // internal gate is a no-op.
+                    let ctx_yes = dry_run::CliCtx { yes: true, ..ctx };
+                    porcelain::flow::replace(
+                        &client,
+                        &args.pg_id,
+                        &args.file,
+                        args.stop_first,
+                        &ctx_yes,
+                    )
+                    .await?
+                }
+                FlowCommand::Generated(_) => unreachable!("handled above"),
+            };
+
+            let fmt = output::OutputFormat::parse(&cli.output).map_err(error::CliError::User)?;
+            let resolved = fmt.resolve();
+            output::render(&result, &resolved, &[], &mut std::io::stdout())
+                .map_err(error::CliError::Io)
+        }
         Commands::FlowFileQueues { command } => {
             dispatch_resource(
                 generated::GeneratedResource::FlowFileQueues { command },
