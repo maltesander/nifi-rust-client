@@ -33,8 +33,8 @@ pub enum WaitPlan {
 
 /// Inspect a `processors update-run-status` body and extract the target state.
 ///
-/// Returns `Ok(None)` if the body encodes a transient state (e.g. `RUN_ONCE`)
-/// with no steady state to converge on — `--wait` is a no-op in that case.
+/// Returns `Ok(Some(...))` for steady states: `RUNNING`, `STOPPED`, `DISABLED`.
+/// Rejects `RUN_ONCE` with a descriptive error since it has no steady state to converge on.
 pub fn processor_target_from_body(
     inline: Option<&str>,
     body_file: Option<&Path>,
@@ -49,7 +49,10 @@ pub fn processor_target_from_body(
         "RUNNING" => Ok(Some(ProcessorTargetState::Running)),
         "STOPPED" => Ok(Some(ProcessorTargetState::Stopped)),
         "DISABLED" => Ok(Some(ProcessorTargetState::Disabled)),
-        "RUN_ONCE" => Ok(None), // transient — nothing to wait for
+        "RUN_ONCE" => Err(CliError::User(
+            "--wait on 'RUN_ONCE' has no effect — RUN_ONCE is a transient state with no steady state to converge on; remove --wait"
+                .to_string(),
+        )),
         other => Err(CliError::User(format!(
             "unsupported processor state for --wait: '{other}' \
              (expected RUNNING, STOPPED, or DISABLED)"
@@ -171,11 +174,17 @@ mod tests {
     }
 
     #[test]
-    fn processor_target_from_body_run_once_is_none() {
-        let out = super::processor_target_from_body(
+    fn processor_target_from_body_run_once_is_rejected() {
+        let err = super::processor_target_from_body(
             Some(r#"{"state":"RUN_ONCE"}"#), None,
-        ).unwrap();
-        assert_eq!(out, None);
+        ).unwrap_err();
+        match err {
+            crate::error::CliError::User(msg) => {
+                assert!(msg.contains("RUN_ONCE"), "message should mention RUN_ONCE: {msg}");
+                assert!(msg.contains("remove --wait"), "message should hint at the fix: {msg}");
+            }
+            other => panic!("expected User, got {other:?}"),
+        }
     }
 
     #[test]
