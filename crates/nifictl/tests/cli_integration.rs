@@ -269,3 +269,129 @@ fn ops_stop_pg_without_yes_in_non_tty_refuses() {
         "stderr should contain refusal message: {stderr}"
     );
 }
+
+/// `flow export --dry-run` must print the GET URL and exit 0 without
+/// hitting the server.
+#[test]
+fn dry_run_on_flow_export_does_not_connect() {
+    let output = nifictl()
+        .args([
+            "--url",
+            "http://localhost:1",
+            "--username",
+            "admin",
+            "--password",
+            "x",
+            "--dry-run",
+            "flow",
+            "export",
+            "pg-1",
+        ])
+        .output()
+        .expect("failed to run nifictl");
+    assert!(
+        output.status.success(),
+        "dry-run should exit 0; stderr={}",
+        String::from_utf8_lossy(&output.stderr),
+    );
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(
+        stdout.contains("DRY RUN"),
+        "stdout should contain dry-run preamble: {stdout}"
+    );
+    assert!(
+        stdout.contains("GET http://localhost:1/nifi-api/process-groups/pg-1/download"),
+        "stdout should contain the target URL: {stdout}"
+    );
+}
+
+/// `flow replace` without `--yes` in non-TTY must refuse with a clear
+/// error, without creating the snapshot file or touching the server.
+#[test]
+fn flow_replace_without_yes_in_non_tty_refuses() {
+    let output = nifictl()
+        .args([
+            "--url",
+            "http://localhost:1",
+            "--username",
+            "admin",
+            "--password",
+            "x",
+            "flow",
+            "replace",
+            "pg-1",
+            "/tmp/file-does-not-matter-confirm-fires-first.json",
+        ])
+        .output()
+        .expect("failed to run nifictl");
+    assert!(!output.status.success(), "expected non-zero exit");
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(
+        stderr.contains("refusing to run destructive command without --yes"),
+        "stderr should contain refusal message: {stderr}"
+    );
+}
+
+/// `flow replace --dry-run --stop-first` must print stop + GET + PUT + start
+/// in order and exit 0 without hitting the server.
+#[test]
+fn dry_run_on_flow_replace_stop_first_prints_all_four_requests() {
+    let output = nifictl()
+        .args([
+            "--url",
+            "http://localhost:1",
+            "--username",
+            "admin",
+            "--password",
+            "x",
+            "--dry-run",
+            "--yes",
+            "flow",
+            "replace",
+            "pg-1",
+            "/tmp/no-read-in-dry-run.json",
+            "--stop-first",
+        ])
+        .output()
+        .expect("failed to run nifictl");
+    assert!(
+        output.status.success(),
+        "dry-run should exit 0; stderr={}",
+        String::from_utf8_lossy(&output.stderr),
+    );
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let stop_idx = stdout
+        .find("\"state\": \"STOPPED\"")
+        .expect("should contain STOPPED body");
+    let get_idx = stdout
+        .find("GET http://localhost:1/nifi-api/process-groups/pg-1")
+        .expect("should contain GET line");
+    let put_idx = stdout
+        .find("PUT http://localhost:1/nifi-api/process-groups/pg-1/flow-contents")
+        .expect("should contain PUT replace");
+    let start_idx = stdout
+        .find("\"state\": \"RUNNING\"")
+        .expect("should contain RUNNING body");
+    assert!(
+        stop_idx < get_idx && get_idx < put_idx && put_idx < start_idx,
+        "expected order stop \u{2192} get \u{2192} put \u{2192} start; stdout={stdout}"
+    );
+}
+
+/// `flow --help` should list the three porcelain verbs alongside the
+/// generated flow subcommands.
+#[test]
+fn flow_help_lists_porcelain_and_generated() {
+    let output = nifictl()
+        .args(["flow", "--help"])
+        .output()
+        .expect("failed");
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    for expected in ["export", "import", "replace", "get-about-info"] {
+        assert!(
+            stdout.contains(expected),
+            "flow --help missing '{expected}': {stdout}"
+        );
+    }
+}
