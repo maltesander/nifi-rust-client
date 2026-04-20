@@ -171,7 +171,11 @@ async fn flow_import_then_replace_round_trip() {
         .await
         .expect("bulk start failed");
 
-    // 5. Cleanup — NiFi's delete requires the latest revision.
+    // 5. Cleanup — NiFi refuses to delete a PG with running components,
+    //    and the start above kicked off the imported processors.
+    bulk::stop_process_group_dynamic(&client, &child_id)
+        .await
+        .expect("bulk stop before delete failed");
     let final_pg = client
         .processgroups()
         .get_process_group(&child_id)
