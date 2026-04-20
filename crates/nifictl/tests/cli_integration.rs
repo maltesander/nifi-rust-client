@@ -483,3 +483,76 @@ fn flow_help_lists_porcelain_and_generated() {
         );
     }
 }
+
+/// 401 from the server must render the two-line error+hint rendering:
+/// `error: ...\nhint: run 'nifictl login'`.
+#[tokio::test]
+async fn hint_fires_on_401() {
+    use wiremock::matchers::{method, path};
+    use wiremock::{Mock, MockServer, ResponseTemplate};
+
+    let mock = MockServer::start().await;
+    // /flow/about is the version-detect probe — answer with 401 so the
+    // token-auth status flow surfaces NifiError::Unauthorized, which
+    // maps to the login-hint.
+    Mock::given(method("GET"))
+        .and(path("/nifi-api/flow/about"))
+        .respond_with(ResponseTemplate::new(401).set_body_string("unauthenticated"))
+        .mount(&mock)
+        .await;
+
+    // status uses an existing token (we provide --token). build_client's
+    // token path calls detect_version() which hits GET /flow/about.
+    let output = nifictl()
+        .args([
+            "--url",
+            &mock.uri(),
+            "--token",
+            "dummy",
+            "status",
+        ])
+        .output()
+        .expect("failed to run nifictl");
+
+    assert!(!output.status.success(), "expected non-zero exit");
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(
+        stderr.contains("error: "),
+        "stderr should start with 'error: ': {stderr}"
+    );
+    assert!(
+        stderr.contains("hint: run 'nifictl login'"),
+        "stderr should include the login hint: {stderr}"
+    );
+}
+
+/// A TLS handshake failure (https URL to a plain-HTTP wiremock) must
+/// render the `--insecure` hint.
+#[tokio::test]
+async fn tls_error_includes_insecure_hint() {
+    use wiremock::MockServer;
+
+    let mock = MockServer::start().await;
+    // wiremock listens on plain HTTP. Connecting with https:// makes
+    // reqwest/rustls fail the handshake.
+    let plain_uri = mock.uri();
+    let https_uri = plain_uri.replacen("http://", "https://", 1);
+
+    let output = nifictl()
+        .args([
+            "--url",
+            &https_uri,
+            "--token",
+            "dummy",
+            "status",
+        ])
+        .output()
+        .expect("failed to run nifictl");
+
+    assert!(!output.status.success());
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(
+        stderr.contains("hint: pass --insecure for dev environments only"),
+        "stderr should include the --insecure hint: {stderr}"
+    );
+}

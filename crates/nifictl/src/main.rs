@@ -400,6 +400,9 @@ async fn main() -> ExitCode {
         Ok(()) => ExitCode::SUCCESS,
         Err(e) => {
             eprintln!("error: {e}");
+            if let Some(hint) = e.hint() {
+                eprintln!("hint: {hint}");
+            }
             e.exit_code()
         }
     }

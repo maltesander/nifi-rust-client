@@ -51,7 +51,6 @@ impl CliError {
     ///
     /// Returns `None` when the error's own Display message already tells
     /// the operator what to do (e.g. `UnsupportedEndpoint`, `User`).
-    #[allow(dead_code)] // wired in Task 6
     pub fn hint(&self) -> Option<&'static str> {
         match self {
             CliError::Nifi(NifiError::Unauthorized { .. }) => {
@@ -75,11 +74,12 @@ impl CliError {
     }
 }
 
-/// Fuzzy sniff for TLS/handshake errors in an error source chain.
-/// Walks the full chain and checks each layer's Display output
-/// for common TLS keywords. Used only to decide whether to append the
-/// `--insecure` hint on a transport error.
-#[allow(dead_code)] // wired in Task 6 via hint()
+/// Fuzzy sniff for TLS/handshake errors in the source chain of
+/// a transport error. Walks the full chain and checks each layer's
+/// Display output for common TLS keywords (including rustls's
+/// "corrupt message" phrasing for record-level handshake failures).
+/// Used only to decide whether to append the `--insecure` hint on a
+/// transport error.
 fn is_tls_handshake_error(err: &dyn std::error::Error) -> bool {
     use std::error::Error;
     let mut current: Option<&dyn Error> = Some(err);
@@ -89,6 +89,7 @@ fn is_tls_handshake_error(err: &dyn std::error::Error) -> bool {
             || msg.contains("unknownissuer")
             || msg.contains("tls")
             || msg.contains("handshake")
+            || msg.contains("corrupt message")
         {
             return true;
         }
@@ -200,6 +201,7 @@ mod tests {
         assert!(is_tls_handshake_error(&Fake("invalid peer certificate")));
         assert!(is_tls_handshake_error(&Fake("TLS handshake failure")));
         assert!(is_tls_handshake_error(&Fake("UnknownIssuer")));
+        assert!(is_tls_handshake_error(&Fake("received corrupt message of type InvalidContentType")));
         assert!(!is_tls_handshake_error(&Fake("connection refused")));
     }
 }
