@@ -23,9 +23,21 @@ async fn post_multipart_sends_file_part() {
         .build()
         .unwrap();
 
+    // Signature: (id, client_id, disconnected_node_acknowledged, group_name,
+    // position_x, position_y, filename, data) — alphabetic-by-wire-name order
+    // for the non-file schema properties.
     let _entity = client
         .processgroups()
-        .upload_process_group("root", "flow.json", b"{}".to_vec())
+        .upload_process_group(
+            "root",
+            "nifictl-probe",
+            None,
+            "imported",
+            0.0,
+            0.0,
+            "flow.json",
+            b"{}".to_vec(),
+        )
         .await
         .unwrap();
 }

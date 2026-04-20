@@ -9,8 +9,62 @@
 use std::collections::BTreeMap;
 
 use crate::canonical::VersionSet;
-use crate::parser::{Endpoint, HttpMethod, QueryParam};
+use crate::parser::{Endpoint, HttpMethod, MultipartField, MultipartFieldType, QueryParam};
 use crate::util::escape_keyword;
+
+/// Rust type for a multipart field in a generated method signature.
+fn multipart_field_rust_type(ty: MultipartFieldType) -> &'static str {
+    match ty {
+        MultipartFieldType::String => "&str",
+        MultipartFieldType::Bool => "bool",
+        MultipartFieldType::F64 => "f64",
+    }
+}
+
+/// Emit the `", name: type"` fragments for a Multipart endpoint's
+/// non-file schema properties, preserving the alphabetic order set by
+/// the parser. Includes the trailing `filename` / `data` pair.
+fn multipart_body_signature(fields: &[MultipartField]) -> String {
+    let mut s = String::new();
+    for f in fields {
+        let rust_ty = multipart_field_rust_type(f.ty);
+        let name = escape_keyword(&f.rust_name);
+        if f.required {
+            s.push_str(&format!(", {name}: {rust_ty}"));
+        } else {
+            s.push_str(&format!(", {name}: Option<{rust_ty}>"));
+        }
+    }
+    s.push_str(", filename: &str, data: Vec<u8>");
+    s
+}
+
+/// Emit the `let mut fields: Vec<(&str, String)> ...` preamble that
+/// collects multipart form fields prior to the dispatch call. Returns
+/// an empty string when `fields` is empty.
+fn multipart_fields_preamble(fields: &[MultipartField], indent: &str) -> String {
+    if fields.is_empty() {
+        return String::new();
+    }
+    let mut s = String::new();
+    s.push_str(&format!(
+        "{indent}let mut fields: Vec<(&str, String)> = Vec::new();\n"
+    ));
+    for f in fields {
+        let rust_name = escape_keyword(&f.rust_name);
+        let wire = &f.name;
+        if f.required {
+            s.push_str(&format!(
+                "{indent}fields.push((\"{wire}\", {rust_name}.to_string()));\n"
+            ));
+        } else {
+            s.push_str(&format!(
+                "{indent}if let Some(v) = {rust_name} {{ fields.push((\"{wire}\", v.to_string())); }}\n"
+            ));
+        }
+    }
+    s
+}
 
 /// Extra per-endpoint context the dynamic emitter needs that isn't
 /// available from the plain `Endpoint` struct: the set of NiFi
@@ -125,6 +179,8 @@ fn emit_method_variant(ep: &Endpoint, mode: &EmitMode<'_>, stream: bool, out: &m
             } else if let Some(RequestBodyKind::Json) = &ep.body_kind {
                 let ty = ep.request_type.as_deref().unwrap_or("serde_json::Value");
                 format!(", body: &crate::types::{ty}")
+            } else if let Some(RequestBodyKind::Multipart) = &ep.body_kind {
+                multipart_body_signature(&ep.multipart_fields)
             } else {
                 crate::emit::common::body_kind_signature(ep.body_kind.as_ref()).to_string()
             }
@@ -138,7 +194,7 @@ fn emit_method_variant(ep: &Endpoint, mode: &EmitMode<'_>, stream: bool, out: &m
                 }
             }
             Some(RequestBodyKind::OctetStream) => ", data: Vec<u8>".to_string(),
-            Some(RequestBodyKind::Multipart) => ", filename: &str, data: Vec<u8>".to_string(),
+            Some(RequestBodyKind::Multipart) => multipart_body_signature(&ep.multipart_fields),
             _ => String::new(),
         },
     };
@@ -611,17 +667,29 @@ fn emit_simple_method_body_static(
                     }
                 }
                 Some(RequestBodyKind::Multipart) => {
+                    let fields_preamble =
+                        multipart_fields_preamble(&ep.multipart_fields, "        ");
+                    let (helper, extra_args) = if ep.multipart_fields.is_empty() {
+                        ("post_multipart", "filename, data")
+                    } else {
+                        ("post_multipart_with_fields", "&fields, filename, data")
+                    };
                     if has_inner {
                         format!(
-                            "{headers_prelude}        let e: crate::types::{entity_ty} = self.client.post_multipart({path_expr}, {header_arg}, filename, data).await?;\n        Ok(e.{inner_field}.unwrap_or_default())\n"
+                            "{headers_prelude}{fields_preamble}        let e: crate::types::{entity_ty} = self.client.{helper}({path_expr}, {header_arg}, {extra_args}).await?;\n        Ok(e.{inner_field}.unwrap_or_default())\n"
                         )
                     } else if ep.response_type.is_some() {
                         format!(
-                            "{headers_prelude}        self.client.post_multipart({path_expr}, {header_arg}, filename, data).await\n"
+                            "{headers_prelude}{fields_preamble}        self.client.{helper}({path_expr}, {header_arg}, {extra_args}).await\n"
                         )
                     } else {
+                        // No Multipart endpoint currently has an empty
+                        // response. If one appears, the `post_void_multipart`
+                        // helper would need a `_with_fields` sibling; flag
+                        // the gap loudly here so the build fails rather than
+                        // silently dropping the schema fields.
                         format!(
-                            "{headers_prelude}        self.client.post_void_multipart({path_expr}, {header_arg}, filename, data).await\n"
+                            "{headers_prelude}{fields_preamble}        self.client.post_void_multipart({path_expr}, {header_arg}, filename, data).await\n"
                         )
                     }
                 }
@@ -746,6 +814,16 @@ fn emit_method_body_dynamic(
 
     // 4. Header setup
     let header_arg = emit_headers_setup_dynamic(out, ep);
+
+    // 4.5. Multipart form fields (only for Multipart endpoints with
+    // non-file schema properties). Built before the tracing call so
+    // `fields` is in scope for the dispatch step.
+    if matches!(
+        ep.body_kind,
+        Some(crate::parser::RequestBodyKind::Multipart)
+    ) {
+        out.push_str(&multipart_fields_preamble(&ep.multipart_fields, "        "));
+    }
 
     // 5. Tracing
     out.push_str(&format!(
@@ -958,7 +1036,15 @@ fn emit_dispatch_dynamic(
                 ("post_octet_stream", ", data", String::new())
             }
             (HttpMethod::Post, Some(RequestBodyKind::Multipart), _) => {
-                ("post_multipart", ", filename, data", String::new())
+                if ep.multipart_fields.is_empty() {
+                    ("post_multipart", ", filename, data", String::new())
+                } else {
+                    (
+                        "post_multipart_with_fields",
+                        ", &fields, filename, data",
+                        String::new(),
+                    )
+                }
             }
             (HttpMethod::Post, _, _) => ("post_no_body", "", String::new()),
             (HttpMethod::Put, Some(RequestBodyKind::Json), true) => {
@@ -1025,6 +1111,7 @@ mod emit_fix_inline_json_tests {
             request_type: None,
             body_kind: None,
             body_doc: None,
+            multipart_fields: Vec::new(),
             response_type: None,
             response_inner: None,
             response_field: None,

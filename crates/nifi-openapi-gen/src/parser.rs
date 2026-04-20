@@ -1,5 +1,5 @@
 use serde_json::Value;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 pub use crate::content_type::RequestBodyKind;
 
@@ -127,6 +127,31 @@ pub struct HeaderParam {
     pub doc: Option<String>,
 }
 
+/// One multipart/form-data field declared in a request-body schema.
+/// Populated only for endpoints whose `body_kind == Multipart`; empty
+/// otherwise. The `file` property is excluded — it is passed through the
+/// existing `filename` / `data` method arguments by the emitter.
+#[derive(Debug, Clone)]
+pub struct MultipartField {
+    /// Wire-level form field name (e.g. "clientId", "groupName").
+    pub name: String,
+    /// snake_case Rust identifier (e.g. "client_id").
+    pub rust_name: String,
+    /// Scalar type. Only String / f64 / bool observed in NiFi 2.x multipart schemas.
+    pub ty: MultipartFieldType,
+    /// Required per the schema's `required` array.
+    pub required: bool,
+    /// Optional doc from the schema's `description`.
+    pub doc: Option<String>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum MultipartFieldType {
+    String,
+    Bool,
+    F64,
+}
+
 #[derive(Debug, Clone)]
 pub struct Endpoint {
     pub method: HttpMethod,
@@ -145,6 +170,11 @@ pub struct Endpoint {
     pub body_kind: Option<RequestBodyKind>,
     /// Human-readable description of the request body, if any.
     pub body_doc: Option<String>,
+    /// Multipart/form-data fields declared in the request-body schema,
+    /// excluding the `file` property. Sorted alphabetically by wire
+    /// name for deterministic code generation. Empty for non-Multipart
+    /// endpoints.
+    pub multipart_fields: Vec<MultipartField>,
     pub response_type: Option<String>,
     /// If response_type is an Entity, the inner DTO name.
     pub response_inner: Option<String>,
@@ -624,6 +654,65 @@ fn parse_tags(
                     crate::content_type::resolve_request_body(content, &pointer)
                 });
 
+            let multipart_fields: Vec<MultipartField> =
+                if matches!(body_kind, Some(RequestBodyKind::Multipart)) {
+                    request_body
+                        .and_then(|rb| rb.get("content"))
+                        .and_then(|c| c.get("multipart/form-data"))
+                        .and_then(|m| m.get("schema"))
+                        .and_then(|s| s.as_object())
+                        .map(|schema| {
+                            let required: HashSet<String> = schema
+                                .get("required")
+                                .and_then(|r| r.as_array())
+                                .map(|arr| {
+                                    arr.iter()
+                                        .filter_map(|v| v.as_str().map(String::from))
+                                        .collect()
+                                })
+                                .unwrap_or_default();
+                            let mut fields: Vec<MultipartField> = schema
+                                .get("properties")
+                                .and_then(|p| p.as_object())
+                                .map(|props| {
+                                    props
+                                        .iter()
+                                        // Skip the file part — emitter threads
+                                        // it through the existing `filename` /
+                                        // `data` arguments.
+                                        .filter(|(name, _)| name.as_str() != "file")
+                                        .map(|(name, prop)| {
+                                            let ty = match prop.get("type").and_then(|t| t.as_str())
+                                            {
+                                                Some("number") => MultipartFieldType::F64,
+                                                Some("boolean") => MultipartFieldType::Bool,
+                                                _ => MultipartFieldType::String,
+                                            };
+                                            MultipartField {
+                                                name: name.clone(),
+                                                rust_name: prop_name_to_rust(name),
+                                                ty,
+                                                required: required.contains(name),
+                                                doc: prop
+                                                    .get("description")
+                                                    .and_then(|d| d.as_str())
+                                                    .map(String::from),
+                                            }
+                                        })
+                                        .collect()
+                                })
+                                .unwrap_or_default();
+                            // `serde_json::Map` does not preserve insertion
+                            // order without the `preserve_order` feature, so
+                            // sort by wire name for a deterministic signature.
+                            fields.sort_by(|a, b| a.name.cmp(&b.name));
+                            fields
+                        })
+                        .unwrap_or_default()
+                } else {
+                    Vec::new()
+                };
+
             let responses = op.get("responses");
             // Pick the 2xx/default response to drive codegen. Prefer one that
             // actually declares a content schema — some endpoints expose a
@@ -744,6 +833,7 @@ fn parse_tags(
                 request_type,
                 body_kind,
                 body_doc,
+                multipart_fields,
                 response_type,
                 response_inner,
                 response_field,

@@ -866,6 +866,7 @@ mod tests {
             request_type: None,
             body_kind: None,
             body_doc: None,
+            multipart_fields: Vec::new(),
             response_type: None,
             response_inner: None,
             response_field: None,
