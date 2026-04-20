@@ -15,7 +15,6 @@ use base64::engine::general_purpose::URL_SAFE_NO_PAD;
 /// until expiry, measured from `now`. Returns `None` if the token is
 /// malformed, if `exp` is missing / wrong type, or if the token has
 /// already expired (i.e. `exp < now`).
-#[allow(dead_code)]
 pub fn expiry_remaining(token: &str, now: SystemTime) -> Option<Duration> {
     let payload = token.split('.').nth(1)?;
     let bytes = URL_SAFE_NO_PAD.decode(payload).ok()?;
