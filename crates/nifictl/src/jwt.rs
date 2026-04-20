@@ -85,4 +85,11 @@ mod tests {
         let token = make_token(r#"{"exp":"not-a-number"}"#);
         assert!(expiry_remaining(&token, now).is_none());
     }
+
+    #[test]
+    fn negative_exp_returns_none() {
+        let now = UNIX_EPOCH;
+        let token = make_token(r#"{"exp":-1}"#);
+        assert!(expiry_remaining(&token, now).is_none());
+    }
 }
