@@ -227,11 +227,10 @@ async fn run(cli: Cli) -> Result<(), error::CliError> {
             let client = params.build_client().await?;
             let result = match cmd {
                 OpsCommand::StartPg { pg_id } => porcelain::ops::start_pg(&client, &pg_id).await?,
-                OpsCommand::StopPg { .. }
-                | OpsCommand::EnableServices { .. }
-                | OpsCommand::DisableServices { .. } => {
+                OpsCommand::StopPg { pg_id } => porcelain::ops::stop_pg(&client, &pg_id).await?,
+                OpsCommand::EnableServices { .. } | OpsCommand::DisableServices { .. } => {
                     return Err(error::CliError::User(
-                        "this ops subcommand is not yet implemented; only 'start-pg' is available in this build".to_string(),
+                        "this ops subcommand is not yet implemented; 'start-pg' and 'stop-pg' are available in this build".to_string(),
                     ));
                 }
             };
