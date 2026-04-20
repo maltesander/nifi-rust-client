@@ -241,6 +241,27 @@ async fn run(cli: Cli) -> Result<(), error::CliError> {
                 base_url: &base_url,
             };
 
+            // For destructive commands, run the confirmation gate before
+            // attempting any network calls so that a non-TTY / missing --yes
+            // refuses immediately without touching the server.
+            if !ctx.dry_run {
+                match &cmd {
+                    OpsCommand::StopPg { pg_id } => {
+                        confirm::confirm_destructive(
+                            &porcelain::ops::stop_pg_what(pg_id),
+                            &ctx,
+                        )?;
+                    }
+                    OpsCommand::DisableServices { pg_id } => {
+                        confirm::confirm_destructive(
+                            &porcelain::ops::disable_services_what(pg_id),
+                            &ctx,
+                        )?;
+                    }
+                    OpsCommand::StartPg { .. } | OpsCommand::EnableServices { .. } => {}
+                }
+            }
+
             // On --dry-run, skip authentication: the handler short-circuits
             // before touching the client, so we only need a constructed
             // (not authenticated) DynamicClient for the signature.
@@ -257,13 +278,19 @@ async fn run(cli: Cli) -> Result<(), error::CliError> {
                     porcelain::ops::start_pg(&client, &pg_id, &ctx).await?
                 }
                 OpsCommand::StopPg { pg_id } => {
-                    porcelain::ops::stop_pg(&client, &pg_id, &ctx).await?
+                    // confirm already ran above; pass yes=true to skip the
+                    // redundant check inside the porcelain helper.
+                    let ctx_yes = dry_run::CliCtx { yes: true, ..ctx };
+                    porcelain::ops::stop_pg(&client, &pg_id, &ctx_yes).await?
                 }
                 OpsCommand::EnableServices { pg_id } => {
                     porcelain::ops::enable_services(&client, &pg_id, &ctx).await?
                 }
                 OpsCommand::DisableServices { pg_id } => {
-                    porcelain::ops::disable_services(&client, &pg_id, &ctx).await?
+                    // confirm already ran above; pass yes=true to skip the
+                    // redundant check inside the porcelain helper.
+                    let ctx_yes = dry_run::CliCtx { yes: true, ..ctx };
+                    porcelain::ops::disable_services(&client, &pg_id, &ctx_yes).await?
                 }
             };
             let fmt = output::OutputFormat::parse(&cli.output).map_err(error::CliError::User)?;

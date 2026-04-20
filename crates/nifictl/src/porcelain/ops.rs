@@ -14,6 +14,18 @@ use crate::dry_run::{self, CliCtx};
 use crate::error::CliError;
 use crate::output::CliOutput;
 
+/// The confirmation prompt description for `stop_pg`. Shared between
+/// `main.rs`'s pre-client confirm and the porcelain's internal confirm
+/// so the text stays in sync.
+pub fn stop_pg_what(pg_id: &str) -> String {
+    format!("stop all processors in process group '{pg_id}'")
+}
+
+/// The confirmation prompt description for `disable_services`.
+pub fn disable_services_what(pg_id: &str) -> String {
+    format!("disable all controller services in process group '{pg_id}'")
+}
+
 /// Start (schedule) all authorized processors in a process group.
 pub async fn start_pg(
     client: &DynamicClient,
@@ -35,6 +47,14 @@ pub async fn start_pg(
 }
 
 /// Stop (unschedule) all processors in a process group.
+///
+/// **Confirm contract:** production callers (i.e. main.rs's
+/// `Commands::Ops` arm) run `confirm::confirm_destructive` BEFORE
+/// invoking this fn and pass `ctx.yes = true` so the call below is a
+/// no-op. The internal call exists as defense-in-depth so that any
+/// future direct caller (unit tests, library use) still enforces the
+/// prompt if it forgets. If you add another destructive porcelain fn,
+/// follow the same pattern.
 pub async fn stop_pg(
     client: &DynamicClient,
     pg_id: &str,
@@ -48,10 +68,7 @@ pub async fn stop_pg(
             .map_err(CliError::Io)?;
         return Ok(CliOutput::Empty);
     }
-    confirm::confirm_destructive(
-        &format!("stop all processors in process group '{pg_id}'"),
-        ctx,
-    )?;
+    confirm::confirm_destructive(&stop_pg_what(pg_id), ctx)?;
     let entity = bulk::stop_process_group_dynamic(client, pg_id).await?;
     let value = serde_json::to_value(&entity)
         .map_err(|e| CliError::User(format!("serialization error: {e}")))?;
@@ -79,6 +96,14 @@ pub async fn enable_services(
 }
 
 /// Disable all controller services in a process group.
+///
+/// **Confirm contract:** production callers (i.e. main.rs's
+/// `Commands::Ops` arm) run `confirm::confirm_destructive` BEFORE
+/// invoking this fn and pass `ctx.yes = true` so the call below is a
+/// no-op. The internal call exists as defense-in-depth so that any
+/// future direct caller (unit tests, library use) still enforces the
+/// prompt if it forgets. If you add another destructive porcelain fn,
+/// follow the same pattern.
 pub async fn disable_services(
     client: &DynamicClient,
     pg_id: &str,
@@ -92,10 +117,7 @@ pub async fn disable_services(
             .map_err(CliError::Io)?;
         return Ok(CliOutput::Empty);
     }
-    confirm::confirm_destructive(
-        &format!("disable all controller services in process group '{pg_id}'"),
-        ctx,
-    )?;
+    confirm::confirm_destructive(&disable_services_what(pg_id), ctx)?;
     let entity = bulk::disable_all_controller_services_dynamic(client, pg_id).await?;
     let value = serde_json::to_value(&entity)
         .map_err(|e| CliError::User(format!("serialization error: {e}")))?;
