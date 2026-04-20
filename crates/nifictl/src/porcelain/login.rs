@@ -105,6 +105,14 @@ mod tests {
     }
 
     #[test]
+    fn should_not_warn_at_exact_threshold() {
+        let now = UNIX_EPOCH + Duration::from_secs(1_700_000_000);
+        let exactly_24h = 1_700_000_000 + 24 * 3600;
+        let token = jwt_with_exp(exactly_24h);
+        assert!(expiry_warning_for(&token, now).is_none());
+    }
+
+    #[test]
     fn should_not_warn_for_malformed_token() {
         let now = UNIX_EPOCH;
         assert!(expiry_warning_for("garbage", now).is_none());
