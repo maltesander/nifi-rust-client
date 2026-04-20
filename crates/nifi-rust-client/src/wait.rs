@@ -2,10 +2,10 @@
 //! Polling helpers for NiFi state transitions and async queries.
 //!
 //! Each helper polls a single resource until a condition is met, or until
-//! [`WaitConfig::timeout`] elapses (returning [`NifiError::Timeout`]).
+//! the configured `WaitConfig::timeout` elapses (returning [`NifiError::Timeout`]).
 //!
 //! Pattern mirrors [`crate::pagination`]: free functions with a `_dynamic`
-//! sibling for use with [`crate::dynamic::DynamicClient`] (gated on the
+//! sibling for use with `crate::dynamic::DynamicClient` (gated on the
 //! `dynamic` feature).
 
 use std::time::Duration;
@@ -35,8 +35,8 @@ pub struct WaitConfig {
     /// known to take a minimum amount of time.
     pub initial_delay: Duration,
     /// Controls the trailing DELETE on async-query helpers. Honored by
-    /// [`parameter_context_update`] and [`provenance_query`] only; ignored by
-    /// [`processor_state`] and [`controller_service_state`] (which have no
+    /// `parameter_context_update` and `provenance_query` only; ignored by
+    /// `processor_state` and `controller_service_state` (which have no
     /// server-side state to clean up). When `true`, the helper issues a
     /// `DELETE` after the query resolves, regardless of success or failure,
     /// and swallows any error from that DELETE so it cannot mask the poll
@@ -75,10 +75,10 @@ impl ProcessorTargetState {
     /// `ProcessorDtoState` enum so the wire vocabulary lives in exactly one
     /// place.
     pub(crate) fn wire_value(&self) -> &'static str {
-        #[cfg(not(feature = "dynamic"))]
-        use crate::types::ProcessorDtoState;
         #[cfg(feature = "dynamic")]
         use crate::dynamic::types::ProcessorDtoState;
+        #[cfg(not(feature = "dynamic"))]
+        use crate::types::ProcessorDtoState;
 
         match self {
             Self::Running => ProcessorDtoState::Running.as_str(),
@@ -105,10 +105,10 @@ impl ControllerServiceTargetState {
     /// `ControllerServiceDtoState` enum so the wire vocabulary lives in
     /// exactly one place.
     pub(crate) fn wire_value(&self) -> &'static str {
-        #[cfg(not(feature = "dynamic"))]
-        use crate::types::ControllerServiceDtoState;
         #[cfg(feature = "dynamic")]
         use crate::dynamic::types::ControllerServiceDtoState;
+        #[cfg(not(feature = "dynamic"))]
+        use crate::types::ControllerServiceDtoState;
 
         match self {
             Self::Enabled => ControllerServiceDtoState::Enabled.as_str(),
@@ -218,14 +218,18 @@ pub async fn processor_state(
     );
     let fetch = || async { client.processors().get_processor(processor_id).await };
     let done = move |entity: &ProcessorEntity| {
-        let matches = entity.component.as_ref().and_then(|c| c.state.as_ref()).is_some_and(|s| {
-            matches!(
-                (target, s),
-                (ProcessorTargetState::Running, ProcessorDtoState::Running)
-                    | (ProcessorTargetState::Stopped, ProcessorDtoState::Stopped)
-                    | (ProcessorTargetState::Disabled, ProcessorDtoState::Disabled)
-            )
-        });
+        let matches = entity
+            .component
+            .as_ref()
+            .and_then(|c| c.state.as_ref())
+            .is_some_and(|s| {
+                matches!(
+                    (target, s),
+                    (ProcessorTargetState::Running, ProcessorDtoState::Running)
+                        | (ProcessorTargetState::Stopped, ProcessorDtoState::Stopped)
+                        | (ProcessorTargetState::Disabled, ProcessorDtoState::Disabled)
+                )
+            });
         if matches {
             PollOutcome::Ready
         } else {
@@ -257,16 +261,29 @@ pub async fn controller_service_state(
         "wait_for_controller_service_state({service_id}, {})",
         target.wire_value()
     );
-    let fetch =
-        || async { client.controller_services().get_controller_service(service_id, None).await };
+    let fetch = || async {
+        client
+            .controller_services()
+            .get_controller_service(service_id, None)
+            .await
+    };
     let done = move |entity: &ControllerServiceEntity| {
-        let matches = entity.component.as_ref().and_then(|c| c.state.as_ref()).is_some_and(|s| {
-            matches!(
-                (target, s),
-                (ControllerServiceTargetState::Enabled, ControllerServiceDtoState::Enabled)
-                    | (ControllerServiceTargetState::Disabled, ControllerServiceDtoState::Disabled)
-            )
-        });
+        let matches = entity
+            .component
+            .as_ref()
+            .and_then(|c| c.state.as_ref())
+            .is_some_and(|s| {
+                matches!(
+                    (target, s),
+                    (
+                        ControllerServiceTargetState::Enabled,
+                        ControllerServiceDtoState::Enabled
+                    ) | (
+                        ControllerServiceTargetState::Disabled,
+                        ControllerServiceDtoState::Disabled
+                    )
+                )
+            });
         if matches {
             PollOutcome::Ready
         } else {
@@ -279,7 +296,7 @@ pub async fn controller_service_state(
 #[cfg(feature = "dynamic")]
 use crate::dynamic::types::ControllerServiceEntity;
 
-/// Dynamic-mode counterpart of [`controller_service_state`].
+/// Dynamic-mode counterpart of `controller_service_state`.
 #[cfg(feature = "dynamic")]
 pub async fn controller_service_state_dynamic(
     client: &crate::dynamic::DynamicClient,
@@ -289,8 +306,12 @@ pub async fn controller_service_state_dynamic(
 ) -> Result<ControllerServiceEntity, NifiError> {
     let target_wire = target.wire_value();
     let op = format!("wait_for_controller_service_state({service_id}, {target_wire})");
-    let fetch =
-        || async { client.controller_services().get_controller_service(service_id, None).await };
+    let fetch = || async {
+        client
+            .controller_services()
+            .get_controller_service(service_id, None)
+            .await
+    };
     let done = move |entity: &ControllerServiceEntity| {
         let state = entity.component.as_ref().and_then(|c| c.state.as_deref());
         if state == Some(target_wire) {
@@ -305,7 +326,7 @@ pub async fn controller_service_state_dynamic(
 #[cfg(feature = "dynamic")]
 use crate::dynamic::types::ProcessorEntity;
 
-/// Dynamic-mode counterpart of [`processor_state`].
+/// Dynamic-mode counterpart of `processor_state`.
 #[cfg(feature = "dynamic")]
 pub async fn processor_state_dynamic(
     client: &crate::dynamic::DynamicClient,
@@ -384,7 +405,7 @@ pub async fn parameter_context_update(
 #[cfg(feature = "dynamic")]
 use crate::dynamic::types::ParameterContextUpdateRequestEntity;
 
-/// Dynamic-mode counterpart of [`parameter_context_update`].
+/// Dynamic-mode counterpart of `parameter_context_update`.
 #[cfg(feature = "dynamic")]
 pub async fn parameter_context_update_dynamic(
     client: &crate::dynamic::DynamicClient,
@@ -468,7 +489,7 @@ pub async fn provenance_query(
 #[cfg(feature = "dynamic")]
 use crate::dynamic::types::ProvenanceDto;
 
-/// Dynamic-mode counterpart of [`provenance_query`].
+/// Dynamic-mode counterpart of `provenance_query`.
 #[cfg(feature = "dynamic")]
 pub async fn provenance_query_dynamic(
     client: &crate::dynamic::DynamicClient,
@@ -562,7 +583,9 @@ mod tests {
         };
         let fetch = || async { Ok::<i32, NifiError>(0) };
         let done = |_: &i32| PollOutcome::Pending;
-        let err = poll_until(&config, "test_op", fetch, done).await.unwrap_err();
+        let err = poll_until(&config, "test_op", fetch, done)
+            .await
+            .unwrap_err();
         match err {
             NifiError::Timeout { operation } => assert_eq!(operation, "test_op"),
             other => panic!("expected Timeout, got {other:?}"),

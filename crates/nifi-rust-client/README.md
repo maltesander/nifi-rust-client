@@ -294,7 +294,6 @@ No per-node token cache or special routing headers are needed. The existing retr
 | `client.token()` | Return the current bearer token as `Option<String>` (async) |
 | `client.set_token(token)` | Restore a previously obtained token (async) |
 
-
 ### Request correlation
 
 Optionally emit a fresh UUIDv4 per request, both on the outgoing HTTP header and
@@ -315,6 +314,7 @@ When not configured (the default), no header is sent and no span field is record
 byte-identical behavior for users who don't opt in. Useful names are
 `"X-Request-Id"`, `"X-Correlation-Id"`, or any other name your observability
 stack expects.
+
 ## Streaming binary downloads
 
 Endpoints returning `application/octet-stream` or `*/*` are emitted in

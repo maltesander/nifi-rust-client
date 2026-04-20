@@ -1,7 +1,7 @@
 #![cfg(not(feature = "dynamic"))]
 
-use nifi_rust_client::config::auth::PasswordAuth;
 use nifi_rust_client::NifiClientBuilder;
+use nifi_rust_client::config::auth::PasswordAuth;
 use serde_json::json;
 use wiremock::matchers::{method, path};
 use wiremock::{Mock, MockServer, ResponseTemplate};
@@ -57,10 +57,7 @@ async fn concurrent_401s_trigger_single_reauth() {
     client.set_token("expired".to_string()).await;
 
     let flow = client.flow();
-    let (r1, r2) = tokio::join!(
-        flow.get_about_info(),
-        flow.get_about_info(),
-    );
+    let (r1, r2) = tokio::join!(flow.get_about_info(), flow.get_about_info(),);
     assert!(r1.is_ok(), "first call failed: {r1:?}");
     assert!(r2.is_ok(), "second call failed: {r2:?}");
     assert_eq!(client.token().await.as_deref(), Some("fresh-jwt"));

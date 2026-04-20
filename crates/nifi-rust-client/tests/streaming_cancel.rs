@@ -45,7 +45,10 @@ async fn dropping_stream_mid_body_does_not_poison_client() {
         .mount(&mock_server)
         .await;
 
-    let client = NifiClientBuilder::new(&mock_server.uri()).unwrap().build().unwrap();
+    let client = NifiClientBuilder::new(&mock_server.uri())
+        .unwrap()
+        .build()
+        .unwrap();
     client.set_token("jwt".to_string()).await;
 
     let mut stream = client

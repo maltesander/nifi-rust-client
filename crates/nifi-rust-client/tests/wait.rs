@@ -2,7 +2,9 @@
 
 use std::time::Duration;
 
-use nifi_rust_client::wait::{self, ControllerServiceTargetState, ProcessorTargetState, WaitConfig};
+use nifi_rust_client::wait::{
+    self, ControllerServiceTargetState, ProcessorTargetState, WaitConfig,
+};
 use nifi_rust_client::{NifiClientBuilder, NifiError};
 use serde_json::json;
 use wiremock::matchers::{method, path};
@@ -53,7 +55,10 @@ async fn processor_state_reaches_target() {
         .mount(&mock_server)
         .await;
 
-    let client = NifiClientBuilder::new(&mock_server.uri()).unwrap().build().unwrap();
+    let client = NifiClientBuilder::new(&mock_server.uri())
+        .unwrap()
+        .build()
+        .unwrap();
     client.set_token("jwt".to_string()).await;
 
     let entity = wait::processor_state(
@@ -76,7 +81,10 @@ async fn processor_state_times_out() {
         .mount(&mock_server)
         .await;
 
-    let client = NifiClientBuilder::new(&mock_server.uri()).unwrap().build().unwrap();
+    let client = NifiClientBuilder::new(&mock_server.uri())
+        .unwrap()
+        .build()
+        .unwrap();
     client.set_token("jwt".to_string()).await;
 
     let err = wait::processor_state(
@@ -104,17 +112,24 @@ async fn controller_service_state_reaches_target() {
 
     Mock::given(method("GET"))
         .and(path("/nifi-api/controller-services/cs-1"))
-        .respond_with(ResponseTemplate::new(200).set_body_json(controller_service_entity("ENABLING")))
+        .respond_with(
+            ResponseTemplate::new(200).set_body_json(controller_service_entity("ENABLING")),
+        )
         .up_to_n_times(1)
         .mount(&mock_server)
         .await;
     Mock::given(method("GET"))
         .and(path("/nifi-api/controller-services/cs-1"))
-        .respond_with(ResponseTemplate::new(200).set_body_json(controller_service_entity("ENABLED")))
+        .respond_with(
+            ResponseTemplate::new(200).set_body_json(controller_service_entity("ENABLED")),
+        )
         .mount(&mock_server)
         .await;
 
-    let client = NifiClientBuilder::new(&mock_server.uri()).unwrap().build().unwrap();
+    let client = NifiClientBuilder::new(&mock_server.uri())
+        .unwrap()
+        .build()
+        .unwrap();
     client.set_token("jwt".to_string()).await;
 
     let entity = wait::controller_service_state(
@@ -133,11 +148,16 @@ async fn controller_service_state_times_out() {
     let mock_server = MockServer::start().await;
     Mock::given(method("GET"))
         .and(path("/nifi-api/controller-services/cs-1"))
-        .respond_with(ResponseTemplate::new(200).set_body_json(controller_service_entity("DISABLED")))
+        .respond_with(
+            ResponseTemplate::new(200).set_body_json(controller_service_entity("DISABLED")),
+        )
         .mount(&mock_server)
         .await;
 
-    let client = NifiClientBuilder::new(&mock_server.uri()).unwrap().build().unwrap();
+    let client = NifiClientBuilder::new(&mock_server.uri())
+        .unwrap()
+        .build()
+        .unwrap();
     client.set_token("jwt".to_string()).await;
 
     let err = wait::controller_service_state(
@@ -167,36 +187,40 @@ async fn parameter_context_update_succeeds_and_cleans_up() {
 
     // First GET: incomplete. Second: complete.
     Mock::given(method("GET"))
-        .and(path("/nifi-api/parameter-contexts/ctx-1/update-requests/req-1"))
+        .and(path(
+            "/nifi-api/parameter-contexts/ctx-1/update-requests/req-1",
+        ))
         .respond_with(ResponseTemplate::new(200).set_body_json(update_request_entity(false, None)))
         .up_to_n_times(1)
         .mount(&mock_server)
         .await;
     Mock::given(method("GET"))
-        .and(path("/nifi-api/parameter-contexts/ctx-1/update-requests/req-1"))
+        .and(path(
+            "/nifi-api/parameter-contexts/ctx-1/update-requests/req-1",
+        ))
         .respond_with(ResponseTemplate::new(200).set_body_json(update_request_entity(true, None)))
         .mount(&mock_server)
         .await;
 
     // DELETE expected exactly once (cleanup: true).
     Mock::given(method("DELETE"))
-        .and(path("/nifi-api/parameter-contexts/ctx-1/update-requests/req-1"))
+        .and(path(
+            "/nifi-api/parameter-contexts/ctx-1/update-requests/req-1",
+        ))
         .respond_with(ResponseTemplate::new(200).set_body_json(update_request_entity(true, None)))
         .expect(1)
         .mount(&mock_server)
         .await;
 
-    let client = NifiClientBuilder::new(&mock_server.uri()).unwrap().build().unwrap();
+    let client = NifiClientBuilder::new(&mock_server.uri())
+        .unwrap()
+        .build()
+        .unwrap();
     client.set_token("jwt".to_string()).await;
 
-    let entity = wait::parameter_context_update(
-        &client,
-        "ctx-1",
-        "req-1",
-        fast_config(1000),
-    )
-    .await
-    .unwrap();
+    let entity = wait::parameter_context_update(&client, "ctx-1", "req-1", fast_config(1000))
+        .await
+        .unwrap();
     assert_eq!(entity.request.and_then(|r| r.complete), Some(true));
 }
 
@@ -205,30 +229,35 @@ async fn parameter_context_update_reports_failure() {
     let mock_server = MockServer::start().await;
 
     Mock::given(method("GET"))
-        .and(path("/nifi-api/parameter-contexts/ctx-1/update-requests/req-1"))
-        .respond_with(ResponseTemplate::new(200).set_body_json(update_request_entity(true, Some("validation failed"))))
+        .and(path(
+            "/nifi-api/parameter-contexts/ctx-1/update-requests/req-1",
+        ))
+        .respond_with(
+            ResponseTemplate::new(200)
+                .set_body_json(update_request_entity(true, Some("validation failed"))),
+        )
         .mount(&mock_server)
         .await;
 
     // DELETE still runs on failure when cleanup is on.
     Mock::given(method("DELETE"))
-        .and(path("/nifi-api/parameter-contexts/ctx-1/update-requests/req-1"))
+        .and(path(
+            "/nifi-api/parameter-contexts/ctx-1/update-requests/req-1",
+        ))
         .respond_with(ResponseTemplate::new(200).set_body_json(update_request_entity(true, None)))
         .expect(1)
         .mount(&mock_server)
         .await;
 
-    let client = NifiClientBuilder::new(&mock_server.uri()).unwrap().build().unwrap();
+    let client = NifiClientBuilder::new(&mock_server.uri())
+        .unwrap()
+        .build()
+        .unwrap();
     client.set_token("jwt".to_string()).await;
 
-    let err = wait::parameter_context_update(
-        &client,
-        "ctx-1",
-        "req-1",
-        fast_config(1000),
-    )
-    .await
-    .unwrap_err();
+    let err = wait::parameter_context_update(&client, "ctx-1", "req-1", fast_config(1000))
+        .await
+        .unwrap_err();
     match err {
         NifiError::Api { status, message } => {
             assert_eq!(status, 500);
@@ -243,20 +272,27 @@ async fn parameter_context_update_no_cleanup_when_disabled() {
     let mock_server = MockServer::start().await;
 
     Mock::given(method("GET"))
-        .and(path("/nifi-api/parameter-contexts/ctx-1/update-requests/req-1"))
+        .and(path(
+            "/nifi-api/parameter-contexts/ctx-1/update-requests/req-1",
+        ))
         .respond_with(ResponseTemplate::new(200).set_body_json(update_request_entity(true, None)))
         .mount(&mock_server)
         .await;
 
     // DELETE must NOT be called when cleanup: false.
     Mock::given(method("DELETE"))
-        .and(path("/nifi-api/parameter-contexts/ctx-1/update-requests/req-1"))
+        .and(path(
+            "/nifi-api/parameter-contexts/ctx-1/update-requests/req-1",
+        ))
         .respond_with(ResponseTemplate::new(200).set_body_json(update_request_entity(true, None)))
         .expect(0)
         .mount(&mock_server)
         .await;
 
-    let client = NifiClientBuilder::new(&mock_server.uri()).unwrap().build().unwrap();
+    let client = NifiClientBuilder::new(&mock_server.uri())
+        .unwrap()
+        .build()
+        .unwrap();
     client.set_token("jwt".to_string()).await;
 
     let config = WaitConfig {
@@ -306,7 +342,10 @@ async fn provenance_query_succeeds_and_cleans_up() {
         .mount(&mock_server)
         .await;
 
-    let client = NifiClientBuilder::new(&mock_server.uri()).unwrap().build().unwrap();
+    let client = NifiClientBuilder::new(&mock_server.uri())
+        .unwrap()
+        .build()
+        .unwrap();
     client.set_token("jwt".to_string()).await;
 
     let dto = wait::provenance_query(&client, "q-1", fast_config(1000))
@@ -332,7 +371,10 @@ async fn provenance_query_propagates_fetch_error() {
         .mount(&mock_server)
         .await;
 
-    let client = NifiClientBuilder::new(&mock_server.uri()).unwrap().build().unwrap();
+    let client = NifiClientBuilder::new(&mock_server.uri())
+        .unwrap()
+        .build()
+        .unwrap();
     client.set_token("jwt".to_string()).await;
 
     let err = wait::provenance_query(&client, "q-1", fast_config(200))
@@ -342,7 +384,8 @@ async fn provenance_query_propagates_fetch_error() {
     // Accept both — the exact outcome depends on whether a retry policy is configured
     // (default is None, so Api(500) is most likely).
     assert!(
-        matches!(err, NifiError::Api { status: 500, .. }) || matches!(err, NifiError::Timeout { .. }),
+        matches!(err, NifiError::Api { status: 500, .. })
+            || matches!(err, NifiError::Timeout { .. }),
         "expected Api(500) or Timeout, got: {err:?}"
     );
 }

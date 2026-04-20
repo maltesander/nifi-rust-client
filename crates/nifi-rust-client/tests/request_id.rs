@@ -19,10 +19,8 @@ fn about_json() -> serde_json::Value {
 }
 
 fn uuid_v4_regex() -> regex::Regex {
-    regex::Regex::new(
-        r"^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
-    )
-    .unwrap()
+    regex::Regex::new(r"^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$")
+        .unwrap()
 }
 
 #[tokio::test]

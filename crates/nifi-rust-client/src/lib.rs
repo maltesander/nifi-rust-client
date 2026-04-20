@@ -121,6 +121,8 @@ compile_error!(
 
 /// Client builder: configure timeouts, TLS, credentials, and retry before connecting.
 pub mod builder;
+/// One-shot bulk-control helpers for process groups.
+pub mod bulk;
 /// The connected client handle and resource accessor methods.
 pub mod client;
 /// Configuration types: credential providers and retry policy.
@@ -129,13 +131,11 @@ pub mod config;
 pub mod error;
 /// Pagination helpers for NiFi REST endpoints that support offset/count paging.
 pub mod pagination;
-/// Polling helpers for state transitions and async queries.
-pub mod wait;
-/// One-shot bulk-control helpers for process groups.
-pub mod bulk;
 mod require;
 /// Streaming byte responses for large binary downloads.
 pub mod streaming;
+/// Polling helpers for state transitions and async queries.
+pub mod wait;
 pub use builder::NifiClientBuilder;
 pub use bytes::Bytes;
 pub use client::NifiClient;

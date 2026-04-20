@@ -252,4 +252,3 @@ mod tests {
         assert!(out.contains("ScheduleComponentsEntityState::Disabled => \"DISABLED\""));
     }
 }
-

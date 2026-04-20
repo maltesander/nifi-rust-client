@@ -326,7 +326,10 @@ mod tests {
             "STOPPED".into(),
         ])));
         let got = extract_inline_enum_variants(&ty);
-        assert_eq!(got, Some(vec!["RUNNING".to_string(), "STOPPED".to_string()]));
+        assert_eq!(
+            got,
+            Some(vec!["RUNNING".to_string(), "STOPPED".to_string()])
+        );
     }
 
     #[test]

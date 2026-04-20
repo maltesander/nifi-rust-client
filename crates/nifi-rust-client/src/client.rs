@@ -208,29 +208,17 @@ impl NifiClient {
     {
         // Snapshot the token at entry so we can detect whether a concurrent
         // task already re-authed while we were waiting on the lock.
-        let token_before = self
-            .token
-            .read()
-            .await
-            .as_ref()
-            .map(|t| (**t).clone());
+        let token_before = self.token.read().await.as_ref().map(|t| (**t).clone());
 
         match f().await {
             Err(NifiError::Unauthorized { .. }) if self.auth_provider.is_some() => {
                 let _guard = self.auth_lock.lock().await;
-                let token_now = self
-                    .token
-                    .read()
-                    .await
-                    .as_ref()
-                    .map(|t| (**t).clone());
+                let token_now = self.token.read().await.as_ref().map(|t| (**t).clone());
                 if token_now == token_before {
                     tracing::info!("received 401, refreshing token via auth provider");
                     self.authenticate().await?;
                 } else {
-                    tracing::debug!(
-                        "token already refreshed by concurrent task, skipping re-auth"
-                    );
+                    tracing::debug!("token already refreshed by concurrent task, skipping re-auth");
                 }
                 // Release the auth lock BEFORE retrying the request — otherwise
                 // the retry's `f().await` would hold the lock across its entire
@@ -583,7 +571,11 @@ impl NifiClient {
     ) -> Result<(), NifiError> {
         self.with_retry(|| async {
             let req = self
-                .build_request(&Method::GET, path, self.http.get(self.api_url(path)).query(query))
+                .build_request(
+                    &Method::GET,
+                    path,
+                    self.http.get(self.api_url(path)).query(query),
+                )
                 .await;
             let req = apply_extra_headers(req, extra_headers);
             let resp = req.send().await.context(HttpSnafu)?;
@@ -601,7 +593,11 @@ impl NifiClient {
     ) -> Result<T, NifiError> {
         self.with_retry(|| async {
             let req = self
-                .build_request(&Method::GET, path, self.http.get(self.api_url(path)).query(query))
+                .build_request(
+                    &Method::GET,
+                    path,
+                    self.http.get(self.api_url(path)).query(query),
+                )
                 .await;
             let req = apply_extra_headers(req, extra_headers);
             let resp = req.send().await.context(HttpSnafu)?;
@@ -656,7 +652,11 @@ impl NifiClient {
     ) -> Result<Vec<u8>, NifiError> {
         self.with_retry(|| async {
             let req = self
-                .build_request(&Method::GET, path, self.http.get(self.api_url(path)).query(query))
+                .build_request(
+                    &Method::GET,
+                    path,
+                    self.http.get(self.api_url(path)).query(query),
+                )
                 .await;
             let req = apply_extra_headers(req, extra_headers);
             let resp = req.send().await.context(HttpSnafu)?;
@@ -700,7 +700,11 @@ impl NifiClient {
     ) -> Result<crate::BytesStream, NifiError> {
         self.with_retry(|| async {
             let req = self
-                .build_request(&Method::GET, path, self.http.get(self.api_url(path)).query(query))
+                .build_request(
+                    &Method::GET,
+                    path,
+                    self.http.get(self.api_url(path)).query(query),
+                )
                 .await;
             let req = apply_extra_headers(req, extra_headers);
             let resp = req.send().await.context(HttpSnafu)?;
@@ -873,7 +877,11 @@ impl NifiClient {
     ) -> Result<(), NifiError> {
         self.with_retry(|| async {
             let req = self
-                .build_request(&Method::POST, path, self.http.post(self.api_url(path)).query(query))
+                .build_request(
+                    &Method::POST,
+                    path,
+                    self.http.post(self.api_url(path)).query(query),
+                )
                 .await;
             let req = apply_extra_headers(req, extra_headers);
             let resp = req.json(body).send().await.context(HttpSnafu)?;
@@ -896,7 +904,11 @@ impl NifiClient {
     {
         self.with_retry(|| async {
             let req = self
-                .build_request(&Method::POST, path, self.http.post(self.api_url(path)).query(query))
+                .build_request(
+                    &Method::POST,
+                    path,
+                    self.http.post(self.api_url(path)).query(query),
+                )
                 .await;
             let req = apply_extra_headers(req, extra_headers);
             let resp = req.json(body).send().await.context(HttpSnafu)?;
@@ -925,7 +937,11 @@ impl NifiClient {
     {
         self.with_retry(|| async {
             let req = self
-                .build_request(&Method::PUT, path, self.http.put(self.api_url(path)).query(query))
+                .build_request(
+                    &Method::PUT,
+                    path,
+                    self.http.put(self.api_url(path)).query(query),
+                )
                 .await;
             let req = apply_extra_headers(req, extra_headers);
             let resp = req.json(body).send().await.context(HttpSnafu)?;

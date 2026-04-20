@@ -2,8 +2,8 @@
 
 use std::time::Duration;
 
-use nifi_rust_client::wait::{processor_state_dynamic, ProcessorTargetState, WaitConfig};
 use nifi_rust_client::NifiClientBuilder;
+use nifi_rust_client::wait::{ProcessorTargetState, WaitConfig, processor_state_dynamic};
 use serde_json::json;
 use wiremock::matchers::{method, path};
 use wiremock::{Mock, MockServer, ResponseTemplate};

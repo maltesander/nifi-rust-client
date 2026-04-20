@@ -9,8 +9,7 @@
 #![cfg(feature = "dynamic")]
 
 use nifi_rust_client::dynamic::types::{
-    ActivateControllerServicesEntityState, ScheduleComponentsEntity,
-    ScheduleComponentsEntityState,
+    ActivateControllerServicesEntityState, ScheduleComponentsEntity, ScheduleComponentsEntityState,
 };
 
 #[test]
@@ -24,7 +23,10 @@ fn schedule_components_entity_state_round_trips() {
         ScheduleComponentsEntityState::from_wire("RUNNING"),
         Some(ScheduleComponentsEntityState::Running)
     );
-    assert_eq!(ScheduleComponentsEntityState::from_wire("UNKNOWN_FUTURE"), None);
+    assert_eq!(
+        ScheduleComponentsEntityState::from_wire("UNKNOWN_FUTURE"),
+        None
+    );
 }
 
 #[test]
@@ -45,8 +47,8 @@ fn dto_field_remains_option_string_so_unknown_values_deserialize() {
         "id": "pg-1",
         "state": "QUARANTINED"  // not in any spec version
     });
-    let entity: ScheduleComponentsEntity = serde_json::from_value(json)
-        .expect("deserialization failed");
+    let entity: ScheduleComponentsEntity =
+        serde_json::from_value(json).expect("deserialization failed");
     assert_eq!(entity.state.as_deref(), Some("QUARANTINED"));
     // The helper returns None on unknown — caller decides whether to surface
     // the raw string or treat as an error.

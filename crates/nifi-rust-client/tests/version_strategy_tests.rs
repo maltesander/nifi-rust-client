@@ -1,8 +1,8 @@
 #![cfg(feature = "dynamic")]
 #![allow(clippy::unwrap_used)]
 
-use nifi_rust_client::NifiError;
 use nifi_rust_client::NifiClientBuilder;
+use nifi_rust_client::NifiError;
 use nifi_rust_client::dynamic::VersionResolutionStrategy;
 use wiremock::matchers::{method, path};
 use wiremock::{Mock, MockServer, ResponseTemplate};

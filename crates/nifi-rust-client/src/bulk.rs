@@ -62,7 +62,10 @@ pub async fn enable_all_controller_services(
         state: Some(ActivateControllerServicesEntityState::Enabled),
         ..Default::default()
     };
-    client.flow().activate_controller_services(group_id, &body).await
+    client
+        .flow()
+        .activate_controller_services(group_id, &body)
+        .await
 }
 
 /// Disable all controller services in the given process group.
@@ -76,7 +79,10 @@ pub async fn disable_all_controller_services(
         state: Some(ActivateControllerServicesEntityState::Disabled),
         ..Default::default()
     };
-    client.flow().activate_controller_services(group_id, &body).await
+    client
+        .flow()
+        .activate_controller_services(group_id, &body)
+        .await
 }
 
 #[cfg(feature = "dynamic")]
@@ -85,7 +91,7 @@ use crate::dynamic::types::{
     ScheduleComponentsEntity, ScheduleComponentsEntityState,
 };
 
-/// Dynamic-mode counterpart of [`start_process_group`].
+/// Dynamic-mode counterpart of `start_process_group`.
 #[cfg(feature = "dynamic")]
 pub async fn start_process_group_dynamic(
     client: &crate::dynamic::DynamicClient,
@@ -99,7 +105,7 @@ pub async fn start_process_group_dynamic(
     client.flow().schedule_components(group_id, &body).await
 }
 
-/// Dynamic-mode counterpart of [`stop_process_group`].
+/// Dynamic-mode counterpart of `stop_process_group`.
 #[cfg(feature = "dynamic")]
 pub async fn stop_process_group_dynamic(
     client: &crate::dynamic::DynamicClient,
@@ -113,7 +119,7 @@ pub async fn stop_process_group_dynamic(
     client.flow().schedule_components(group_id, &body).await
 }
 
-/// Dynamic-mode counterpart of [`enable_all_controller_services`].
+/// Dynamic-mode counterpart of `enable_all_controller_services`.
 #[cfg(feature = "dynamic")]
 pub async fn enable_all_controller_services_dynamic(
     client: &crate::dynamic::DynamicClient,
@@ -124,10 +130,13 @@ pub async fn enable_all_controller_services_dynamic(
         state: Some(ActivateControllerServicesEntityState::Enabled.into()),
         ..Default::default()
     };
-    client.flow().activate_controller_services(group_id, &body).await
+    client
+        .flow()
+        .activate_controller_services(group_id, &body)
+        .await
 }
 
-/// Dynamic-mode counterpart of [`disable_all_controller_services`].
+/// Dynamic-mode counterpart of `disable_all_controller_services`.
 #[cfg(feature = "dynamic")]
 pub async fn disable_all_controller_services_dynamic(
     client: &crate::dynamic::DynamicClient,
@@ -138,5 +147,8 @@ pub async fn disable_all_controller_services_dynamic(
         state: Some(ActivateControllerServicesEntityState::Disabled.into()),
         ..Default::default()
     };
-    client.flow().activate_controller_services(group_id, &body).await
+    client
+        .flow()
+        .activate_controller_services(group_id, &body)
+        .await
 }

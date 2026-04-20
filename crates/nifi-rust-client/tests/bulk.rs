@@ -1,7 +1,7 @@
 #![cfg(not(feature = "dynamic"))]
 
-use nifi_rust_client::bulk;
 use nifi_rust_client::NifiClientBuilder;
+use nifi_rust_client::bulk;
 use serde_json::json;
 use wiremock::matchers::{body_partial_json, method, path};
 use wiremock::{Mock, MockServer, ResponseTemplate};
@@ -12,7 +12,9 @@ async fn start_process_group_sends_running_body() {
 
     Mock::given(method("PUT"))
         .and(path("/nifi-api/flow/process-groups/pg-1"))
-        .and(body_partial_json(json!({ "id": "pg-1", "state": "RUNNING" })))
+        .and(body_partial_json(
+            json!({ "id": "pg-1", "state": "RUNNING" }),
+        ))
         .respond_with(ResponseTemplate::new(200).set_body_json(json!({
             "id": "pg-1", "state": "RUNNING"
         })))
@@ -20,7 +22,10 @@ async fn start_process_group_sends_running_body() {
         .mount(&mock_server)
         .await;
 
-    let client = NifiClientBuilder::new(&mock_server.uri()).unwrap().build().unwrap();
+    let client = NifiClientBuilder::new(&mock_server.uri())
+        .unwrap()
+        .build()
+        .unwrap();
     client.set_token("jwt".to_string()).await;
 
     let result = bulk::start_process_group(&client, "pg-1").await.unwrap();
@@ -33,7 +38,9 @@ async fn stop_process_group_sends_stopped_body() {
 
     Mock::given(method("PUT"))
         .and(path("/nifi-api/flow/process-groups/pg-1"))
-        .and(body_partial_json(json!({ "id": "pg-1", "state": "STOPPED" })))
+        .and(body_partial_json(
+            json!({ "id": "pg-1", "state": "STOPPED" }),
+        ))
         .respond_with(ResponseTemplate::new(200).set_body_json(json!({
             "id": "pg-1", "state": "STOPPED"
         })))
@@ -41,7 +48,10 @@ async fn stop_process_group_sends_stopped_body() {
         .mount(&mock_server)
         .await;
 
-    let client = NifiClientBuilder::new(&mock_server.uri()).unwrap().build().unwrap();
+    let client = NifiClientBuilder::new(&mock_server.uri())
+        .unwrap()
+        .build()
+        .unwrap();
     client.set_token("jwt".to_string()).await;
 
     let result = bulk::stop_process_group(&client, "pg-1").await.unwrap();
@@ -53,8 +63,12 @@ async fn enable_all_controller_services_sends_enabled_body() {
     let mock_server = MockServer::start().await;
 
     Mock::given(method("PUT"))
-        .and(path("/nifi-api/flow/process-groups/pg-1/controller-services"))
-        .and(body_partial_json(json!({ "id": "pg-1", "state": "ENABLED" })))
+        .and(path(
+            "/nifi-api/flow/process-groups/pg-1/controller-services",
+        ))
+        .and(body_partial_json(
+            json!({ "id": "pg-1", "state": "ENABLED" }),
+        ))
         .respond_with(ResponseTemplate::new(200).set_body_json(json!({
             "id": "pg-1", "state": "ENABLED"
         })))
@@ -62,10 +76,15 @@ async fn enable_all_controller_services_sends_enabled_body() {
         .mount(&mock_server)
         .await;
 
-    let client = NifiClientBuilder::new(&mock_server.uri()).unwrap().build().unwrap();
+    let client = NifiClientBuilder::new(&mock_server.uri())
+        .unwrap()
+        .build()
+        .unwrap();
     client.set_token("jwt".to_string()).await;
 
-    let result = bulk::enable_all_controller_services(&client, "pg-1").await.unwrap();
+    let result = bulk::enable_all_controller_services(&client, "pg-1")
+        .await
+        .unwrap();
     assert_eq!(result.id.as_deref(), Some("pg-1"));
 }
 
@@ -74,8 +93,12 @@ async fn disable_all_controller_services_sends_disabled_body() {
     let mock_server = MockServer::start().await;
 
     Mock::given(method("PUT"))
-        .and(path("/nifi-api/flow/process-groups/pg-1/controller-services"))
-        .and(body_partial_json(json!({ "id": "pg-1", "state": "DISABLED" })))
+        .and(path(
+            "/nifi-api/flow/process-groups/pg-1/controller-services",
+        ))
+        .and(body_partial_json(
+            json!({ "id": "pg-1", "state": "DISABLED" }),
+        ))
         .respond_with(ResponseTemplate::new(200).set_body_json(json!({
             "id": "pg-1", "state": "DISABLED"
         })))
@@ -83,9 +106,14 @@ async fn disable_all_controller_services_sends_disabled_body() {
         .mount(&mock_server)
         .await;
 
-    let client = NifiClientBuilder::new(&mock_server.uri()).unwrap().build().unwrap();
+    let client = NifiClientBuilder::new(&mock_server.uri())
+        .unwrap()
+        .build()
+        .unwrap();
     client.set_token("jwt".to_string()).await;
 
-    let result = bulk::disable_all_controller_services(&client, "pg-1").await.unwrap();
+    let result = bulk::disable_all_controller_services(&client, "pg-1")
+        .await
+        .unwrap();
     assert_eq!(result.id.as_deref(), Some("pg-1"));
 }

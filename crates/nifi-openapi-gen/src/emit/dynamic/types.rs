@@ -68,8 +68,12 @@ pub(super) fn merge_inline_enum(
                  A DTO-field override table does not exist yet — rename one of the \
                  conflicting field declarations in the OpenAPI spec, or open an \
                  issue to add field-level naming_overrides support.",
-                existing.parent_dto, existing.parent_field, existing.owner_tag,
-                parent_dto, parent_field, owner_tag,
+                existing.parent_dto,
+                existing.parent_field,
+                existing.owner_tag,
+                parent_dto,
+                parent_field,
+                owner_tag,
             );
         }
         Some(existing) => {
@@ -220,12 +224,8 @@ fn emit_dynamic_type_file(
         "//! Generated dynamic types for the `{tag_label}` API tag.\n"
     ));
     out.push_str("//!\n");
-    out.push_str(
-        "//! Includes union DTOs, entity wrappers, standalone string enums, and\n",
-    );
-    out.push_str(
-        "//! field-level enum helpers (`Option<String>` + typed companion).\n",
-    );
+    out.push_str("//! Includes union DTOs, entity wrappers, standalone string enums, and\n");
+    out.push_str("//! field-level enum helpers (`Option<String>` + typed companion).\n");
     out.push_str("#![allow(dead_code, private_interfaces, unused_imports)]\n\n");
     out.push_str("use serde::{Deserialize, Serialize};\n");
     out.push_str("use super::*;\n\n");
@@ -258,7 +258,10 @@ fn emit_dynamic_type_file(
     // format_source because prettyplease strips line comments, so we inject it
     // into the formatted output by searching for the first helper's doc comment.
     if let Some(pos) = first_helper_doc_marker.and_then(|marker| formatted.find(&marker)) {
-        formatted.insert_str(pos, "// ── Inline-enum helpers ──────────────────────────────────────────────\n\n");
+        formatted.insert_str(
+            pos,
+            "// ── Inline-enum helpers ──────────────────────────────────────────────\n\n",
+        );
     }
 
     formatted
@@ -275,11 +278,9 @@ pub(super) fn emit_inline_enum_helper(out: &mut String, name: &str, helper: &Inl
         helper.parent_dto, helper.parent_field
     ));
     out.push_str("///\n");
+    out.push_str("/// Helper enum — the parent field is `Option<String>` so unknown\n");
     out.push_str(
-        "/// Helper enum — the parent field is `Option<String>` so unknown\n",
-    );
-    out.push_str(
-        "/// server values still deserialize. Convert via [`as_str`] / [`from_wire`].\n",
+        "/// server values still deserialize. Convert via [`Self::as_str`] / [`Self::from_wire`].\n",
     );
     if let Some(doc) = &helper.field_doc {
         out.push_str("///\n");
@@ -311,9 +312,7 @@ pub(super) fn emit_inline_enum_helper(out: &mut String, name: &str, helper: &Inl
     }
     out.push_str("        }\n");
     out.push_str("    }\n\n");
-    out.push_str(
-        "    /// Parse a wire string into the typed variant. Returns `None` for\n",
-    );
+    out.push_str("    /// Parse a wire string into the typed variant. Returns `None` for\n");
     out.push_str("    /// values not present in any supported NiFi version's spec.\n");
     out.push_str("    pub fn from_wire(s: &str) -> Option<Self> {\n");
     out.push_str("        match s {\n");
@@ -331,9 +330,7 @@ pub(super) fn emit_inline_enum_helper(out: &mut String, name: &str, helper: &Inl
 
     // Display impl
     out.push_str(&format!("impl std::fmt::Display for {name} {{\n"));
-    out.push_str(
-        "    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {\n",
-    );
+    out.push_str("    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {\n");
     out.push_str("        f.write_str(self.as_str())\n");
     out.push_str("    }\n");
     out.push_str("}\n\n");
@@ -495,11 +492,8 @@ fn merge_all_types(
                         else {
                             continue;
                         };
-                        let helper_name = format!(
-                            "{}{}",
-                            td.name,
-                            crate::util::pascal_case(&field.rust_name)
-                        );
+                        let helper_name =
+                            format!("{}{}", td.name, crate::util::pascal_case(&field.rust_name));
                         let owner_tag = match type_to_tags.get(&td.name) {
                             Some(tags) if tags.len() == 1 => {
                                 Some(tags.iter().next().unwrap().clone())
@@ -581,11 +575,11 @@ fn wrap_in_option(ty: &FieldType, rust_str: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::collections::HashMap;
     use crate::canonical::canonicalize;
     use crate::parser::{
         ApiSpec, Endpoint, Field, FieldType, HttpMethod, TagGroup, TypeDef, TypeKind,
     };
+    use std::collections::HashMap;
 
     fn make_spec(types: Vec<TypeDef>) -> ApiSpec {
         ApiSpec {
@@ -976,8 +970,7 @@ mod tests {
         };
         let spec = make_spec(vec![td]);
         let type_to_tags = HashMap::new();
-        let (_merged, inline_enums) =
-            merge_all_types(&[("2.8.0", &spec)], &type_to_tags);
+        let (_merged, inline_enums) = merge_all_types(&[("2.8.0", &spec)], &type_to_tags);
         let helper = inline_enums
             .get("ScheduleComponentsEntityState")
             .expect("helper not collected");
@@ -1064,14 +1057,18 @@ mod tests {
 
         let (_merged, inline_enums) = merge_all_types(&[("2.8.0", &spec)], &type_to_tags);
 
-        let dto_state = inline_enums.get("DtoState").expect("DtoState helper missing");
+        let dto_state = inline_enums
+            .get("DtoState")
+            .expect("DtoState helper missing");
         assert_eq!(
             dto_state.owner_tag.as_deref(),
             Some("flow"),
             "single-tag-referenced parent should set owner_tag = Some(tag)"
         );
 
-        let shared_kind = inline_enums.get("SharedKind").expect("SharedKind helper missing");
+        let shared_kind = inline_enums
+            .get("SharedKind")
+            .expect("SharedKind helper missing");
         assert_eq!(
             shared_kind.owner_tag, None,
             "multi-tag-referenced parent should set owner_tag = None"
@@ -1158,13 +1155,9 @@ mod tests {
         assert!(out.contains("\"RUNNING\" => Some(Self::Running)"));
         assert!(out.contains("_ => None,"));
         // Display
-        assert!(out.contains(
-            "impl std::fmt::Display for ScheduleComponentsEntityState"
-        ));
+        assert!(out.contains("impl std::fmt::Display for ScheduleComponentsEntityState"));
         // From<T> for String
-        assert!(out.contains(
-            "impl From<ScheduleComponentsEntityState> for String"
-        ));
+        assert!(out.contains("impl From<ScheduleComponentsEntityState> for String"));
         // No serde derives — wire-detached
         assert!(
             !out.contains("Deserialize") && !out.contains("Serialize"),
@@ -1273,7 +1266,10 @@ mod tests {
         let dto = TypeDef {
             name: "AboutDto".to_string(),
             kind: TypeKind::Dto,
-            fields: vec![make_field("version", FieldType::Opt(Box::new(FieldType::Str)))],
+            fields: vec![make_field(
+                "version",
+                FieldType::Opt(Box::new(FieldType::Str)),
+            )],
             doc: None,
         };
         let flow_tag = make_tag("flow", vec!["AboutDto"]);
@@ -1313,7 +1309,12 @@ mod tests {
         };
         let spec = make_spec(vec![dto]);
         let files = emit_types_from_specs(&[("2.8.0", &spec)]);
-        let common = files.iter().find(|(n, _)| n == "common.rs").unwrap().1.as_str();
+        let common = files
+            .iter()
+            .find(|(n, _)| n == "common.rs")
+            .unwrap()
+            .1
+            .as_str();
         assert!(
             common.contains("// ── Inline-enum helpers"),
             "banner missing; got:\n{common}"
@@ -1326,12 +1327,20 @@ mod tests {
         let dto = TypeDef {
             name: "DtoNoHelper".to_string(),
             kind: TypeKind::Dto,
-            fields: vec![make_field("version", FieldType::Opt(Box::new(FieldType::Str)))],
+            fields: vec![make_field(
+                "version",
+                FieldType::Opt(Box::new(FieldType::Str)),
+            )],
             doc: None,
         };
         let spec = make_spec(vec![dto]);
         let files = emit_types_from_specs(&[("2.8.0", &spec)]);
-        let common = files.iter().find(|(n, _)| n == "common.rs").unwrap().1.as_str();
+        let common = files
+            .iter()
+            .find(|(n, _)| n == "common.rs")
+            .unwrap()
+            .1
+            .as_str();
         assert!(
             !common.contains("// ── Inline-enum helpers"),
             "banner should not appear when there are no helpers"
