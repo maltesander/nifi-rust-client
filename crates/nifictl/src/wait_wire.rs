@@ -21,6 +21,46 @@ pub fn parse_wait_timeout(raw: &str) -> Result<Duration, CliError> {
     })
 }
 
+/// Human-readable description of a wait plan, used by `--dry-run + --wait`.
+pub fn describe_wait_plan(plan: &WaitPlan, timeout: Duration) -> String {
+    let t = fmt_timeout(timeout);
+    match plan {
+        WaitPlan::ProcessorState { processor_id, target } => {
+            let state = match target {
+                ProcessorTargetState::Running => "RUNNING",
+                ProcessorTargetState::Stopped => "STOPPED",
+                ProcessorTargetState::Disabled => "DISABLED",
+            };
+            format!("wait for processor '{processor_id}' state={state} (timeout={t})")
+        }
+        WaitPlan::ControllerServiceState { service_id, target } => {
+            let state = match target {
+                ControllerServiceTargetState::Enabled => "ENABLED",
+                ControllerServiceTargetState::Disabled => "DISABLED",
+            };
+            format!(
+                "wait for controller service '{service_id}' state={state} (timeout={t})"
+            )
+        }
+        WaitPlan::ParameterContextUpdate { context_id } => format!(
+            "wait for parameter-context '{context_id}' update to complete (timeout={t})"
+        ),
+        WaitPlan::ProvenanceQuery => {
+            format!("wait for provenance query to complete (timeout={t})")
+        }
+    }
+}
+
+/// Format a `Duration` as a display string: whole seconds when possible
+/// (`30s`), millisecond precision otherwise (`1.500s`).
+fn fmt_timeout(timeout: Duration) -> String {
+    if timeout.subsec_millis() == 0 {
+        format!("{}s", timeout.as_secs())
+    } else {
+        format!("{:.3}s", timeout.as_secs_f64())
+    }
+}
+
 /// A post-dispatch wait plan, produced by peeking at a generated resource
 /// before `dispatch_generated` takes ownership.
 pub enum WaitPlan {
@@ -250,6 +290,69 @@ mod tests {
             CliError::User(msg) => assert!(msg.contains("invalid --wait-timeout")),
             other => panic!("expected User error, got {other:?}"),
         }
+    }
+
+    // --- describe_wait_plan ---
+
+    #[test]
+    fn describe_wait_plan_processor() {
+        let plan = WaitPlan::ProcessorState {
+            processor_id: "proc-1".to_string(),
+            target: ProcessorTargetState::Running,
+        };
+        let s = super::describe_wait_plan(&plan, Duration::from_secs(30));
+        assert_eq!(
+            s,
+            "wait for processor 'proc-1' state=RUNNING (timeout=30s)"
+        );
+    }
+
+    #[test]
+    fn describe_wait_plan_controller_service() {
+        let plan = WaitPlan::ControllerServiceState {
+            service_id: "svc-9".to_string(),
+            target: ControllerServiceTargetState::Enabled,
+        };
+        let s = super::describe_wait_plan(&plan, Duration::from_secs(45));
+        assert_eq!(
+            s,
+            "wait for controller service 'svc-9' state=ENABLED (timeout=45s)"
+        );
+    }
+
+    #[test]
+    fn describe_wait_plan_parameter_context_update() {
+        let plan = WaitPlan::ParameterContextUpdate {
+            context_id: "ctx-1".to_string(),
+        };
+        let s = super::describe_wait_plan(&plan, Duration::from_secs(60));
+        assert_eq!(
+            s,
+            "wait for parameter-context 'ctx-1' update to complete (timeout=60s)"
+        );
+    }
+
+    #[test]
+    fn describe_wait_plan_provenance_query() {
+        let plan = WaitPlan::ProvenanceQuery;
+        let s = super::describe_wait_plan(&plan, Duration::from_secs(15));
+        assert_eq!(
+            s,
+            "wait for provenance query to complete (timeout=15s)"
+        );
+    }
+
+    #[test]
+    fn describe_wait_plan_subsecond_timeout_shows_fraction() {
+        let plan = WaitPlan::ProcessorState {
+            processor_id: "proc-x".to_string(),
+            target: ProcessorTargetState::Running,
+        };
+        let s = super::describe_wait_plan(&plan, Duration::from_millis(1500));
+        assert_eq!(
+            s,
+            "wait for processor 'proc-x' state=RUNNING (timeout=1.500s)"
+        );
     }
 
     // --- processor_target_from_body ---

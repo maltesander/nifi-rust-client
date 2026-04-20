@@ -322,9 +322,8 @@ async fn run(cli: Cli) -> Result<(), error::CliError> {
 
             if let Some(plan) = wait_plan {
                 if ctx.dry_run {
-                    // Task 7 upgrades this to a wait_wire::describe_wait_plan() call.
-                    eprintln!("  + would then wait (see --help)");
-                    let _ = plan;
+                    let timeout = wait_wire::parse_wait_timeout(&cli.wait_timeout)?;
+                    eprintln!("  + would then {}", wait_wire::describe_wait_plan(&plan, timeout));
                 } else {
                     let dispatch_value = match &result {
                         output::CliOutput::Single(v) => v.clone(),
