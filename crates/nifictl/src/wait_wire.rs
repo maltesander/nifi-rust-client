@@ -349,7 +349,13 @@ mod tests {
         let err = super::controller_service_target_from_body(
             Some(r#"{"state":"DISABLING"}"#), None,
         ).unwrap_err();
-        assert!(matches!(err, crate::error::CliError::User(_)));
+        match err {
+            crate::error::CliError::User(msg) => {
+                assert!(msg.contains("DISABLING"), "message should mention DISABLING: {msg}");
+                assert!(msg.contains("transient"), "message should mention transient: {msg}");
+            }
+            other => panic!("expected User, got {other:?}"),
+        }
     }
 
     #[test]
