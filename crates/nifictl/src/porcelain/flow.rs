@@ -12,6 +12,7 @@ use std::path::Path;
 use nifi_rust_client::dynamic::DynamicClient;
 use serde_json::Value;
 
+use crate::confirm;
 use crate::dry_run::{self, CliCtx};
 use crate::error::CliError;
 use crate::output::CliOutput;
@@ -119,6 +120,88 @@ pub async fn import(
             data,
         )
         .await?;
+
+    let value = serde_json::to_value(&entity)
+        .map_err(|e| CliError::User(format!("serialization error: {e}")))?;
+    Ok(CliOutput::Single(value))
+}
+
+/// Short prompt description, shared with main.rs's pre-client confirm gate.
+// Wired in by Task 10 (FlowCommand → main.rs); suppress dead_code until then.
+#[allow(dead_code)]
+pub fn replace_what(pg_id: &str) -> String {
+    format!("replace contents of process group '{pg_id}'")
+}
+
+/// Overwrite a process group's contents with a snapshot file.
+///
+/// **Destructive.** Runs `confirm::confirm_destructive` internally as
+/// defense-in-depth; production callers in `main.rs` run the confirm
+/// gate before touching the client so the internal call is a no-op when
+/// `ctx.yes = true`. `stop_first` handled in Task 9.
+// Wired in by Task 10 (FlowCommand → main.rs); suppress dead_code until then.
+#[allow(dead_code)]
+pub async fn replace(
+    client: &DynamicClient,
+    pg_id: &str,
+    file: &Path,
+    stop_first: bool,
+    ctx: &CliCtx<'_>,
+) -> Result<CliOutput, CliError> {
+    if ctx.dry_run {
+        let _ = stop_first; // wired in Task 9
+        // 1. GET the target to show where the revision comes from.
+        let get_path = format!("/process-groups/{pg_id}");
+        let get_url = dry_run::format_url(ctx.base_url, &get_path, &[]);
+        dry_run::print(&mut std::io::stdout(), "GET", &get_url, None).map_err(CliError::Io)?;
+        // 2. PUT the replace — summarise rather than inlining the snapshot.
+        let put_path = format!("/process-groups/{pg_id}/flow-contents");
+        let put_url = dry_run::format_url(ctx.base_url, &put_path, &[]);
+        let body = serde_json::json!({
+            "disconnectedNodeAcknowledged": false,
+            "processGroupRevision": { "version": "<fetched from GET above>" },
+            "versionedFlowSnapshot": format!("<contents of {}>", file.display()),
+        });
+        dry_run::print(&mut std::io::stdout(), "PUT", &put_url, Some(&body))
+            .map_err(CliError::Io)?;
+        return Ok(CliOutput::Empty);
+    }
+
+    confirm::confirm_destructive(&replace_what(pg_id), ctx)?;
+
+    // 1. Fetch current revision.
+    let pg = client.processgroups().get_process_group(pg_id).await?;
+    let revision = pg.revision.clone().ok_or_else(|| {
+        CliError::User(format!(
+            "process group '{pg_id}' response had no revision field"
+        ))
+    })?;
+
+    // 2. Read and parse the snapshot.
+    let content = std::fs::read_to_string(file)
+        .map_err(|e| CliError::User(format!("failed to read {}: {e}", file.display())))?;
+    let snapshot: nifi_rust_client::dynamic::types::RegisteredFlowSnapshot =
+        serde_json::from_str(&content).map_err(|e| {
+            CliError::User(format!("invalid snapshot JSON in {}: {e}", file.display()))
+        })?;
+
+    // 3. Assemble the ProcessGroupImportEntity and PUT.
+    // `ProcessGroupImportEntity` is `#[non_exhaustive]`; construct via
+    // `Default::default()` + field assignments.
+    let mut body = nifi_rust_client::dynamic::types::ProcessGroupImportEntity::default();
+    body.disconnected_node_acknowledged = Some(false);
+    body.process_group_revision = Some(revision);
+    body.versioned_flow_snapshot = Some(snapshot);
+    let entity = client
+        .processgroups()
+        .replace_process_group(pg_id, &body)
+        .await?;
+
+    if stop_first {
+        return Err(CliError::User(
+            "internal: stop_first not yet implemented; see Task 9".to_string(),
+        ));
+    }
 
     let value = serde_json::to_value(&entity)
         .map_err(|e| CliError::User(format!("serialization error: {e}")))?;
@@ -283,5 +366,111 @@ mod tests {
             .await
             .unwrap();
         assert!(matches!(result, CliOutput::Empty));
+    }
+
+    #[tokio::test]
+    async fn replace_gets_revision_then_puts_import_entity() {
+        let mock = MockServer::start().await;
+        // GET current revision
+        Mock::given(method("GET"))
+            .and(path("/nifi-api/process-groups/pg-1"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+                "id": "pg-1",
+                "revision": { "version": 42 },
+                "component": {}
+            })))
+            .expect(1)
+            .mount(&mock)
+            .await;
+        // PUT replace
+        Mock::given(method("PUT"))
+            .and(path("/nifi-api/process-groups/pg-1/flow-contents"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+                "processGroupRevision": { "version": 43 },
+                "versionedFlowSnapshot": { "flowContents": {} }
+            })))
+            .expect(1)
+            .mount(&mock)
+            .await;
+
+        let dir = tempfile::tempdir().unwrap();
+        let snap = dir.path().join("snap.json");
+        std::fs::write(&snap, r#"{"flowContents": {"name": "x"}}"#).unwrap();
+
+        let client = dynamic_client_on(&mock, "2.9.0").await;
+        let base_url = mock.uri();
+        let ctx = CliCtx {
+            dry_run: false,
+            yes: true,
+            base_url: &base_url,
+        };
+        let result = replace(&client, "pg-1", &snap, false, &ctx).await.unwrap();
+        match result {
+            CliOutput::Single(v) => {
+                assert_eq!(
+                    v.pointer("/processGroupRevision/version")
+                        .and_then(|v| v.as_i64()),
+                    Some(43)
+                );
+            }
+            _ => panic!("expected Single"),
+        }
+    }
+
+    #[tokio::test]
+    async fn replace_dry_run_prints_get_and_put_without_hitting_server() {
+        let mock = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/nifi-api/process-groups/pg-2"))
+            .respond_with(ResponseTemplate::new(500))
+            .expect(0)
+            .mount(&mock)
+            .await;
+        Mock::given(method("PUT"))
+            .and(path("/nifi-api/process-groups/pg-2/flow-contents"))
+            .respond_with(ResponseTemplate::new(500))
+            .expect(0)
+            .mount(&mock)
+            .await;
+
+        let dir = tempfile::tempdir().unwrap();
+        let snap = dir.path().join("snap.json");
+        std::fs::write(&snap, r#"{}"#).unwrap();
+
+        let client = dynamic_client_on(&mock, "2.9.0").await;
+        let base_url = mock.uri();
+        let ctx = CliCtx {
+            dry_run: true,
+            yes: true,
+            base_url: &base_url,
+        };
+        let result = replace(&client, "pg-2", &snap, false, &ctx).await.unwrap();
+        assert!(matches!(result, CliOutput::Empty));
+    }
+
+    #[tokio::test]
+    async fn replace_without_yes_in_non_tty_refuses() {
+        let mock = MockServer::start().await;
+        // No mocks registered — any HTTP call would fail.
+        let dir = tempfile::tempdir().unwrap();
+        let snap = dir.path().join("snap.json");
+        std::fs::write(&snap, r#"{}"#).unwrap();
+
+        let client = dynamic_client_on(&mock, "2.9.0").await;
+        let base_url = mock.uri();
+        let ctx = CliCtx {
+            dry_run: false,
+            yes: false,
+            base_url: &base_url,
+        };
+        let err = replace(&client, "pg-3", &snap, false, &ctx)
+            .await
+            .unwrap_err();
+        match err {
+            CliError::User(msg) => {
+                assert!(msg.contains("--yes"), "msg should mention --yes: {msg}")
+            }
+            other => panic!("expected User, got {other:?}"),
+        }
     }
 }
