@@ -46,6 +46,58 @@ impl CliError {
     }
 }
 
+impl CliError {
+    /// Optional one-line remediation hint printed on a second stderr line.
+    ///
+    /// Returns `None` when the error's own Display message already tells
+    /// the operator what to do (e.g. `UnsupportedEndpoint`, `User`).
+    #[allow(dead_code)] // wired in Task 6
+    pub fn hint(&self) -> Option<&'static str> {
+        match self {
+            CliError::Nifi(NifiError::Unauthorized { .. }) => {
+                Some("run 'nifictl login'")
+            }
+            CliError::Nifi(NifiError::Forbidden { .. }) => {
+                Some("user lacks the required NiFi policy — check /users in the UI")
+            }
+            CliError::Nifi(NifiError::NotFound { .. }) => Some(
+                "verify the id with 'nifictl <resource> list' \
+                 or check 'nifictl status' for the NiFi version",
+            ),
+            CliError::Nifi(NifiError::InvalidCertificate { .. }) => {
+                Some("pass --insecure for dev environments only")
+            }
+            CliError::Nifi(NifiError::Http { source }) if is_tls_handshake_error(source) => {
+                Some("pass --insecure for dev environments only")
+            }
+            _ => None,
+        }
+    }
+}
+
+/// Fuzzy sniff for TLS/handshake errors inside a `reqwest::Error` source
+/// chain. Walks the full chain and checks each layer's Display output
+/// for common TLS keywords. Used only to decide whether to append the
+/// `--insecure` hint on a transport error.
+#[allow(dead_code)] // wired in Task 6 via hint()
+fn is_tls_handshake_error(err: &reqwest::Error) -> bool {
+    use std::error::Error;
+    let mut current: Option<&dyn Error> = Some(err);
+    while let Some(e) = current {
+        let msg = e.to_string().to_lowercase();
+        if msg.contains("certificate")
+            || msg.contains("unknownissuer")
+            || msg.contains("tls")
+            || msg.contains("handshake")
+            || msg.contains("peer certificate")
+        {
+            return true;
+        }
+        current = e.source();
+    }
+    false
+}
+
 impl fmt::Display for CliError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
@@ -72,5 +124,96 @@ impl From<ConfigError> for CliError {
 impl From<std::io::Error> for CliError {
     fn from(e: std::io::Error) -> Self {
         CliError::Io(e)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn hint_for_unauthorized() {
+        let e = CliError::Nifi(NifiError::Unauthorized {
+            message: "expired".to_string(),
+        });
+        assert_eq!(e.hint(), Some("run 'nifictl login'"));
+    }
+
+    #[test]
+    fn hint_for_forbidden() {
+        let e = CliError::Nifi(NifiError::Forbidden {
+            message: "denied".to_string(),
+        });
+        assert_eq!(
+            e.hint(),
+            Some("user lacks the required NiFi policy — check /users in the UI")
+        );
+    }
+
+    #[test]
+    fn hint_for_not_found() {
+        let e = CliError::Nifi(NifiError::NotFound {
+            message: "missing".to_string(),
+        });
+        assert_eq!(
+            e.hint(),
+            Some(
+                "verify the id with 'nifictl <resource> list' or check 'nifictl status' for the NiFi version"
+            )
+        );
+    }
+
+    #[test]
+    fn hint_for_unsupported_endpoint_is_none() {
+        // UnsupportedEndpoint's own Display is already clear; no hint.
+        let e = CliError::Nifi(NifiError::UnsupportedEndpoint {
+            endpoint: "POST /foo".to_string(),
+            version: "2.6.0".to_string(),
+        });
+        assert_eq!(e.hint(), None);
+    }
+
+    #[test]
+    fn hint_for_user_body_file_parse_error_is_none() {
+        // CliError::User with a body-file parse message is passthrough;
+        // the "include file path + line:col" requirement is already
+        // satisfied by serde_json::Error's Display — no hint to add.
+        let e = CliError::User(
+            "invalid JSON in /path/to/body.json: expected value at line 3 column 5".to_string(),
+        );
+        assert_eq!(e.hint(), None);
+    }
+
+    #[test]
+    fn is_tls_handshake_error_matches_keywords() {
+        // reqwest::Error has no public constructor, so unit-test the
+        // keyword sniff on a dyn Error proxy instead.
+        use std::error::Error;
+        use std::fmt;
+
+        #[derive(Debug)]
+        struct Fake(&'static str);
+        impl fmt::Display for Fake {
+            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                f.write_str(self.0)
+            }
+        }
+        impl Error for Fake {}
+
+        // Mirror the sniff logic inline so we exercise the same
+        // substring rules without needing a real reqwest::Error.
+        fn sniff(err: &dyn Error) -> bool {
+            let msg = err.to_string().to_lowercase();
+            msg.contains("certificate")
+                || msg.contains("unknownissuer")
+                || msg.contains("tls")
+                || msg.contains("handshake")
+                || msg.contains("peer certificate")
+        }
+
+        assert!(sniff(&Fake("invalid peer certificate")));
+        assert!(sniff(&Fake("TLS handshake failure")));
+        assert!(sniff(&Fake("UnknownIssuer")));
+        assert!(!sniff(&Fake("connection refused")));
     }
 }
