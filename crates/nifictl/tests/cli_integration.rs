@@ -192,6 +192,55 @@ fn dry_run_on_ops_stop_pg_does_not_connect() {
     );
 }
 
+/// Regression pin for Task 4 — `--help` must list every generated
+/// resource at the top level, regardless of flatten vs explicit
+/// enumeration.
+#[test]
+fn help_lists_all_generated_resources() {
+    let output = nifictl()
+        .arg("--help")
+        .output()
+        .expect("failed to run nifictl");
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    for resource in [
+        "access",
+        "authentication",
+        "connections",
+        "connectors",
+        "controller",
+        "controller_services",
+        "counters",
+        "datatransfer",
+        "flow",
+        "flowfilequeues",
+        "funnels",
+        "inputports",
+        "labels",
+        "outputports",
+        "parametercontexts",
+        "parameterproviders",
+        "policies",
+        "processgroups",
+        "processors",
+        "provenance",
+        "provenanceevents",
+        "remoteprocessgroups",
+        "reportingtasks",
+        "resources",
+        "sitetosite",
+        "snippets",
+        "system",
+        "tenants",
+        "versions",
+    ] {
+        assert!(
+            stdout.contains(resource),
+            "top-level help missing '{resource}': {stdout}"
+        );
+    }
+}
+
 /// `ops stop-pg` without `--yes` in non-TTY must refuse with a clear error.
 #[test]
 fn ops_stop_pg_without_yes_in_non_tty_refuses() {
