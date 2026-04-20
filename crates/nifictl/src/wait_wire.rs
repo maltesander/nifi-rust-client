@@ -38,6 +38,9 @@ pub enum WaitPlan {
     /// `context_id` is known pre-dispatch; `request_id` is extracted from the
     /// response body at `/request/requestId`.
     ParameterContextUpdate { context_id: String },
+    /// Wait on the async query started by `submit-provenance-request`.
+    /// `query_id` is extracted from the response body at `/provenance/id`.
+    ProvenanceQuery,
 }
 
 /// Inspect a `processors update-run-status` body and extract the target state.
@@ -106,6 +109,7 @@ pub fn peek_wait_plan(
 ) -> Result<Option<WaitPlan>, CliError> {
     use crate::generated::{
         ControllerServicesCommand, GeneratedResource, ParameterContextsCommand, ProcessorsCommand,
+        ProvenanceCommand,
     };
 
     if let GeneratedResource::Processors { command } = resource
@@ -138,6 +142,12 @@ pub fn peek_wait_plan(
         return Ok(Some(WaitPlan::ParameterContextUpdate {
             context_id: args.context_id.clone(),
         }));
+    }
+
+    if let GeneratedResource::Provenance { command } = resource
+        && matches!(&command, ProvenanceCommand::SubmitProvenanceRequest(_))
+    {
+        return Ok(Some(WaitPlan::ProvenanceQuery));
     }
 
     Ok(None)
@@ -180,6 +190,19 @@ pub async fn run_wait_plan(
                 client, &context_id, &request_id, config,
             ).await?;
             let value = serde_json::to_value(&entity)
+                .map_err(|e| CliError::User(format!("serialization error: {e}")))?;
+            Ok(CliOutput::Single(value))
+        }
+        WaitPlan::ProvenanceQuery => {
+            let query_id = dispatch_result
+                .pointer("/provenance/id")
+                .and_then(Value::as_str)
+                .ok_or_else(|| CliError::User(
+                    "submit response missing /provenance/id — cannot wait".to_string(),
+                ))?
+                .to_string();
+            let dto = wait::provenance_query_dynamic(client, &query_id, config).await?;
+            let value = serde_json::to_value(&dto)
                 .map_err(|e| CliError::User(format!("serialization error: {e}")))?;
             Ok(CliOutput::Single(value))
         }
@@ -527,6 +550,86 @@ mod tests {
         match result {
             Err(crate::error::CliError::User(msg)) => {
                 assert!(msg.contains("/request/requestId"), "message should reference the missing pointer: {msg}");
+            }
+            Err(other) => panic!("expected User, got {other:?}"),
+            Ok(_) => panic!("expected Err, got Ok"),
+        }
+    }
+
+    #[tokio::test]
+    async fn run_wait_plan_provenance_query_polls_and_cleans_up() {
+        use nifi_rust_client::NifiClientBuilder;
+        use nifi_rust_client::dynamic::DynamicClient;
+        use serde_json::json;
+        use std::time::Duration;
+        use wiremock::matchers::{method, path};
+        use wiremock::{Mock, MockServer, ResponseTemplate};
+
+        let mock = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/nifi-api/flow/about"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+                "about": { "title": "NiFi", "version": "2.9.0" }
+            })))
+            .mount(&mock)
+            .await;
+        Mock::given(method("GET"))
+            .and(path("/nifi-api/provenance/q-1"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+                "provenance": { "id": "q-1", "finished": true }
+            })))
+            .mount(&mock)
+            .await;
+        Mock::given(method("DELETE"))
+            .and(path("/nifi-api/provenance/q-1"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({})))
+            .expect(1)
+            .mount(&mock)
+            .await;
+
+        let client = NifiClientBuilder::new(&mock.uri()).unwrap().build().unwrap();
+        let dyn_client = DynamicClient::from_client(client).await.unwrap();
+
+        let plan = super::WaitPlan::ProvenanceQuery;
+        let dispatch = json!({ "provenance": { "id": "q-1" } });
+        let out = super::run_wait_plan(plan, dispatch, &dyn_client, Duration::from_secs(2))
+            .await
+            .unwrap();
+        match out {
+            crate::output::CliOutput::Single(v) => {
+                assert_eq!(v.get("finished").and_then(|b| b.as_bool()), Some(true));
+            }
+            _ => panic!("expected Single"),
+        }
+    }
+
+    #[tokio::test]
+    async fn run_wait_plan_provenance_missing_id_errors() {
+        use nifi_rust_client::NifiClientBuilder;
+        use nifi_rust_client::dynamic::DynamicClient;
+        use serde_json::json;
+        use std::time::Duration;
+        use wiremock::matchers::{method, path};
+        use wiremock::{Mock, MockServer, ResponseTemplate};
+
+        let mock = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/nifi-api/flow/about"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+                "about": { "title": "NiFi", "version": "2.9.0" }
+            })))
+            .mount(&mock)
+            .await;
+
+        let client = NifiClientBuilder::new(&mock.uri()).unwrap().build().unwrap();
+        let dyn_client = DynamicClient::from_client(client).await.unwrap();
+
+        let plan = super::WaitPlan::ProvenanceQuery;
+        let dispatch = json!({});
+        let result = super::run_wait_plan(plan, dispatch, &dyn_client, Duration::from_secs(2)).await;
+        match result {
+            Err(crate::error::CliError::User(msg)) => {
+                assert!(msg.contains("/provenance/id"), "message should reference the missing pointer: {msg}");
             }
             Err(other) => panic!("expected User, got {other:?}"),
             Ok(_) => panic!("expected Err, got Ok"),
