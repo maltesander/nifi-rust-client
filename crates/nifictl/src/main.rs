@@ -210,8 +210,7 @@ async fn run(cli: Cli) -> Result<(), error::CliError> {
         Commands::Ops(cmd) => {
             if cli.wait {
                 return Err(error::CliError::User(
-                    "--wait is not yet supported on 'ops' subcommands \
-                     (requires a process-group wait helper not yet in the client)"
+                    "--wait on 'ops' subcommands is not yet supported; omit --wait to proceed without polling"
                         .to_string(),
                 ));
             }
@@ -228,12 +227,12 @@ async fn run(cli: Cli) -> Result<(), error::CliError> {
             let client = params.build_client().await?;
             let result = match cmd {
                 OpsCommand::StartPg { pg_id } => porcelain::ops::start_pg(&client, &pg_id).await?,
-                OpsCommand::StopPg { pg_id } => porcelain::ops::stop_pg(&client, &pg_id).await?,
-                OpsCommand::EnableServices { pg_id } => {
-                    porcelain::ops::enable_services(&client, &pg_id).await?
-                }
-                OpsCommand::DisableServices { pg_id } => {
-                    porcelain::ops::disable_services(&client, &pg_id).await?
+                OpsCommand::StopPg { .. }
+                | OpsCommand::EnableServices { .. }
+                | OpsCommand::DisableServices { .. } => {
+                    return Err(error::CliError::User(
+                        "this ops subcommand is not yet implemented; only 'start-pg' is available in this build".to_string(),
+                    ));
                 }
             };
             let fmt = output::OutputFormat::parse(&cli.output).map_err(error::CliError::User)?;

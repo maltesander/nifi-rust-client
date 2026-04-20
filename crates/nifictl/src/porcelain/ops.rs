@@ -19,30 +19,6 @@ pub async fn start_pg(client: &DynamicClient, pg_id: &str) -> Result<CliOutput, 
     Ok(CliOutput::Single(value))
 }
 
-/// Stop (unschedule) all processors in a process group. Replaced in Task 4.
-#[allow(dead_code)]
-pub async fn stop_pg(_client: &DynamicClient, _pg_id: &str) -> Result<CliOutput, CliError> {
-    todo!("Task 4")
-}
-
-/// Enable all authorized controller services in a process group. Replaced in Task 5.
-#[allow(dead_code)]
-pub async fn enable_services(
-    _client: &DynamicClient,
-    _pg_id: &str,
-) -> Result<CliOutput, CliError> {
-    todo!("Task 5")
-}
-
-/// Disable all controller services in a process group. Replaced in Task 6.
-#[allow(dead_code)]
-pub async fn disable_services(
-    _client: &DynamicClient,
-    _pg_id: &str,
-) -> Result<CliOutput, CliError> {
-    todo!("Task 6")
-}
-
 #[cfg(test)]
 mod tests {
     use nifi_rust_client::NifiClientBuilder;
