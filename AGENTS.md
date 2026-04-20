@@ -403,6 +403,83 @@ asserts it matches the committed file. `cargo run -p nifi-openapi-gen --
 follow-up artifact; the source of truth is the parser + overrides. Fix
 the root cause (add an override or accept the rename) and regenerate.
 
+### Inline-JSON responses (emitter correctness)
+
+When an OpenAPI endpoint declares `application/json` with an inline schema
+(no `$ref`) — e.g. `GET /process-groups/{id}/download` whose response
+schema is `{"type": "string"}` even though NiFi actually sends a JSON
+object — the generator emits the method as
+`-> Result<serde_json::Value, NifiError>` using the matching helper
+(`get` / `get_with_query` / `post` / `put`), NOT the `post_void_no_body`
+fallback that older versions used. The dynamic emitter's
+`dynamic_response_type_for` and `emit_dispatch_dynamic` in
+`crates/nifi-openapi-gen/src/emit/method.rs` dispatch on `response_kind`,
+not on whether a `response_type` string happens to be populated. Static
+mode has always been correct via `common.rs::response_return_type`.
+
+If you add or change an emitter site that decides between a real helper
+and `post_void_no_body`, mirror this pattern — check `response_kind`, not
+`response_type`. The unit tests in `mod emit_fix_inline_json_tests` at
+the end of `emit/method.rs` pin the shape of the fix.
+
+### Multipart request-body schema coverage
+
+When a `multipart/form-data` request schema declares `properties` beyond
+the `file` part, the parser (`parser.rs`) populates
+`Endpoint::multipart_fields: Vec<MultipartField>` sorted alphabetically
+by wire name (deterministic regeneration; serde_json's default `Map` is
+not order-preserving workspace-wide). Each field becomes a typed
+function parameter (`&str`, `bool`, or `f64`, wrapped in `Option<T>` for
+non-required fields) in both the static and dynamic emitters, pushed
+into a `fields: Vec<(&str, String)>` at call time, and the dispatch
+routes through `NifiClient::post_multipart_with_fields` instead of the
+older `post_multipart` helper. Empty `multipart_fields` keeps the old
+`post_multipart` dispatch — future file-only multipart endpoints still
+work without parser changes.
+
+CLI-layer exposure of multipart endpoints is intentionally skipped by
+`emit/cli/commands.rs::is_skipped_body_kind` — hand-written porcelain
+(e.g. `porcelain::flow::import`) consumes the library method directly.
+
+### nifictl `Commands` enum — manual resource enumeration
+
+Historically `Commands` in `crates/nifictl/src/main.rs` flattened
+`generated::GeneratedResource` to expose every generated tag as a
+top-level subcommand via `#[command(flatten)] Resource(Box<...>)`.
+Phase 3 changed this: porcelain `nifictl flow export|import|replace`
+shares the top-level `flow` name with the generator's `Flow` tag, and
+clap rejects duplicate variant names under a flatten. `Commands` now
+lists every generated resource explicitly (~29 variants), with `Flow`
+substituted by a custom `FlowCommand` wrapper:
+
+```rust
+enum FlowCommand {
+    Export(FlowExportArgs),
+    Import(FlowImportArgs),
+    Replace(FlowReplaceArgs),
+    #[command(flatten)]
+    Generated(generated::FlowCommand),  // falls through to dispatch_resource
+}
+```
+
+The shared `dispatch_resource` helper in `main.rs` holds the generated
+command dispatch body; each per-resource arm calls it with the
+reconstructed `generated::GeneratedResource::<Variant>`. Adding a new
+porcelain verb on a different tag follows the same pattern.
+
+When the code generator adds a new tag, the `Commands` list AND the
+matching `dispatch_resource` arm must both grow by one — the coupling is
+manual; the test `help_lists_all_generated_resources` asserts every
+resource name appears in `nifictl --help` so drift is caught in CI.
+
+Also note: the global `--output` flag (which selects output format:
+json/yaml/table) has `global = true` and propagates into every
+subcommand. Per-subcommand flags named `--output` collide at clap
+parse-time. If porcelain needs a local `--output <file>`-style flag,
+rename it (e.g. `--output-file` as `flow export` does) and give the
+`clap::Arg` a distinct `id = "..."` so clap's internal registry does
+not double-register the `output` id.
+
 ## Build & Test
 
 ### Commands

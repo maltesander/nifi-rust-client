@@ -171,6 +171,46 @@ client-side process-group wait helper is needed first). These commands
 return immediately after the server acknowledges the state-change
 request.
 
+### Flow portability
+
+Round-trip a process group's flow definition between NiFi instances.
+
+| Command | Effect |
+|---------|--------|
+| `nifictl flow export <pg-id> [--output-file <file>] [--include-referenced-services]` | `GET /process-groups/{id}/download` — dumps the `RegisteredFlowSnapshot` JSON. Writes to stdout if `--output-file` is omitted. |
+| `nifictl flow import <parent-pg-id> <file> [--name <name>]` | `POST /process-groups/{id}/process-groups/upload` — creates a new child process group under `<parent-pg-id>` from a snapshot file. Non-destructive; no prompt. |
+| `nifictl flow replace <pg-id> <file> [--stop-first] [--dry-run] [-y]` | `PUT /process-groups/{id}/flow-contents` — overwrites `<pg-id>`'s contents. Destructive — prompts unless `--yes`; refuses in non-TTY without `--yes`. |
+
+The `--output-file` (not `--output`) spelling avoids colliding with the
+global `--output` flag that selects output format (json/yaml/table).
+
+**`--stop-first` semantics.** NiFi rejects `flow-contents` replacement
+when components are running. `--stop-first` stops the PG, replaces, and
+restarts. If the restart fails after a successful replace, the CLI exits
+non-zero with `error: flow replaced, but restart failed: …` — the
+replace is **not** rolled back.
+
+**Parameter contexts.** Flow snapshots reference parameter contexts by
+name. Import or replace into an environment where those contexts do not
+exist surfaces the NiFi server error verbatim. Create the contexts first
+with `nifictl parametercontexts …`.
+
+#### Environment promotion recipe
+
+```bash
+# 1. Export from the source environment
+nifictl --context dev flow export "$PG_ID" --output-file flow.json
+
+# 2a. Apply to the target as a new child PG under a parent
+nifictl --context prod flow import "$TARGET_PARENT_ID" flow.json --name imported
+
+# 2b. …or in-place on an existing PG, handling running components
+nifictl --context prod flow replace "$TARGET_PG_ID" flow.json --stop-first --yes
+```
+
+Semantic flow diff is not yet available — a later release will ship
+`nifictl flow diff`.
+
 ## Dry-run and confirmations
 
 ### `--dry-run`
@@ -202,6 +242,7 @@ Some commands prompt before acting:
 | Any `<resource> delete-*` generated command | `About to delete <Resource> resource 'id=...'. Continue? [y/N]:` |
 | `ops stop-pg <pg-id>` | `About to stop all processors in process group '<pg-id>'. Continue? [y/N]:` |
 | `ops disable-services <pg-id>` | `About to disable all controller services in process group '<pg-id>'. Continue? [y/N]:` |
+| `flow replace <pg-id> <file>` | `About to replace contents of process group '<pg-id>'. Continue? [y/N]:` |
 
 Non-destructive updates (e.g. `update-run-status RUNNING`, parameter
 updates, `ops start-pg`, `ops enable-services`, config edits) never prompt.
