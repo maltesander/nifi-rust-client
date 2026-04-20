@@ -12,7 +12,12 @@ use crate::error::CliError;
 /// Resolved authentication credentials, ready to hand to the NiFi client.
 #[derive(Debug)]
 pub enum ResolvedAuth {
-    Password { username: String, password: String },
+    /// Password auth. `password` is `None` when no password source was
+    /// available at resolve time — `build_client` prompts on TTY.
+    Password {
+        username: String,
+        password: Option<String>,
+    },
     Token(String),
     Mtls { identity_path: String },
 }
@@ -64,10 +69,12 @@ impl ResolvedParams {
         // Auth: flag token > flag username+password > context auth
         let auth = if let Some(t) = token {
             ResolvedAuth::Token(t)
-        } else if let (Some(u), Some(p)) = (username, password) {
+        } else if let Some(u) = username {
+            // Password may be `None` (no --password, NIFI_PASSWORD unset) —
+            // build_client will prompt on TTY or error off-TTY.
             ResolvedAuth::Password {
                 username: u,
-                password: p,
+                password,
             }
         } else if let Some(ctx) = context {
             resolve_auth_from_context(ctx)?
@@ -127,7 +134,11 @@ impl ResolvedParams {
 
         match &self.auth {
             ResolvedAuth::Password { username, password } => {
-                client.login(username, password).await?;
+                let pw = match password {
+                    Some(p) => p.clone(),
+                    None => crate::prompt::prompt_password(username, &self.url)?,
+                };
+                client.login(username, &pw).await?;
             }
             ResolvedAuth::Token(token) => {
                 client.set_token(token.clone()).await;
@@ -167,19 +178,21 @@ pub fn resolve_auth_from_context(ctx: &Context) -> Result<ResolvedAuth, CliError
             password_env,
         } => {
             let resolved_password = if let Some(p) = password {
-                p.clone()
+                Some(p.clone())
             } else if let Some(env_var) = password_env {
-                std::env::var(env_var).map_err(|_| {
+                // `password_env` is an explicit pointer at an env var —
+                // if the env var is missing, surface that specific error
+                // rather than silently falling through to a prompt.
+                Some(std::env::var(env_var).map_err(|_| {
                     CliError::User(format!(
                         "env var '{env_var}' (password_env for context '{}') is not set",
                         ctx.name
                     ))
-                })?
+                })?)
             } else {
-                return Err(CliError::User(format!(
-                    "context '{}' has password auth but neither 'password' nor 'password_env' is set",
-                    ctx.name
-                )));
+                // No password, no password_env — defer to build_client
+                // which prompts on TTY or refuses off-TTY.
+                None
             };
             Ok(ResolvedAuth::Password {
                 username: username.clone(),

@@ -4,8 +4,10 @@ mod config;
 mod confirm;
 mod dry_run;
 mod error;
+mod jwt;
 mod output;
 mod porcelain;
+mod prompt;
 mod table;
 mod wait_wire;
 
@@ -398,6 +400,9 @@ async fn main() -> ExitCode {
         Ok(()) => ExitCode::SUCCESS,
         Err(e) => {
             eprintln!("error: {e}");
+            if let Some(hint) = e.hint() {
+                eprintln!("hint: {hint}");
+            }
             e.exit_code()
         }
     }

@@ -385,6 +385,87 @@ fn dry_run_on_flow_replace_stop_first_prints_all_four_requests() {
     );
 }
 
+/// `login` with a password-auth context and no password source, in a
+/// non-TTY process, must refuse with a clear error — not hang on a
+/// hidden prompt.
+#[test]
+fn login_password_auth_non_tty_no_password_refuses() {
+    let dir = tempfile::tempdir().unwrap();
+    let config_path = dir.path().join("config.toml");
+    std::fs::write(
+        &config_path,
+        r#"
+current_context = "dev"
+
+[[contexts]]
+name = "dev"
+url = "http://localhost:1"
+
+[contexts.auth]
+type = "password"
+username = "admin"
+"#,
+    )
+    .unwrap();
+
+    let output = nifictl()
+        .args(["--config", &config_path.to_string_lossy(), "login"])
+        // Unset NIFI_PASSWORD so the clap env fallback doesn't populate --password.
+        .env_remove("NIFI_PASSWORD")
+        .output()
+        .expect("failed to run nifictl");
+
+    assert!(!output.status.success(), "expected non-zero exit");
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(
+        stderr.contains("no password available and stdin is not a TTY"),
+        "stderr should mention non-TTY: {stderr}"
+    );
+    assert!(
+        stderr.contains("set NIFI_PASSWORD or pass --password"),
+        "stderr should include hint: {stderr}"
+    );
+}
+
+/// The existing context-with-password-env error message still fires
+/// when the env var is explicitly referenced but missing — the
+/// interactive-prompt code path only engages when NO password source
+/// is configured at all.
+#[test]
+fn login_with_missing_password_env_still_errors_cleanly() {
+    let dir = tempfile::tempdir().unwrap();
+    let config_path = dir.path().join("config.toml");
+    std::fs::write(
+        &config_path,
+        r#"
+current_context = "dev"
+
+[[contexts]]
+name = "dev"
+url = "http://localhost:1"
+
+[contexts.auth]
+type = "password"
+username = "admin"
+password_env = "DEFINITELY_NOT_SET_PW"
+"#,
+    )
+    .unwrap();
+
+    let output = nifictl()
+        .args(["--config", &config_path.to_string_lossy(), "login"])
+        .env_remove("DEFINITELY_NOT_SET_PW")
+        .output()
+        .expect("failed to run nifictl");
+
+    assert!(!output.status.success());
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(
+        stderr.contains("DEFINITELY_NOT_SET_PW"),
+        "stderr should name the missing env var: {stderr}"
+    );
+}
+
 /// `flow --help` should list the three porcelain verbs alongside the
 /// generated flow subcommands.
 #[test]
@@ -401,4 +482,77 @@ fn flow_help_lists_porcelain_and_generated() {
             "flow --help missing '{expected}': {stdout}"
         );
     }
+}
+
+/// 401 from the server must render the two-line error+hint rendering:
+/// `error: ...\nhint: run 'nifictl login'`.
+#[tokio::test]
+async fn hint_fires_on_401() {
+    use wiremock::matchers::{method, path};
+    use wiremock::{Mock, MockServer, ResponseTemplate};
+
+    let mock = MockServer::start().await;
+    // /flow/about is the version-detect probe — answer with 401 so the
+    // token-auth status flow surfaces NifiError::Unauthorized, which
+    // maps to the login-hint.
+    Mock::given(method("GET"))
+        .and(path("/nifi-api/flow/about"))
+        .respond_with(ResponseTemplate::new(401).set_body_string("unauthenticated"))
+        .mount(&mock)
+        .await;
+
+    // status uses an existing token (we provide --token). build_client's
+    // token path calls detect_version() which hits GET /flow/about.
+    let output = nifictl()
+        .args([
+            "--url",
+            &mock.uri(),
+            "--token",
+            "dummy",
+            "status",
+        ])
+        .output()
+        .expect("failed to run nifictl");
+
+    assert!(!output.status.success(), "expected non-zero exit");
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(
+        stderr.contains("error: "),
+        "stderr should start with 'error: ': {stderr}"
+    );
+    assert!(
+        stderr.contains("hint: run 'nifictl login'"),
+        "stderr should include the login hint: {stderr}"
+    );
+}
+
+/// A TLS handshake failure (https URL to a plain-HTTP wiremock) must
+/// render the `--insecure` hint.
+#[tokio::test]
+async fn tls_error_includes_insecure_hint() {
+    use wiremock::MockServer;
+
+    let mock = MockServer::start().await;
+    // wiremock listens on plain HTTP. Connecting with https:// makes
+    // reqwest/rustls fail the handshake.
+    let plain_uri = mock.uri();
+    let https_uri = plain_uri.replacen("http://", "https://", 1);
+
+    let output = nifictl()
+        .args([
+            "--url",
+            &https_uri,
+            "--token",
+            "dummy",
+            "status",
+        ])
+        .output()
+        .expect("failed to run nifictl");
+
+    assert!(!output.status.success());
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(
+        stderr.contains("hint: pass --insecure for dev environments only"),
+        "stderr should include the --insecure hint: {stderr}"
+    );
 }

@@ -98,6 +98,37 @@ nifictl config delete-context old # remove context
 
 CLI flags > environment variables > active context > defaults.
 
+### Interactive login
+
+If the active context uses password auth and no password is available from
+`--password`, `NIFI_PASSWORD`, `password` (in the config file), or
+`password_env`, `nifictl` prompts on the TTY:
+
+```
+$ nifictl login
+Password for admin@https://nifi:8443:
+Logged in to https://nifi:8443 (token cached)
+NiFi version: 2.9.0
+```
+
+Off-TTY (CI, scripts, piped stdin), `nifictl` refuses with:
+
+```
+error: no password available and stdin is not a TTY
+hint: set NIFI_PASSWORD or pass --password
+```
+
+### JWT expiry warning
+
+After a successful `login`, if the returned token expires within 24 hours
+`nifictl` prints a stderr warning:
+
+```
+warning: token expires in 5h 42m
+```
+
+No auto-refresh — re-run `nifictl login` to obtain a fresh token.
+
 ## Output formats
 
 | Flag | Format | Default when |
@@ -310,3 +341,21 @@ a single version:
 ```bash
 cargo install --path crates/nifictl --no-default-features --features nifi-2-9-0
 ```
+
+## Troubleshooting
+
+`nifictl` appends a remediation hint to operator-facing errors where the
+fix is non-obvious. Hint table:
+
+| Condition | Hint |
+|-----------|------|
+| HTTP 401 | `run 'nifictl login'` |
+| HTTP 403 | `user lacks the required NiFi policy — check /users in the UI` |
+| HTTP 404 | `verify the id with 'nifictl <resource> list' or check 'nifictl status' for the NiFi version` |
+| TLS handshake / certificate error | `pass --insecure for dev environments only` |
+
+Body-file parse errors include the file path and `line:col` (from
+`serde_json`'s error output) — no extra hint needed.
+
+`UnsupportedEndpoint` errors include the endpoint path and detected NiFi
+version in the message itself, so they carry no hint.
