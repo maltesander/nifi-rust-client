@@ -159,11 +159,16 @@ fn processors_help_shows_subcommands() {
 fn dry_run_on_ops_stop_pg_does_not_connect() {
     let output = nifictl()
         .args([
-            "--url", "http://localhost:1",
-            "--username", "admin",
-            "--password", "x",
+            "--url",
+            "http://localhost:1",
+            "--username",
+            "admin",
+            "--password",
+            "x",
             "--dry-run",
-            "ops", "stop-pg", "pg-1",
+            "ops",
+            "stop-pg",
+            "pg-1",
         ])
         .output()
         .expect("failed to run nifictl");
@@ -192,10 +197,15 @@ fn dry_run_on_ops_stop_pg_does_not_connect() {
 fn ops_stop_pg_without_yes_in_non_tty_refuses() {
     let output = nifictl()
         .args([
-            "--url", "http://localhost:1",
-            "--username", "admin",
-            "--password", "x",
-            "ops", "stop-pg", "pg-1",
+            "--url",
+            "http://localhost:1",
+            "--username",
+            "admin",
+            "--password",
+            "x",
+            "ops",
+            "stop-pg",
+            "pg-1",
         ])
         .output()
         .expect("failed to run nifictl");

@@ -247,10 +247,7 @@ async fn run(cli: Cli) -> Result<(), error::CliError> {
             if !ctx.dry_run {
                 match &cmd {
                     OpsCommand::StopPg { pg_id } => {
-                        confirm::confirm_destructive(
-                            &porcelain::ops::stop_pg_what(pg_id),
-                            &ctx,
-                        )?;
+                        confirm::confirm_destructive(&porcelain::ops::stop_pg_what(pg_id), &ctx)?;
                     }
                     OpsCommand::DisableServices { pg_id } => {
                         confirm::confirm_destructive(
@@ -344,13 +341,15 @@ async fn run(cli: Cli) -> Result<(), error::CliError> {
                 None
             };
 
-            let mut result =
-                generated::dispatch_generated(*resource, &client, &ctx).await?;
+            let mut result = generated::dispatch_generated(*resource, &client, &ctx).await?;
 
             if let Some(plan) = wait_plan {
                 if ctx.dry_run {
                     let timeout = wait_wire::parse_wait_timeout(&cli.wait_timeout)?;
-                    eprintln!("  + would then {}", wait_wire::describe_wait_plan(&plan, timeout));
+                    eprintln!(
+                        "  + would then {}",
+                        wait_wire::describe_wait_plan(&plan, timeout)
+                    );
                 } else {
                     let dispatch_value = match &result {
                         output::CliOutput::Single(v) => v.clone(),

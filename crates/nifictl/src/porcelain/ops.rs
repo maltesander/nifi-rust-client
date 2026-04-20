@@ -36,8 +36,7 @@ pub async fn start_pg(
         let path = format!("/flow/process-groups/{pg_id}");
         let url = dry_run::format_url(ctx.base_url, &path, &[]);
         let body = json!({ "id": pg_id, "state": "RUNNING" });
-        dry_run::print(&mut std::io::stdout(), "PUT", &url, Some(&body))
-            .map_err(CliError::Io)?;
+        dry_run::print(&mut std::io::stdout(), "PUT", &url, Some(&body)).map_err(CliError::Io)?;
         return Ok(CliOutput::Empty);
     }
     let entity = bulk::start_process_group_dynamic(client, pg_id).await?;
@@ -64,8 +63,7 @@ pub async fn stop_pg(
         let path = format!("/flow/process-groups/{pg_id}");
         let url = dry_run::format_url(ctx.base_url, &path, &[]);
         let body = json!({ "id": pg_id, "state": "STOPPED" });
-        dry_run::print(&mut std::io::stdout(), "PUT", &url, Some(&body))
-            .map_err(CliError::Io)?;
+        dry_run::print(&mut std::io::stdout(), "PUT", &url, Some(&body)).map_err(CliError::Io)?;
         return Ok(CliOutput::Empty);
     }
     confirm::confirm_destructive(&stop_pg_what(pg_id), ctx)?;
@@ -85,8 +83,7 @@ pub async fn enable_services(
         let path = format!("/flow/process-groups/{pg_id}/controller-services");
         let url = dry_run::format_url(ctx.base_url, &path, &[]);
         let body = json!({ "id": pg_id, "state": "ENABLED" });
-        dry_run::print(&mut std::io::stdout(), "PUT", &url, Some(&body))
-            .map_err(CliError::Io)?;
+        dry_run::print(&mut std::io::stdout(), "PUT", &url, Some(&body)).map_err(CliError::Io)?;
         return Ok(CliOutput::Empty);
     }
     let entity = bulk::enable_all_controller_services_dynamic(client, pg_id).await?;
@@ -113,8 +110,7 @@ pub async fn disable_services(
         let path = format!("/flow/process-groups/{pg_id}/controller-services");
         let url = dry_run::format_url(ctx.base_url, &path, &[]);
         let body = json!({ "id": pg_id, "state": "DISABLED" });
-        dry_run::print(&mut std::io::stdout(), "PUT", &url, Some(&body))
-            .map_err(CliError::Io)?;
+        dry_run::print(&mut std::io::stdout(), "PUT", &url, Some(&body)).map_err(CliError::Io)?;
         return Ok(CliOutput::Empty);
     }
     confirm::confirm_destructive(&disable_services_what(pg_id), ctx)?;
@@ -140,7 +136,10 @@ mod tests {
             })))
             .mount(mock)
             .await;
-        let client = NifiClientBuilder::new(&mock.uri()).unwrap().build().unwrap();
+        let client = NifiClientBuilder::new(&mock.uri())
+            .unwrap()
+            .build()
+            .unwrap();
         DynamicClient::from_client(client).await.unwrap()
     }
 
@@ -149,7 +148,9 @@ mod tests {
         let mock = MockServer::start().await;
         Mock::given(method("PUT"))
             .and(path("/nifi-api/flow/process-groups/pg-1"))
-            .and(body_partial_json(json!({ "id": "pg-1", "state": "RUNNING" })))
+            .and(body_partial_json(
+                json!({ "id": "pg-1", "state": "RUNNING" }),
+            ))
             .respond_with(ResponseTemplate::new(200).set_body_json(json!({
                 "id": "pg-1", "state": "RUNNING"
             })))
@@ -159,7 +160,11 @@ mod tests {
 
         let client = dynamic_client_on(&mock, "2.9.0").await;
         let base_url = mock.uri();
-        let ctx = crate::dry_run::CliCtx { dry_run: false, yes: true, base_url: &base_url };
+        let ctx = crate::dry_run::CliCtx {
+            dry_run: false,
+            yes: true,
+            base_url: &base_url,
+        };
         let result = super::start_pg(&client, "pg-1", &ctx).await.unwrap();
         match result {
             crate::output::CliOutput::Single(v) => {
@@ -174,7 +179,9 @@ mod tests {
         let mock = MockServer::start().await;
         Mock::given(method("PUT"))
             .and(path("/nifi-api/flow/process-groups/pg-2"))
-            .and(body_partial_json(json!({ "id": "pg-2", "state": "STOPPED" })))
+            .and(body_partial_json(
+                json!({ "id": "pg-2", "state": "STOPPED" }),
+            ))
             .respond_with(ResponseTemplate::new(200).set_body_json(json!({
                 "id": "pg-2", "state": "STOPPED"
             })))
@@ -184,7 +191,11 @@ mod tests {
 
         let client = dynamic_client_on(&mock, "2.9.0").await;
         let base_url = mock.uri();
-        let ctx = crate::dry_run::CliCtx { dry_run: false, yes: true, base_url: &base_url };
+        let ctx = crate::dry_run::CliCtx {
+            dry_run: false,
+            yes: true,
+            base_url: &base_url,
+        };
         let result = super::stop_pg(&client, "pg-2", &ctx).await.unwrap();
         match result {
             crate::output::CliOutput::Single(v) => {
@@ -198,8 +209,12 @@ mod tests {
     async fn enable_services_sends_enabled_body() {
         let mock = MockServer::start().await;
         Mock::given(method("PUT"))
-            .and(path("/nifi-api/flow/process-groups/pg-3/controller-services"))
-            .and(body_partial_json(json!({ "id": "pg-3", "state": "ENABLED" })))
+            .and(path(
+                "/nifi-api/flow/process-groups/pg-3/controller-services",
+            ))
+            .and(body_partial_json(
+                json!({ "id": "pg-3", "state": "ENABLED" }),
+            ))
             .respond_with(ResponseTemplate::new(200).set_body_json(json!({
                 "id": "pg-3", "state": "ENABLED"
             })))
@@ -209,7 +224,11 @@ mod tests {
 
         let client = dynamic_client_on(&mock, "2.9.0").await;
         let base_url = mock.uri();
-        let ctx = crate::dry_run::CliCtx { dry_run: false, yes: true, base_url: &base_url };
+        let ctx = crate::dry_run::CliCtx {
+            dry_run: false,
+            yes: true,
+            base_url: &base_url,
+        };
         let result = super::enable_services(&client, "pg-3", &ctx).await.unwrap();
         match result {
             crate::output::CliOutput::Single(v) => {
@@ -223,8 +242,12 @@ mod tests {
     async fn disable_services_sends_disabled_body() {
         let mock = MockServer::start().await;
         Mock::given(method("PUT"))
-            .and(path("/nifi-api/flow/process-groups/pg-4/controller-services"))
-            .and(body_partial_json(json!({ "id": "pg-4", "state": "DISABLED" })))
+            .and(path(
+                "/nifi-api/flow/process-groups/pg-4/controller-services",
+            ))
+            .and(body_partial_json(
+                json!({ "id": "pg-4", "state": "DISABLED" }),
+            ))
             .respond_with(ResponseTemplate::new(200).set_body_json(json!({
                 "id": "pg-4", "state": "DISABLED"
             })))
@@ -234,8 +257,14 @@ mod tests {
 
         let client = dynamic_client_on(&mock, "2.9.0").await;
         let base_url = mock.uri();
-        let ctx = crate::dry_run::CliCtx { dry_run: false, yes: true, base_url: &base_url };
-        let result = super::disable_services(&client, "pg-4", &ctx).await.unwrap();
+        let ctx = crate::dry_run::CliCtx {
+            dry_run: false,
+            yes: true,
+            base_url: &base_url,
+        };
+        let result = super::disable_services(&client, "pg-4", &ctx)
+            .await
+            .unwrap();
         match result {
             crate::output::CliOutput::Single(v) => {
                 assert_eq!(v.get("state").and_then(|s| s.as_str()), Some("DISABLED"));
@@ -256,7 +285,11 @@ mod tests {
 
         let client = dynamic_client_on(&mock, "2.9.0").await;
         let base_url = mock.uri();
-        let ctx = crate::dry_run::CliCtx { dry_run: true, yes: false, base_url: &base_url };
+        let ctx = crate::dry_run::CliCtx {
+            dry_run: true,
+            yes: false,
+            base_url: &base_url,
+        };
 
         let result = super::start_pg(&client, "pg-1", &ctx).await.unwrap();
         assert!(matches!(result, crate::output::CliOutput::Empty));
@@ -274,13 +307,20 @@ mod tests {
 
         let client = dynamic_client_on(&mock, "2.9.0").await;
         let base_url = mock.uri();
-        let ctx = crate::dry_run::CliCtx { dry_run: false, yes: false, base_url: &base_url };
+        let ctx = crate::dry_run::CliCtx {
+            dry_run: false,
+            yes: false,
+            base_url: &base_url,
+        };
 
         let err = super::stop_pg(&client, "pg-2", &ctx).await.unwrap_err();
         match err {
             crate::error::CliError::User(msg) => {
                 assert!(msg.contains("--yes"), "message should mention --yes: {msg}");
-                assert!(msg.contains("non-interactive"), "should mention non-interactive: {msg}");
+                assert!(
+                    msg.contains("non-interactive"),
+                    "should mention non-interactive: {msg}"
+                );
             }
             other => panic!("expected User, got {other:?}"),
         }
@@ -291,7 +331,9 @@ mod tests {
         let mock = MockServer::start().await;
         Mock::given(method("PUT"))
             .and(path("/nifi-api/flow/process-groups/pg-3"))
-            .and(body_partial_json(json!({ "id": "pg-3", "state": "STOPPED" })))
+            .and(body_partial_json(
+                json!({ "id": "pg-3", "state": "STOPPED" }),
+            ))
             .respond_with(ResponseTemplate::new(200).set_body_json(json!({
                 "id": "pg-3", "state": "STOPPED"
             })))
@@ -301,7 +343,11 @@ mod tests {
 
         let client = dynamic_client_on(&mock, "2.9.0").await;
         let base_url = mock.uri();
-        let ctx = crate::dry_run::CliCtx { dry_run: false, yes: true, base_url: &base_url };
+        let ctx = crate::dry_run::CliCtx {
+            dry_run: false,
+            yes: true,
+            base_url: &base_url,
+        };
 
         super::stop_pg(&client, "pg-3", &ctx).await.unwrap();
     }
@@ -310,7 +356,9 @@ mod tests {
     async fn disable_services_without_yes_in_non_tty_refuses() {
         let mock = MockServer::start().await;
         Mock::given(method("PUT"))
-            .and(path("/nifi-api/flow/process-groups/pg-4/controller-services"))
+            .and(path(
+                "/nifi-api/flow/process-groups/pg-4/controller-services",
+            ))
             .respond_with(ResponseTemplate::new(500))
             .expect(0)
             .mount(&mock)
@@ -318,9 +366,15 @@ mod tests {
 
         let client = dynamic_client_on(&mock, "2.9.0").await;
         let base_url = mock.uri();
-        let ctx = crate::dry_run::CliCtx { dry_run: false, yes: false, base_url: &base_url };
+        let ctx = crate::dry_run::CliCtx {
+            dry_run: false,
+            yes: false,
+            base_url: &base_url,
+        };
 
-        let err = super::disable_services(&client, "pg-4", &ctx).await.unwrap_err();
+        let err = super::disable_services(&client, "pg-4", &ctx)
+            .await
+            .unwrap_err();
         match err {
             crate::error::CliError::User(msg) => {
                 assert!(msg.contains("--yes"));

@@ -7,7 +7,9 @@ use std::path::Path;
 use std::time::Duration;
 
 use nifi_rust_client::dynamic::DynamicClient;
-use nifi_rust_client::wait::{self, ControllerServiceTargetState, ProcessorTargetState, WaitConfig};
+use nifi_rust_client::wait::{
+    self, ControllerServiceTargetState, ProcessorTargetState, WaitConfig,
+};
 use serde_json::Value;
 
 use crate::body;
@@ -16,16 +18,18 @@ use crate::output::CliOutput;
 
 /// Parse a `--wait-timeout` argument like `"30s"`, `"2m"`, `"1500ms"`.
 pub fn parse_wait_timeout(raw: &str) -> Result<Duration, CliError> {
-    humantime::parse_duration(raw).map_err(|e| {
-        CliError::User(format!("invalid --wait-timeout '{raw}': {e}"))
-    })
+    humantime::parse_duration(raw)
+        .map_err(|e| CliError::User(format!("invalid --wait-timeout '{raw}': {e}")))
 }
 
 /// Human-readable description of a wait plan, used by `--dry-run + --wait`.
 pub fn describe_wait_plan(plan: &WaitPlan, timeout: Duration) -> String {
     let t = fmt_timeout(timeout);
     match plan {
-        WaitPlan::ProcessorState { processor_id, target } => {
+        WaitPlan::ProcessorState {
+            processor_id,
+            target,
+        } => {
             let state = match target {
                 ProcessorTargetState::Running => "RUNNING",
                 ProcessorTargetState::Stopped => "STOPPED",
@@ -38,13 +42,11 @@ pub fn describe_wait_plan(plan: &WaitPlan, timeout: Duration) -> String {
                 ControllerServiceTargetState::Enabled => "ENABLED",
                 ControllerServiceTargetState::Disabled => "DISABLED",
             };
-            format!(
-                "wait for controller service '{service_id}' state={state} (timeout={t})"
-            )
+            format!("wait for controller service '{service_id}' state={state} (timeout={t})")
         }
-        WaitPlan::ParameterContextUpdate { context_id } => format!(
-            "wait for parameter-context '{context_id}' update to complete (timeout={t})"
-        ),
+        WaitPlan::ParameterContextUpdate { context_id } => {
+            format!("wait for parameter-context '{context_id}' update to complete (timeout={t})")
+        }
         WaitPlan::ProvenanceQuery => {
             format!("wait for provenance query to complete (timeout={t})")
         }
@@ -157,10 +159,7 @@ pub fn peek_wait_plan(
     {
         return Ok(Some(WaitPlan::ProcessorState {
             processor_id: args.id.clone(),
-            target: processor_target_from_body(
-                args.body.as_deref(),
-                args.body_file.as_deref(),
-            )?,
+            target: processor_target_from_body(args.body.as_deref(), args.body_file.as_deref())?,
         }));
     }
 
@@ -206,14 +205,19 @@ pub async fn run_wait_plan(
         ..WaitConfig::default()
     };
     match plan {
-        WaitPlan::ProcessorState { processor_id, target } => {
-            let entity = wait::processor_state_dynamic(client, &processor_id, target, config).await?;
+        WaitPlan::ProcessorState {
+            processor_id,
+            target,
+        } => {
+            let entity =
+                wait::processor_state_dynamic(client, &processor_id, target, config).await?;
             let value = serde_json::to_value(&entity)
                 .map_err(|e| CliError::User(format!("serialization error: {e}")))?;
             Ok(CliOutput::Single(value))
         }
         WaitPlan::ControllerServiceState { service_id, target } => {
-            let entity = wait::controller_service_state_dynamic(client, &service_id, target, config).await?;
+            let entity =
+                wait::controller_service_state_dynamic(client, &service_id, target, config).await?;
             let value = serde_json::to_value(&entity)
                 .map_err(|e| CliError::User(format!("serialization error: {e}")))?;
             Ok(CliOutput::Single(value))
@@ -222,13 +226,15 @@ pub async fn run_wait_plan(
             let request_id = dispatch_result
                 .pointer("/request/requestId")
                 .and_then(Value::as_str)
-                .ok_or_else(|| CliError::User(
-                    "submit response missing /request/requestId — cannot wait".to_string(),
-                ))?
+                .ok_or_else(|| {
+                    CliError::User(
+                        "submit response missing /request/requestId — cannot wait".to_string(),
+                    )
+                })?
                 .to_string();
-            let entity = wait::parameter_context_update_dynamic(
-                client, &context_id, &request_id, config,
-            ).await?;
+            let entity =
+                wait::parameter_context_update_dynamic(client, &context_id, &request_id, config)
+                    .await?;
             let value = serde_json::to_value(&entity)
                 .map_err(|e| CliError::User(format!("serialization error: {e}")))?;
             Ok(CliOutput::Single(value))
@@ -237,9 +243,11 @@ pub async fn run_wait_plan(
             let query_id = dispatch_result
                 .pointer("/provenance/id")
                 .and_then(Value::as_str)
-                .ok_or_else(|| CliError::User(
-                    "submit response missing /provenance/id — cannot wait".to_string(),
-                ))?
+                .ok_or_else(|| {
+                    CliError::User(
+                        "submit response missing /provenance/id — cannot wait".to_string(),
+                    )
+                })?
                 .to_string();
             let dto = wait::provenance_query_dynamic(client, &query_id, config).await?;
             let value = serde_json::to_value(&dto)
@@ -277,7 +285,10 @@ mod tests {
         match err {
             CliError::User(msg) => {
                 assert!(msg.contains("invalid --wait-timeout"));
-                assert!(msg.contains("'30'"), "message should include the rejected value: {msg}");
+                assert!(
+                    msg.contains("'30'"),
+                    "message should include the rejected value: {msg}"
+                );
             }
             other => panic!("expected User error, got {other:?}"),
         }
@@ -301,10 +312,7 @@ mod tests {
             target: ProcessorTargetState::Running,
         };
         let s = super::describe_wait_plan(&plan, Duration::from_secs(30));
-        assert_eq!(
-            s,
-            "wait for processor 'proc-1' state=RUNNING (timeout=30s)"
-        );
+        assert_eq!(s, "wait for processor 'proc-1' state=RUNNING (timeout=30s)");
     }
 
     #[test]
@@ -336,10 +344,7 @@ mod tests {
     fn describe_wait_plan_provenance_query() {
         let plan = WaitPlan::ProvenanceQuery;
         let s = super::describe_wait_plan(&plan, Duration::from_secs(15));
-        assert_eq!(
-            s,
-            "wait for provenance query to complete (timeout=15s)"
-        );
+        assert_eq!(s, "wait for provenance query to complete (timeout=15s)");
     }
 
     #[test]
@@ -359,37 +364,36 @@ mod tests {
 
     #[test]
     fn processor_target_from_body_parses_running() {
-        let out = super::processor_target_from_body(
-            Some(r#"{"state":"RUNNING"}"#), None,
-        ).unwrap();
+        let out = super::processor_target_from_body(Some(r#"{"state":"RUNNING"}"#), None).unwrap();
         assert_eq!(out, super::ProcessorTargetState::Running);
     }
 
     #[test]
     fn processor_target_from_body_parses_stopped() {
-        let out = super::processor_target_from_body(
-            Some(r#"{"state":"STOPPED"}"#), None,
-        ).unwrap();
+        let out = super::processor_target_from_body(Some(r#"{"state":"STOPPED"}"#), None).unwrap();
         assert_eq!(out, super::ProcessorTargetState::Stopped);
     }
 
     #[test]
     fn processor_target_from_body_parses_disabled() {
-        let out = super::processor_target_from_body(
-            Some(r#"{"state":"DISABLED"}"#), None,
-        ).unwrap();
+        let out = super::processor_target_from_body(Some(r#"{"state":"DISABLED"}"#), None).unwrap();
         assert_eq!(out, super::ProcessorTargetState::Disabled);
     }
 
     #[test]
     fn processor_target_from_body_run_once_is_rejected() {
-        let err = super::processor_target_from_body(
-            Some(r#"{"state":"RUN_ONCE"}"#), None,
-        ).unwrap_err();
+        let err =
+            super::processor_target_from_body(Some(r#"{"state":"RUN_ONCE"}"#), None).unwrap_err();
         match err {
             crate::error::CliError::User(msg) => {
-                assert!(msg.contains("RUN_ONCE"), "message should mention RUN_ONCE: {msg}");
-                assert!(msg.contains("remove --wait"), "message should hint at the fix: {msg}");
+                assert!(
+                    msg.contains("RUN_ONCE"),
+                    "message should mention RUN_ONCE: {msg}"
+                );
+                assert!(
+                    msg.contains("remove --wait"),
+                    "message should hint at the fix: {msg}"
+                );
             }
             other => panic!("expected User, got {other:?}"),
         }
@@ -406,9 +410,8 @@ mod tests {
 
     #[test]
     fn processor_target_from_body_rejects_unknown_state() {
-        let err = super::processor_target_from_body(
-            Some(r#"{"state":"SOMETHING_ELSE"}"#), None,
-        ).unwrap_err();
+        let err = super::processor_target_from_body(Some(r#"{"state":"SOMETHING_ELSE"}"#), None)
+            .unwrap_err();
         match err {
             crate::error::CliError::User(msg) => assert!(msg.contains("SOMETHING_ELSE")),
             other => panic!("expected User, got {other:?}"),
@@ -419,29 +422,32 @@ mod tests {
 
     #[test]
     fn controller_service_target_from_body_parses_enabled() {
-        let out = super::controller_service_target_from_body(
-            Some(r#"{"state":"ENABLED"}"#), None,
-        ).unwrap();
+        let out = super::controller_service_target_from_body(Some(r#"{"state":"ENABLED"}"#), None)
+            .unwrap();
         assert_eq!(out, super::ControllerServiceTargetState::Enabled);
     }
 
     #[test]
     fn controller_service_target_from_body_parses_disabled() {
-        let out = super::controller_service_target_from_body(
-            Some(r#"{"state":"DISABLED"}"#), None,
-        ).unwrap();
+        let out = super::controller_service_target_from_body(Some(r#"{"state":"DISABLED"}"#), None)
+            .unwrap();
         assert_eq!(out, super::ControllerServiceTargetState::Disabled);
     }
 
     #[test]
     fn controller_service_target_from_body_rejects_enabling() {
-        let err = super::controller_service_target_from_body(
-            Some(r#"{"state":"ENABLING"}"#), None,
-        ).unwrap_err();
+        let err = super::controller_service_target_from_body(Some(r#"{"state":"ENABLING"}"#), None)
+            .unwrap_err();
         match err {
             crate::error::CliError::User(msg) => {
-                assert!(msg.contains("ENABLING"), "message should mention ENABLING: {msg}");
-                assert!(msg.contains("transient"), "message should mention transient: {msg}");
+                assert!(
+                    msg.contains("ENABLING"),
+                    "message should mention ENABLING: {msg}"
+                );
+                assert!(
+                    msg.contains("transient"),
+                    "message should mention transient: {msg}"
+                );
             }
             other => panic!("expected User, got {other:?}"),
         }
@@ -449,13 +455,19 @@ mod tests {
 
     #[test]
     fn controller_service_target_from_body_rejects_disabling() {
-        let err = super::controller_service_target_from_body(
-            Some(r#"{"state":"DISABLING"}"#), None,
-        ).unwrap_err();
+        let err =
+            super::controller_service_target_from_body(Some(r#"{"state":"DISABLING"}"#), None)
+                .unwrap_err();
         match err {
             crate::error::CliError::User(msg) => {
-                assert!(msg.contains("DISABLING"), "message should mention DISABLING: {msg}");
-                assert!(msg.contains("transient"), "message should mention transient: {msg}");
+                assert!(
+                    msg.contains("DISABLING"),
+                    "message should mention DISABLING: {msg}"
+                );
+                assert!(
+                    msg.contains("transient"),
+                    "message should mention transient: {msg}"
+                );
             }
             other => panic!("expected User, got {other:?}"),
         }
@@ -472,9 +484,8 @@ mod tests {
 
     #[test]
     fn controller_service_target_from_body_rejects_unknown_state() {
-        let err = super::controller_service_target_from_body(
-            Some(r#"{"state":"WAT"}"#), None,
-        ).unwrap_err();
+        let err = super::controller_service_target_from_body(Some(r#"{"state":"WAT"}"#), None)
+            .unwrap_err();
         match err {
             crate::error::CliError::User(msg) => assert!(msg.contains("WAT")),
             other => panic!("expected User, got {other:?}"),
@@ -508,7 +519,10 @@ mod tests {
             .mount(&mock)
             .await;
 
-        let client = NifiClientBuilder::new(&mock.uri()).unwrap().build().unwrap();
+        let client = NifiClientBuilder::new(&mock.uri())
+            .unwrap()
+            .build()
+            .unwrap();
         let dyn_client = DynamicClient::from_client(client).await.unwrap();
 
         let plan = super::WaitPlan::ProcessorState {
@@ -554,7 +568,10 @@ mod tests {
             .mount(&mock)
             .await;
 
-        let client = NifiClientBuilder::new(&mock.uri()).unwrap().build().unwrap();
+        let client = NifiClientBuilder::new(&mock.uri())
+            .unwrap()
+            .build()
+            .unwrap();
         let dyn_client = DynamicClient::from_client(client).await.unwrap();
 
         let plan = super::WaitPlan::ControllerServiceState {
@@ -595,20 +612,27 @@ mod tests {
             .mount(&mock)
             .await;
         Mock::given(method("GET"))
-            .and(path("/nifi-api/parameter-contexts/ctx-1/update-requests/req-1"))
+            .and(path(
+                "/nifi-api/parameter-contexts/ctx-1/update-requests/req-1",
+            ))
             .respond_with(ResponseTemplate::new(200).set_body_json(json!({
                 "request": { "requestId": "req-1", "complete": true }
             })))
             .mount(&mock)
             .await;
         Mock::given(method("DELETE"))
-            .and(path("/nifi-api/parameter-contexts/ctx-1/update-requests/req-1"))
+            .and(path(
+                "/nifi-api/parameter-contexts/ctx-1/update-requests/req-1",
+            ))
             .respond_with(ResponseTemplate::new(200).set_body_json(json!({})))
             .expect(1)
             .mount(&mock)
             .await;
 
-        let client = NifiClientBuilder::new(&mock.uri()).unwrap().build().unwrap();
+        let client = NifiClientBuilder::new(&mock.uri())
+            .unwrap()
+            .build()
+            .unwrap();
         let dyn_client = DynamicClient::from_client(client).await.unwrap();
 
         let plan = super::WaitPlan::ParameterContextUpdate {
@@ -647,18 +671,24 @@ mod tests {
             .mount(&mock)
             .await;
 
-        let client = NifiClientBuilder::new(&mock.uri()).unwrap().build().unwrap();
+        let client = NifiClientBuilder::new(&mock.uri())
+            .unwrap()
+            .build()
+            .unwrap();
         let dyn_client = DynamicClient::from_client(client).await.unwrap();
 
         let plan = super::WaitPlan::ParameterContextUpdate {
             context_id: "ctx-1".to_string(),
         };
         let dispatch = json!({});
-        let result = super::run_wait_plan(plan, dispatch, &dyn_client, Duration::from_secs(2))
-            .await;
+        let result =
+            super::run_wait_plan(plan, dispatch, &dyn_client, Duration::from_secs(2)).await;
         match result {
             Err(crate::error::CliError::User(msg)) => {
-                assert!(msg.contains("/request/requestId"), "message should reference the missing pointer: {msg}");
+                assert!(
+                    msg.contains("/request/requestId"),
+                    "message should reference the missing pointer: {msg}"
+                );
             }
             Err(other) => panic!("expected User, got {other:?}"),
             Ok(_) => panic!("expected Err, got Ok"),
@@ -696,7 +726,10 @@ mod tests {
             .mount(&mock)
             .await;
 
-        let client = NifiClientBuilder::new(&mock.uri()).unwrap().build().unwrap();
+        let client = NifiClientBuilder::new(&mock.uri())
+            .unwrap()
+            .build()
+            .unwrap();
         let dyn_client = DynamicClient::from_client(client).await.unwrap();
 
         let plan = super::WaitPlan::ProvenanceQuery;
@@ -730,15 +763,22 @@ mod tests {
             .mount(&mock)
             .await;
 
-        let client = NifiClientBuilder::new(&mock.uri()).unwrap().build().unwrap();
+        let client = NifiClientBuilder::new(&mock.uri())
+            .unwrap()
+            .build()
+            .unwrap();
         let dyn_client = DynamicClient::from_client(client).await.unwrap();
 
         let plan = super::WaitPlan::ProvenanceQuery;
         let dispatch = json!({});
-        let result = super::run_wait_plan(plan, dispatch, &dyn_client, Duration::from_secs(2)).await;
+        let result =
+            super::run_wait_plan(plan, dispatch, &dyn_client, Duration::from_secs(2)).await;
         match result {
             Err(crate::error::CliError::User(msg)) => {
-                assert!(msg.contains("/provenance/id"), "message should reference the missing pointer: {msg}");
+                assert!(
+                    msg.contains("/provenance/id"),
+                    "message should reference the missing pointer: {msg}"
+                );
             }
             Err(other) => panic!("expected User, got {other:?}"),
             Ok(_) => panic!("expected Err, got Ok"),

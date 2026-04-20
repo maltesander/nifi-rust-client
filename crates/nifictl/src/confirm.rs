@@ -50,7 +50,11 @@ mod tests {
 
     #[test]
     fn yes_bypasses_prompt() {
-        let ctx = CliCtx { dry_run: false, yes: true, base_url: "https://x" };
+        let ctx = CliCtx {
+            dry_run: false,
+            yes: true,
+            base_url: "https://x",
+        };
         confirm_destructive("delete the world", &ctx).unwrap();
     }
 

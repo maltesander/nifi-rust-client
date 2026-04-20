@@ -586,9 +586,7 @@ fn emit_confirm_what_expr(tag_name: &str, path_params: &[PathParam]) -> String {
         Some(first) => {
             let field = rust_ident(&first.name);
             let param_name = &first.name;
-            format!(
-                r#"format!("delete {tag_name} resource '{param_name}={{}}'", args.{field})"#
-            )
+            format!(r#"format!("delete {tag_name} resource '{param_name}={{}}'", args.{field})"#)
         }
         None => format!(r#"format!("delete {tag_name} resource")"#),
     }
@@ -792,7 +790,10 @@ mod tests {
             .find("async fn handle_processors_get_processor")
             .expect("get handler missing");
         let rest = &src[get_handler_start..];
-        let next_fn = rest[1..].find("\nasync fn ").map(|i| i + 1).unwrap_or(rest.len());
+        let next_fn = rest[1..]
+            .find("\nasync fn ")
+            .map(|i| i + 1)
+            .unwrap_or(rest.len());
         let handler_body = &rest[..next_fn];
         assert!(
             !handler_body.contains("if ctx.dry_run"),
@@ -842,7 +843,10 @@ mod tests {
             .find("async fn handle_processors_update_processor")
             .expect("PUT handler missing");
         let rest = &src[put_start..];
-        let next_fn = rest[1..].find("\nasync fn ").map(|i| i + 1).unwrap_or(rest.len());
+        let next_fn = rest[1..]
+            .find("\nasync fn ")
+            .map(|i| i + 1)
+            .unwrap_or(rest.len());
         let handler_body = &rest[..next_fn];
         assert!(
             !handler_body.contains("confirm_destructive"),

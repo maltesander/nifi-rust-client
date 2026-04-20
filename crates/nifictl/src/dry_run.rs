@@ -29,13 +29,7 @@ pub fn format_url(base_url: &str, path: &str, query: &[(&str, String)]) -> Strin
         url.push('?');
         let encoded: Vec<String> = query
             .iter()
-            .map(|(k, v)| {
-                format!(
-                    "{}={}",
-                    urlencoding::encode(k),
-                    urlencoding::encode(v)
-                )
-            })
+            .map(|(k, v)| format!("{}={}", urlencoding::encode(k), urlencoding::encode(v)))
             .collect();
         url.push_str(&encoded.join("&"));
     }
@@ -56,8 +50,7 @@ pub fn print(
     writeln!(writer, "  {method} {url}")?;
     if let Some(body) = body {
         writeln!(writer, "  Body:")?;
-        let pretty = serde_json::to_string_pretty(body)
-            .unwrap_or_else(|_| body.to_string());
+        let pretty = serde_json::to_string_pretty(body).unwrap_or_else(|_| body.to_string());
         for line in pretty.lines() {
             writeln!(writer, "  {line}")?;
         }
@@ -73,7 +66,10 @@ mod tests {
     #[test]
     fn format_url_no_query() {
         let url = format_url("https://nifi:8443", "/flow/process-groups/abc-123", &[]);
-        assert_eq!(url, "https://nifi:8443/nifi-api/flow/process-groups/abc-123");
+        assert_eq!(
+            url,
+            "https://nifi:8443/nifi-api/flow/process-groups/abc-123"
+        );
     }
 
     #[test]
@@ -87,10 +83,7 @@ mod tests {
         let url = format_url(
             "https://nifi:8443",
             "/flow/history",
-            &[
-                ("offset", "0".to_string()),
-                ("count", "50".to_string()),
-            ],
+            &[("offset", "0".to_string()), ("count", "50".to_string())],
         );
         assert_eq!(
             url,
@@ -100,11 +93,7 @@ mod tests {
 
     #[test]
     fn format_url_url_encodes_query_values() {
-        let url = format_url(
-            "https://nifi:8443",
-            "/foo",
-            &[("q", "a b&c".to_string())],
-        );
+        let url = format_url("https://nifi:8443", "/foo", &[("q", "a b&c".to_string())]);
         assert_eq!(url, "https://nifi:8443/nifi-api/foo?q=a%20b%26c");
     }
 
