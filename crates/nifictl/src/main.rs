@@ -258,7 +258,25 @@ async fn run(cli: Cli) -> Result<(), error::CliError> {
                 context,
             )?;
             let client = params.build_client().await?;
-            let result = generated::dispatch_generated(*resource, &client).await?;
+
+            // Peek for a wait plan before dispatch consumes the resource.
+            let wait_plan = if cli.wait {
+                wait_wire::peek_wait_plan(&resource)?
+            } else {
+                None
+            };
+
+            let mut result = generated::dispatch_generated(*resource, &client).await?;
+
+            if let Some(plan) = wait_plan {
+                let timeout = wait_wire::parse_wait_timeout(&cli.wait_timeout)?;
+                result = wait_wire::run_wait_plan(plan, &client, timeout).await?;
+            } else if cli.wait {
+                return Err(error::CliError::User(
+                    "--wait is not supported on this command".to_string(),
+                ));
+            }
+
             let fmt = output::OutputFormat::parse(&cli.output).map_err(error::CliError::User)?;
             let resolved = fmt.resolve();
             output::render(&result, &resolved, &[], &mut std::io::stdout())
