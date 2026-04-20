@@ -1,8 +1,7 @@
 #![cfg(feature = "dynamic")]
-//! End-to-end integration tests for the Phase 3 flow portability
-//! endpoints (`export_process_group`, `upload_process_group`,
-//! `replace_process_group`) against a live NiFi instance. Mirrors the
-//! Task 13 manual smoke pass so the happy path is re-runnable from CI.
+//! End-to-end integration tests for the flow portability endpoints
+//! (`export_process_group`, `upload_process_group`, `replace_process_group`)
+//! against a live NiFi instance.
 //!
 //! Each test is `#[ignore]`d — run with `./tests/run.sh` which sets up a
 //! NiFi container and invokes `cargo test -- --ignored`.
@@ -46,11 +45,7 @@ async fn create_temp_pg(
     (id, version)
 }
 
-async fn delete_temp_pg(
-    client: &nifi_rust_client::dynamic::DynamicClient,
-    id: &str,
-    version: i64,
-) {
+async fn delete_temp_pg(client: &nifi_rust_client::dynamic::DynamicClient, id: &str, version: i64) {
     client
         .processgroups()
         .remove_process_group(id, Some(&version.to_string()), None, None)
@@ -128,9 +123,8 @@ async fn flow_import_then_replace_round_trip() {
     let mut body = ProcessGroupImportEntity::default();
     body.disconnected_node_acknowledged = Some(false);
     body.process_group_revision = Some(rev);
-    body.versioned_flow_snapshot = Some(
-        serde_json::from_value(snapshot.clone()).expect("snapshot not deserializable"),
-    );
+    body.versioned_flow_snapshot =
+        Some(serde_json::from_value(snapshot.clone()).expect("snapshot not deserializable"));
     let replaced = client
         .processgroups()
         .replace_process_group(&child_id, &body)
@@ -159,9 +153,8 @@ async fn flow_import_then_replace_round_trip() {
     let mut body2 = ProcessGroupImportEntity::default();
     body2.disconnected_node_acknowledged = Some(false);
     body2.process_group_revision = Some(rev2);
-    body2.versioned_flow_snapshot = Some(
-        serde_json::from_value(snapshot).expect("snapshot not deserializable"),
-    );
+    body2.versioned_flow_snapshot =
+        Some(serde_json::from_value(snapshot).expect("snapshot not deserializable"));
     client
         .processgroups()
         .replace_process_group(&child_id, &body2)
