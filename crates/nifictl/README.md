@@ -117,6 +117,35 @@ nifictl completions zsh > ~/.zfunc/_nifictl
 nifictl completions fish > ~/.config/fish/completions/nifictl.fish
 ```
 
+## Waiting for state transitions (`--wait`)
+
+Some state-changing generated commands have a corresponding poll helper
+in `nifi-rust-client`'s `wait::` module. Passing `--wait` on these
+commands polls the target resource after the initial request and returns
+the final entity when it converges to the requested state.
+
+| Command | Waits for |
+|---------|-----------|
+| `processors update-run-status <id> --wait` | processor state matches the body's `state` (RUNNING, STOPPED, or DISABLED) |
+| `controller_services update-run-status <id> --wait` | service state matches the body's `state` (ENABLED or DISABLED) |
+| `parametercontexts submit-parameter-context-update <context-id> --wait` | update request reports `complete: true` (polls the request id returned by submit; trailing DELETE is best-effort) |
+| `provenance submit-provenance-request --wait` | query reports `finished: true` (polls the query id returned by submit; trailing DELETE is best-effort) |
+
+Default timeout is 30s; override with `--wait-timeout=<duration>`
+(e.g. `--wait-timeout=2m`, `--wait-timeout=500ms`).
+
+Transient target states (`RUN_ONCE` for processors, `ENABLING`/`DISABLING`
+for controller services) are rejected with a clear error — there is no
+steady state for `--wait` to converge on.
+
+Example:
+
+````bash
+nifictl processors update-run-status proc-1 \
+    --body '{"state":"RUNNING"}' \
+    --wait --wait-timeout=60s
+````
+
 ## Porcelain commands
 
 | Command | Description |
@@ -124,6 +153,23 @@ nifictl completions fish > ~/.config/fish/completions/nifictl.fish
 | `nifictl login` | Authenticate and cache token |
 | `nifictl logout` | Clear cached token |
 | `nifictl status` | NiFi version and cluster info |
+
+### Operator bulk commands (`ops`)
+
+Thin wrappers over `bulk::*_dynamic` in `nifi-rust-client`. Each command
+applies an all-or-nothing state transition across a process group.
+
+| Command | NiFi endpoint |
+|---------|---------------|
+| `nifictl ops start-pg <pg-id>` | `PUT /flow/process-groups/{id}` (state: RUNNING) |
+| `nifictl ops stop-pg <pg-id>` | `PUT /flow/process-groups/{id}` (state: STOPPED) |
+| `nifictl ops enable-services <pg-id>` | `PUT /flow/process-groups/{id}/controller-services` (state: ENABLED) |
+| `nifictl ops disable-services <pg-id>` | `PUT /flow/process-groups/{id}/controller-services` (state: DISABLED) |
+
+The `--wait` flag is **not yet supported** on `ops` subcommands (a
+client-side process-group wait helper is needed first). These commands
+return immediately after the server acknowledges the state-change
+request.
 
 ## Generated commands
 

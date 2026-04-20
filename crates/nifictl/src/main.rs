@@ -5,6 +5,7 @@ mod error;
 mod output;
 mod porcelain;
 mod table;
+mod wait_wire;
 
 // Include generated CLI code
 #[allow(dead_code, unused_imports, unused_variables, clippy::all)]
@@ -57,6 +58,14 @@ struct Cli {
     #[arg(short, long, action = clap::ArgAction::Count, global = true)]
     verbose: u8,
 
+    /// Wait for the operation to reach a terminal state (supported commands only)
+    #[arg(long, global = true)]
+    wait: bool,
+
+    /// Timeout for --wait (e.g. "30s", "2m")
+    #[arg(long = "wait-timeout", global = true, default_value = "30s")]
+    wait_timeout: String,
+
     #[command(subcommand)]
     command: Commands,
 }
@@ -73,6 +82,10 @@ enum Commands {
     /// Manage CLI configuration and contexts
     #[command(subcommand)]
     Config(ConfigCommand),
+
+    /// Operator porcelain — bulk state changes on a process group
+    #[command(subcommand)]
+    Ops(OpsCommand),
 
     /// Generate shell completions
     Completions {
@@ -100,6 +113,30 @@ enum ConfigCommand {
     DeleteContext {
         /// Context name to delete
         name: String,
+    },
+}
+
+#[derive(clap::Subcommand)]
+enum OpsCommand {
+    /// Start (schedule) all authorized processors in a process group
+    StartPg {
+        /// The process group id
+        pg_id: String,
+    },
+    /// Stop (unschedule) all processors in a process group
+    StopPg {
+        /// The process group id
+        pg_id: String,
+    },
+    /// Enable all authorized controller services in a process group
+    EnableServices {
+        /// The process group id
+        pg_id: String,
+    },
+    /// Disable all controller services in a process group
+    DisableServices {
+        /// The process group id
+        pg_id: String,
     },
 }
 
@@ -170,6 +207,35 @@ async fn run(cli: Cli) -> Result<(), error::CliError> {
                 .map_err(error::CliError::Io)
         }
         Commands::Config(cmd) => handle_config(cmd, cli.config.as_deref()).await,
+        Commands::Ops(cmd) => {
+            if cli.wait {
+                return Err(error::CliError::User(
+                    "--wait on 'ops' subcommands is not yet supported; omit --wait to proceed without polling"
+                        .to_string(),
+                ));
+            }
+            let cfg = load_config(cli.config.as_deref())?;
+            let context = resolve_context(&cfg, cli.context.as_deref())?;
+            let params = client_factory::ResolvedParams::resolve(
+                cli.url,
+                cli.username,
+                cli.password,
+                cli.token,
+                cli.insecure,
+                context,
+            )?;
+            let client = params.build_client().await?;
+            let result = match cmd {
+                OpsCommand::StartPg { pg_id } => porcelain::ops::start_pg(&client, &pg_id).await?,
+                OpsCommand::StopPg { pg_id } => porcelain::ops::stop_pg(&client, &pg_id).await?,
+                OpsCommand::EnableServices { pg_id } => porcelain::ops::enable_services(&client, &pg_id).await?,
+                OpsCommand::DisableServices { pg_id } => porcelain::ops::disable_services(&client, &pg_id).await?,
+            };
+            let fmt = output::OutputFormat::parse(&cli.output).map_err(error::CliError::User)?;
+            let resolved = fmt.resolve();
+            output::render(&result, &resolved, &[], &mut std::io::stdout())
+                .map_err(error::CliError::Io)
+        }
         Commands::Completions { shell } => {
             use clap::CommandFactory;
             clap_complete::generate(
@@ -192,7 +258,29 @@ async fn run(cli: Cli) -> Result<(), error::CliError> {
                 context,
             )?;
             let client = params.build_client().await?;
-            let result = generated::dispatch_generated(*resource, &client).await?;
+
+            // Peek for a wait plan before dispatch consumes the resource.
+            let wait_plan = if cli.wait {
+                wait_wire::peek_wait_plan(&resource)?
+            } else {
+                None
+            };
+
+            let mut result = generated::dispatch_generated(*resource, &client).await?;
+
+            if let Some(plan) = wait_plan {
+                let dispatch_value = match &result {
+                    output::CliOutput::Single(v) => v.clone(),
+                    _ => serde_json::Value::Null,
+                };
+                let timeout = wait_wire::parse_wait_timeout(&cli.wait_timeout)?;
+                result = wait_wire::run_wait_plan(plan, dispatch_value, &client, timeout).await?;
+            } else if cli.wait {
+                return Err(error::CliError::User(
+                    "--wait is not supported on this command".to_string(),
+                ));
+            }
+
             let fmt = output::OutputFormat::parse(&cli.output).map_err(error::CliError::User)?;
             let resolved = fmt.resolve();
             output::render(&result, &resolved, &[], &mut std::io::stdout())

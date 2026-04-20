@@ -613,6 +613,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "df3b46402a9d5adb4c86a0cf463f42e19994e3ee891101b1841f30a545cb49a9"
 
 [[package]]
+name = "humantime"
+version = "2.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "135b12329e5e3ce057a9f972339ea52bc954fe1e9358ef27f95e89716fbc5424"
+
+[[package]]
 name = "hyper"
 version = "1.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -990,8 +996,8 @@ dependencies = [
 name = "nifi-integration-tests"
 version = "0.0.0"
 dependencies = [
- "nifi-openapi-gen 0.10.1",
- "nifi-rust-client 0.10.1",
+ "nifi-openapi-gen",
+ "nifi-rust-client",
  "tokio",
 ]
 
@@ -1010,20 +1016,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "nifi-openapi-gen"
-version = "0.10.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5861d392a212e1d28efc4200f857410be7e687793be2304d34ef61de35702249"
-dependencies = [
- "prettyplease",
- "semver",
- "serde",
- "serde_json",
- "syn",
- "toml_edit",
-]
-
-[[package]]
 name = "nifi-rust-client"
 version = "0.10.1"
 dependencies = [
@@ -1031,7 +1023,7 @@ dependencies = [
  "bytes",
  "futures-core",
  "futures-util",
- "nifi-openapi-gen 0.10.1",
+ "nifi-openapi-gen",
  "regex",
  "reqwest",
  "semver",
@@ -1048,32 +1040,15 @@ dependencies = [
 ]
 
 [[package]]
-name = "nifi-rust-client"
-version = "0.10.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "38d419b2fbd952048ca772b43ad6d847cc411248f30c58f67b6b15ad008a88d8"
-dependencies = [
- "async-trait",
- "nifi-openapi-gen 0.10.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "reqwest",
- "semver",
- "serde",
- "serde_json",
- "snafu",
- "tokio",
- "tracing",
- "url",
-]
-
-[[package]]
 name = "nifictl"
 version = "0.1.1"
 dependencies = [
  "clap",
  "clap_complete",
  "comfy-table",
- "nifi-openapi-gen 0.10.1",
- "nifi-rust-client 0.10.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "humantime",
+ "nifi-openapi-gen",
+ "nifi-rust-client",
  "serde",
  "serde_json",
  "serde_yaml",
@@ -1082,6 +1057,7 @@ dependencies = [
  "toml",
  "tracing",
  "tracing-subscriber",
+ "wiremock",
 ]
 
 [[package]]
