@@ -171,6 +171,74 @@ client-side process-group wait helper is needed first). These commands
 return immediately after the server acknowledges the state-change
 request.
 
+## Dry-run and confirmations
+
+### `--dry-run`
+
+Any mutating command (POST / PUT / DELETE) accepts the global `--dry-run`
+flag. It prints the HTTP method, URL, and body that *would* be sent, exits
+with code 0, and does not touch the server. GET commands ignore the flag.
+
+```bash
+$ nifictl --dry-run ops stop-pg abc-123
+DRY RUN — would send:
+  PUT https://nifi:8443/nifi-api/flow/process-groups/abc-123
+  Body:
+  {
+    "id": "abc-123",
+    "state": "STOPPED"
+  }
+```
+
+Under `--dry-run` the client does not authenticate — the command is
+purely local. This lets you preview a request without valid credentials.
+
+### Confirmations
+
+Some commands prompt before acting:
+
+| Command | Prompt |
+|---------|--------|
+| Any `<resource> delete-*` generated command | `About to delete <Resource> resource 'id=...'. Continue? [y/N]:` |
+| `ops stop-pg <pg-id>` | `About to stop all processors in process group '<pg-id>'. Continue? [y/N]:` |
+| `ops disable-services <pg-id>` | `About to disable all controller services in process group '<pg-id>'. Continue? [y/N]:` |
+
+Non-destructive updates (e.g. `update-run-status RUNNING`, parameter
+updates, `ops start-pg`, `ops enable-services`, config edits) never prompt.
+
+### `--yes` / `-y`
+
+`--yes` / `-y` bypasses the prompt. In non-interactive mode (stdin is not
+a TTY) a confirmable command without `--yes` refuses with exit code 1:
+
+```
+error: refusing to run destructive command without --yes in non-interactive mode
+```
+
+This is deliberate — silent destruction from CI pipelines is worse than a
+clear refusal.
+
+### Flag interactions
+
+| Combination | Behaviour |
+|-------------|-----------|
+| `--dry-run` + confirmable cmd | `--dry-run` wins, no prompt |
+| `--dry-run` + `--wait` | Prints the "would send" block plus a `would then wait for ...` line; no polling |
+| `--yes` + `--dry-run` | `--yes` silently ignored |
+
+Example with `--dry-run + --wait`:
+
+```bash
+$ nifictl --dry-run --wait processors update-run-status proc-1 --body '{"state":"RUNNING"}'
+DRY RUN — would send:
+  PUT https://nifi:8443/nifi-api/processors/proc-1/run-status
+  Body:
+  {
+    "state": "RUNNING"
+  }
+  + would then wait for processor 'proc-1' state=RUNNING (timeout=30s)
+```
+
 ## Generated commands
 
 Every NiFi API tag is a top-level subcommand. Command names are derived
