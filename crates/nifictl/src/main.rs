@@ -343,7 +343,7 @@ struct FlowExportArgs {
     /// Source process group id
     pg_id: String,
     /// Output file path. Writes to stdout if omitted.
-    #[arg(short = 'o', long = "output")]
+    #[arg(id = "flow_export_output", long = "output-file")]
     output: Option<PathBuf>,
     /// Include externally-referenced controller services in the snapshot
     #[arg(long = "include-referenced-services")]
@@ -740,9 +740,29 @@ async fn run(cli: Cli) -> Result<(), error::CliError> {
             )
             .await
         }
-        Commands::Flow { command: _ } => {
-            todo!("flow porcelain lands in Task 10")
-        }
+        Commands::Flow { command } => match command {
+            FlowCommand::Generated(inner) => {
+                dispatch_resource(
+                    generated::GeneratedResource::Flow { command: inner },
+                    cli.config.as_deref(),
+                    cli.context.as_deref(),
+                    cli.url.clone(),
+                    cli.username.clone(),
+                    cli.password.clone(),
+                    cli.token.clone(),
+                    cli.insecure,
+                    cli.dry_run,
+                    cli.yes,
+                    cli.wait,
+                    &cli.wait_timeout,
+                    &cli.output,
+                )
+                .await
+            }
+            FlowCommand::Export(_) | FlowCommand::Import(_) | FlowCommand::Replace(_) => {
+                todo!("flow porcelain lands in Task 10")
+            }
+        },
         Commands::FlowFileQueues { command } => {
             dispatch_resource(
                 generated::GeneratedResource::FlowFileQueues { command },

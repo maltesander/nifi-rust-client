@@ -230,7 +230,7 @@ fn help_lists_all_generated_resources() {
         "resources",
         "sitetosite",
         "snippets",
-        "system",
+        "systemdiagnostics",
         "tenants",
         "versions",
     ] {
