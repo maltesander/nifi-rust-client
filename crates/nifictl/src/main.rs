@@ -292,7 +292,23 @@ async fn run(cli: Cli) -> Result<(), error::CliError> {
                 cli.insecure,
                 context,
             )?;
-            let client = params.build_client().await?;
+            let base_url = params.url.clone();
+            let ctx = dry_run::CliCtx {
+                dry_run: cli.dry_run,
+                yes: cli.yes,
+                base_url: &base_url,
+            };
+
+            // Under --dry-run the handler short-circuits before touching
+            // the client, so we skip authentication and build only the
+            // wrapper.
+            let client = if ctx.dry_run {
+                nifi_rust_client::NifiClientBuilder::new(&base_url)?
+                    .danger_accept_invalid_certs(params.insecure)
+                    .build_dynamic()?
+            } else {
+                params.build_client().await?
+            };
 
             // Peek for a wait plan before dispatch consumes the resource.
             let wait_plan = if cli.wait {
@@ -301,15 +317,23 @@ async fn run(cli: Cli) -> Result<(), error::CliError> {
                 None
             };
 
-            let mut result = generated::dispatch_generated(*resource, &client).await?;
+            let mut result =
+                generated::dispatch_generated(*resource, &client, &ctx).await?;
 
             if let Some(plan) = wait_plan {
-                let dispatch_value = match &result {
-                    output::CliOutput::Single(v) => v.clone(),
-                    _ => serde_json::Value::Null,
-                };
-                let timeout = wait_wire::parse_wait_timeout(&cli.wait_timeout)?;
-                result = wait_wire::run_wait_plan(plan, dispatch_value, &client, timeout).await?;
+                if ctx.dry_run {
+                    // Task 7 upgrades this to a wait_wire::describe_wait_plan() call.
+                    eprintln!("  + would then wait (see --help)");
+                    let _ = plan;
+                } else {
+                    let dispatch_value = match &result {
+                        output::CliOutput::Single(v) => v.clone(),
+                        _ => serde_json::Value::Null,
+                    };
+                    let timeout = wait_wire::parse_wait_timeout(&cli.wait_timeout)?;
+                    result =
+                        wait_wire::run_wait_plan(plan, dispatch_value, &client, timeout).await?;
+                }
             } else if cli.wait {
                 return Err(error::CliError::User(
                     "--wait is not supported on this command".to_string(),
