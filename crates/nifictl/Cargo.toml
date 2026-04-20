@@ -13,6 +13,7 @@ description = "CLI tool for Apache NiFi 2.x"
 clap = { workspace = true }
 clap_complete.workspace = true
 comfy-table.workspace = true
+humantime = "2"
 nifi-rust-client = { version = "0.10.1", features = ["dynamic"] }
 serde = { workspace = true }
 serde_json.workspace = true
@@ -24,6 +25,7 @@ tracing-subscriber.workspace = true
 
 [dev-dependencies]
 tempfile = "3"
+wiremock = { workspace = true }
 
 [build-dependencies]
 nifi-openapi-gen = { path = "../nifi-openapi-gen", version = "0.10.1" }

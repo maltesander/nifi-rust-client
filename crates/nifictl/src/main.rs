@@ -5,6 +5,7 @@ mod error;
 mod output;
 mod porcelain;
 mod table;
+mod wait_wire;
 
 // Include generated CLI code
 #[allow(dead_code, unused_imports, unused_variables, clippy::all)]
@@ -56,6 +57,14 @@ struct Cli {
     /// Increase log verbosity (-v info, -vv debug, -vvv trace)
     #[arg(short, long, action = clap::ArgAction::Count, global = true)]
     verbose: u8,
+
+    /// Wait for the operation to reach a terminal state (supported commands only)
+    #[arg(long, global = true)]
+    wait: bool,
+
+    /// Timeout for --wait (e.g. "30s", "2m"). Default: 30s.
+    #[arg(long = "wait-timeout", global = true, default_value = "30s")]
+    wait_timeout: String,
 
     #[command(subcommand)]
     command: Commands,
