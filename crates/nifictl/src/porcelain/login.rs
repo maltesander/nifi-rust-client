@@ -66,7 +66,7 @@ mod tests {
     use super::*;
     use base64::Engine;
     use base64::engine::general_purpose::URL_SAFE_NO_PAD;
-    use std::time::{Duration, SystemTime, UNIX_EPOCH};
+    use std::time::{Duration, UNIX_EPOCH};
 
     fn jwt_with_exp(exp_secs: i64) -> String {
         let header = URL_SAFE_NO_PAD.encode(br#"{"alg":"HS256"}"#);
