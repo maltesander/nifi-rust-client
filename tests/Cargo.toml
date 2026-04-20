@@ -13,6 +13,7 @@ nifi-openapi-gen = { path = "../crates/nifi-openapi-gen" }
 
 [dev-dependencies]
 nifi-rust-client = { workspace = true, default-features = false }
+serde_json = { workspace = true }
 tokio = { workspace = true, features = ["rt", "rt-multi-thread", "macros", "time"] }
 
 [lints]

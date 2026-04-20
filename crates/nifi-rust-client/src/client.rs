@@ -505,6 +505,7 @@ impl NifiClient {
     /// part named `"file"` carrying the given filename and raw bytes. The
     /// `Content-Type` header (including the generated boundary) is set by
     /// reqwest when `.multipart(form)` is called.
+    #[allow(dead_code)]
     #[tracing::instrument(skip(self, data), fields(request_id = tracing::field::Empty))]
     pub(crate) async fn post_multipart<T: DeserializeOwned>(
         &self,
@@ -521,6 +522,49 @@ impl NifiClient {
             let part =
                 reqwest::multipart::Part::bytes(data.clone()).file_name(filename.to_string());
             let form = reqwest::multipart::Form::new().part("file", part);
+            let resp = req.multipart(form).send().await.context(HttpSnafu)?;
+            Self::deserialize(&Method::POST, path, resp).await
+        })
+        .await
+    }
+
+    /// POST `multipart/form-data` with additional text fields alongside
+    /// the `file` part.
+    ///
+    /// Used by endpoints whose multipart schema declares required text
+    /// properties beyond the file part — for example
+    /// `POST /process-groups/{id}/process-groups/upload` requires
+    /// `clientId`, `groupName`, `positionX`, and `positionY`.
+    ///
+    /// Each `(name, value)` tuple is emitted as a `form.text(...)` part
+    /// before the `file` part. The order mirrors the slice order; the
+    /// generator emits it in alphabetic order by wire name for
+    /// determinism across regenerations.
+    #[allow(dead_code)]
+    #[tracing::instrument(
+        skip(self, text_fields, data),
+        fields(request_id = tracing::field::Empty)
+    )]
+    pub(crate) async fn post_multipart_with_fields<T: DeserializeOwned>(
+        &self,
+        path: &str,
+        extra_headers: &[(&str, &str)],
+        text_fields: &[(&str, String)],
+        filename: &str,
+        data: Vec<u8>,
+    ) -> Result<T, NifiError> {
+        self.with_retry(|| async {
+            let req = self
+                .build_request(&Method::POST, path, self.http.post(self.api_url(path)))
+                .await;
+            let req = apply_extra_headers(req, extra_headers);
+            let mut form = reqwest::multipart::Form::new();
+            for (name, value) in text_fields {
+                form = form.text((*name).to_string(), value.clone());
+            }
+            let part =
+                reqwest::multipart::Part::bytes(data.clone()).file_name(filename.to_string());
+            form = form.part("file", part);
             let resp = req.multipart(form).send().await.context(HttpSnafu)?;
             Self::deserialize(&Method::POST, path, resp).await
         })

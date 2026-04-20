@@ -616,6 +616,7 @@ mod tests {
             request_type: None,
             body_kind: None,
             body_doc: None,
+            multipart_fields: Vec::new(),
             response_type: response_type.map(str::to_string),
             response_inner: None,
             response_field: None,

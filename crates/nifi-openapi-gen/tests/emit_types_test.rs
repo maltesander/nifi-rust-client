@@ -195,6 +195,7 @@ fn mod_rs_reexports_all_modules() {
                         path_params: vec![],
                         request_type: None,
                         body_doc: None,
+                        multipart_fields: Vec::new(),
 
                         body_kind: None,
                         response_type: Some("FlowDto".into()),
@@ -219,6 +220,7 @@ fn mod_rs_reexports_all_modules() {
                         path_params: vec![],
                         request_type: None,
                         body_doc: None,
+                        multipart_fields: Vec::new(),
 
                         body_kind: None,
                         response_type: Some("SharedDto".into()),
@@ -255,6 +257,7 @@ fn mod_rs_reexports_all_modules() {
                         }],
                         request_type: None,
                         body_doc: None,
+                        multipart_fields: Vec::new(),
 
                         body_kind: None,
                         response_type: Some("ProcDto".into()),
@@ -279,6 +282,7 @@ fn mod_rs_reexports_all_modules() {
                         path_params: vec![],
                         request_type: None,
                         body_doc: None,
+                        multipart_fields: Vec::new(),
 
                         body_kind: None,
                         response_type: Some("SharedDto".into()),

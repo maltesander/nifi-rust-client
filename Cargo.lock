@@ -998,6 +998,7 @@ version = "0.0.0"
 dependencies = [
  "nifi-openapi-gen",
  "nifi-rust-client",
+ "serde_json",
  "tokio",
 ]
 

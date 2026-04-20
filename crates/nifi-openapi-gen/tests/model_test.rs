@@ -33,6 +33,7 @@ fn can_construct_internal_model() {
                 path_params: vec![],
                 request_type: None,
                 body_doc: None,
+                multipart_fields: Vec::new(),
 
                 body_kind: None,
                 response_type: Some("AboutEntity".into()),
