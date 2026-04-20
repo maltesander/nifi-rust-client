@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use crate::content_type::RequestBodyKind;
-use crate::parser::{ApiSpec, Endpoint, HttpMethod, QueryParamType, TagGroup};
+use crate::parser::{ApiSpec, Endpoint, HttpMethod, PathParam, QueryParamType, TagGroup};
 use crate::util::format_source;
 
 /// Emit all generated CLI code.
@@ -342,6 +342,18 @@ fn emit_handler(
         out.push_str("    }\n");
     }
 
+    // --- Confirmation branch (DELETE only) ---
+    // Only the first path param is referenced in the prompt — see
+    // `emit_confirm_what_expr` for the rationale. Additional path
+    // segments (e.g. the {assetId} in /connectors/{id}/assets/{assetId})
+    // are intentionally omitted from the prompt to keep it readable.
+    if ep.method == HttpMethod::Delete {
+        let what_expr = emit_confirm_what_expr(&tag.tag, &ep.path_params);
+        out.push_str(&format!(
+            "    crate::confirm::confirm_destructive(&{what_expr}, ctx)?;\n"
+        ));
+    }
+
     // Build method call arguments — all path params are passed in order.
     let mut call_args = Vec::new();
     for pp in &ep.path_params {
@@ -564,6 +576,24 @@ fn emit_query_pairs(out: &mut String, ep: &Endpoint) {
     }
 }
 
+/// Build the `format!(...)` expression embedded in a DELETE handler's
+/// `confirm_destructive` call. Only the first path param (if any) is
+/// included — by design, since that is always the primary-resource
+/// identifier and additional path segments (e.g. sub-resource UUIDs
+/// on two-param paths) add noise to the prompt.
+fn emit_confirm_what_expr(tag_name: &str, path_params: &[PathParam]) -> String {
+    match path_params.first() {
+        Some(first) => {
+            let field = rust_ident(&first.name);
+            let param_name = &first.name;
+            format!(
+                r#"format!("delete {tag_name} resource '{param_name}={{}}'", args.{field})"#
+            )
+        }
+        None => format!(r#"format!("delete {tag_name} resource")"#),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -767,6 +797,56 @@ mod tests {
         assert!(
             !handler_body.contains("if ctx.dry_run"),
             "GET handler body must not contain dry-run branch: {handler_body}"
+        );
+    }
+
+    #[test]
+    fn emit_produces_confirm_branch_for_delete() {
+        let ep_delete = make_endpoint(
+            HttpMethod::Delete,
+            "delete_processor",
+            "/processors/{id}",
+            vec![PathParam {
+                name: "id".to_string(),
+                doc: None,
+            }],
+            None,
+        );
+        let spec = make_spec(vec![make_tag("Processors", vec![ep_delete])]);
+        let files = emit_cli(&[("2.8.0".to_string(), spec)]);
+        let src = &files[0].1;
+
+        assert!(
+            src.contains("crate::confirm::confirm_destructive"),
+            "DELETE handler should emit confirm branch"
+        );
+    }
+
+    #[test]
+    fn emit_does_not_emit_confirm_branch_for_put() {
+        let ep_put = make_endpoint(
+            HttpMethod::Put,
+            "update_processor",
+            "/processors/{id}",
+            vec![PathParam {
+                name: "id".to_string(),
+                doc: None,
+            }],
+            Some("ProcessorEntity"),
+        );
+        let spec = make_spec(vec![make_tag("Processors", vec![ep_put])]);
+        let files = emit_cli(&[("2.8.0".to_string(), spec)]);
+        let src = &files[0].1;
+
+        let put_start = src
+            .find("async fn handle_processors_update_processor")
+            .expect("PUT handler missing");
+        let rest = &src[put_start..];
+        let next_fn = rest[1..].find("\nasync fn ").map(|i| i + 1).unwrap_or(rest.len());
+        let handler_body = &rest[..next_fn];
+        assert!(
+            !handler_body.contains("confirm_destructive"),
+            "PUT handler must not emit confirm branch"
         );
     }
 }
