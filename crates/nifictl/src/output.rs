@@ -60,6 +60,7 @@ pub enum ResolvedFormat {
 }
 
 /// The logical output of a CLI command.
+#[derive(Debug)]
 #[allow(dead_code)]
 pub enum CliOutput {
     /// A single resource.

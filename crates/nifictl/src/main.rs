@@ -234,12 +234,37 @@ async fn run(cli: Cli) -> Result<(), error::CliError> {
                 cli.insecure,
                 context,
             )?;
-            let client = params.build_client().await?;
+            let base_url = params.url.clone();
+            let ctx = dry_run::CliCtx {
+                dry_run: cli.dry_run,
+                yes: cli.yes,
+                base_url: &base_url,
+            };
+
+            // On --dry-run, skip authentication: the handler short-circuits
+            // before touching the client, so we only need a constructed
+            // (not authenticated) DynamicClient for the signature.
+            let client = if ctx.dry_run {
+                nifi_rust_client::NifiClientBuilder::new(&base_url)?
+                    .danger_accept_invalid_certs(params.insecure)
+                    .build_dynamic()?
+            } else {
+                params.build_client().await?
+            };
+
             let result = match cmd {
-                OpsCommand::StartPg { pg_id } => porcelain::ops::start_pg(&client, &pg_id).await?,
-                OpsCommand::StopPg { pg_id } => porcelain::ops::stop_pg(&client, &pg_id).await?,
-                OpsCommand::EnableServices { pg_id } => porcelain::ops::enable_services(&client, &pg_id).await?,
-                OpsCommand::DisableServices { pg_id } => porcelain::ops::disable_services(&client, &pg_id).await?,
+                OpsCommand::StartPg { pg_id } => {
+                    porcelain::ops::start_pg(&client, &pg_id, &ctx).await?
+                }
+                OpsCommand::StopPg { pg_id } => {
+                    porcelain::ops::stop_pg(&client, &pg_id, &ctx).await?
+                }
+                OpsCommand::EnableServices { pg_id } => {
+                    porcelain::ops::enable_services(&client, &pg_id, &ctx).await?
+                }
+                OpsCommand::DisableServices { pg_id } => {
+                    porcelain::ops::disable_services(&client, &pg_id, &ctx).await?
+                }
             };
             let fmt = output::OutputFormat::parse(&cli.output).map_err(error::CliError::User)?;
             let resolved = fmt.resolve();

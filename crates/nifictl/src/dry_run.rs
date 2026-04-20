@@ -10,7 +10,6 @@ use serde_json::Value;
 
 /// Flags resolved once per CLI invocation and threaded through dispatch.
 #[derive(Debug, Clone, Copy)]
-#[allow(dead_code)]
 pub struct CliCtx<'a> {
     pub dry_run: bool,
     pub yes: bool,
@@ -23,7 +22,6 @@ pub struct CliCtx<'a> {
 /// `path` is the endpoint path with path params already substituted
 /// (e.g. `"/flow/process-groups/abc-123"`). Appends `/nifi-api` and
 /// joins any non-empty query.
-#[allow(dead_code)]
 pub fn format_url(base_url: &str, path: &str, query: &[(&str, String)]) -> String {
     let base = base_url.trim_end_matches('/');
     let mut url = format!("{base}/nifi-api{path}");
@@ -48,7 +46,6 @@ pub fn format_url(base_url: &str, path: &str, query: &[(&str, String)]) -> Strin
 ///
 /// * `method` is one of `"GET" | "POST" | "PUT" | "PATCH" | "DELETE"`.
 /// * `body` is `None` for DELETE / empty-body requests, `Some(Value)` otherwise.
-#[allow(dead_code)]
 pub fn print(
     writer: &mut dyn Write,
     method: &str,

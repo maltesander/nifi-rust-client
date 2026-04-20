@@ -23,7 +23,6 @@ pub(crate) fn prompt_message(what: &str) -> String {
 }
 
 /// Gate on confirmation. Returns `Ok(())` when the user (or `--yes`) agrees.
-#[allow(dead_code)]
 pub fn confirm_destructive(what: &str, ctx: &CliCtx) -> Result<(), CliError> {
     if ctx.yes {
         return Ok(());
