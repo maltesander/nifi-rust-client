@@ -697,7 +697,12 @@ fn dynamic_response_type_for(ep: &Endpoint, stream: bool) -> String {
         (ResponseBodyKind::OctetStream | ResponseBodyKind::Wildcard, _, _) => "Vec<u8>".to_string(),
         (_, Some(inner), _) => format!("crate::dynamic::types::{inner}"),
         (_, _, Some(rt)) => format!("crate::dynamic::types::{rt}"),
-        _ => "()".to_string(),
+        // Inline-schema JSON response (e.g. an OpenAPI response with
+        // `application/json` + an inline schema like `{"type": "string"}`).
+        // The parser leaves response_inner/response_type unset because there
+        // is no named schema to resolve; the response is still deserializable
+        // JSON, so route it through the opaque serde_json::Value.
+        (ResponseBodyKind::Json { .. }, None, None) => "serde_json::Value".to_string(),
     }
 }
 
@@ -977,15 +982,15 @@ fn emit_dispatch_dynamic(
             ));
         }
         _ => {
-            if let Some(_rt) = ep.response_type.as_deref() {
-                out.push_str(&format!(
-                    "        self.client.inner().{base_helper}({path_arg}, {header_arg}{body_args}{query_args}).await\n"
-                ));
-            } else {
-                out.push_str(&format!(
-                    "        self.client.inner().post_void_no_body({path_arg}, {header_arg}).await\n"
-                ));
-            }
+            // By the time we reach here the outer Empty/Text/Xml/OctetStream
+            // /Wildcard early returns have already dispatched, so the response
+            // is definitionally Json. Always emit the resolved base_helper
+            // call; the fn-signature builder (`dynamic_response_type_for`)
+            // routes the return type through serde_json::Value when the
+            // response schema is inline (no $ref).
+            out.push_str(&format!(
+                "        self.client.inner().{base_helper}({path_arg}, {header_arg}{body_args}{query_args}).await\n"
+            ));
         }
     }
 }
@@ -996,5 +1001,91 @@ fn method_str(m: &HttpMethod) -> &'static str {
         HttpMethod::Post => "POST",
         HttpMethod::Put => "PUT",
         HttpMethod::Delete => "DELETE",
+    }
+}
+
+#[cfg(test)]
+mod emit_fix_inline_json_tests {
+    use super::*;
+    use crate::content_type::ResponseBodyKind;
+    use crate::parser::{Endpoint, HttpMethod, PathParam};
+
+    fn inline_json_endpoint() -> Endpoint {
+        Endpoint {
+            method: HttpMethod::Get,
+            path: "/process-groups/{id}/download".to_string(),
+            fn_name: "export_process_group".to_string(),
+            raw_operation_id: "exportProcessGroup".to_string(),
+            doc: Some("Exports a process group snapshot.".to_string()),
+            description: None,
+            path_params: vec![PathParam {
+                name: "id".to_string(),
+                doc: None,
+            }],
+            request_type: None,
+            body_kind: None,
+            body_doc: None,
+            response_type: None,
+            response_inner: None,
+            response_field: None,
+            response_kind: ResponseBodyKind::Json {
+                schema_ref: "serde_json::Value".to_string(),
+            },
+            query_params: vec![],
+            header_params: vec![],
+            success_responses: vec![],
+            error_responses: vec![],
+            security: None,
+        }
+    }
+
+    #[test]
+    fn dynamic_response_type_for_inline_json_is_value() {
+        let ep = inline_json_endpoint();
+        let rt = dynamic_response_type_for(&ep, false);
+        assert_eq!(rt, "serde_json::Value");
+    }
+
+    #[test]
+    fn dynamic_response_type_for_stream_only_applies_to_bytes() {
+        let mut ep = inline_json_endpoint();
+        ep.response_kind = ResponseBodyKind::OctetStream;
+        assert_eq!(dynamic_response_type_for(&ep, true), "crate::BytesStream");
+        assert_eq!(dynamic_response_type_for(&ep, false), "Vec<u8>");
+    }
+
+    #[test]
+    fn emit_dispatch_dynamic_for_inline_json_get_uses_get_helper() {
+        let ep = inline_json_endpoint();
+        let mut out = String::new();
+        emit_dispatch_dynamic(&mut out, &ep, false, "&[]", false);
+        assert!(
+            out.contains("self.client.inner().get("),
+            "expected a `get` dispatch for inline-JSON GET, got: {out}"
+        );
+        assert!(
+            !out.contains("post_void_no_body"),
+            "must not fall through to post_void_no_body: {out}"
+        );
+    }
+
+    #[test]
+    fn emit_dispatch_dynamic_for_inline_json_get_with_query_uses_get_with_query() {
+        use crate::parser::{QueryParam, QueryParamType};
+        let mut ep = inline_json_endpoint();
+        ep.query_params = vec![QueryParam {
+            name: "includeReferencedServices".to_string(),
+            rust_name: "include_referenced_services".to_string(),
+            required: false,
+            ty: QueryParamType::Bool,
+            doc: None,
+            enum_type_name: None,
+        }];
+        let mut out = String::new();
+        emit_dispatch_dynamic(&mut out, &ep, true, "&[]", false);
+        assert!(
+            out.contains("self.client.inner().get_with_query("),
+            "expected `get_with_query` dispatch for inline-JSON GET with query, got: {out}"
+        );
     }
 }
