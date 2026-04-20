@@ -7,10 +7,10 @@ use std::io::{self, IsTerminal};
 
 use crate::error::CliError;
 
-pub const NON_INTERACTIVE_ERROR: &str =
+pub(crate) const PROMPT_NON_TTY_ERROR: &str =
     "no password available and stdin is not a TTY";
 
-pub const NON_INTERACTIVE_HINT: &str =
+pub(crate) const PROMPT_NON_TTY_HINT: &str =
     "set NIFI_PASSWORD or pass --password";
 
 pub(crate) fn format_prompt(username: &str, base_url: &str) -> String {
@@ -21,7 +21,7 @@ pub(crate) fn format_prompt(username: &str, base_url: &str) -> String {
 pub fn prompt_password(username: &str, base_url: &str) -> Result<String, CliError> {
     if !io::stdin().is_terminal() {
         return Err(CliError::User(format!(
-            "{NON_INTERACTIVE_ERROR}\nhint: {NON_INTERACTIVE_HINT}"
+            "{PROMPT_NON_TTY_ERROR}\nhint: {PROMPT_NON_TTY_HINT}"
         )));
     }
     let prompt = format_prompt(username, base_url);
