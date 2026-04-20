@@ -1,6 +1,7 @@
 mod body;
 mod client_factory;
 mod config;
+mod confirm;
 mod dry_run;
 mod error;
 mod output;

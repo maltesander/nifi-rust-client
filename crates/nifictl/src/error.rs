@@ -14,7 +14,8 @@ pub enum CliError {
     Config(ConfigError),
     /// An I/O error (e.g. reading a certificate file).
     Io(std::io::Error),
-    /// A user-facing error message (not a bug — e.g. missing required flag).
+    /// A user-facing error message (not a bug — e.g. missing required flag
+    /// or cancelled interactively by the user).
     User(String),
 }
 
