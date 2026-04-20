@@ -127,8 +127,8 @@ the final entity when it converges to the requested state.
 | Command | Waits for |
 |---------|-----------|
 | `processors update-run-status <id> --wait` | processor state matches the body's `state` (RUNNING, STOPPED, or DISABLED) |
-| `controller-services update-run-status <id> --wait` | service state matches the body's `state` (ENABLED or DISABLED) |
-| `parameter-contexts submit-parameter-context-update <context-id> --wait` | update request reports `complete: true` (polls the request id returned by submit; trailing DELETE is best-effort) |
+| `controller_services update-run-status <id> --wait` | service state matches the body's `state` (ENABLED or DISABLED) |
+| `parametercontexts submit-parameter-context-update <context-id> --wait` | update request reports `complete: true` (polls the request id returned by submit; trailing DELETE is best-effort) |
 | `provenance submit-provenance-request --wait` | query reports `finished: true` (polls the query id returned by submit; trailing DELETE is best-effort) |
 
 Default timeout is 30s; override with `--wait-timeout=<duration>`
