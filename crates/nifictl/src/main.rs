@@ -269,8 +269,12 @@ async fn run(cli: Cli) -> Result<(), error::CliError> {
             let mut result = generated::dispatch_generated(*resource, &client).await?;
 
             if let Some(plan) = wait_plan {
+                let dispatch_value = match &result {
+                    output::CliOutput::Single(v) => v.clone(),
+                    _ => serde_json::Value::Null,
+                };
                 let timeout = wait_wire::parse_wait_timeout(&cli.wait_timeout)?;
-                result = wait_wire::run_wait_plan(plan, &client, timeout).await?;
+                result = wait_wire::run_wait_plan(plan, dispatch_value, &client, timeout).await?;
             } else if cli.wait {
                 return Err(error::CliError::User(
                     "--wait is not supported on this command".to_string(),
