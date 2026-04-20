@@ -343,6 +343,10 @@ struct FlowExportArgs {
     /// Source process group id
     pg_id: String,
     /// Output file path. Writes to stdout if omitted.
+    // `id` must differ from the global `Cli::output` arg id. The global has
+    // `global = true` so its `--output` propagates into every subcommand;
+    // without this distinct id, clap rejects duplicate registration even
+    // though the local long flag is `--output-file`.
     #[arg(id = "flow_export_output", long = "output-file")]
     output: Option<PathBuf>,
     /// Include externally-referenced controller services in the snapshot
