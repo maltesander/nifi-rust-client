@@ -14,7 +14,10 @@ async fn dynamic_client_on(mock: &MockServer, version: &str) -> DynamicClient {
         })))
         .mount(mock)
         .await;
-    let client = NifiClientBuilder::new(&mock.uri()).unwrap().build().unwrap();
+    let client = NifiClientBuilder::new(&mock.uri())
+        .unwrap()
+        .build()
+        .unwrap();
     DynamicClient::from_client(client).await.unwrap()
 }
 
