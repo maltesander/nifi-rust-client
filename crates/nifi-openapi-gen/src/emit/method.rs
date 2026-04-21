@@ -671,7 +671,10 @@ fn emit_simple_method_body_static(
                     let (helper, extra_args) = if ep.multipart_fields.is_empty() {
                         ("post_multipart", "filename, data.into()")
                     } else {
-                        ("post_multipart_with_fields", "&fields, filename, data.into()")
+                        (
+                            "post_multipart_with_fields",
+                            "&fields, filename, data.into()",
+                        )
                     };
                     if has_inner {
                         format!(

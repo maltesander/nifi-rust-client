@@ -443,14 +443,23 @@ CLI-layer exposure of multipart endpoints is intentionally skipped by
 
 ### nifictl `Commands` enum — manual resource enumeration
 
-Historically `Commands` in `crates/nifictl/src/main.rs` flattened
-`generated::GeneratedResource` to expose every generated tag as a
-top-level subcommand via `#[command(flatten)] Resource(Box<...>)`.
-Phase 3 changed this: porcelain `nifictl flow export|import|replace`
-shares the top-level `flow` name with the generator's `Flow` tag, and
-clap rejects duplicate variant names under a flatten. `Commands` now
-lists every generated resource explicitly (~29 variants), with `Flow`
-substituted by a custom `FlowCommand` wrapper:
+The nifictl binary is split into three modules: `crates/nifictl/src/main.rs`
+is a thin entry point (~60 lines) that initializes tracing, parses the CLI,
+and delegates to `dispatch::run`. `crates/nifictl/src/cli.rs` holds every
+clap definition — the `Cli` struct, the `Commands` / `ConfigCommand` /
+`OpsCommand` / `FlowCommand` enums, and the `Flow*Args` structs for the
+porcelain verbs. `crates/nifictl/src/dispatch.rs` holds `run()`, the shared
+`dispatch_resource` helper, the `handle_config` handler, the config / context
+resolution helpers, and the `resolve_password_input` / `warn_password_flag_used`
+auth-resolution helpers.
+
+Historically `Commands` flattened `generated::GeneratedResource` to expose
+every generated tag as a top-level subcommand via
+`#[command(flatten)] Resource(Box<...>)`. Phase 3 changed this: porcelain
+`nifictl flow export|import|replace` shares the top-level `flow` name with
+the generator's `Flow` tag, and clap rejects duplicate variant names under a
+flatten. `Commands` now lists every generated resource explicitly
+(~29 variants), with `Flow` substituted by a custom `FlowCommand` wrapper:
 
 ```rust
 enum FlowCommand {
@@ -462,15 +471,17 @@ enum FlowCommand {
 }
 ```
 
-The shared `dispatch_resource` helper in `main.rs` holds the generated
-command dispatch body; each per-resource arm calls it with the
-reconstructed `generated::GeneratedResource::<Variant>`. Adding a new
-porcelain verb on a different tag follows the same pattern.
+The shared `dispatch_resource` helper in `dispatch.rs` holds the generated
+command dispatch body; each per-resource arm routes to it via the
+`dispatch_uniform!` macro (expanded once per variant) with the reconstructed
+`generated::GeneratedResource::<Variant>`. Adding a new porcelain verb on a
+different tag follows the same pattern (inline arm in `run()`, not the macro).
 
-When the code generator adds a new tag, the `Commands` list AND the
-matching `dispatch_resource` arm must both grow by one — the coupling is
-manual; the test `help_lists_all_generated_resources` asserts every
-resource name appears in `nifictl --help` so drift is caught in CI.
+When the code generator adds a new tag, the `Commands` list in `cli.rs` AND
+the matching `dispatch_uniform!(cli, command, Variant)` arm in `dispatch.rs`
+must both grow by one — the coupling is manual; the test
+`help_lists_all_generated_resources` asserts every resource name appears in
+`nifictl --help` so drift is caught in CI.
 
 Also note: the global `--output` flag (which selects output format:
 json/yaml/table) has `global = true` and propagates into every

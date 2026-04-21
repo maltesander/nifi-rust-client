@@ -1,8 +1,10 @@
 # nifi-openapi-gen
 
-> **Published to crates.io** solely so that `nifi-rust-client` can use it as a
-> build-dependency. Not intended for general use — API may change without notice.
-> Versioned in lockstep with `nifi-rust-client`.
+> ⚠️ **Internal code generator.** Only the surfaces listed in the [Stability](#stability)
+> section are covered by a semver guarantee. Everything else — `parser`, `emit`, `diff`,
+> `docs`, `repo`, `util` — is an implementation detail and may change in any minor
+> release. If you are not writing a `build.rs` that calls
+> `nifi_openapi_gen::build_api::generate_client`, you should not depend on this crate.
 
 ## Stability
 
