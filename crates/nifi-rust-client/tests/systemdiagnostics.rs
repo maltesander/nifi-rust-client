@@ -1,6 +1,7 @@
 #![cfg(not(feature = "dynamic"))]
 use nifi_rust_client::NifiClientBuilder;
-use wiremock::matchers::{method, path};
+use nifi_rust_client::types::DiagnosticLevel;
+use wiremock::matchers::{method, path, query_param};
 use wiremock::{Mock, MockServer, ResponseTemplate};
 
 #[tokio::test]
@@ -42,4 +43,31 @@ async fn get_system_diagnostics_returns_heap_and_processor_count() {
     assert_eq!(snapshot.total_threads, Some(42));
     assert_eq!(snapshot.total_heap.as_deref(), Some("512 MB"));
     assert_eq!(snapshot.free_heap.as_deref(), Some("384 MB"));
+}
+
+/// Pins the wire serialization of `DiagnosticLevel`: the typed enum
+/// renders as its uppercase wire value in the query string. Guards
+/// against a future rename/serde break on the generated enum.
+#[tokio::test]
+async fn get_system_diagnostics_sends_diagnostic_level_as_verbose() {
+    let mock_server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/nifi-api/system-diagnostics"))
+        .and(query_param("diagnosticLevel", "VERBOSE"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+            "systemDiagnostics": { "aggregateSnapshot": {} }
+        })))
+        .expect(1)
+        .mount(&mock_server)
+        .await;
+
+    let client = NifiClientBuilder::new(&mock_server.uri())
+        .unwrap()
+        .build()
+        .unwrap();
+    client
+        .systemdiagnostics()
+        .get_system_diagnostics(None, Some(DiagnosticLevel::Verbose), None)
+        .await
+        .unwrap();
 }

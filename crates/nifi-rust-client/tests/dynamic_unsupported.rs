@@ -1,15 +1,20 @@
-//! End-to-end regression test: setting a version-specific query
-//! parameter on a DynamicClient whose detected version does not
-//! support it must fail with NifiError::UnsupportedQueryParam.
+//! End-to-end regression tests for dynamic-mode availability gating.
 //!
-//! Pins the current canonical-superset contract: query params
-//! set to a non-None value on an unsupporting version error out,
-//! instead of silently sending the request.
+//! Two distinct failure modes are pinned here:
 //!
-//! Target: Flow::get_flow_metrics on GET /flow/metrics/{producer}.
-//! The `flowMetricsReportingStrategy` param was added in NiFi 2.7.2;
-//! detecting a 2.6.0 server and passing Some(..) must fail the
-//! availability check before any HTTP request is made.
+//! 1. Setting a version-specific query parameter on a server that
+//!    predates it → `NifiError::UnsupportedQueryParam`.
+//!    Target: `Flow::get_flow_metrics` with `flowMetricsReportingStrategy`
+//!    (added in NiFi 2.7.2) against a detected 2.6.0 server.
+//!
+//! 2. Calling an endpoint that doesn't exist in the detected version →
+//!    `NifiError::UnsupportedEndpoint`.
+//!    Target: `Connectors::get_flow` (added in NiFi 2.9.0) against a
+//!    detected 2.6.0 server.
+//!
+//! Both assertions verify the availability check fires before any HTTP
+//! request is made — the mock server is provisioned only with
+//! `/flow/about` so a mistaken request would show up as a wiremock miss.
 
 #![cfg(feature = "dynamic")]
 
@@ -83,5 +88,39 @@ async fn setting_unsupported_query_param_returns_unsupported_query_param_error()
             assert_eq!(param, "flowMetricsReportingStrategy");
         }
         other => panic!("expected UnsupportedQueryParam, got {other:?}"),
+    }
+}
+
+#[tokio::test]
+async fn calling_unsupported_endpoint_returns_unsupported_endpoint_error() {
+    let server = MockServer::start().await;
+    mock_nifi_2_6_0(&server).await;
+
+    let inner = NifiClientBuilder::new(&server.uri())
+        .expect("builder")
+        .build()
+        .expect("client");
+    let client = DynamicClient::new(inner);
+
+    client.set_token("fake-jwt".to_string()).await;
+    client.detect_version().await.expect("detect_version");
+
+    // `GET /connectors/{connectorId}/flow/process-groups/{processGroupId}`
+    // is only available on NiFi 2.9.0. Against a detected 2.6.0 server
+    // the availability check must fire before any HTTP call.
+    let result = client
+        .connectors()
+        .get_flow("connector-id", "pg-id", None)
+        .await;
+
+    match result {
+        Err(NifiError::UnsupportedEndpoint { endpoint, version }) => {
+            assert_eq!(version, "2.6.0");
+            assert!(
+                endpoint.contains("connectors"),
+                "endpoint string should reference connectors path: {endpoint}"
+            );
+        }
+        other => panic!("expected UnsupportedEndpoint, got {other:?}"),
     }
 }

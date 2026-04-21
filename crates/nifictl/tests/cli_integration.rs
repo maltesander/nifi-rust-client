@@ -470,10 +470,7 @@ password_env = "DEFINITELY_NOT_SET_PW"
 /// generated flow subcommands.
 #[test]
 fn flow_help_lists_porcelain_and_generated() {
-    let output = nifictl()
-        .args(["flow", "--help"])
-        .output()
-        .expect("failed");
+    let output = nifictl().args(["flow", "--help"]).output().expect("failed");
     assert!(output.status.success());
     let stdout = String::from_utf8_lossy(&output.stdout);
     for expected in ["export", "import", "replace", "get-about-info"] {
@@ -504,13 +501,7 @@ async fn hint_fires_on_401() {
     // status uses an existing token (we provide --token). build_client's
     // token path calls detect_version() which hits GET /flow/about.
     let output = nifictl()
-        .args([
-            "--url",
-            &mock.uri(),
-            "--token",
-            "dummy",
-            "status",
-        ])
+        .args(["--url", &mock.uri(), "--token", "dummy", "status"])
         .output()
         .expect("failed to run nifictl");
 
@@ -523,6 +514,163 @@ async fn hint_fires_on_401() {
     assert!(
         stderr.contains("hint: run 'nifictl login'"),
         "stderr should include the login hint: {stderr}"
+    );
+}
+
+/// Happy-path `nifictl login` with password auth: server returns a JWT,
+/// command exits 0, stores the token under `$HOME/.nifictl/tokens/<ctx>`,
+/// and prints the detected NiFi version on stderr.
+#[tokio::test]
+async fn login_happy_path_stores_token_and_reports_version() {
+    use wiremock::matchers::{method, path};
+    use wiremock::{Mock, MockServer, ResponseTemplate};
+
+    let mock = MockServer::start().await;
+    Mock::given(method("POST"))
+        .and(path("/nifi-api/access/token"))
+        .respond_with(ResponseTemplate::new(201).set_body_string("eyJhbGciOiJSUzI1NiJ9.jwt.sig"))
+        .mount(&mock)
+        .await;
+    Mock::given(method("GET"))
+        .and(path("/nifi-api/flow/about"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+            "about": { "title": "NiFi", "version": "2.9.0", "uri": "https://localhost/nifi-api",
+                "contentViewerUrl": "", "timezone": "UTC", "buildTag": "", "buildRevision": "",
+                "buildBranch": "", "buildTimestamp": "" }
+        })))
+        .mount(&mock)
+        .await;
+
+    // tempdir doubles as HOME so the token cache doesn't touch the real
+    // filesystem, and holds the config file.
+    let home = tempfile::tempdir().unwrap();
+    let config_path = home.path().join("config.toml");
+    std::fs::write(
+        &config_path,
+        format!(
+            r#"
+current_context = "mock"
+
+[[contexts]]
+name = "mock"
+url = "{}"
+
+[contexts.auth]
+type = "password"
+username = "admin"
+password_env = "TEST_NIFI_PW"
+"#,
+            mock.uri(),
+        ),
+    )
+    .unwrap();
+
+    let output = nifictl()
+        .args(["--config", &config_path.to_string_lossy(), "login"])
+        .env("HOME", home.path())
+        .env("TEST_NIFI_PW", "pw")
+        .output()
+        .expect("failed to run nifictl");
+
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(output.status.success(), "expected exit 0; stderr={stderr}");
+    assert!(
+        stderr.contains("Logged in to"),
+        "stderr should confirm login: {stderr}"
+    );
+    assert!(
+        stderr.contains("NiFi version: 2.9.0"),
+        "stderr should report detected version: {stderr}"
+    );
+
+    // Token was cached to $HOME/.nifictl/tokens/mock.
+    let token_path = home.path().join(".nifictl").join("tokens").join("mock");
+    assert!(
+        token_path.exists(),
+        "token file should exist at {token_path:?}",
+    );
+    let token = std::fs::read_to_string(&token_path).unwrap();
+    assert_eq!(token, "eyJhbGciOiJSUzI1NiJ9.jwt.sig");
+}
+
+/// 403 from the server must render the forbidden hint directing the
+/// operator at the `/users` admin page.
+#[tokio::test]
+async fn hint_fires_on_403() {
+    use wiremock::matchers::{method, path};
+    use wiremock::{Mock, MockServer, ResponseTemplate};
+
+    let mock = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/nifi-api/flow/about"))
+        .respond_with(ResponseTemplate::new(403).set_body_string("forbidden"))
+        .mount(&mock)
+        .await;
+
+    let output = nifictl()
+        .args(["--url", &mock.uri(), "--token", "dummy", "status"])
+        .output()
+        .expect("failed to run nifictl");
+
+    assert!(!output.status.success(), "expected non-zero exit");
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(
+        stderr.contains("error: "),
+        "stderr should start with 'error: ': {stderr}"
+    );
+    assert!(
+        stderr.contains("hint: user lacks the required NiFi policy"),
+        "stderr should include the forbidden hint: {stderr}"
+    );
+}
+
+/// 404 from a resource-get command must render the not-found hint
+/// suggesting `list` / `status` as next steps.
+#[tokio::test]
+async fn hint_fires_on_404() {
+    use wiremock::matchers::{method, path};
+    use wiremock::{Mock, MockServer, ResponseTemplate};
+
+    let mock = MockServer::start().await;
+    // /flow/about must succeed so version detection passes — the 404 has
+    // to come from the subsequent resource call, not version detection.
+    Mock::given(method("GET"))
+        .and(path("/nifi-api/flow/about"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+            "about": { "title": "NiFi", "version": "2.9.0", "uri": "https://localhost/nifi-api",
+                "contentViewerUrl": "", "timezone": "UTC", "buildTag": "", "buildRevision": "",
+                "buildBranch": "", "buildTimestamp": "" }
+        })))
+        .mount(&mock)
+        .await;
+    Mock::given(method("GET"))
+        .and(path("/nifi-api/processors/does-not-exist"))
+        .respond_with(ResponseTemplate::new(404).set_body_string("not found"))
+        .mount(&mock)
+        .await;
+
+    let output = nifictl()
+        .args([
+            "--url",
+            &mock.uri(),
+            "--token",
+            "dummy",
+            "processors",
+            "get-processor",
+            "does-not-exist",
+        ])
+        .output()
+        .expect("failed to run nifictl");
+
+    assert!(!output.status.success(), "expected non-zero exit");
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(
+        stderr.contains("error: "),
+        "stderr should start with 'error: ': {stderr}"
+    );
+    assert!(
+        stderr.contains("hint: verify the id with 'nifictl <resource> list'"),
+        "stderr should include the not-found hint: {stderr}"
     );
 }
 
@@ -539,13 +687,7 @@ async fn tls_error_includes_insecure_hint() {
     let https_uri = plain_uri.replacen("http://", "https://", 1);
 
     let output = nifictl()
-        .args([
-            "--url",
-            &https_uri,
-            "--token",
-            "dummy",
-            "status",
-        ])
+        .args(["--url", &https_uri, "--token", "dummy", "status"])
         .output()
         .expect("failed to run nifictl");
 

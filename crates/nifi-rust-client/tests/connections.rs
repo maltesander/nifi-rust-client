@@ -1,7 +1,7 @@
 #![cfg(not(feature = "dynamic"))]
 use nifi_rust_client::NifiClientBuilder;
 use nifi_rust_client::NifiError;
-use wiremock::matchers::{method, path};
+use wiremock::matchers::{body_partial_json, method, path};
 use wiremock::{Mock, MockServer, ResponseTemplate};
 
 // ── get_connection ────────────────────────────────────────────────────────────
@@ -59,12 +59,14 @@ async fn update_connection_sends_body_and_returns_entity() {
     let mock_server = MockServer::start().await;
     Mock::given(method("PUT"))
         .and(path("/nifi-api/connections/conn-id"))
+        .and(body_partial_json(serde_json::json!({ "id": "conn-id" })))
         .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
             "id": "conn-id",
             "sourceType": "PROCESSOR",
             "destinationType": "PROCESSOR",
-            "component": { "id": "conn-id" }
+            "component": { "id": "conn-id", "name": "updated" }
         })))
+        .expect(1)
         .mount(&mock_server)
         .await;
 
@@ -72,13 +74,21 @@ async fn update_connection_sends_body_and_returns_entity() {
         .unwrap()
         .build()
         .unwrap();
-    let body = nifi_rust_client::types::ConnectionEntity::default();
-    let result = client
+    let body = nifi_rust_client::types::ConnectionEntity {
+        id: Some("conn-id".to_string()),
+        ..Default::default()
+    };
+    let entity = client
         .connections()
         .update_connection("conn-id", &body)
-        .await;
+        .await
+        .unwrap();
 
-    assert!(result.is_ok(), "{:?}", result);
+    assert_eq!(entity.id.as_deref(), Some("conn-id"));
+    assert_eq!(
+        entity.component.and_then(|c| c.name).as_deref(),
+        Some("updated")
+    );
 }
 
 // ── behavior: 409 on non-empty queue ─────────────────────────────────────────
