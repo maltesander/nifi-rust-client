@@ -13,6 +13,84 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-04-21
+
+### Breaking Changes
+
+- Remove Redacted<T> in favor of Zeroizing ([c81624a](https://github.com/maltesander/nifi-rust-client/commit/c81624a))
+
+### Added
+
+- Add bulk::enable/disable_all_controller_services ([2340694](https://github.com/maltesander/nifi-rust-client/commit/2340694))
+- Add bulk::start_process_group + stop_process_group ([ee869b4](https://github.com/maltesander/nifi-rust-client/commit/ee869b4))
+- Add wait::provenance_query helper ([1e6ad05](https://github.com/maltesander/nifi-rust-client/commit/1e6ad05))
+- Add wait::parameter_context_update helper ([68d6c9a](https://github.com/maltesander/nifi-rust-client/commit/68d6c9a))
+- Add wait::controller_service_state helper ([f62c295](https://github.com/maltesander/nifi-rust-client/commit/f62c295))
+- Add wait::processor_state helper ([c5ebd5d](https://github.com/maltesander/nifi-rust-client/commit/c5ebd5d))
+- Add wait and bulk module scaffolds ([c48de54](https://github.com/maltesander/nifi-rust-client/commit/c48de54))
+- Add NifiError::Timeout variant for wait helpers ([2dcfc25](https://github.com/maltesander/nifi-rust-client/commit/2dcfc25))
+- Declare request_id span field on HTTP helpers ([cc871ff](https://github.com/maltesander/nifi-rust-client/commit/cc871ff))
+- Attach request-id header to login and logout requests ([d144836](https://github.com/maltesander/nifi-rust-client/commit/d144836))
+- Attach UUIDv4 request-id header and span field when configured ([f78a6f7](https://github.com/maltesander/nifi-rust-client/commit/f78a6f7))
+- Add NifiClientBuilder::request_id_header option ([2ecc192](https://github.com/maltesander/nifi-rust-client/commit/2ecc192))
+- Emit streaming variant for binary GET endpoints (dynamic) ([e28a640](https://github.com/maltesander/nifi-rust-client/commit/e28a640))
+- Add get_bytes_stream_with_query helper ([41153c9](https://github.com/maltesander/nifi-rust-client/commit/41153c9))
+- Add get_bytes_stream helper ([6cefe0e](https://github.com/maltesander/nifi-rust-client/commit/6cefe0e))
+- Add BytesStream type and Bytes re-export ([afa1380](https://github.com/maltesander/nifi-rust-client/commit/afa1380))
+
+### Changed
+
+- Drop stale #[allow(dead_code)] on used HTTP helpers ([6c962e5](https://github.com/maltesander/nifi-rust-client/commit/6c962e5))
+- Extract handle_response_status shared preamble ([f72687b](https://github.com/maltesander/nifi-rust-client/commit/f72687b))
+- Collapse wait::wire_value() to one body via generated as_str ([98dc10d](https://github.com/maltesander/nifi-rust-client/commit/98dc10d))
+- Replace bulk.rs STATE_* consts with typed helper enums ([becfa9a](https://github.com/maltesander/nifi-rust-client/commit/becfa9a))
+- Replace magic strings/numbers with typed constants ([d440e03](https://github.com/maltesander/nifi-rust-client/commit/d440e03))
+- Address final-review polish on wait and auth ([fbf7ffb](https://github.com/maltesander/nifi-rust-client/commit/fbf7ffb))
+- Centralize HTTP plumbing in build_request ([339a6dd](https://github.com/maltesander/nifi-rust-client/commit/339a6dd))
+- Zeroize bearer token in NifiClient ([6d9efc3](https://github.com/maltesander/nifi-rust-client/commit/6d9efc3))
+- Zeroize env-var password in EnvPasswordAuth ([074c777](https://github.com/maltesander/nifi-rust-client/commit/074c777))
+- Zeroize StaticTokenAuth token on drop ([ecb7979](https://github.com/maltesander/nifi-rust-client/commit/ecb7979))
+- Zeroize PasswordAuth password on drop ([e198fc7](https://github.com/maltesander/nifi-rust-client/commit/e198fc7))
+
+### Fixed
+
+- Drain connection queues before deleting imported flow PG ([78cd059](https://github.com/maltesander/nifi-rust-client/commit/78cd059))
+- Allow unwrap in integration-test setup helpers ([dad43eb](https://github.com/maltesander/nifi-rust-client/commit/dad43eb))
+- Warn on cleanup DELETE failures instead of silent drop ([959bcdc](https://github.com/maltesander/nifi-rust-client/commit/959bcdc))
+- Multipart emitter carries required schema properties ([17c89d6](https://github.com/maltesander/nifi-rust-client/commit/17c89d6))
+- Resolve rustdoc broken intra-doc links + markdown lint ([888d80d](https://github.com/maltesander/nifi-rust-client/commit/888d80d))
+- Singleflight concurrent 401 re-auth to avoid duplicate login ([acc3b83](https://github.com/maltesander/nifi-rust-client/commit/acc3b83))
+
+### Documentation
+
+- Add streaming and bulk examples ([b9f0564](https://github.com/maltesander/nifi-rust-client/commit/b9f0564))
+- Warn on missing rustdoc for all public items ([6fb20bc](https://github.com/maltesander/nifi-rust-client/commit/6fb20bc))
+- Improve flow portability module header. ([bce9026](https://github.com/maltesander/nifi-rust-client/commit/bce9026))
+- Document wait and bulk modules ([fb29b2f](https://github.com/maltesander/nifi-rust-client/commit/fb29b2f))
+- Correct apply_request_id bypass list in docstring ([2c0849c](https://github.com/maltesander/nifi-rust-client/commit/2c0849c))
+- Document request_id_header builder option ([111282e](https://github.com/maltesander/nifi-rust-client/commit/111282e))
+- Document streaming binary-download helpers ([d4e2d8c](https://github.com/maltesander/nifi-rust-client/commit/d4e2d8c))
+
+### Tests
+
+- Close coverage gaps on wait, multipart, enums, and hint paths ([e01fe29](https://github.com/maltesander/nifi-rust-client/commit/e01fe29))
+- Stop PG before cleanup delete in round-trip ([f26318b](https://github.com/maltesander/nifi-rust-client/commit/f26318b))
+- Cover export_process_group returning JSON Value ([0aa86a3](https://github.com/maltesander/nifi-rust-client/commit/0aa86a3))
+- Round-trip smoke test for generated field-enum helpers ([6062941](https://github.com/maltesander/nifi-rust-client/commit/6062941))
+- Dynamic-mode smoke test for processor_state_dynamic ([8228154](https://github.com/maltesander/nifi-rust-client/commit/8228154))
+- Add concurrent 401 singleflight test ([3ed7855](https://github.com/maltesander/nifi-rust-client/commit/3ed7855))
+- Cover dynamic version resolution strategies ([96d28c7](https://github.com/maltesander/nifi-rust-client/commit/96d28c7))
+- Verify stream drop mid-body does not poison client ([10e5a3e](https://github.com/maltesander/nifi-rust-client/commit/10e5a3e))
+- Wiremock tests for bulk helpers ([3f9bec1](https://github.com/maltesander/nifi-rust-client/commit/3f9bec1))
+- Wiremock tests for wait::provenance_query ([95f0b34](https://github.com/maltesander/nifi-rust-client/commit/95f0b34))
+- Wiremock tests for wait::parameter_context_update ([7d57521](https://github.com/maltesander/nifi-rust-client/commit/7d57521))
+- Wiremock tests for wait::{processor,controller_service}_state ([b219f74](https://github.com/maltesander/nifi-rust-client/commit/b219f74))
+- Unit tests for poll_until primitive ([4401fe6](https://github.com/maltesander/nifi-rust-client/commit/4401fe6))
+- Add failing wiremock tests for request-id header ([54e8c4c](https://github.com/maltesander/nifi-rust-client/commit/54e8c4c))
+- Cover RetryPolicy defaults and overflow behavior ([e1a9aac](https://github.com/maltesander/nifi-rust-client/commit/e1a9aac))
+- Characterize Debug masking of PasswordAuth and StaticTokenAuth ([e20a29a](https://github.com/maltesander/nifi-rust-client/commit/e20a29a))
+- Verify Range header + 206 on streaming variant ([facbe45](https://github.com/maltesander/nifi-rust-client/commit/facbe45))
+
 ## [0.10.1] - 2026-04-14
 
 - Normalize dynamic path template placeholders in `openapi-gen` ([160d46d](https://github.com/maltesander/nifi-rust-client/commit/160d46d))
@@ -486,7 +564,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Structured error handling** — `NifiError` via `snafu` with distinct variants for HTTP, auth, serialization, and network errors.
 - **Tracing** — all HTTP requests emit a `tracing::debug!` event with method and path before sending.
 
-[Unreleased]: https://github.com/maltesander/nifi-rust-client/compare/client-v0.10.1...HEAD
+[Unreleased]: https://github.com/maltesander/nifi-rust-client/compare/client-v0.11.0...HEAD
+[0.11.0]: https://github.com/maltesander/nifi-rust-client/compare/client-v0.10.1...client-v0.11.0
 [0.10.1]: https://github.com/maltesander/nifi-rust-client/compare/client-v0.10.0...client-v0.10.1
 [0.10.0]: https://github.com/maltesander/nifi-rust-client/compare/client-v0.9.0...client-v0.10.0
 [0.9.0]: https://github.com/maltesander/nifi-rust-client/compare/client-v0.8.0...client-v0.9.0
