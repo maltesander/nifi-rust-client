@@ -1,9 +1,9 @@
 //! Command dispatch for `nifictl`.
 //!
-//! The top-level `run()` entry point matches on the parsed
-//! [`cli::Commands`] and routes each arm to either a porcelain helper
-//! or the shared [`dispatch_resource`] path (which every generated
-//! resource subcommand goes through).
+//! The top-level [`run`] entry point matches on the parsed
+//! [`crate::cli::Commands`] and routes each arm to either a porcelain
+//! helper or the shared [`dispatch_resource`] path (which every
+//! generated resource subcommand goes through).
 //!
 //! Auth-input resolution (`resolve_password_input`, `warn_password_flag_used`)
 //! lives here because it is only consumed by arms in this module.

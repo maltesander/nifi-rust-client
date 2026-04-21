@@ -32,8 +32,8 @@ pub(crate) struct Cli {
     /// Password for username/password authentication.
     ///
     /// Hidden from --help because passing a password via CLI leaks it to
-    /// /proc/<pid>/cmdline and shell history. Prefer NIFI_PASSWORD, a
-    /// context's password_env, or the interactive prompt.
+    /// `/proc/<pid>/cmdline` and shell history. Prefer `NIFI_PASSWORD`, a
+    /// context's `password_env`, or the interactive prompt.
     #[arg(long, global = true, hide = true)]
     pub(crate) password: Option<String>,
 

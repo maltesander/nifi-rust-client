@@ -4,11 +4,13 @@
 //! [`ApiSpec`]s. The entry point is [`compute_diff`]; the submodules
 //! are implementation details.
 //!
-//! - [`endpoint`] — endpoint-level diffing (paths, params, request
+//! - `endpoint` — endpoint-level diffing (paths, params, request
 //!   bodies, responses).
-//! - [`types`] — type-level diffing (struct fields, enum variants).
-//! - [`index`] — transitive-type-reachability walk used to associate
+//! - `types` — type-level diffing (struct fields, enum variants).
+//! - `index` — transitive-type-reachability walk used to associate
 //!   types with the tag (API group) that references them.
+//! - `report` — summary / is-breaking / semver-bump methods on
+//!   `VersionDiff`.
 
 mod endpoint;
 mod index;
