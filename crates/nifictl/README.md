@@ -98,6 +98,11 @@ nifictl config delete-context old # remove context
 
 CLI flags > environment variables > active context > defaults.
 
+> **Note:** `--password` is accepted for scripting convenience but hidden
+> from `--help`. Prefer `NIFI_PASSWORD`, a context's `password_env`, or
+> the interactive prompt — CLI flags are visible to other local users via
+> `/proc/<pid>/cmdline`.
+
 ### Interactive login
 
 If the active context uses password auth and no password is available from

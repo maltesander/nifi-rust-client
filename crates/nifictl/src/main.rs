@@ -42,8 +42,12 @@ struct Cli {
     #[arg(long, env = "NIFI_USERNAME", global = true)]
     username: Option<String>,
 
-    /// NiFi password (overrides context)
-    #[arg(long, env = "NIFI_PASSWORD", global = true)]
+    /// Password for username/password authentication.
+    ///
+    /// Hidden from --help because passing a password via CLI leaks it to
+    /// /proc/<pid>/cmdline and shell history. Prefer NIFI_PASSWORD, a
+    /// context's password_env, or the interactive prompt.
+    #[arg(long, global = true, hide = true)]
     password: Option<String>,
 
     /// NiFi bearer token (overrides context)
@@ -408,6 +412,35 @@ async fn main() -> ExitCode {
     }
 }
 
+/// Fires once per process on stderr when `--password` was passed on the CLI.
+static PASSWORD_FLAG_WARNED: std::sync::OnceLock<()> = std::sync::OnceLock::new();
+
+fn warn_password_flag_used() {
+    if PASSWORD_FLAG_WARNED.set(()).is_ok() {
+        eprintln!(
+            "warning: --password is visible to other local users via the process list; \
+             prefer NIFI_PASSWORD, a context's password_env, or the interactive prompt"
+        );
+    }
+}
+
+/// Resolve the password input for `ResolvedParams::resolve`:
+///
+/// - If `--password` was passed (`Some(_)`), warn once and return it.
+/// - Otherwise fall back to the `NIFI_PASSWORD` env var (no warning).
+///
+/// The env-var fallback lives here because the clap attribute no longer
+/// reads `NIFI_PASSWORD` automatically — that coupling made it impossible
+/// to tell the two sources apart and fire the warning selectively.
+fn resolve_password_input(cli_password: Option<String>) -> Option<String> {
+    if cli_password.is_some() {
+        warn_password_flag_used();
+        cli_password
+    } else {
+        std::env::var("NIFI_PASSWORD").ok()
+    }
+}
+
 #[allow(clippy::too_many_arguments)]
 async fn dispatch_resource(
     resource: generated::GeneratedResource,
@@ -486,7 +519,7 @@ async fn run(cli: Cli) -> Result<(), error::CliError> {
             let params = client_factory::ResolvedParams::resolve(
                 cli.url,
                 cli.username,
-                cli.password,
+                resolve_password_input(cli.password),
                 cli.token,
                 cli.insecure,
                 context,
@@ -504,7 +537,7 @@ async fn run(cli: Cli) -> Result<(), error::CliError> {
             let params = client_factory::ResolvedParams::resolve(
                 cli.url,
                 cli.username,
-                cli.password,
+                resolve_password_input(cli.password),
                 cli.token,
                 cli.insecure,
                 context,
@@ -529,7 +562,7 @@ async fn run(cli: Cli) -> Result<(), error::CliError> {
             let params = client_factory::ResolvedParams::resolve(
                 cli.url,
                 cli.username,
-                cli.password,
+                resolve_password_input(cli.password),
                 cli.token,
                 cli.insecure,
                 context,
@@ -612,7 +645,7 @@ async fn run(cli: Cli) -> Result<(), error::CliError> {
                 cli.context.as_deref(),
                 cli.url.clone(),
                 cli.username.clone(),
-                cli.password.clone(),
+                resolve_password_input(cli.password.clone()),
                 cli.token.clone(),
                 cli.insecure,
                 cli.dry_run,
@@ -630,7 +663,7 @@ async fn run(cli: Cli) -> Result<(), error::CliError> {
                 cli.context.as_deref(),
                 cli.url.clone(),
                 cli.username.clone(),
-                cli.password.clone(),
+                resolve_password_input(cli.password.clone()),
                 cli.token.clone(),
                 cli.insecure,
                 cli.dry_run,
@@ -648,7 +681,7 @@ async fn run(cli: Cli) -> Result<(), error::CliError> {
                 cli.context.as_deref(),
                 cli.url.clone(),
                 cli.username.clone(),
-                cli.password.clone(),
+                resolve_password_input(cli.password.clone()),
                 cli.token.clone(),
                 cli.insecure,
                 cli.dry_run,
@@ -666,7 +699,7 @@ async fn run(cli: Cli) -> Result<(), error::CliError> {
                 cli.context.as_deref(),
                 cli.url.clone(),
                 cli.username.clone(),
-                cli.password.clone(),
+                resolve_password_input(cli.password.clone()),
                 cli.token.clone(),
                 cli.insecure,
                 cli.dry_run,
@@ -684,7 +717,7 @@ async fn run(cli: Cli) -> Result<(), error::CliError> {
                 cli.context.as_deref(),
                 cli.url.clone(),
                 cli.username.clone(),
-                cli.password.clone(),
+                resolve_password_input(cli.password.clone()),
                 cli.token.clone(),
                 cli.insecure,
                 cli.dry_run,
@@ -702,7 +735,7 @@ async fn run(cli: Cli) -> Result<(), error::CliError> {
                 cli.context.as_deref(),
                 cli.url.clone(),
                 cli.username.clone(),
-                cli.password.clone(),
+                resolve_password_input(cli.password.clone()),
                 cli.token.clone(),
                 cli.insecure,
                 cli.dry_run,
@@ -720,7 +753,7 @@ async fn run(cli: Cli) -> Result<(), error::CliError> {
                 cli.context.as_deref(),
                 cli.url.clone(),
                 cli.username.clone(),
-                cli.password.clone(),
+                resolve_password_input(cli.password.clone()),
                 cli.token.clone(),
                 cli.insecure,
                 cli.dry_run,
@@ -738,7 +771,7 @@ async fn run(cli: Cli) -> Result<(), error::CliError> {
                 cli.context.as_deref(),
                 cli.url.clone(),
                 cli.username.clone(),
-                cli.password.clone(),
+                resolve_password_input(cli.password.clone()),
                 cli.token.clone(),
                 cli.insecure,
                 cli.dry_run,
@@ -761,7 +794,7 @@ async fn run(cli: Cli) -> Result<(), error::CliError> {
                     cli.context.as_deref(),
                     cli.url,
                     cli.username,
-                    cli.password,
+                    resolve_password_input(cli.password),
                     cli.token,
                     cli.insecure,
                     cli.dry_run,
@@ -785,7 +818,7 @@ async fn run(cli: Cli) -> Result<(), error::CliError> {
             let params = client_factory::ResolvedParams::resolve(
                 cli.url,
                 cli.username,
-                cli.password,
+                resolve_password_input(cli.password),
                 cli.token,
                 cli.insecure,
                 context,
@@ -861,7 +894,7 @@ async fn run(cli: Cli) -> Result<(), error::CliError> {
                 cli.context.as_deref(),
                 cli.url.clone(),
                 cli.username.clone(),
-                cli.password.clone(),
+                resolve_password_input(cli.password.clone()),
                 cli.token.clone(),
                 cli.insecure,
                 cli.dry_run,
@@ -879,7 +912,7 @@ async fn run(cli: Cli) -> Result<(), error::CliError> {
                 cli.context.as_deref(),
                 cli.url.clone(),
                 cli.username.clone(),
-                cli.password.clone(),
+                resolve_password_input(cli.password.clone()),
                 cli.token.clone(),
                 cli.insecure,
                 cli.dry_run,
@@ -897,7 +930,7 @@ async fn run(cli: Cli) -> Result<(), error::CliError> {
                 cli.context.as_deref(),
                 cli.url.clone(),
                 cli.username.clone(),
-                cli.password.clone(),
+                resolve_password_input(cli.password.clone()),
                 cli.token.clone(),
                 cli.insecure,
                 cli.dry_run,
@@ -915,7 +948,7 @@ async fn run(cli: Cli) -> Result<(), error::CliError> {
                 cli.context.as_deref(),
                 cli.url.clone(),
                 cli.username.clone(),
-                cli.password.clone(),
+                resolve_password_input(cli.password.clone()),
                 cli.token.clone(),
                 cli.insecure,
                 cli.dry_run,
@@ -933,7 +966,7 @@ async fn run(cli: Cli) -> Result<(), error::CliError> {
                 cli.context.as_deref(),
                 cli.url.clone(),
                 cli.username.clone(),
-                cli.password.clone(),
+                resolve_password_input(cli.password.clone()),
                 cli.token.clone(),
                 cli.insecure,
                 cli.dry_run,
@@ -951,7 +984,7 @@ async fn run(cli: Cli) -> Result<(), error::CliError> {
                 cli.context.as_deref(),
                 cli.url.clone(),
                 cli.username.clone(),
-                cli.password.clone(),
+                resolve_password_input(cli.password.clone()),
                 cli.token.clone(),
                 cli.insecure,
                 cli.dry_run,
@@ -969,7 +1002,7 @@ async fn run(cli: Cli) -> Result<(), error::CliError> {
                 cli.context.as_deref(),
                 cli.url.clone(),
                 cli.username.clone(),
-                cli.password.clone(),
+                resolve_password_input(cli.password.clone()),
                 cli.token.clone(),
                 cli.insecure,
                 cli.dry_run,
@@ -987,7 +1020,7 @@ async fn run(cli: Cli) -> Result<(), error::CliError> {
                 cli.context.as_deref(),
                 cli.url.clone(),
                 cli.username.clone(),
-                cli.password.clone(),
+                resolve_password_input(cli.password.clone()),
                 cli.token.clone(),
                 cli.insecure,
                 cli.dry_run,
@@ -1005,7 +1038,7 @@ async fn run(cli: Cli) -> Result<(), error::CliError> {
                 cli.context.as_deref(),
                 cli.url.clone(),
                 cli.username.clone(),
-                cli.password.clone(),
+                resolve_password_input(cli.password.clone()),
                 cli.token.clone(),
                 cli.insecure,
                 cli.dry_run,
@@ -1023,7 +1056,7 @@ async fn run(cli: Cli) -> Result<(), error::CliError> {
                 cli.context.as_deref(),
                 cli.url.clone(),
                 cli.username.clone(),
-                cli.password.clone(),
+                resolve_password_input(cli.password.clone()),
                 cli.token.clone(),
                 cli.insecure,
                 cli.dry_run,
@@ -1041,7 +1074,7 @@ async fn run(cli: Cli) -> Result<(), error::CliError> {
                 cli.context.as_deref(),
                 cli.url.clone(),
                 cli.username.clone(),
-                cli.password.clone(),
+                resolve_password_input(cli.password.clone()),
                 cli.token.clone(),
                 cli.insecure,
                 cli.dry_run,
@@ -1059,7 +1092,7 @@ async fn run(cli: Cli) -> Result<(), error::CliError> {
                 cli.context.as_deref(),
                 cli.url.clone(),
                 cli.username.clone(),
-                cli.password.clone(),
+                resolve_password_input(cli.password.clone()),
                 cli.token.clone(),
                 cli.insecure,
                 cli.dry_run,
@@ -1077,7 +1110,7 @@ async fn run(cli: Cli) -> Result<(), error::CliError> {
                 cli.context.as_deref(),
                 cli.url.clone(),
                 cli.username.clone(),
-                cli.password.clone(),
+                resolve_password_input(cli.password.clone()),
                 cli.token.clone(),
                 cli.insecure,
                 cli.dry_run,
@@ -1095,7 +1128,7 @@ async fn run(cli: Cli) -> Result<(), error::CliError> {
                 cli.context.as_deref(),
                 cli.url.clone(),
                 cli.username.clone(),
-                cli.password.clone(),
+                resolve_password_input(cli.password.clone()),
                 cli.token.clone(),
                 cli.insecure,
                 cli.dry_run,
@@ -1113,7 +1146,7 @@ async fn run(cli: Cli) -> Result<(), error::CliError> {
                 cli.context.as_deref(),
                 cli.url.clone(),
                 cli.username.clone(),
-                cli.password.clone(),
+                resolve_password_input(cli.password.clone()),
                 cli.token.clone(),
                 cli.insecure,
                 cli.dry_run,
@@ -1131,7 +1164,7 @@ async fn run(cli: Cli) -> Result<(), error::CliError> {
                 cli.context.as_deref(),
                 cli.url.clone(),
                 cli.username.clone(),
-                cli.password.clone(),
+                resolve_password_input(cli.password.clone()),
                 cli.token.clone(),
                 cli.insecure,
                 cli.dry_run,
@@ -1149,7 +1182,7 @@ async fn run(cli: Cli) -> Result<(), error::CliError> {
                 cli.context.as_deref(),
                 cli.url.clone(),
                 cli.username.clone(),
-                cli.password.clone(),
+                resolve_password_input(cli.password.clone()),
                 cli.token.clone(),
                 cli.insecure,
                 cli.dry_run,
@@ -1167,7 +1200,7 @@ async fn run(cli: Cli) -> Result<(), error::CliError> {
                 cli.context.as_deref(),
                 cli.url.clone(),
                 cli.username.clone(),
-                cli.password.clone(),
+                resolve_password_input(cli.password.clone()),
                 cli.token.clone(),
                 cli.insecure,
                 cli.dry_run,
@@ -1185,7 +1218,7 @@ async fn run(cli: Cli) -> Result<(), error::CliError> {
                 cli.context.as_deref(),
                 cli.url.clone(),
                 cli.username.clone(),
-                cli.password.clone(),
+                resolve_password_input(cli.password.clone()),
                 cli.token.clone(),
                 cli.insecure,
                 cli.dry_run,
@@ -1203,7 +1236,7 @@ async fn run(cli: Cli) -> Result<(), error::CliError> {
                 cli.context.as_deref(),
                 cli.url.clone(),
                 cli.username.clone(),
-                cli.password.clone(),
+                resolve_password_input(cli.password.clone()),
                 cli.token.clone(),
                 cli.insecure,
                 cli.dry_run,

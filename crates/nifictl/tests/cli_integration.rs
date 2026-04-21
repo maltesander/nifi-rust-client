@@ -38,6 +38,20 @@ fn completions_bash() {
 }
 
 #[test]
+fn password_is_hidden_from_help() {
+    let output = std::process::Command::new(env!("CARGO_BIN_EXE_nifictl"))
+        .arg("--help")
+        .output()
+        .expect("run nifictl --help");
+    assert!(output.status.success(), "nifictl --help exited non-zero");
+    let help = String::from_utf8_lossy(&output.stdout);
+    assert!(
+        !help.contains("--password"),
+        "--password should be hidden from help; help contained:\n{help}"
+    );
+}
+
+#[test]
 fn completions_fish() {
     let output = nifictl()
         .args(["completions", "fish"])
