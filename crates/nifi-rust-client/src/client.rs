@@ -541,7 +541,6 @@ impl NifiClient {
     /// before the `file` part. The order mirrors the slice order; the
     /// generator emits it in alphabetic order by wire name for
     /// determinism across regenerations.
-    #[allow(dead_code)]
     #[tracing::instrument(
         skip(self, text_fields, data),
         fields(request_id = tracing::field::Empty)
