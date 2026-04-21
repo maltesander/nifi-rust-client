@@ -118,6 +118,8 @@ error: no password available and stdin is not a TTY
 hint: set NIFI_PASSWORD or pass --password
 ```
 
+Cached tokens are written with `0o600` permissions on Unix.
+
 ### JWT expiry warning
 
 After a successful `login`, if the returned token expires within 24 hours

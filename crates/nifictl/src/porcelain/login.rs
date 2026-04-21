@@ -34,11 +34,33 @@ fn token_path(context_name: &str) -> PathBuf {
     token_dir().join(context_name)
 }
 
+/// Write the cached token to disk at `path`. On Unix, sets the file's
+/// permissions to `0o600` after write so a multi-user system does not
+/// expose the JWT. On non-Unix platforms the umask applies.
+pub(crate) fn write_token_file(path: &std::path::Path, token: &str) -> std::io::Result<()> {
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent)?;
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            // Best-effort on parent dir — don't fail login if the dir already
+            // exists with different perms.
+            let _ = std::fs::set_permissions(parent, std::fs::Permissions::from_mode(0o700));
+        }
+    }
+    std::fs::write(path, token)?;
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        std::fs::set_permissions(path, std::fs::Permissions::from_mode(0o600))?;
+    }
+    Ok(())
+}
+
 pub async fn login(params: &ResolvedParams, context_name: &str) -> Result<(), CliError> {
     let client = params.build_client().await?;
     if let Some(token) = client.token().await {
-        std::fs::create_dir_all(token_dir())?;
-        std::fs::write(token_path(context_name), &token)?;
+        write_token_file(&token_path(context_name), &token)?;
         eprintln!("Logged in to {} (token cached)", params.url);
         if let Some(version) = client.detected_version() {
             eprintln!("NiFi version: {version}");
@@ -116,5 +138,34 @@ mod tests {
     fn should_not_warn_for_malformed_token() {
         let now = UNIX_EPOCH;
         assert!(expiry_warning_for("garbage", now).is_none());
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn token_file_is_written_with_mode_0o600() {
+        use std::os::unix::fs::PermissionsExt;
+        let tmp = tempfile::tempdir().unwrap();
+        let path = tmp.path().join("token");
+        super::write_token_file(&path, "jwt-payload").unwrap();
+        let mode = std::fs::metadata(&path).unwrap().permissions().mode() & 0o777;
+        assert_eq!(
+            mode, 0o600,
+            "token file must be owner-read/write only, got {:o}",
+            mode
+        );
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn token_file_overwrite_resets_mode_to_0o600() {
+        use std::os::unix::fs::PermissionsExt;
+        let tmp = tempfile::tempdir().unwrap();
+        let path = tmp.path().join("token");
+        std::fs::write(&path, "old").unwrap();
+        std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o644)).unwrap();
+        super::write_token_file(&path, "new-jwt").unwrap();
+        let mode = std::fs::metadata(&path).unwrap().permissions().mode() & 0o777;
+        assert_eq!(mode, 0o600);
+        assert_eq!(std::fs::read_to_string(&path).unwrap(), "new-jwt");
     }
 }
