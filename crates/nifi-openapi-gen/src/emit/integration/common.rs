@@ -20,7 +20,7 @@ pub(super) fn find_endpoint<'a>(
 /// Build the accessor for calling the API in dynamic mode.
 ///
 /// With the Phase 5 flat API, every endpoint lives as an inherent method
-/// on the single per-tag struct, so the accessor is just
+/// on the single resource struct, so the accessor is just
 /// `{tag_accessor_fn}()`.
 pub(super) fn build_accessor(tag_accessor_fn: &str) -> String {
     format!("{tag_accessor_fn}()")

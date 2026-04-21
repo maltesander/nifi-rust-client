@@ -65,3 +65,11 @@ required-features = ["nifi-2-8-0"]
 [[example]]
 name = "dynamic_autodetect"
 required-features = ["dynamic"]
+
+[[example]]
+name = "streaming_download"
+required-features = ["nifi-2-8-0"]
+
+[[example]]
+name = "bulk_start_stop"
+required-features = ["nifi-2-8-0"]

@@ -299,7 +299,7 @@ fn emit_handler(
     // returned directly and its methods are inherent. No import needed.
     let _ = cmd;
 
-    // Flat API: a single accessor returns the tag struct, then the method
+    // Flat API: a single accessor returns the resource struct, then the method
     // is called directly with all path params as regular arguments.
     let api_access = format!("client.{}()", tag.accessor_fn);
 

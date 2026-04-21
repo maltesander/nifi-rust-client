@@ -69,8 +69,8 @@ async fn put<B: Serialize, T: DeserializeOwned>(&self, path: &str, body: &B) -> 
 async fn put_no_body<T: DeserializeOwned>(&self, path: &str) -> Result<T, NifiError>
 async fn put_void_no_body(&self, path: &str) -> Result<(), NifiError>
 async fn delete(&self, path: &str) -> Result<(), NifiError>
-async fn post_octet_stream<T: DeserializeOwned>(&self, path: &str, filename: Option<&str>, data: Vec<u8>) -> Result<T, NifiError>
-async fn post_void_octet_stream(&self, path: &str, filename: Option<&str>, data: Vec<u8>) -> Result<(), NifiError>
+async fn post_octet_stream<T: DeserializeOwned>(&self, path: &str, filename: Option<&str>, data: bytes::Bytes) -> Result<T, NifiError>
+async fn post_void_octet_stream(&self, path: &str, filename: Option<&str>, data: bytes::Bytes) -> Result<(), NifiError>
 async fn get_bytes_stream(&self, path: &str, extra_headers: &[(&str, &str)]) -> Result<BytesStream, NifiError>
 async fn get_bytes_stream_with_query(&self, path: &str, extra_headers: &[(&str, &str)], query: &[(&str, String)]) -> Result<BytesStream, NifiError>
 ```
@@ -551,11 +551,11 @@ nifi-rust-client = { version = "...", features = ["dynamic"] }
 ```
 
 The `DynamicClient` lazily detects the NiFi version via the `/flow/about` endpoint. Unlike the
-legacy dispatch model that routed to per-version generated code, the canonical-superset model
-emits a single set of types (one struct per DTO, fields `Option<T>` where any version omits them)
-and a single set of API methods that start with a runtime `require_endpoint(Endpoint::FOO).await?`
-availability check. Version detection happens automatically on `login()`, or can be triggered
-explicitly via `detect_version()`.
+legacy dispatch model that routed to per-version generated code, dynamic mode emits a single set
+of types (one struct per DTO, fields `Option<T>` where any version omits them) and a single set
+of API methods that start with a runtime `require_endpoint(Endpoint::FOO).await?` availability
+check. Version detection happens automatically on `login()`, or can be triggered explicitly via
+`detect_version()`.
 
 The canonical dynamic emitter lives at
 `crates/nifi-openapi-gen/src/emit/dynamic/{mod,api,types,availability,index}.rs`. It consumes
