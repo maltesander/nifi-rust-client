@@ -27,9 +27,9 @@ import tempfile
 import time
 import urllib.error
 import urllib.request
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import date
-from typing import List, Optional
+from typing import List
 
 # ---------------------------------------------------------------------------
 # Constants
