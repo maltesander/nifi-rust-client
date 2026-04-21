@@ -851,6 +851,7 @@ fn parse_tags(
     let mut groups: Vec<TagGroup> = tag_map
         .into_iter()
         .map(|(tag, all_endpoints)| {
+            validate_tag_identifier(&tag);
             let struct_name = tag.replace(' ', "");
             let module_name = tag.to_lowercase().replace(' ', "_");
             let accessor_fn = tag_to_accessor(&tag);
@@ -893,6 +894,51 @@ fn parse_tags(
         .collect();
     groups.sort_by(|a, b| a.tag.cmp(&b.tag));
     groups
+}
+
+/// Validate that a tag name can become a Rust identifier via the
+/// existing `replace(' ', "")` / `replace(' ', "_")` normalization.
+///
+/// After stripping whitespace, the remainder must:
+/// - start with an ASCII letter or underscore, and
+/// - contain only ASCII alphanumerics and underscores.
+///
+/// A tag that fails these rules would produce invalid Rust and break
+/// the build at rustc-time with a confusing error. Panic here instead
+/// with an actionable message pointing at the offending tag.
+fn validate_tag_identifier(tag: &str) {
+    let stripped: String = tag.chars().filter(|c| !c.is_whitespace()).collect();
+    if stripped.is_empty() {
+        crate::parser_strict::panic_unknown(
+            "tag",
+            "/tags",
+            &format!("tag '{tag}' is empty after stripping whitespace"),
+        );
+    }
+    let mut chars = stripped.chars();
+    let first = chars.next().expect("non-empty checked above");
+    if !(first.is_ascii_alphabetic() || first == '_') {
+        crate::parser_strict::panic_unknown(
+            "tag",
+            "/tags",
+            &format!(
+                "tag '{tag}' does not start with an ASCII letter or underscore \
+                 after stripping whitespace (got '{first}')"
+            ),
+        );
+    }
+    for c in chars {
+        if !(c.is_ascii_alphanumeric() || c == '_') {
+            crate::parser_strict::panic_unknown(
+                "tag",
+                "/tags",
+                &format!(
+                    "tag '{tag}' contains non-identifier char '{c}' after \
+                     stripping whitespace"
+                ),
+            );
+        }
+    }
 }
 
 fn operation_id_to_fn_name(id: &str) -> String {
@@ -1118,5 +1164,38 @@ mod tests {
         ));
         // response_type should still be populated the old way
         assert!(ep.response_type.is_some());
+    }
+
+    #[test]
+    #[should_panic(expected = "does not start with an ASCII letter")]
+    fn rejects_tag_starting_with_digit() {
+        super::validate_tag_identifier("1bad");
+    }
+
+    #[test]
+    #[should_panic(expected = "non-identifier char")]
+    fn rejects_tag_with_hyphen() {
+        super::validate_tag_identifier("bad-tag");
+    }
+
+    #[test]
+    #[should_panic(expected = "is empty after stripping")]
+    fn rejects_empty_tag() {
+        super::validate_tag_identifier("   ");
+    }
+
+    #[test]
+    fn accepts_tag_with_space() {
+        super::validate_tag_identifier("Good Tag");
+    }
+
+    #[test]
+    fn accepts_normal_tag() {
+        super::validate_tag_identifier("Flow");
+    }
+
+    #[test]
+    fn accepts_underscore_prefix() {
+        super::validate_tag_identifier("_internal");
     }
 }
