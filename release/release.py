@@ -23,6 +23,8 @@ import re
 import shutil
 import subprocess
 import sys
+import tempfile
+import time
 import urllib.error
 import urllib.request
 from dataclasses import dataclass, field
@@ -767,16 +769,42 @@ def validate_client_build_dep(dry_run):
 # ---------------------------------------------------------------------------
 
 
-def _run_cmd_list(checks, rollback_hint):
+def _format_elapsed(secs):
+    if secs < 60:
+        return f"{secs:.0f}s"
+    m, s = divmod(int(secs), 60)
+    return f"{m}m {s:02d}s"
+
+
+def _run_cmd_list(checks, rollback_hint, heartbeat_interval=15):
+    """Run each (cmd, label) pair, printing a heartbeat dot every
+    heartbeat_interval seconds so long-running steps show liveness, plus the
+    elapsed time on completion. Output is captured to a tempfile (not a PIPE)
+    to avoid the subprocess blocking on a full pipe buffer on multi-MB
+    cargo/pre-commit logs.
+    """
     for cmd, label in checks:
-        print(f"      {label}...", end=" ", flush=True)
-        result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
-        if result.returncode == 0:
-            print("OK")
+        print(f"      {label}...", end="", flush=True)
+        start = time.monotonic()
+        with tempfile.TemporaryFile(mode="w+b") as tmp:
+            proc = subprocess.Popen(
+                cmd, shell=True, stdout=tmp, stderr=subprocess.STDOUT
+            )
+            while True:
+                try:
+                    proc.wait(timeout=heartbeat_interval)
+                    break
+                except subprocess.TimeoutExpired:
+                    print(".", end="", flush=True)
+            tmp.seek(0)
+            output = tmp.read().decode("utf-8", errors="replace")
+        elapsed = _format_elapsed(time.monotonic() - start)
+        if proc.returncode == 0:
+            print(f" OK ({elapsed})")
         else:
-            print("FAILED")
-            if result.stderr:
-                print(result.stderr, file=sys.stderr)
+            print(f" FAILED ({elapsed})")
+            if output:
+                print(output, file=sys.stderr)
             print(f"ERROR: '{label}' check failed. {rollback_hint}", file=sys.stderr)
             sys.exit(1)
 
