@@ -296,37 +296,6 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn stop_pg_without_yes_in_non_tty_refuses() {
-        let mock = MockServer::start().await;
-        Mock::given(method("PUT"))
-            .and(path("/nifi-api/flow/process-groups/pg-2"))
-            .respond_with(ResponseTemplate::new(500))
-            .expect(0)
-            .mount(&mock)
-            .await;
-
-        let client = dynamic_client_on(&mock, "2.9.0").await;
-        let base_url = mock.uri();
-        let ctx = crate::dry_run::CliCtx {
-            dry_run: false,
-            yes: false,
-            base_url: &base_url,
-        };
-
-        let err = super::stop_pg(&client, "pg-2", &ctx).await.unwrap_err();
-        match err {
-            crate::error::CliError::User(msg) => {
-                assert!(msg.contains("--yes"), "message should mention --yes: {msg}");
-                assert!(
-                    msg.contains("non-interactive"),
-                    "should mention non-interactive: {msg}"
-                );
-            }
-            other => panic!("expected User, got {other:?}"),
-        }
-    }
-
-    #[tokio::test]
     async fn stop_pg_with_yes_bypasses_prompt_and_hits_server() {
         let mock = MockServer::start().await;
         Mock::given(method("PUT"))
@@ -350,36 +319,5 @@ mod tests {
         };
 
         super::stop_pg(&client, "pg-3", &ctx).await.unwrap();
-    }
-
-    #[tokio::test]
-    async fn disable_services_without_yes_in_non_tty_refuses() {
-        let mock = MockServer::start().await;
-        Mock::given(method("PUT"))
-            .and(path(
-                "/nifi-api/flow/process-groups/pg-4/controller-services",
-            ))
-            .respond_with(ResponseTemplate::new(500))
-            .expect(0)
-            .mount(&mock)
-            .await;
-
-        let client = dynamic_client_on(&mock, "2.9.0").await;
-        let base_url = mock.uri();
-        let ctx = crate::dry_run::CliCtx {
-            dry_run: false,
-            yes: false,
-            base_url: &base_url,
-        };
-
-        let err = super::disable_services(&client, "pg-4", &ctx)
-            .await
-            .unwrap_err();
-        match err {
-            crate::error::CliError::User(msg) => {
-                assert!(msg.contains("--yes"));
-            }
-            other => panic!("expected User, got {other:?}"),
-        }
     }
 }

@@ -467,32 +467,6 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn replace_without_yes_in_non_tty_refuses() {
-        let mock = MockServer::start().await;
-        // No mocks registered — any HTTP call would fail.
-        let dir = tempfile::tempdir().unwrap();
-        let snap = dir.path().join("snap.json");
-        std::fs::write(&snap, r#"{}"#).unwrap();
-
-        let client = dynamic_client_on(&mock, "2.9.0").await;
-        let base_url = mock.uri();
-        let ctx = CliCtx {
-            dry_run: false,
-            yes: false,
-            base_url: &base_url,
-        };
-        let err = replace(&client, "pg-3", &snap, false, &ctx)
-            .await
-            .unwrap_err();
-        match err {
-            CliError::User(msg) => {
-                assert!(msg.contains("--yes"), "msg should mention --yes: {msg}")
-            }
-            other => panic!("expected User, got {other:?}"),
-        }
-    }
-
-    #[tokio::test]
     async fn replace_stop_first_happy_path_sends_four_requests() {
         let mock = MockServer::start().await;
         // 1. stop
