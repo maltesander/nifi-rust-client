@@ -20,6 +20,7 @@ import argparse
 import json
 import os
 import re
+import select
 import shutil
 import subprocess
 import sys
@@ -776,33 +777,77 @@ def _format_elapsed(secs):
     return f"{m}m {s:02d}s"
 
 
+# Lines worth surfacing live from cargo / pre-commit / rustc output.
+_INTERESTING_LINE_RE = re.compile(
+    r'^\s*(Compiling|Checking|Finished|Running )'   # cargo build/test stages
+    r'|^running \d+ tests?\b'                        # libtest binary start
+    r'|^test result:'                                # libtest summary
+    r'|FAILED'                                       # any failure marker
+    r'|^error(\[E\d+\])?:'                           # rustc errors
+    r'|\.\.+(Passed|Failed|Skipped)'                 # pre-commit hook rows
+)
+
+
 def _run_cmd_list(checks, rollback_hint, heartbeat_interval=15):
-    """Run each (cmd, label) pair, printing a heartbeat dot every
-    heartbeat_interval seconds so long-running steps show liveness, plus the
-    elapsed time on completion. Output is captured to a tempfile (not a PIPE)
-    to avoid the subprocess blocking on a full pipe buffer on multi-MB
-    cargo/pre-commit logs.
+    """Run each (cmd, label) pair. Stream "interesting" output lines live
+    (cargo Compiling/Running/test-result, pre-commit hook rows, rustc errors);
+    uninteresting chatter is captured silently to a tempfile so it can be
+    dumped on failure. Heartbeat dots fire only until the first interesting
+    line — after that, streamed activity is the liveness signal.
     """
     for cmd, label in checks:
         print(f"      {label}...", end="", flush=True)
         start = time.monotonic()
+        saw_stream_output = False
         with tempfile.TemporaryFile(mode="w+b") as tmp:
             proc = subprocess.Popen(
-                cmd, shell=True, stdout=tmp, stderr=subprocess.STDOUT
+                cmd,
+                shell=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                bufsize=0,
             )
+            stdout_fd = proc.stdout.fileno()
+            line_buf = b""
             while True:
-                try:
-                    proc.wait(timeout=heartbeat_interval)
-                    break
-                except subprocess.TimeoutExpired:
-                    print(".", end="", flush=True)
+                ready, _, _ = select.select([stdout_fd], [], [], heartbeat_interval)
+                if ready:
+                    chunk = os.read(stdout_fd, 4096)
+                    if not chunk:
+                        break
+                    tmp.write(chunk)
+                    line_buf += chunk
+                    while b"\n" in line_buf:
+                        line_bytes, line_buf = line_buf.split(b"\n", 1)
+                        line = line_bytes.decode("utf-8", errors="replace").rstrip()
+                        if _INTERESTING_LINE_RE.search(line):
+                            if not saw_stream_output:
+                                print()  # break out of the "Label..." line
+                                saw_stream_output = True
+                            print(f"         {line.strip()}", flush=True)
+                else:
+                    if proc.poll() is not None:
+                        break
+                    if not saw_stream_output:
+                        print(".", end="", flush=True)
+            proc.wait()
+            if line_buf:
+                tmp.write(line_buf)
+                tail = line_buf.decode("utf-8", errors="replace").rstrip()
+                if tail and _INTERESTING_LINE_RE.search(tail):
+                    if not saw_stream_output:
+                        print()
+                        saw_stream_output = True
+                    print(f"         {tail}", flush=True)
             tmp.seek(0)
             output = tmp.read().decode("utf-8", errors="replace")
         elapsed = _format_elapsed(time.monotonic() - start)
-        if proc.returncode == 0:
-            print(f" OK ({elapsed})")
+        status = "OK" if proc.returncode == 0 else "FAILED"
+        if saw_stream_output:
+            print(f"      {label}: {status} ({elapsed})")
         else:
-            print(f" FAILED ({elapsed})")
+            print(f" {status} ({elapsed})")
+        if proc.returncode != 0:
             if output:
                 print(output, file=sys.stderr)
             print(f"ERROR: '{label}' check failed. {rollback_hint}", file=sys.stderr)
