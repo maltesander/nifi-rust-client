@@ -1,4 +1,5 @@
 #![cfg(feature = "dynamic")]
+#![allow(clippy::unwrap_used)] // integration-test setup helpers are not #[test] fns
 
 //! Wiremock coverage for the dynamic upload_process_group endpoint:
 //! asserts that the generated method issues a multipart POST and
