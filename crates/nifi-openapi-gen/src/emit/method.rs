@@ -650,19 +650,19 @@ fn emit_simple_method_body_static(
                 Some(RequestBodyKind::OctetStream) => {
                     if is_text_response {
                         format!(
-                            "{headers_prelude}        self.client.post_octet_stream_returning_text({path_expr}, {header_arg}, data).await\n"
+                            "{headers_prelude}        self.client.post_octet_stream_returning_text({path_expr}, {header_arg}, data.into()).await\n"
                         )
                     } else if has_inner {
                         format!(
-                            "{headers_prelude}        let e: crate::types::{entity_ty} = self.client.post_octet_stream({path_expr}, {header_arg}, data).await?;\n        Ok(e.{inner_field}.unwrap_or_default())\n"
+                            "{headers_prelude}        let e: crate::types::{entity_ty} = self.client.post_octet_stream({path_expr}, {header_arg}, data.into()).await?;\n        Ok(e.{inner_field}.unwrap_or_default())\n"
                         )
                     } else if ep.response_type.is_some() {
                         format!(
-                            "{headers_prelude}        self.client.post_octet_stream({path_expr}, {header_arg}, data).await\n"
+                            "{headers_prelude}        self.client.post_octet_stream({path_expr}, {header_arg}, data.into()).await\n"
                         )
                     } else {
                         format!(
-                            "{headers_prelude}        self.client.post_void_octet_stream({path_expr}, {header_arg}, data).await\n"
+                            "{headers_prelude}        self.client.post_void_octet_stream({path_expr}, {header_arg}, data.into()).await\n"
                         )
                     }
                 }
@@ -670,9 +670,9 @@ fn emit_simple_method_body_static(
                     let fields_preamble =
                         multipart_fields_preamble(&ep.multipart_fields, "        ");
                     let (helper, extra_args) = if ep.multipart_fields.is_empty() {
-                        ("post_multipart", "filename, data")
+                        ("post_multipart", "filename, data.into()")
                     } else {
-                        ("post_multipart_with_fields", "&fields, filename, data")
+                        ("post_multipart_with_fields", "&fields, filename, data.into()")
                     };
                     if has_inner {
                         format!(
@@ -696,7 +696,7 @@ fn emit_simple_method_body_static(
                             );
                         }
                         format!(
-                            "{headers_prelude}{fields_preamble}        self.client.post_void_multipart({path_expr}, {header_arg}, filename, data).await\n"
+                            "{headers_prelude}{fields_preamble}        self.client.post_void_multipart({path_expr}, {header_arg}, filename, data.into()).await\n"
                         )
                     }
                 }
@@ -961,7 +961,7 @@ fn emit_dispatch_dynamic(
             }
             (HttpMethod::Post, Some(RequestBodyKind::OctetStream), _) => {
                 out.push_str(&format!(
-                    "        self.client.inner().post_void_octet_stream({path_arg}, {header_arg}, data).await\n"
+                    "        self.client.inner().post_void_octet_stream({path_arg}, {header_arg}, data.into()).await\n"
                 ));
             }
             (HttpMethod::Post, _, _) => {
@@ -1040,15 +1040,15 @@ fn emit_dispatch_dynamic(
                 ("post", ", body", String::new())
             }
             (HttpMethod::Post, Some(RequestBodyKind::OctetStream), _) => {
-                ("post_octet_stream", ", data", String::new())
+                ("post_octet_stream", ", data.into()", String::new())
             }
             (HttpMethod::Post, Some(RequestBodyKind::Multipart), _) => {
                 if ep.multipart_fields.is_empty() {
-                    ("post_multipart", ", filename, data", String::new())
+                    ("post_multipart", ", filename, data.into()", String::new())
                 } else {
                     (
                         "post_multipart_with_fields",
-                        ", &fields, filename, data",
+                        ", &fields, filename, data.into()",
                         String::new(),
                     )
                 }

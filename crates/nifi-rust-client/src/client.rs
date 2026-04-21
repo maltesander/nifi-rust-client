@@ -483,7 +483,7 @@ impl NifiClient {
         &self,
         path: &str,
         extra_headers: &[(&str, &str)],
-        data: Vec<u8>,
+        data: bytes::Bytes,
     ) -> Result<T, NifiError> {
         self.with_retry(|| async {
             let req = self
@@ -512,15 +512,16 @@ impl NifiClient {
         path: &str,
         extra_headers: &[(&str, &str)],
         filename: &str,
-        data: Vec<u8>,
+        data: bytes::Bytes,
     ) -> Result<T, NifiError> {
         self.with_retry(|| async {
             let req = self
                 .build_request(&Method::POST, path, self.http.post(self.api_url(path)))
                 .await;
             let req = apply_extra_headers(req, extra_headers);
-            let part =
-                reqwest::multipart::Part::bytes(data.clone()).file_name(filename.to_string());
+            let len = data.len() as u64;
+            let part = reqwest::multipart::Part::stream_with_length(data.clone(), len)
+                .file_name(filename.to_string());
             let form = reqwest::multipart::Form::new().part("file", part);
             let resp = req.multipart(form).send().await.context(HttpSnafu)?;
             Self::deserialize(&Method::POST, path, resp).await
@@ -551,7 +552,7 @@ impl NifiClient {
         extra_headers: &[(&str, &str)],
         text_fields: &[(&str, String)],
         filename: &str,
-        data: Vec<u8>,
+        data: bytes::Bytes,
     ) -> Result<T, NifiError> {
         self.with_retry(|| async {
             let req = self
@@ -562,8 +563,9 @@ impl NifiClient {
             for (name, value) in text_fields {
                 form = form.text((*name).to_string(), value.clone());
             }
-            let part =
-                reqwest::multipart::Part::bytes(data.clone()).file_name(filename.to_string());
+            let len = data.len() as u64;
+            let part = reqwest::multipart::Part::stream_with_length(data.clone(), len)
+                .file_name(filename.to_string());
             form = form.part("file", part);
             let resp = req.multipart(form).send().await.context(HttpSnafu)?;
             Self::deserialize(&Method::POST, path, resp).await
@@ -768,7 +770,7 @@ impl NifiClient {
         &self,
         path: &str,
         extra_headers: &[(&str, &str)],
-        data: Vec<u8>,
+        data: bytes::Bytes,
     ) -> Result<(), NifiError> {
         self.with_retry(|| async {
             let req = self
@@ -795,15 +797,16 @@ impl NifiClient {
         path: &str,
         extra_headers: &[(&str, &str)],
         filename: &str,
-        data: Vec<u8>,
+        data: bytes::Bytes,
     ) -> Result<(), NifiError> {
         self.with_retry(|| async {
             let req = self
                 .build_request(&Method::POST, path, self.http.post(self.api_url(path)))
                 .await;
             let req = apply_extra_headers(req, extra_headers);
-            let part =
-                reqwest::multipart::Part::bytes(data.clone()).file_name(filename.to_string());
+            let len = data.len() as u64;
+            let part = reqwest::multipart::Part::stream_with_length(data.clone(), len)
+                .file_name(filename.to_string());
             let form = reqwest::multipart::Form::new().part("file", part);
             let resp = req.multipart(form).send().await.context(HttpSnafu)?;
             Self::check_void(&Method::POST, path, resp).await
@@ -846,7 +849,7 @@ impl NifiClient {
         &self,
         path: &str,
         extra_headers: &[(&str, &str)],
-        data: Vec<u8>,
+        data: bytes::Bytes,
     ) -> Result<String, NifiError> {
         self.with_retry(|| async {
             let req = self
@@ -1223,4 +1226,36 @@ pub fn extract_error_message(body: &str) -> String {
         .ok()
         .and_then(|v| v["message"].as_str().map(str::to_owned))
         .unwrap_or_else(|| body.to_owned())
+}
+
+#[cfg(test)]
+mod tests {
+    /// Pins the invariant the upload helpers rely on: cloning a `bytes::Bytes`
+    /// handle is a refcount bump, not a heap allocation. The retry closures in
+    /// `post_octet_stream`, `post_void_octet_stream`, `post_multipart`,
+    /// `post_void_multipart`, `post_multipart_with_fields`, and
+    /// `post_octet_stream_returning_text` call `data.clone()` on every attempt;
+    /// if someone ever switches the parameter back to `Vec<u8>`, a multi-GB
+    /// NAR upload would reallocate the entire buffer on each retry. This test
+    /// fails loudly in that case.
+    #[test]
+    fn bytes_clone_is_refcount_only() {
+        use bytes::Bytes;
+        let data = Bytes::from(vec![0u8; 1024]);
+        let before = data.len();
+        let clone1 = data.clone();
+        let clone2 = data.clone();
+        assert_eq!(clone1.len(), before);
+        assert_eq!(clone2.len(), before);
+        assert_eq!(
+            data.as_ptr(),
+            clone1.as_ptr(),
+            "Bytes::clone should share buffer"
+        );
+        assert_eq!(
+            data.as_ptr(),
+            clone2.as_ptr(),
+            "Bytes::clone should share buffer"
+        );
+    }
 }

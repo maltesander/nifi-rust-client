@@ -69,8 +69,8 @@ async fn put<B: Serialize, T: DeserializeOwned>(&self, path: &str, body: &B) -> 
 async fn put_no_body<T: DeserializeOwned>(&self, path: &str) -> Result<T, NifiError>
 async fn put_void_no_body(&self, path: &str) -> Result<(), NifiError>
 async fn delete(&self, path: &str) -> Result<(), NifiError>
-async fn post_octet_stream<T: DeserializeOwned>(&self, path: &str, filename: Option<&str>, data: Vec<u8>) -> Result<T, NifiError>
-async fn post_void_octet_stream(&self, path: &str, filename: Option<&str>, data: Vec<u8>) -> Result<(), NifiError>
+async fn post_octet_stream<T: DeserializeOwned>(&self, path: &str, filename: Option<&str>, data: bytes::Bytes) -> Result<T, NifiError>
+async fn post_void_octet_stream(&self, path: &str, filename: Option<&str>, data: bytes::Bytes) -> Result<(), NifiError>
 async fn get_bytes_stream(&self, path: &str, extra_headers: &[(&str, &str)]) -> Result<BytesStream, NifiError>
 async fn get_bytes_stream_with_query(&self, path: &str, extra_headers: &[(&str, &str)], query: &[(&str, String)]) -> Result<BytesStream, NifiError>
 ```
