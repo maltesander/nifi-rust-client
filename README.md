@@ -124,6 +124,16 @@ async fn save_provenance_content(
 The same `Range` header semantics apply — pass `Some("bytes=0-1023")`
 as the last argument for a partial download.
 
+## Development
+
+This repo uses [pre-commit](https://pre-commit.com) with both pre-commit
+and pre-push stages. After cloning or pulling changes that modify hook
+stages, re-install hooks:
+
+```bash
+pre-commit install --hook-type pre-commit --hook-type pre-push --hook-type pre-merge-commit
+```
+
 ## License
 
 Apache-2.0. See [`LICENSE`](LICENSE).

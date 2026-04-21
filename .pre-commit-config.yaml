@@ -24,6 +24,8 @@ repos:
         args: ["--severity=info"]
 
   - repo: local
+    # Fast hooks (pre-commit): fmt, clippy, deny, msrv, generator-check.
+    # Heavy hooks (pre-push / pre-merge-commit): test, rustdoc.
     hooks:
       - id: cargo-rustfmt
         name: cargo-rustfmt
@@ -45,7 +47,7 @@ repos:
         name: cargo-rustdoc
         language: system
         entry: bash -c 'RUSTDOCFLAGS="-D warnings" cargo doc --workspace --exclude nifi-integration-tests --no-deps'
-        stages: [pre-commit, pre-merge-commit]
+        stages: [pre-push, pre-merge-commit]
         pass_filenames: false
         files: \.rs$
 
@@ -69,7 +71,7 @@ repos:
         name: cargo-test
         language: system
         entry: bash -c 'cargo test --workspace --exclude nifi-integration-tests && cargo test -p nifi-integration-tests'
-        stages: [pre-commit, pre-merge-commit]
+        stages: [pre-push, pre-merge-commit]
         pass_filenames: false
         files: \.rs$|Cargo\.(toml|lock)
 
