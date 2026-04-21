@@ -80,14 +80,13 @@ pub struct DynamicMethodCtx<'a> {
 }
 
 /// Selects whether the emitted method body targets a static
-/// per-version resource struct or the canonical-superset dynamic
-/// resource struct.
+/// per-version resource struct or the dynamic-mode resource struct.
 pub enum EmitMode<'a> {
     /// Static per-version emission. Type-path rewriting is handled
     /// after the fact by `emit_api_with_prefix` via a string replace,
     /// so no version or prefix fields are needed here.
     Static,
-    /// Canonical-superset dynamic emission.
+    /// Dynamic-mode emission.
     Dynamic(DynamicMethodCtx<'a>),
 }
 

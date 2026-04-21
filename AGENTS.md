@@ -551,11 +551,11 @@ nifi-rust-client = { version = "...", features = ["dynamic"] }
 ```
 
 The `DynamicClient` lazily detects the NiFi version via the `/flow/about` endpoint. Unlike the
-legacy dispatch model that routed to per-version generated code, the canonical-superset model
-emits a single set of types (one struct per DTO, fields `Option<T>` where any version omits them)
-and a single set of API methods that start with a runtime `require_endpoint(Endpoint::FOO).await?`
-availability check. Version detection happens automatically on `login()`, or can be triggered
-explicitly via `detect_version()`.
+legacy dispatch model that routed to per-version generated code, dynamic mode emits a single set
+of types (one struct per DTO, fields `Option<T>` where any version omits them) and a single set
+of API methods that start with a runtime `require_endpoint(Endpoint::FOO).await?` availability
+check. Version detection happens automatically on `login()`, or can be triggered explicitly via
+`detect_version()`.
 
 The canonical dynamic emitter lives at
 `crates/nifi-openapi-gen/src/emit/dynamic/{mod,api,types,availability,index}.rs`. It consumes
