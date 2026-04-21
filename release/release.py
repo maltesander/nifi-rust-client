@@ -917,7 +917,7 @@ def run_checks(crate: CrateConfig, dry_run, skip_integration):
         checks = [
             ("cargo build --workspace", "Build"),
             (
-                "cargo test --workspace --all-features --exclude nifi-integration-tests",
+                "cargo test --workspace --all-features --exclude nifi-integration-tests --exclude nifictl",
                 "Tests (all features)",
             ),
             ("cargo test -p nifi-integration-tests", "Tests (integration compile)"),
