@@ -122,6 +122,10 @@ CRATES = {
             "crates/nifi-rust-client/README.md",
             "crates/nifi-rust-client/src/lib.rs",
             "README.md",
+            # Client release must also bump nifictl's version constraint on
+            # nifi-rust-client so the workspace path dep still resolves. This
+            # is a workspace-coherence edit, not a release for nifictl.
+            "crates/nifictl/Cargo.toml",
             "Cargo.lock",
         ],
         readme_shorthand_paths=[
@@ -329,6 +333,38 @@ def update_client_build_dep(new_gen_version, dry_run):
                 f.write(new_content)
         else:
             print("      (skipped write — dry-run)")
+
+
+def update_ctl_client_dep(new_client_version, dry_run):
+    """Rewrite nifi-rust-client version pin in nifictl's Cargo.toml.
+
+    nifictl has a path + version dep on nifi-rust-client. When the client's
+    version is bumped, ctl's pin must follow or `cargo generate-lockfile`
+    refuses to resolve `^old_client_version` against the freshly bumped path
+    dep (minor/major bumps break 0.x semver matching). This is a
+    workspace-coherence edit — it does NOT bump nifictl's own version or
+    trigger a release for it.
+    """
+    if not os.path.exists(CTL_BUILD_DEP_CARGO_TOML):
+        return
+    pattern = re.compile(
+        r'(nifi-rust-client\s*=\s*\{[^}]*version\s*=\s*")\d+\.\d+\.\d+(")'
+    )
+    with open(CTL_BUILD_DEP_CARGO_TOML, "r") as f:
+        content = f.read()
+    new_content, count = pattern.subn(
+        rf'\g<1>{new_client_version}\g<2>',
+        content,
+    )
+    rel = os.path.relpath(CTL_BUILD_DEP_CARGO_TOML, ROOT)
+    if count == 0:
+        return
+    print(f"      {rel}: nifi-rust-client dep → \"{new_client_version}\"")
+    if not dry_run:
+        with open(CTL_BUILD_DEP_CARGO_TOML, "w") as f:
+            f.write(new_content)
+    else:
+        print("      (skipped write — dry-run)")
 
 
 # ---------------------------------------------------------------------------
@@ -935,6 +971,8 @@ def main():
     update_crate_cargo_toml(crate.cargo_toml, old_version, new_version, args.dry_run)
     if crate.id == "gen":
         update_client_build_dep(new_version, args.dry_run)
+    elif crate.id == "client":
+        update_ctl_client_dep(new_version, args.dry_run)
     update_readmes(crate, old_version, new_version, args.bump, args.dry_run)
 
     print(f"[5/10] Scanning for stale version '{old_version}'...")
