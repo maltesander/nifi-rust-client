@@ -31,7 +31,7 @@ tempfile = "3"
 wiremock = { workspace = true }
 
 [build-dependencies]
-nifi-openapi-gen = { path = "../nifi-openapi-gen", version = "0.10.1" }
+nifi-openapi-gen = { path = "../nifi-openapi-gen", version = "0.11.0" }
 
 [lints]
 workspace = true

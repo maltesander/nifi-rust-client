@@ -14,6 +14,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-04-21
+
+### Added
+
+- Validate tag identifier chars at parse time ([a7be413](https://github.com/maltesander/nifi-rust-client/commit/a7be413))
+- Emit confirm branch for every generated DELETE handler ([b4a48f9](https://github.com/maltesander/nifi-rust-client/commit/b4a48f9))
+- Emit dry-run branch for every mutating generated handler ([e7763e1](https://github.com/maltesander/nifi-rust-client/commit/e7763e1))
+- Emit dynamic-mode inline-enum helpers per owning tag file ([7ac7856](https://github.com/maltesander/nifi-rust-client/commit/7ac7856))
+- Add emit_inline_enum_helper for dynamic-mode field enums ([513beea](https://github.com/maltesander/nifi-rust-client/commit/513beea))
+- Panic on inline-enum helper name collision ([e30c3e6](https://github.com/maltesander/nifi-rust-client/commit/e30c3e6))
+- Collect dynamic-mode inline-enum helpers in merge_all_types ([4420e31](https://github.com/maltesander/nifi-rust-client/commit/4420e31))
+- Emit as_str() on static-mode field-level string enums ([918284e](https://github.com/maltesander/nifi-rust-client/commit/918284e))
+- Emit streaming variant for binary GET endpoints (dynamic) ([e28a640](https://github.com/maltesander/nifi-rust-client/commit/e28a640))
+- Emit streaming variant for binary GET endpoints (static) ([c06026e](https://github.com/maltesander/nifi-rust-client/commit/c06026e))
+- Emit doc comments for dynamic API methods ([0395ec8](https://github.com/maltesander/nifi-rust-client/commit/0395ec8))
+
+### Changed
+
+- Move impl VersionDiff into diff/report.rs ([5be454e](https://github.com/maltesander/nifi-rust-client/commit/5be454e))
+- Split diff.rs into endpoint/types/index submodules ([3d173ef](https://github.com/maltesander/nifi-rust-client/commit/3d173ef))
+- Extract shared helpers between static and dynamic type emitters ([fa1e06e](https://github.com/maltesander/nifi-rust-client/commit/fa1e06e))
+- Promote extract_enum to emit/common as extract_inline_enum_variants ([12a3eb3](https://github.com/maltesander/nifi-rust-client/commit/12a3eb3))
+
+### Fixed
+
+- Multipart emitter carries required schema properties ([17c89d6](https://github.com/maltesander/nifi-rust-client/commit/17c89d6))
+- Inline-JSON responses emit get helper + serde_json::Value ([1e443ec](https://github.com/maltesander/nifi-rust-client/commit/1e443ec))
+- Resolve rustdoc broken intra-doc links + markdown lint ([888d80d](https://github.com/maltesander/nifi-rust-client/commit/888d80d))
+- Tighten merge_inline_enum panic message ([74cda35](https://github.com/maltesander/nifi-rust-client/commit/74cda35))
+
+### Documentation
+
+- Fix rustdoc warnings on doc build ([ed62e18](https://github.com/maltesander/nifi-rust-client/commit/ed62e18))
+- Front-load stability scope banner ([3ee9b54](https://github.com/maltesander/nifi-rust-client/commit/3ee9b54))
+- Sweep terminology for consistency ([7c213b9](https://github.com/maltesander/nifi-rust-client/commit/7c213b9))
+- Banner separates helpers from DTOs in dynamic type files ([132bc36](https://github.com/maltesander/nifi-rust-client/commit/132bc36))
+- Add module-level //! header to dynamic per-tag type files ([41295da](https://github.com/maltesander/nifi-rust-client/commit/41295da))
+
+### Tests
+
+- Add exhaustive emit_method dispatch unit tests ([e4ed981](https://github.com/maltesander/nifi-rust-client/commit/e4ed981))
+- Add unit tests for MutationPlan apply/check ([dba141a](https://github.com/maltesander/nifi-rust-client/commit/dba141a))
+- Tighten stream emission assertions and cover with-query branch ([78793bd](https://github.com/maltesander/nifi-rust-client/commit/78793bd))
+
 ## [0.10.1] - 2026-04-14
 
 ### Fixed
@@ -192,6 +236,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Stable method names across NiFi versions via path-based grouping ([a058972](https://github.com/maltesander/nifi-rust-client/commit/a058972))
 
+[0.11.0]: https://github.com/maltesander/nifi-rust-client/compare/gen-v0.10.1...gen-v0.11.0
 [0.10.1]: https://github.com/maltesander/nifi-rust-client/compare/gen-v0.10.0...gen-v0.10.1
 [0.10.0]: https://github.com/maltesander/nifi-rust-client/compare/gen-v0.9.0...gen-v0.10.0
 [0.9.0]: https://github.com/maltesander/nifi-rust-client/compare/gen-v0.8.0...gen-v0.9.0
