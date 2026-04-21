@@ -7,11 +7,9 @@ use std::io::{self, IsTerminal};
 
 use crate::error::CliError;
 
-pub(crate) const PROMPT_NON_TTY_ERROR: &str =
-    "no password available and stdin is not a TTY";
+pub(crate) const PROMPT_NON_TTY_ERROR: &str = "no password available and stdin is not a TTY";
 
-pub(crate) const PROMPT_NON_TTY_HINT: &str =
-    "set NIFI_PASSWORD or pass --password";
+pub(crate) const PROMPT_NON_TTY_HINT: &str = "set NIFI_PASSWORD or pass --password";
 
 pub(crate) fn format_prompt(username: &str, base_url: &str) -> String {
     format!("Password for {username}@{base_url}: ")

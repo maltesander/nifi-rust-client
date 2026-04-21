@@ -143,18 +143,14 @@ pub async fn replace(
     if ctx.dry_run {
         if stop_first {
             // 0. stop
-            let stop_url = dry_run::format_url(
-                ctx.base_url,
-                &format!("/flow/process-groups/{pg_id}"),
-                &[],
-            );
+            let stop_url =
+                dry_run::format_url(ctx.base_url, &format!("/flow/process-groups/{pg_id}"), &[]);
             let stop_body = serde_json::json!({ "id": pg_id, "state": "STOPPED" });
             dry_run::print(&mut std::io::stdout(), "PUT", &stop_url, Some(&stop_body))
                 .map_err(CliError::Io)?;
         }
         // 1. GET the target to show where the revision comes from.
-        let get_url =
-            dry_run::format_url(ctx.base_url, &format!("/process-groups/{pg_id}"), &[]);
+        let get_url = dry_run::format_url(ctx.base_url, &format!("/process-groups/{pg_id}"), &[]);
         dry_run::print(&mut std::io::stdout(), "GET", &get_url, None).map_err(CliError::Io)?;
         // 2. PUT the replace — summarise rather than inlining the snapshot.
         let put_url = dry_run::format_url(
@@ -171,11 +167,8 @@ pub async fn replace(
             .map_err(CliError::Io)?;
         if stop_first {
             // 3. start
-            let start_url = dry_run::format_url(
-                ctx.base_url,
-                &format!("/flow/process-groups/{pg_id}"),
-                &[],
-            );
+            let start_url =
+                dry_run::format_url(ctx.base_url, &format!("/flow/process-groups/{pg_id}"), &[]);
             let start_body = serde_json::json!({ "id": pg_id, "state": "RUNNING" });
             dry_run::print(&mut std::io::stdout(), "PUT", &start_url, Some(&start_body))
                 .map_err(CliError::Io)?;
@@ -618,7 +611,9 @@ mod tests {
             yes: true,
             base_url: &base_url,
         };
-        let err = replace(&client, "pg-2", &snap, true, &ctx).await.unwrap_err();
+        let err = replace(&client, "pg-2", &snap, true, &ctx)
+            .await
+            .unwrap_err();
         match err {
             CliError::User(msg) => {
                 assert!(

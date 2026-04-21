@@ -19,7 +19,9 @@ pub enum ResolvedAuth {
         password: Option<String>,
     },
     Token(String),
-    Mtls { identity_path: String },
+    Mtls {
+        identity_path: String,
+    },
 }
 
 // ---------------------------------------------------------------------------

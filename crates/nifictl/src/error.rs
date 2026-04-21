@@ -53,9 +53,7 @@ impl CliError {
     /// the operator what to do (e.g. `UnsupportedEndpoint`, `User`).
     pub fn hint(&self) -> Option<&'static str> {
         match self {
-            CliError::Nifi(NifiError::Unauthorized { .. }) => {
-                Some("run 'nifictl login'")
-            }
+            CliError::Nifi(NifiError::Unauthorized { .. }) => Some("run 'nifictl login'"),
             CliError::Nifi(NifiError::Forbidden { .. }) => {
                 Some("user lacks the required NiFi policy — check /users in the UI")
             }
@@ -66,7 +64,9 @@ impl CliError {
             CliError::Nifi(NifiError::InvalidCertificate { .. }) => {
                 Some("pass --insecure for dev environments only")
             }
-            CliError::Nifi(NifiError::Http { source }) if is_tls_handshake_error(source as &dyn std::error::Error) => {
+            CliError::Nifi(NifiError::Http { source })
+                if is_tls_handshake_error(source as &dyn std::error::Error) =>
+            {
                 Some("pass --insecure for dev environments only")
             }
             _ => None,
@@ -201,7 +201,9 @@ mod tests {
         assert!(is_tls_handshake_error(&Fake("invalid peer certificate")));
         assert!(is_tls_handshake_error(&Fake("TLS handshake failure")));
         assert!(is_tls_handshake_error(&Fake("UnknownIssuer")));
-        assert!(is_tls_handshake_error(&Fake("received corrupt message of type InvalidContentType")));
+        assert!(is_tls_handshake_error(&Fake(
+            "received corrupt message of type InvalidContentType"
+        )));
         assert!(!is_tls_handshake_error(&Fake("connection refused")));
     }
 }
