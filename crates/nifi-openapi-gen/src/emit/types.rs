@@ -1,7 +1,8 @@
 use std::collections::{BTreeMap, HashMap, HashSet};
 
 use crate::emit::common::{InlineEnumMode, emit_doc_comment, field_type_to_rust};
-use crate::parser::{ApiSpec, TagGroup, TypeDef, TypeKind};
+use crate::emit::types_shared;
+use crate::parser::{ApiSpec, TypeDef, TypeKind};
 use crate::util::{escape_keyword, pascal_case};
 
 /// Returns a list of `(filename, content)` pairs to write into `src/types/`.
@@ -13,7 +14,7 @@ pub fn emit_types(spec: &ApiSpec) -> Vec<(String, String)> {
     // Map type name → set of tag module_names that directly reference it.
     let mut type_to_tags: HashMap<String, HashSet<String>> = HashMap::new();
     for tag in &spec.tags {
-        for type_name in types_referenced_by_tag(tag) {
+        for type_name in types_shared::types_referenced_by_tag(tag) {
             type_to_tags
                 .entry(type_name)
                 .or_default()
@@ -49,41 +50,9 @@ pub fn emit_types(spec: &ApiSpec) -> Vec<(String, String)> {
     }
 
     // mod.rs — declares modules and re-exports all for backward compat
-    let mut mod_out = String::new();
-    mod_out.push_str("pub mod common;\n");
-    for tag_name in &tag_names {
-        mod_out.push_str(&format!("pub mod {tag_name};\n"));
-    }
-    mod_out.push_str("\npub use common::*;\n");
-    for tag_name in &tag_names {
-        mod_out.push_str(&format!("pub use {tag_name}::*;\n"));
-    }
-    files.push(("mod.rs".into(), crate::util::format_source(&mod_out)));
+    files.push(("mod.rs".into(), types_shared::emit_mod_rs(&tag_names)));
 
     files
-}
-
-/// Collect all type names directly referenced by a tag's endpoints (shallow — no transitive follow).
-fn types_referenced_by_tag(tag: &TagGroup) -> HashSet<String> {
-    let mut names = HashSet::new();
-    for ep in tag.endpoints.iter() {
-        if let Some(t) = &ep.request_type {
-            names.insert(t.clone());
-        }
-        if let Some(t) = &ep.response_type {
-            names.insert(t.clone());
-        }
-        if let Some(t) = &ep.response_inner {
-            names.insert(t.clone());
-        }
-        // Include query param enum types so they land in this tag's types file
-        for qp in &ep.query_params {
-            if let Some(type_name) = &qp.enum_type_name {
-                names.insert(type_name.clone());
-            }
-        }
-    }
-    names
 }
 
 fn emit_type_file(types: &[&TypeDef]) -> String {

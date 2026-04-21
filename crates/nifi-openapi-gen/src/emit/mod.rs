@@ -6,6 +6,7 @@ pub mod integration;
 pub mod method;
 mod tests;
 mod types;
+mod types_shared;
 
 pub use api::{emit_api, emit_api_with_prefix};
 pub use cli::emit_cli;

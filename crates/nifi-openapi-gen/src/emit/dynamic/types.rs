@@ -1,18 +1,22 @@
 //! Dynamic types emitter for `dynamic/types/*.rs`.
 //!
-//! Inlined from the legacy `emit/dynamic/types.rs` as part of Phase 4b, making
-//! this module fully self-contained. The public entry point `emit_types` accepts
-//! a `&CanonicalSpec` and delegates to `emit_types_from_specs` (the renamed body
-//! of the legacy `emit_dynamic_types`). Semantics are preserved exactly.
+//! Consumes a [`CanonicalSpec`] (the union of every shipped NiFi version's
+//! spec) and emits per-tag union DTOs where fields absent in any version are
+//! wrapped in `Option<T>`, plus sibling helper enums for inline-enum fields.
 //!
-//! Phase 4b Task 4 will delete `emit/dynamic/types.rs`; this module is the
-//! canonical replacement.
+//! Mechanical pieces shared with the single-version static emitter
+//! (`emit::types`) — the tag-reference walk and the `mod.rs` skeleton —
+//! live in [`crate::emit::types_shared`]. The per-type emission logic
+//! remains distinct because the output shape is intentionally different:
+//! this emitter unions variants and fields across versions, the static one
+//! passes through the single version under compilation.
 
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 
 use crate::canonical::CanonicalSpec;
 use crate::emit::common::{InlineEnumMode, field_type_to_rust};
-use crate::parser::{ApiSpec, Field, FieldType, TagGroup, TypeKind};
+use crate::emit::types_shared;
+use crate::parser::{ApiSpec, Field, FieldType, TypeKind};
 use crate::util::{escape_keyword, wire_to_pascal};
 
 /// Intermediate representation of a merged type across all API versions.
@@ -161,16 +165,7 @@ fn emit_types_from_specs(specs: &[(&str, &ApiSpec)]) -> Vec<(String, String)> {
     }
 
     // mod.rs
-    let mut mod_out = String::new();
-    mod_out.push_str("pub mod common;\n");
-    for tag_name in &tag_names {
-        mod_out.push_str(&format!("pub mod {tag_name};\n"));
-    }
-    mod_out.push_str("\npub use common::*;\n");
-    for tag_name in &tag_names {
-        mod_out.push_str(&format!("pub use {tag_name}::*;\n"));
-    }
-    files.push(("mod.rs".into(), crate::util::format_source(&mod_out)));
+    files.push(("mod.rs".into(), types_shared::emit_mod_rs(&tag_names)));
 
     files
 }
@@ -179,7 +174,7 @@ fn build_type_to_tags(specs: &[(&str, &ApiSpec)]) -> HashMap<String, HashSet<Str
     let mut type_to_tags: HashMap<String, HashSet<String>> = HashMap::new();
     for (_version, spec) in specs {
         for tag in &spec.tags {
-            for type_name in types_referenced_by_tag(tag) {
+            for type_name in types_shared::types_referenced_by_tag(tag) {
                 type_to_tags
                     .entry(type_name)
                     .or_default()
@@ -188,28 +183,6 @@ fn build_type_to_tags(specs: &[(&str, &ApiSpec)]) -> HashMap<String, HashSet<Str
         }
     }
     type_to_tags
-}
-
-/// Collect all type names directly referenced by a tag's endpoints (shallow — no transitive follow).
-fn types_referenced_by_tag(tag: &TagGroup) -> HashSet<String> {
-    let mut names = HashSet::new();
-    for ep in tag.endpoints.iter() {
-        if let Some(t) = &ep.request_type {
-            names.insert(t.clone());
-        }
-        if let Some(t) = &ep.response_type {
-            names.insert(t.clone());
-        }
-        if let Some(t) = &ep.response_inner {
-            names.insert(t.clone());
-        }
-        for qp in &ep.query_params {
-            if let Some(type_name) = &qp.enum_type_name {
-                names.insert(type_name.clone());
-            }
-        }
-    }
-    names
 }
 
 fn emit_dynamic_type_file(
