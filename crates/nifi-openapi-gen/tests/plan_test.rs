@@ -135,7 +135,8 @@ fn apply_bails_before_writing_any_files_when_validation_fails() {
     };
     let err = plan.apply().expect_err("apply rejects invalid plan");
     assert!(
-        err.iter().any(|e| matches!(e, PlanError::FileNotFound { .. })),
+        err.iter()
+            .any(|e| matches!(e, PlanError::FileNotFound { .. })),
         "expected FileNotFound, got {err:?}"
     );
     // Critically: the *valid* edit's file must be untouched.
@@ -222,6 +223,12 @@ fn plan_error_display_mentions_path_and_marker() {
     let s3 = format!("{dup}");
 
     assert!(s1.contains("/tmp/example.rs"), "got: {s1}");
-    assert!(s2.contains("<!-- START -->") && s2.contains("/tmp/example.rs"), "got: {s2}");
-    assert!(s3.contains("duplicate") && s3.contains("<!-- START -->"), "got: {s3}");
+    assert!(
+        s2.contains("<!-- START -->") && s2.contains("/tmp/example.rs"),
+        "got: {s2}"
+    );
+    assert!(
+        s3.contains("duplicate") && s3.contains("<!-- START -->"),
+        "got: {s3}"
+    );
 }
