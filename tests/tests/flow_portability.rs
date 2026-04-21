@@ -53,6 +53,48 @@ async fn delete_temp_pg(client: &nifi_rust_client::dynamic::DynamicClient, id: &
         .expect("remove_process_group failed");
 }
 
+/// Issue `empty-all-connections-requests` against `pg_id` and poll until the
+/// server reports the drop as finished, then clean up the request tracker.
+///
+/// NiFi refuses to delete a process group whose connections still have
+/// queued flowfiles. Tests that import a live root-level flow (where
+/// processors produce data on start) must drain queues before deletion.
+async fn empty_all_queues(client: &nifi_rust_client::dynamic::DynamicClient, pg_id: &str) {
+    let created = client
+        .processgroups()
+        .create_empty_all_connections_request(pg_id)
+        .await
+        .expect("create_empty_all_connections_request failed");
+    let request_id = created
+        .id
+        .as_deref()
+        .expect("empty-all-connections request has no id")
+        .to_string();
+
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(30);
+    loop {
+        let status = client
+            .processgroups()
+            .get_drop_all_flowfiles_request(pg_id, &request_id)
+            .await
+            .expect("get_drop_all_flowfiles_request failed");
+        if status.finished.unwrap_or(false) {
+            break;
+        }
+        if std::time::Instant::now() > deadline {
+            panic!("empty-all-connections timed out for pg={pg_id}");
+        }
+        tokio::time::sleep(std::time::Duration::from_millis(250)).await;
+    }
+
+    // Best-effort cleanup of the request tracker — a failure here is not
+    // fatal for the test and does not leave the PG undeletable.
+    let _ = client
+        .processgroups()
+        .remove_drop_request(pg_id, &request_id)
+        .await;
+}
+
 #[tokio::test]
 #[ignore = "requires a running NiFi instance (use tests/run.sh)"]
 async fn flow_export_returns_registered_flow_snapshot_shape() {
@@ -164,11 +206,15 @@ async fn flow_import_then_replace_round_trip() {
         .await
         .expect("bulk start failed");
 
-    // 5. Cleanup — NiFi refuses to delete a PG with running components,
-    //    and the start above kicked off the imported processors.
+    // 5. Cleanup — NiFi refuses to delete a PG with running components OR
+    //    non-empty queues. The start above kicked off the imported
+    //    processors which produced flowfiles; stop them and drain the
+    //    connections before deletion. Without the drain, NiFi 2.6.0
+    //    returns 409 "Queue not empty for <connection-id>".
     bulk::stop_process_group_dynamic(&client, &child_id)
         .await
         .expect("bulk stop before delete failed");
+    empty_all_queues(&client, &child_id).await;
     let final_pg = client
         .processgroups()
         .get_process_group(&child_id)
