@@ -326,12 +326,6 @@ nifictl flow search-cluster --q "my processor"
 nifictl controller_services get-controller-service <id>
 ```
 
-> **Phase 5 change:** subcommand names were previously CRUD verbs (`get`,
-> `list`, `config-get`, `run-status-put`, etc.). They are now the exact
-> flat-API function names with dashes, which lines up with the Rust API and
-> makes the NiFi REST docs trivially discoverable. Use `nifictl <resource>
-> --help` to list the available commands for any resource.
-
 ## Multi-version support
 
 By default, nifictl compiles in dynamic mode (all supported NiFi versions).
