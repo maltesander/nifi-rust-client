@@ -104,6 +104,8 @@
 //! At least one version feature (or `dynamic`) must be enabled — builds with
 //! none fail at both build-script time and compile time.
 
+#![warn(missing_docs)]
+
 // `has_dynamic_or_version` is a rustc-cfg emitted by build.rs whenever it
 // runs successfully with at least one NiFi version feature or the `dynamic`
 // feature enabled. The flag is invisible to users — it isn't a Cargo
