@@ -38,6 +38,76 @@ fn completions_bash() {
 }
 
 #[test]
+fn password_is_hidden_from_help() {
+    let output = std::process::Command::new(env!("CARGO_BIN_EXE_nifictl"))
+        .arg("--help")
+        .output()
+        .expect("run nifictl --help");
+    assert!(output.status.success(), "nifictl --help exited non-zero");
+    let help = String::from_utf8_lossy(&output.stdout);
+    assert!(
+        !help.contains("--password"),
+        "--password should be hidden from help; help contained:\n{help}"
+    );
+}
+
+/// Passing `--password` on the CLI must emit the visibility warning to
+/// stderr (via `resolve_password_input` → `warn_password_flag_used`).
+/// `--dry-run` means no network call is attempted; `ops stop-pg` is just
+/// a convenient subcommand that routes through the password resolver.
+#[test]
+fn password_flag_triggers_visibility_warning() {
+    let output = std::process::Command::new(env!("CARGO_BIN_EXE_nifictl"))
+        .env_remove("NIFI_PASSWORD")
+        .args([
+            "--url",
+            "http://127.0.0.1:1", // unreachable — we don't actually connect
+            "--username",
+            "admin",
+            "--password",
+            "shh",
+            "--dry-run",
+            "ops",
+            "stop-pg",
+            "pg-1",
+            "--yes",
+        ])
+        .output()
+        .expect("run nifictl");
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(
+        stderr.contains("--password is visible"),
+        "expected visibility warning on stderr; got:\n{stderr}"
+    );
+}
+
+/// The warning must NOT fire when the password is supplied via the
+/// `NIFI_PASSWORD` env var — that path skips `warn_password_flag_used`.
+#[test]
+fn password_env_does_not_trigger_visibility_warning() {
+    let output = std::process::Command::new(env!("CARGO_BIN_EXE_nifictl"))
+        .env("NIFI_PASSWORD", "shh")
+        .args([
+            "--url",
+            "http://127.0.0.1:1",
+            "--username",
+            "admin",
+            "--dry-run",
+            "ops",
+            "stop-pg",
+            "pg-1",
+            "--yes",
+        ])
+        .output()
+        .expect("run nifictl");
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(
+        !stderr.contains("--password is visible"),
+        "env var should not trigger warning; got:\n{stderr}"
+    );
+}
+
+#[test]
 fn completions_fish() {
     let output = nifictl()
         .args(["completions", "fish"])
@@ -410,7 +480,7 @@ username = "admin"
 
     let output = nifictl()
         .args(["--config", &config_path.to_string_lossy(), "login"])
-        // Unset NIFI_PASSWORD so the clap env fallback doesn't populate --password.
+        // Unset NIFI_PASSWORD so resolve_password_input's env fallback returns None.
         .env_remove("NIFI_PASSWORD")
         .output()
         .expect("failed to run nifictl");

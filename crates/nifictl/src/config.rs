@@ -52,6 +52,11 @@ pub enum ConfigError {
     Io(std::io::Error),
     Parse(toml::de::Error),
     UnknownContext(String),
+    PlaintextSecret {
+        name: String,
+        kind: &'static str,
+        env_alternative: &'static str,
+    },
 }
 
 impl fmt::Display for ConfigError {
@@ -62,6 +67,15 @@ impl fmt::Display for ConfigError {
             ConfigError::UnknownContext(name) => {
                 write!(f, "current_context '{name}' not found in contexts")
             }
+            ConfigError::PlaintextSecret {
+                name,
+                kind,
+                env_alternative,
+            } => write!(
+                f,
+                "context '{name}' has a plaintext {kind} in config; \
+                 set NIFICTL_ALLOW_PLAINTEXT_SECRETS=1 or move it to {env_alternative}"
+            ),
         }
     }
 }
@@ -72,6 +86,7 @@ impl std::error::Error for ConfigError {
             ConfigError::Io(e) => Some(e),
             ConfigError::Parse(e) => Some(e),
             ConfigError::UnknownContext(_) => None,
+            ConfigError::PlaintextSecret { .. } => None,
         }
     }
 }
@@ -115,27 +130,51 @@ impl Config {
 
     /// Validate the config.
     ///
-    /// - Warns to stderr when a plaintext `password` or `token` is present.
+    /// - Refuses plaintext `password` or `token` fields by default, returning
+    ///   `ConfigError::PlaintextSecret`. Set the environment variable
+    ///   `NIFICTL_ALLOW_PLAINTEXT_SECRETS=1` (or `true` / `TRUE`) to
+    ///   downgrade the refusal to a stderr warning.
     /// - Returns `ConfigError::UnknownContext` when `current_context` names a
     ///   context that doesn't exist in `contexts`.
     pub fn validate(&self) -> Result<(), ConfigError> {
+        let allow_plaintext = matches!(
+            std::env::var("NIFICTL_ALLOW_PLAINTEXT_SECRETS").as_deref(),
+            Ok("1") | Ok("true") | Ok("TRUE")
+        );
+
         for ctx in &self.contexts {
             match &ctx.auth {
                 AuthConfig::Password {
                     password: Some(_), ..
                 } => {
-                    eprintln!(
-                        "warning: context '{}' has a plaintext password in config; \
-                         prefer password_env",
-                        ctx.name
-                    );
+                    if allow_plaintext {
+                        eprintln!(
+                            "warning: context '{}' has a plaintext password in config; \
+                             allowed via NIFICTL_ALLOW_PLAINTEXT_SECRETS — prefer password_env",
+                            ctx.name
+                        );
+                    } else {
+                        return Err(ConfigError::PlaintextSecret {
+                            name: ctx.name.clone(),
+                            kind: "password",
+                            env_alternative: "password_env",
+                        });
+                    }
                 }
                 AuthConfig::Token { token: Some(_), .. } => {
-                    eprintln!(
-                        "warning: context '{}' has a plaintext token in config; \
-                         prefer token_env",
-                        ctx.name
-                    );
+                    if allow_plaintext {
+                        eprintln!(
+                            "warning: context '{}' has a plaintext token in config; \
+                             allowed via NIFICTL_ALLOW_PLAINTEXT_SECRETS — prefer token_env",
+                            ctx.name
+                        );
+                    } else {
+                        return Err(ConfigError::PlaintextSecret {
+                            name: ctx.name.clone(),
+                            kind: "token",
+                            env_alternative: "token_env",
+                        });
+                    }
                 }
                 _ => {}
             }
@@ -164,6 +203,13 @@ impl Config {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::Mutex;
+
+    // Serializes tests that mutate NIFICTL_ALLOW_PLAINTEXT_SECRETS so they
+    // don't race each other under cargo's default parallel runner.
+    // `std::env::set_var` is process-global; unrelated tests don't touch
+    // this variable, so a local mutex is enough.
+    static ENV_LOCK: Mutex<()> = Mutex::new(());
 
     const FULL_CONFIG: &str = r#"
 current_context = "prod"
@@ -253,7 +299,7 @@ client_identity_path = "/etc/ssl/client.pem"
     }
 
     #[test]
-    fn parse_password_plaintext_warns() {
+    fn parse_password_plaintext_still_deserializes() {
         let toml_str = r#"
 [[contexts]]
 name = "dev"
@@ -264,20 +310,86 @@ type = "password"
 username = "admin"
 password = "s3cr3t"
 "#;
+        // Parsing a plaintext password must still succeed — validate() is
+        // what enforces the refusal.
         let config: Config = toml::from_str(toml_str).expect("should parse");
-        // validate() should succeed (only warn), not return an error
-        let result = config.validate();
-        assert!(
-            result.is_ok(),
-            "plaintext password should warn but not error"
-        );
-
         match &config.contexts[0].auth {
             AuthConfig::Password { password, .. } => {
                 assert_eq!(password.as_deref(), Some("s3cr3t"));
             }
             other => panic!("expected Password auth, got {other:?}"),
         }
+    }
+
+    #[test]
+    fn plaintext_password_refused_by_default() {
+        let _guard = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        // SAFETY: ENV_LOCK serializes all tests in this module that touch
+        // NIFICTL_ALLOW_PLAINTEXT_SECRETS, and the config tests use no
+        // threads internally.
+        unsafe {
+            std::env::remove_var("NIFICTL_ALLOW_PLAINTEXT_SECRETS");
+        }
+        let raw = r#"
+current_context = "prod"
+[[contexts]]
+name = "prod"
+url = "https://nifi:8443"
+[contexts.auth]
+type = "password"
+username = "admin"
+password = "hunter2"
+"#;
+        let cfg: Config = toml::from_str(raw).unwrap();
+        let err = cfg.validate().unwrap_err();
+        assert!(matches!(err, ConfigError::PlaintextSecret { .. }));
+    }
+
+    #[test]
+    fn plaintext_token_refused_by_default() {
+        let _guard = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        unsafe {
+            std::env::remove_var("NIFICTL_ALLOW_PLAINTEXT_SECRETS");
+        }
+        let raw = r#"
+current_context = "prod"
+[[contexts]]
+name = "prod"
+url = "https://nifi:8443"
+[contexts.auth]
+type = "token"
+token = "abc.def.ghi"
+"#;
+        let cfg: Config = toml::from_str(raw).unwrap();
+        let err = cfg.validate().unwrap_err();
+        assert!(matches!(err, ConfigError::PlaintextSecret { .. }));
+    }
+
+    #[test]
+    fn plaintext_allowed_with_env_escape_hatch() {
+        let _guard = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        unsafe {
+            std::env::set_var("NIFICTL_ALLOW_PLAINTEXT_SECRETS", "1");
+        }
+        let raw = r#"
+current_context = "prod"
+[[contexts]]
+name = "prod"
+url = "https://nifi:8443"
+[contexts.auth]
+type = "password"
+username = "admin"
+password = "hunter2"
+"#;
+        let cfg: Config = toml::from_str(raw).unwrap();
+        let result = cfg.validate();
+        unsafe {
+            std::env::remove_var("NIFICTL_ALLOW_PLAINTEXT_SECRETS");
+        }
+        assert!(
+            result.is_ok(),
+            "validate should succeed when env allows: {result:?}"
+        );
     }
 
     #[test]

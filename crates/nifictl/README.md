@@ -85,6 +85,8 @@ type = "mtls"
 client_identity_path = "/path/to/identity.pem"
 ```
 
+Plaintext `password` / `token` fields are **refused by default**. Move them to `password_env` / `token_env`. If a deployment has no other option, set `NIFICTL_ALLOW_PLAINTEXT_SECRETS=1` in the environment — a warning will still be emitted.
+
 ### Context management
 
 ```bash
@@ -97,6 +99,11 @@ nifictl config delete-context old # remove context
 ### Precedence
 
 CLI flags > environment variables > active context > defaults.
+
+> **Note:** `--password` is accepted for scripting convenience but hidden
+> from `--help`. Prefer `NIFI_PASSWORD`, a context's `password_env`, or
+> the interactive prompt — CLI flags are visible to other local users via
+> `/proc/<pid>/cmdline`.
 
 ### Interactive login
 
@@ -117,6 +124,8 @@ Off-TTY (CI, scripts, piped stdin), `nifictl` refuses with:
 error: no password available and stdin is not a TTY
 hint: set NIFI_PASSWORD or pass --password
 ```
+
+Cached tokens are written with `0o600` permissions on Unix.
 
 ### JWT expiry warning
 
