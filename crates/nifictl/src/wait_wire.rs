@@ -22,6 +22,19 @@ pub fn parse_wait_timeout(raw: &str) -> Result<Duration, CliError> {
         .map_err(|e| CliError::User(format!("invalid --wait-timeout '{raw}': {e}")))
 }
 
+/// Return a `CliError::User` rejecting a transient wait target.
+///
+/// The server never reports transient states (e.g. `RUN_ONCE`,
+/// `ENABLING`, `DISABLING`) as steady state, so the wait helpers cannot
+/// succeed if asked to wait for one. Surface that to the user with an
+/// actionable error listing the categories they can wait for.
+fn reject_transient_state(category: &str, attempted: &str, allowed: &[&str]) -> CliError {
+    CliError::User(format!(
+        "--wait on {category} state '{attempted}' has no effect — '{attempted}' is a transient state; use one of {}",
+        allowed.join(", ")
+    ))
+}
+
 /// Human-readable description of a wait plan, used by `--dry-run + --wait`.
 pub fn describe_wait_plan(plan: &WaitPlan, timeout: Duration) -> String {
     let t = fmt_timeout(timeout);
@@ -103,9 +116,10 @@ pub fn processor_target_from_body(
         "RUNNING" => Ok(ProcessorTargetState::Running),
         "STOPPED" => Ok(ProcessorTargetState::Stopped),
         "DISABLED" => Ok(ProcessorTargetState::Disabled),
-        "RUN_ONCE" => Err(CliError::User(
-            "--wait on 'RUN_ONCE' has no effect — RUN_ONCE is a transient state with no steady state to converge on; remove --wait"
-                .to_string(),
+        "RUN_ONCE" => Err(reject_transient_state(
+            "processor",
+            "RUN_ONCE",
+            &["RUNNING", "STOPPED", "DISABLED"],
         )),
         other => Err(CliError::User(format!(
             "unsupported processor state for --wait: '{other}' \
@@ -132,10 +146,11 @@ pub fn controller_service_target_from_body(
     match state {
         "ENABLED" => Ok(ControllerServiceTargetState::Enabled),
         "DISABLED" => Ok(ControllerServiceTargetState::Disabled),
-        "ENABLING" | "DISABLING" => Err(CliError::User(format!(
-            "--wait on '{state}' has no effect — '{state}' is a transient state; \
-             use ENABLED or DISABLED"
-        ))),
+        "ENABLING" | "DISABLING" => Err(reject_transient_state(
+            "controller service",
+            state,
+            &["ENABLED", "DISABLED"],
+        )),
         other => Err(CliError::User(format!(
             "unsupported controller-service state for --wait: '{other}' \
              (expected ENABLED or DISABLED)"
@@ -391,8 +406,12 @@ mod tests {
                     "message should mention RUN_ONCE: {msg}"
                 );
                 assert!(
-                    msg.contains("remove --wait"),
-                    "message should hint at the fix: {msg}"
+                    msg.contains("transient"),
+                    "message should mention transient: {msg}"
+                );
+                assert!(
+                    msg.contains("RUNNING") && msg.contains("STOPPED") && msg.contains("DISABLED"),
+                    "message should list allowed states: {msg}"
                 );
             }
             other => panic!("expected User, got {other:?}"),
