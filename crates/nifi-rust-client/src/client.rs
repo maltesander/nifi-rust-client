@@ -1090,16 +1090,8 @@ impl NifiClient {
         path: &str,
         resp: reqwest::Response,
     ) -> Result<T, NifiError> {
-        let status = resp.status();
-        tracing::debug!(method = %method, path, status = status.as_u16(), "NiFi API response");
-        if status.is_success() {
-            return resp.json::<T>().await.context(HttpSnafu);
-        }
-        let body = resp.text().await.unwrap_or_else(|_| status.to_string());
-        tracing::debug!(method = %method, path, status = status.as_u16(), %body, "NiFi API raw error body");
-        let message = extract_error_message(&body);
-        tracing::warn!(method = %method, path, status = status.as_u16(), %message, "NiFi API error");
-        Err(crate::error::api_error(status.as_u16(), message))
+        let resp = handle_response_status(method, path, resp).await?;
+        resp.json::<T>().await.context(HttpSnafu)
     }
 
     /// Check a void response (no JSON body expected). Returns `Ok(())` on success,
@@ -1109,16 +1101,8 @@ impl NifiClient {
         path: &str,
         resp: reqwest::Response,
     ) -> Result<(), NifiError> {
-        let status = resp.status();
-        tracing::debug!(method = %method, path, status = status.as_u16(), "NiFi API response");
-        if status.is_success() {
-            return Ok(());
-        }
-        let body = resp.text().await.unwrap_or_else(|_| status.to_string());
-        tracing::debug!(method = %method, path, status = status.as_u16(), %body, "NiFi API raw error body");
-        let message = extract_error_message(&body);
-        tracing::warn!(method = %method, path, status = status.as_u16(), %message, "NiFi API error");
-        Err(crate::error::api_error(status.as_u16(), message))
+        handle_response_status(method, path, resp).await?;
+        Ok(())
     }
 
     /// Read a raw `text/plain` (or equivalent) response body as a `String`.
@@ -1127,16 +1111,8 @@ impl NifiClient {
         path: &str,
         resp: reqwest::Response,
     ) -> Result<String, NifiError> {
-        let status = resp.status();
-        tracing::debug!(method = %method, path, status = status.as_u16(), "NiFi API response");
-        if status.is_success() {
-            return resp.text().await.context(HttpSnafu);
-        }
-        let body = resp.text().await.unwrap_or_else(|_| status.to_string());
-        tracing::debug!(method = %method, path, status = status.as_u16(), %body, "NiFi API raw error body");
-        let message = extract_error_message(&body);
-        tracing::warn!(method = %method, path, status = status.as_u16(), %message, "NiFi API error");
-        Err(crate::error::api_error(status.as_u16(), message))
+        let resp = handle_response_status(method, path, resp).await?;
+        resp.text().await.context(HttpSnafu)
     }
 
     /// Read a raw `application/octet-stream` (or equivalent) response body as bytes.
@@ -1145,17 +1121,9 @@ impl NifiClient {
         path: &str,
         resp: reqwest::Response,
     ) -> Result<Vec<u8>, NifiError> {
-        let status = resp.status();
-        tracing::debug!(method = %method, path, status = status.as_u16(), "NiFi API response");
-        if status.is_success() {
-            let b = resp.bytes().await.context(HttpSnafu)?;
-            return Ok(b.to_vec());
-        }
-        let body = resp.text().await.unwrap_or_else(|_| status.to_string());
-        tracing::debug!(method = %method, path, status = status.as_u16(), %body, "NiFi API raw error body");
-        let message = extract_error_message(&body);
-        tracing::warn!(method = %method, path, status = status.as_u16(), %message, "NiFi API error");
-        Err(crate::error::api_error(status.as_u16(), message))
+        let resp = handle_response_status(method, path, resp).await?;
+        let b = resp.bytes().await.context(HttpSnafu)?;
+        Ok(b.to_vec())
     }
 
     /// Turn a successful `application/octet-stream` (or `*/*`) response into
@@ -1167,22 +1135,19 @@ impl NifiClient {
         resp: reqwest::Response,
     ) -> Result<crate::BytesStream, NifiError> {
         use futures_util::TryStreamExt;
-        let status = resp.status();
-        tracing::debug!(method = %method, path, status = status.as_u16(), "NiFi API response");
-        if status.is_success() {
-            let s = resp
-                .bytes_stream()
-                .map_err(|source| NifiError::Http { source });
-            return Ok(Box::pin(s));
-        }
-        let body = resp.text().await.unwrap_or_else(|_| status.to_string());
-        tracing::debug!(method = %method, path, status = status.as_u16(), %body, "NiFi API raw error body");
-        let message = extract_error_message(&body);
-        tracing::warn!(method = %method, path, status = status.as_u16(), %message, "NiFi API error");
-        Err(crate::error::api_error(status.as_u16(), message))
+        let resp = handle_response_status(method, path, resp).await?;
+        let s = resp
+            .bytes_stream()
+            .map_err(|source| NifiError::Http { source });
+        Ok(Box::pin(s))
     }
 
     /// Like `check_void`, but also treats 302 as success.
+    ///
+    /// Does NOT delegate to [`handle_response_status`] because its
+    /// success predicate also admits `StatusCode::FOUND` (302). Keeping
+    /// the redirect semantics out of the shared helper means
+    /// [`handle_response_status`] stays a plain "2xx-or-error" gate.
     async fn check_void_with_redirect(
         method: &Method,
         path: &str,
@@ -1205,6 +1170,36 @@ impl NifiClient {
         url.set_path(&format!("/nifi-api{path}"));
         url
     }
+}
+
+/// Shared preamble for response helpers.
+///
+/// Emits the single `tracing::debug!` response line every helper used
+/// to emit inline, and on non-2xx statuses consumes the body, logs the
+/// raw body at `debug!` plus the extracted message at `warn!`, and
+/// returns `Err(NifiError::Api)`. On 2xx the response is handed back to
+/// the caller so it can read the body however it needs (json / text /
+/// bytes / stream).
+///
+/// [`NifiClient::check_void_with_redirect`] deliberately does NOT
+/// delegate here — its success predicate admits `StatusCode::FOUND`
+/// (302) in addition to 2xx, and folding that branch into the shared
+/// helper would leak redirect semantics into every caller.
+async fn handle_response_status(
+    method: &Method,
+    path: &str,
+    resp: reqwest::Response,
+) -> Result<reqwest::Response, NifiError> {
+    let status = resp.status();
+    tracing::debug!(method = %method, path, status = status.as_u16(), "NiFi API response");
+    if status.is_success() {
+        return Ok(resp);
+    }
+    let body = resp.text().await.unwrap_or_else(|_| status.to_string());
+    tracing::debug!(method = %method, path, status = status.as_u16(), %body, "NiFi API raw error body");
+    let message = extract_error_message(&body);
+    tracing::warn!(method = %method, path, status = status.as_u16(), %message, "NiFi API error");
+    Err(crate::error::api_error(status.as_u16(), message))
 }
 
 /// Apply a fold of `(name, value)` header pairs to a `RequestBuilder`.
