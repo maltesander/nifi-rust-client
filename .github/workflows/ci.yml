@@ -25,14 +25,15 @@ jobs:
     name: Clippy (${{ matrix.name }})
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         include:
-          - name: default
-            args: "--workspace --all-targets --exclude nifi-integration-tests -- -D warnings"
-          - name: all-features
+          - name: workspace
             args: "--workspace --all-targets --all-features --exclude nifi-integration-tests -- -D warnings"
           - name: integration
             args: "-p nifi-integration-tests --all-targets -- -D warnings"
+          - name: no-default-features
+            args: "--workspace --all-targets --no-default-features --features nifi-2-9-0 --exclude nifi-integration-tests -- -D warnings"
     steps:
       - uses: actions/checkout@v5
       - uses: actions-rust-lang/setup-rust-toolchain@v1
@@ -45,14 +46,15 @@ jobs:
     name: Test (${{ matrix.name }})
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         include:
-          - name: default
-            args: "--workspace --exclude nifi-integration-tests"
-          - name: all-features
+          - name: workspace
             args: "--workspace --all-features --exclude nifi-integration-tests"
           - name: integration
             args: "-p nifi-integration-tests"
+          - name: no-default-features
+            args: "--workspace --no-default-features --features nifi-2-9-0 --exclude nifi-integration-tests"
     steps:
       - uses: actions/checkout@v5
       - uses: actions-rust-lang/setup-rust-toolchain@v1
