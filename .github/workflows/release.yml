@@ -43,8 +43,9 @@ jobs:
       - run: cargo test -p nifi-openapi-gen --all-features
       - run: RUSTDOCFLAGS="-D warnings" cargo doc -p nifi-openapi-gen --all-features --no-deps
 
-      - name: Install cargo-deny
-        run: cargo install cargo-deny --locked
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-deny
       - run: cargo deny check
 
       - name: Verify packaging
@@ -127,8 +128,9 @@ jobs:
       - run: cargo test --workspace --all-features --exclude nifi-integration-tests
       - run: RUSTDOCFLAGS="-D warnings" cargo doc --workspace --all-features --exclude nifi-integration-tests --no-deps
 
-      - name: Install cargo-deny
-        run: cargo install cargo-deny --locked
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-deny
       - run: cargo deny check
 
       - name: Verify packaging (nifi-rust-client)
@@ -208,8 +210,9 @@ jobs:
       - run: cargo test -p nifictl
       - run: RUSTDOCFLAGS="-D warnings" cargo doc -p nifictl --no-deps
 
-      - name: Install cargo-deny
-        run: cargo install cargo-deny --locked
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-deny
       - run: cargo deny check
 
       - name: Verify packaging
