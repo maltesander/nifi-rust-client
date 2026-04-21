@@ -172,6 +172,27 @@ where
     }
 }
 
+/// Log a cleanup DELETE failure at warn level and discard the error.
+///
+/// Cleanup is best-effort: the primary operation has already completed
+/// (or timed out), and the user should see that result, not the
+/// cleanup DELETE's failure. But silently ignoring it hides real stuck
+/// state — warn so operators can see it in logs.
+fn warn_cleanup_failure<E: std::fmt::Display>(
+    operation: &str,
+    target: &str,
+    result: Result<(), E>,
+) {
+    if let Err(err) = result {
+        tracing::warn!(
+            operation,
+            target,
+            error = %err,
+            "cleanup request failed (best-effort; ignored)"
+        );
+    }
+}
+
 // ── wait::processor_state ──────────────────────────────────────────────────
 
 #[cfg(not(feature = "dynamic"))]
@@ -394,10 +415,12 @@ pub async fn parameter_context_update(
     let result = poll_until(&config, &op, fetch, done).await;
 
     if config.cleanup {
-        let _ = client
+        let res = client
             .parametercontexts()
             .delete_update_request(context_id, request_id, None)
-            .await;
+            .await
+            .map(|_| ());
+        warn_cleanup_failure(&op, &format!("{context_id}/{request_id}"), res);
     }
     result
 }
@@ -436,10 +459,12 @@ pub async fn parameter_context_update_dynamic(
     let result = poll_until(&config, &op, fetch, done).await;
 
     if config.cleanup {
-        let _ = client
+        let res = client
             .parametercontexts()
             .delete_update_request(context_id, request_id, None)
-            .await;
+            .await
+            .map(|_| ());
+        warn_cleanup_failure(&op, &format!("{context_id}/{request_id}"), res);
     }
     result
 }
@@ -481,7 +506,12 @@ pub async fn provenance_query(
     let result = poll_until(&config, &op, fetch, done).await;
 
     if config.cleanup {
-        let _ = client.provenance().delete_provenance(query_id, None).await;
+        let res = client
+            .provenance()
+            .delete_provenance(query_id, None)
+            .await
+            .map(|_| ());
+        warn_cleanup_failure(&op, query_id, res);
     }
     result
 }
@@ -513,7 +543,12 @@ pub async fn provenance_query_dynamic(
     let result = poll_until(&config, &op, fetch, done).await;
 
     if config.cleanup {
-        let _ = client.provenance().delete_provenance(query_id, None).await;
+        let res = client
+            .provenance()
+            .delete_provenance(query_id, None)
+            .await
+            .map(|_| ());
+        warn_cleanup_failure(&op, query_id, res);
     }
     result
 }
