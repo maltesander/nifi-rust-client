@@ -13,6 +13,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.11.1] - 2026-04-27
+
+### Fixed
+
+- Build on Windows by normalizing backslashes to forward slashes in generated `#[path]` attributes (fixes invalid escape sequences like `\a`, `\x86_64` in OUT_DIR paths under cargo-dist) ([c025188](https://github.com/maltesander/nifi-rust-client/commit/c025188))
+
 ## [0.11.0] - 2026-04-21
 
 ### Breaking Changes
@@ -564,7 +570,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Structured error handling** — `NifiError` via `snafu` with distinct variants for HTTP, auth, serialization, and network errors.
 - **Tracing** — all HTTP requests emit a `tracing::debug!` event with method and path before sending.
 
-[Unreleased]: https://github.com/maltesander/nifi-rust-client/compare/client-v0.11.0...HEAD
+[Unreleased]: https://github.com/maltesander/nifi-rust-client/compare/client-v0.11.1...HEAD
+[0.11.1]: https://github.com/maltesander/nifi-rust-client/compare/client-v0.11.0...client-v0.11.1
 [0.11.0]: https://github.com/maltesander/nifi-rust-client/compare/client-v0.10.1...client-v0.11.0
 [0.10.1]: https://github.com/maltesander/nifi-rust-client/compare/client-v0.10.0...client-v0.10.1
 [0.10.0]: https://github.com/maltesander/nifi-rust-client/compare/client-v0.9.0...client-v0.10.0
