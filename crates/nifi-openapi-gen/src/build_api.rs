@@ -266,7 +266,11 @@ fn generate_dynamic(out_dir: &Path, all_parsed: &[(String, ApiSpec)]) {
 /// It uses `#[path = "..."]` attributes with absolute filesystem paths from
 /// `out_dir` since `env!("OUT_DIR")` cannot be used in `#[path]` attributes.
 fn generate_lib_rs_fragment(versions: &[String], out_dir: &Path, dynamic: bool) -> String {
-    let out_dir_str = out_dir.display();
+    // Normalize backslashes to forward slashes so the path interpolates safely
+    // into a Rust string literal on Windows. Native separators turn `\a`,
+    // `\x86_64`, etc. into invalid escape sequences when the emitted file is
+    // compiled. `#[path]` accepts forward slashes on every platform.
+    let out_dir_str = out_dir.display().to_string().replace('\\', "/");
     let mut out = String::new();
 
     // ── Compile-error guards ────────────────────────────────────────────
@@ -456,6 +460,30 @@ mod tests {
         assert!(fragment.contains("#[path = \"/tmp/test_out/dynamic/mod.rs\"]"));
         // dynamic_v2 no longer exists after Task 6 rename.
         assert!(!fragment.contains("dynamic_v2"));
+    }
+
+    #[test]
+    fn generate_lib_rs_fragment_normalizes_windows_separators() {
+        // Regression: cargo-dist on Windows passes an OUT_DIR with backslashes
+        // (e.g. `D:\a\nifi-lens\...`). When interpolated into a regular Rust
+        // string literal, those backslashes parse as escape sequences (`\a`,
+        // `\x86_64`, ...) and rustc rejects the emitted #[path] attribute.
+        // The emitter must convert backslashes to forward slashes; #[path]
+        // accepts forward slashes on every platform.
+        let versions = vec!["2.9.0".to_string()];
+        let out_dir = Path::new(r"D:\a\nifi-lens\nifi-lens\target\out");
+        let fragment = generate_lib_rs_fragment(&versions, out_dir, true);
+
+        assert!(
+            !fragment.contains('\\'),
+            "fragment must not contain backslashes: {fragment}"
+        );
+        assert!(
+            fragment.contains("#[path = \"D:/a/nifi-lens/nifi-lens/target/out/v2_9_0/mod.rs\"]")
+        );
+        assert!(
+            fragment.contains("#[path = \"D:/a/nifi-lens/nifi-lens/target/out/dynamic/mod.rs\"]")
+        );
     }
 
     #[test]
