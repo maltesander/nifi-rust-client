@@ -37,7 +37,7 @@ tracing-subscriber.workspace = true
 wiremock.workspace = true
 
 [build-dependencies]
-nifi-openapi-gen = { path = "../nifi-openapi-gen", version = "0.11.1" }
+nifi-openapi-gen = { path = "../nifi-openapi-gen", version = "0.12.0" }
 
 [lints]
 workspace = true

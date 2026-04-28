@@ -14,6 +14,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.12.0] - 2026-04-28
+
+### Breaking Changes
+
+- Deserialize date-time DTO fields from string or integer ([d27a643](https://github.com/maltesander/nifi-rust-client/commit/d27a643))
+
 ## [0.11.1] - 2026-04-27
 
 ### Fixed
@@ -242,6 +248,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Stable method names across NiFi versions via path-based grouping ([a058972](https://github.com/maltesander/nifi-rust-client/commit/a058972))
 
+[0.12.0]: https://github.com/maltesander/nifi-rust-client/compare/gen-v0.11.1...gen-v0.12.0
 [0.11.1]: https://github.com/maltesander/nifi-rust-client/compare/gen-v0.11.0...gen-v0.11.1
 [0.11.0]: https://github.com/maltesander/nifi-rust-client/compare/gen-v0.10.1...gen-v0.11.0
 [0.10.1]: https://github.com/maltesander/nifi-rust-client/compare/gen-v0.10.0...gen-v0.10.1
