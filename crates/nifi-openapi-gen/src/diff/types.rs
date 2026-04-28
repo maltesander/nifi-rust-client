@@ -77,6 +77,7 @@ fn unwrap_opt(ty: &FieldType) -> &FieldType {
 fn field_type_display(ty: &FieldType) -> String {
     match ty {
         FieldType::Str => "String".to_string(),
+        FieldType::DateTimeStr => "crate::compat::FlexibleString".to_string(),
         FieldType::Bool => "bool".to_string(),
         FieldType::I32 => "i32".to_string(),
         FieldType::I64 => "i64".to_string(),

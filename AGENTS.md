@@ -208,6 +208,50 @@ raw `&str`. The full pipeline:
 | `FlowMetricsReportingStrategy` | `AllProcessGroups`, `AllComponents` |
 | `IncludedRegistries` | `Nifi`, `Jvm`, `Bulletin`, `Connection`, `Cluster`, `VersionInfo` |
 
+### `string + format: date-time` → `FlexibleString`
+
+The OpenAPI spec declares timestamp fields like `StatusSnapshotDTO.timestamp`,
+`VersionInfoDTO.buildTimestamp`, and the various `lastUpdated` /
+`submissionTime` fields as `string + format: date-time`. NiFi 2.6.0 honours
+that and returns a formatted string; NiFi 2.9.0+ emits the same fields as
+JSON integers carrying Unix milliseconds (the server-side `@JsonFormat`
+annotation changed). Plain `Option<String>` rejects the integer shape and
+the entire response fails to deserialize.
+
+Pipeline:
+
+1. **Parser** (`parser.rs::parse_field_type`): a `type: string` property
+   with `format: date-time` becomes `FieldType::DateTimeStr` instead of
+   `FieldType::Str`. Other string formats fall through to plain `Str` for
+   now — add a new arm if a future spec needs them typed.
+2. **Emitter** (`emit/common.rs::field_type_to_rust`): `FieldType::DateTimeStr`
+   maps to `crate::compat::FlexibleString`. Both the per-version and dynamic
+   emitters route through this single function, so per-version `types/*.rs`
+   and dynamic `dynamic/types/*.rs` get the wrapper consistently.
+3. **Wrapper** (`crates/nifi-rust-client/src/compat.rs`): `FlexibleString`
+   is a transparent newtype around `String` whose `Deserialize` impl
+   accepts JSON strings and JSON numbers (all integer/float visitor
+   methods stringify to a decimal). Serializes as a JSON string. Derefs
+   to `&str` and implements `Display`/`AsRef<str>`/`From<&str>`/`From<String>`,
+   so most consumers (`as_deref`, `format!`, equality with `&str`) keep
+   working unchanged. Re-exported at the crate root as
+   `nifi_rust_client::FlexibleString`.
+
+This is a soft-breaking type change (`Option<String>` → `Option<FlexibleString>`
+on those fields). Pattern matches against `String`, owned-`String`
+construction, and direct `==` against `String` need a `.into()` /
+`.into_inner()` / `.0` on the consumer side; everything that goes through
+`&str` continues to compile.
+
+The same wrapper absorbs any future `format: date-time` field whose server
+implementation drifts from the spec — no further client changes needed.
+
+If a NiFi server is found to drift on a string field whose spec lacks
+`format: date-time` (e.g. `StatusHistoryDTO.generated`, which the spec
+declares as a plain string but is also a server-side timestamp), that
+specific field needs an explicit override — not yet implemented; add the
+mechanism alongside `naming_overrides.rs` if the case ever fires.
+
 ### Response Types
 
 Response structs live in `src/types/<resource>.rs`, mirroring the resource grouping in `src/api/`.

@@ -113,6 +113,14 @@ pub(crate) fn field_type_to_rust(
 ) -> String {
     match ty {
         FieldType::Str => "String".into(),
+        // The wrapper accepts either a JSON string or a JSON number on the
+        // wire (NiFi 2.9.0 emits `timestamp` as Unix ms despite the spec
+        // saying `string + format: date-time`). The path resolves inside the
+        // generated module tree because the per-version `types/*.rs` and the
+        // dynamic `dynamic/types/*.rs` are both included into the
+        // `nifi-rust-client` crate via `include!()` / generated `pub mod`
+        // declarations from `lib.rs`.
+        FieldType::DateTimeStr => "crate::compat::FlexibleString".into(),
         FieldType::Bool => "bool".into(),
         FieldType::I32 => "i32".into(),
         FieldType::I64 => "i64".into(),
@@ -186,6 +194,19 @@ mod tests {
     fn field_type_str() {
         let result = field_type_to_rust(&FieldType::Str, "Foo", InlineEnumMode::AsString);
         assert_eq!(result, "String");
+    }
+
+    #[test]
+    fn field_type_date_time_str_emits_flexible_string() {
+        let result = field_type_to_rust(&FieldType::DateTimeStr, "Foo", InlineEnumMode::AsString);
+        assert_eq!(result, "crate::compat::FlexibleString");
+    }
+
+    #[test]
+    fn field_type_opt_date_time_str_wraps_flexible_string() {
+        let ty = FieldType::Opt(Box::new(FieldType::DateTimeStr));
+        let result = field_type_to_rust(&ty, "Foo", InlineEnumMode::AsString);
+        assert_eq!(result, "Option<crate::compat::FlexibleString>");
     }
 
     #[test]

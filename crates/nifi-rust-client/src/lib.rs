@@ -127,6 +127,9 @@ pub mod builder;
 pub mod bulk;
 /// The connected client handle and resource accessor methods.
 pub mod client;
+/// Server-quirk compatibility shims (e.g. [`FlexibleString`] for date-time
+/// fields that some NiFi versions emit as numbers despite the spec).
+pub mod compat;
 /// Configuration types: credential providers and retry policy.
 pub mod config;
 /// Error type returned by all client operations.
@@ -141,6 +144,7 @@ pub mod wait;
 pub use builder::NifiClientBuilder;
 pub use bytes::Bytes;
 pub use client::NifiClient;
+pub use compat::FlexibleString;
 pub use config::auth::AuthProvider;
 pub use error::NifiError;
 pub use require::RequireField;

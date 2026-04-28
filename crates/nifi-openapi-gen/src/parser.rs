@@ -49,6 +49,12 @@ pub struct Field {
 #[derive(Debug, Clone, PartialEq)]
 pub enum FieldType {
     Str,
+    /// `string + format: date-time`. Emits `crate::compat::FlexibleString`
+    /// instead of `String` so the generated DTO can deserialize either the
+    /// formatted-string shape (NiFi 2.6.0) or the Unix-millisecond integer
+    /// shape (NiFi 2.9.0+) of the same field. See `compat.rs` in
+    /// `nifi-rust-client` for details.
+    DateTimeStr,
     Bool,
     I32,
     I64,
@@ -351,7 +357,15 @@ fn parse_field_type(prop: &Value, json_pointer: &str) -> FieldType {
                     .collect();
                 return FieldType::Enum(vs);
             }
-            FieldType::Str
+            // NiFi servers don't always honour `string + format: date-time` —
+            // 2.9.0+ emits some of these fields as JSON integers (Unix ms).
+            // The emitter maps DateTimeStr to a wrapper that accepts both
+            // shapes. Other string formats (`uuid`, `byte`, etc.) currently
+            // fall through to plain `Str`; introduce new arms when needed.
+            match prop.get("format").and_then(|f| f.as_str()) {
+                Some("date-time") => FieldType::DateTimeStr,
+                _ => FieldType::Str,
+            }
         }
         Some("boolean") => FieldType::Bool,
         Some("integer") => match prop.get("format").and_then(|f| f.as_str()) {
