@@ -13,6 +13,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.12.0] - 2026-04-28
+
+### Breaking Changes
+
+- Deserialize date-time DTO fields from string or integer ([d27a643](https://github.com/maltesander/nifi-rust-client/commit/d27a643))
+
 ## [0.11.1] - 2026-04-27
 
 ### Fixed
@@ -570,7 +576,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Structured error handling** — `NifiError` via `snafu` with distinct variants for HTTP, auth, serialization, and network errors.
 - **Tracing** — all HTTP requests emit a `tracing::debug!` event with method and path before sending.
 
-[Unreleased]: https://github.com/maltesander/nifi-rust-client/compare/client-v0.11.1...HEAD
+[Unreleased]: https://github.com/maltesander/nifi-rust-client/compare/client-v0.12.0...HEAD
+[0.12.0]: https://github.com/maltesander/nifi-rust-client/compare/client-v0.11.1...client-v0.12.0
 [0.11.1]: https://github.com/maltesander/nifi-rust-client/compare/client-v0.11.0...client-v0.11.1
 [0.11.0]: https://github.com/maltesander/nifi-rust-client/compare/client-v0.10.1...client-v0.11.0
 [0.10.1]: https://github.com/maltesander/nifi-rust-client/compare/client-v0.10.0...client-v0.10.1

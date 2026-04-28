@@ -15,7 +15,7 @@ clap = { workspace = true }
 clap_complete.workspace = true
 comfy-table.workspace = true
 humantime = "2"
-nifi-rust-client = { path = "../nifi-rust-client", version = "0.11.1", features = ["dynamic"] }
+nifi-rust-client = { path = "../nifi-rust-client", version = "0.12.0", features = ["dynamic"] }
 rpassword = "7"
 serde = { workspace = true }
 serde_json.workspace = true
