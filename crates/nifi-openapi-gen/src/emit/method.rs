@@ -867,7 +867,7 @@ fn emit_method_body_dynamic(
     let header_arg = emit_headers_setup_dynamic(out, ep);
 
     // 4.5. Multipart form fields (only for Multipart endpoints with
-    // non-file schema properties). Built before the tracing call so
+    // non-file schema properties). Built before the dispatch call so
     // `fields` is in scope for the dispatch step.
     if matches!(
         ep.body_kind,
@@ -876,13 +876,11 @@ fn emit_method_body_dynamic(
         out.push_str(&multipart_fields_preamble(&ep.multipart_fields, "        "));
     }
 
-    // 5. Tracing
-    out.push_str(&format!(
-        "        tracing::debug!(method = \"{method_lit}\", path = path.as_str(), \"NiFi API request\");\n",
-        method_lit = ctx.method_lit,
-    ));
+    // (Tracing is emitted by client.rs::build_request — exactly one
+    // request-side debug line per call. Per AGENTS.md "Client Design",
+    // helpers and emitted methods must NOT add their own debug lines.)
 
-    // 6. Dispatch
+    // 5. Dispatch
     emit_dispatch_dynamic(out, ep, has_query, &header_arg, stream);
 }
 
@@ -1280,6 +1278,26 @@ mod emit_fix_inline_json_tests {
         assert!(
             !out.contains(".replace(\"{id}\", id)"),
             "dynamic emitter must not pass raw `id` to .replace; got:\n{out}"
+        );
+    }
+
+    #[test]
+    fn dynamic_emitter_does_not_emit_tracing_debug() {
+        let ep = inline_json_endpoint();
+        let endpoint_versions = crate::canonical::VersionSet::new();
+        let query_param_versions = std::collections::BTreeMap::new();
+        let ctx = DynamicMethodCtx {
+            endpoint_versions: &endpoint_versions,
+            query_param_versions: &query_param_versions,
+            endpoint_variant: "ExportProcessGroup".to_string(),
+            method_lit: "GET",
+        };
+        let mut out = String::new();
+        emit_method(&ep, &EmitMode::Dynamic(ctx), &mut out);
+        assert!(
+            !out.contains("tracing::debug!"),
+            "dynamic emitter must NOT emit tracing::debug! — build_request \
+             in client.rs is the single request-side debug source. Got:\n{out}"
         );
     }
 }
