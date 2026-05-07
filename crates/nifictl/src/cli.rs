@@ -45,8 +45,21 @@ pub(crate) struct Cli {
     #[arg(long, global = true)]
     pub(crate) insecure: bool,
 
-    /// Output format: auto, json, yaml, table
-    #[arg(short, long, default_value = "auto", global = true)]
+    /// Output format
+    #[arg(
+        short,
+        long,
+        default_value = "auto",
+        global = true,
+        value_parser = clap::builder::PossibleValuesParser::new([
+            "auto",
+            "json",
+            "json-compact",
+            "yaml",
+            "table",
+            "raw",
+        ]),
+    )]
     pub(crate) output: String,
 
     /// Increase log verbosity (-v info, -vv debug, -vvv trace)
