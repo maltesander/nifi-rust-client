@@ -871,8 +871,14 @@ fn emits_stream_variant_for_octet_stream_response() {
     assert!(x_rs.contains("id: &str"));
     assert!(x_rs.contains("-> Result<Vec<u8>, NifiError>"));
     assert!(x_rs.contains("-> Result<crate::BytesStream, NifiError>"));
-    assert!(x_rs.contains("self.client.get_bytes("));
-    assert!(x_rs.contains("self.client.get_bytes_stream("));
+    // rustfmt may wrap the method-chain across lines once the path expr
+    // grows long enough (e.g. percent-encoded path-param substitution),
+    // so check for the helper name independent of the receiver.
+    assert!(x_rs.contains(".get_bytes("), "missing get_bytes call: {x_rs}");
+    assert!(
+        x_rs.contains(".get_bytes_stream("),
+        "missing get_bytes_stream call: {x_rs}"
+    );
     assert!(
         x_rs.contains("/// Streaming variant: yields body chunks"),
         "stream doc prefix missing; got:\n{x_rs}"

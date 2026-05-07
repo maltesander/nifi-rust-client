@@ -313,6 +313,31 @@ fn emit_error_and_permission_docs(out: &mut String, ep: &Endpoint) {
     }
 }
 
+/// Turn `/processors/{id}/state` into `/processors/{}/state` for use with
+/// positional `format!` args. Uses raw OpenAPI param names (no
+/// snake-casing) — the emitter passes pre-snake-cased identifiers as
+/// arguments separately, so the placeholder name no longer matters once
+/// it's stripped to `{}`.
+fn positional_path_for_format(path: &str) -> String {
+    let mut result = String::new();
+    let mut in_brace = false;
+    for ch in path.chars() {
+        match ch {
+            '{' if !in_brace => {
+                in_brace = true;
+                result.push('{');
+            }
+            '}' if in_brace => {
+                in_brace = false;
+                result.push('}');
+            }
+            _ if in_brace => { /* skip placeholder name */ }
+            _ => result.push(ch),
+        }
+    }
+    result
+}
+
 fn normalize_path_for_format(path: &str) -> String {
     // Replace {camelCase-param-name} with {snake_case_param_name}
     let mut result = String::new();
@@ -431,8 +456,21 @@ fn emit_method_body_static(ep: &Endpoint, stream: bool) -> String {
     let path_expr = if ep.path_params.is_empty() {
         format!("\"{}\"", ep.path)
     } else {
-        let fmt_path = normalize_path_for_format(&ep.path);
-        format!("&format!(\"{fmt_path}\")")
+        // Replace `{name}` placeholders with `{}` and supply each value
+        // wrapped in `crate::url::encode_path_segment(...)` so a `/` or
+        // `?` in the value cannot reshape the URL.
+        let positional_path = positional_path_for_format(&ep.path);
+        let args: Vec<String> = ep
+            .path_params
+            .iter()
+            .map(|p| {
+                format!(
+                    "crate::url::encode_path_segment({})",
+                    escape_keyword(&p.name)
+                )
+            })
+            .collect();
+        format!("&format!(\"{positional_path}\", {})", args.join(", "))
     };
 
     let has_inner = ep.response_inner.is_some();
@@ -1182,6 +1220,30 @@ mod emit_fix_inline_json_tests {
         assert!(
             out.contains("self.client.inner().get_with_query("),
             "expected `get_with_query` dispatch for inline-JSON GET with query, got: {out}"
+        );
+    }
+
+    #[test]
+    fn static_emitter_encodes_path_params() {
+        let ep = Endpoint {
+            fn_name: "get_processor".to_string(),
+            path: "/processors/{id}".to_string(),
+            method: HttpMethod::Get,
+            path_params: vec![PathParam {
+                name: "id".to_string(),
+                doc: None,
+            }],
+            ..inline_json_endpoint()
+        };
+        let mut out = String::new();
+        emit_method(&ep, &EmitMode::Static, &mut out);
+        assert!(
+            out.contains("crate::url::encode_path_segment(id)"),
+            "static emitter must wrap path params in encode_path_segment; got:\n{out}"
+        );
+        assert!(
+            !out.contains("/processors/{id}\")"),
+            "static emitter must not emit raw {{id}} into the format string; got:\n{out}"
         );
     }
 }
