@@ -3,8 +3,8 @@
 ## Project Overview
 
 `nifi-rust-client` is an idiomatic Rust client library for the Apache NiFi 2.x REST API.
-
-Supports multiple NiFi 2.x API versions via Cargo feature flags. Default (latest): the semver-latest version present in `crates/nifi-openapi-gen/specs/`.
+Multiple NiFi 2.x API versions are supported via Cargo feature flags. Default = semver-latest
+spec under `crates/nifi-openapi-gen/specs/`.
 
 ## Workspace Structure
 
@@ -12,192 +12,127 @@ Supports multiple NiFi 2.x API versions via Cargo feature flags. Default (latest
 crates/
   nifi-openapi-gen/           # Code generator — published to crates.io as build-dependency
     src/
-      bin/
-        generate.rs       # Orchestrator binary — writes generated files
-        openapi_diff.rs   # Standalone OpenAPI diff tool (--features cli)
-      emit/               # Code emitters (api, types, tests, dynamic/)
-        common.rs         # Shared emit helpers (field_type_to_rust, etc.)
-        dynamic/          # Dynamic multi-version emitters
-      docs/               # Documentation generators (README tables, API changes, resource accessors)
-      repo/               # Repo sync (lib.rs, Cargo.toml, cleanup)
-      parser.rs           # OpenAPI spec parser
-      diff.rs             # Generic OpenAPI spec differ
-      util.rs             # Shared utilities
-    scripts/
-      fetch-nifi-spec.sh  # Fetch OpenAPI spec from a running NiFi instance
-    specs/
-      x.y.z/nifi-api.json  # OpenAPI 3.0.1 spec per supported NiFi version
-    tests/                # Unit tests for parser and emitters
-  nifi-rust-client/       # Library crate — published to crates.io
-    build.rs              # Calls nifi-openapi-gen to generate code at build time
+      bin/{generate.rs, openapi_diff.rs}   # Orchestrator + standalone diff tool
+      emit/                                # Code emitters (api, types, tests, dynamic/)
+        common.rs                          # Shared helpers (field_type_to_rust, …)
+      docs/, repo/                         # Doc generators / repo sync
+      parser.rs, diff.rs, util.rs
+    scripts/fetch-nifi-spec.sh             # Fetch OpenAPI spec from a running NiFi
+    specs/x.y.z/nifi-api.json              # OpenAPI 3.0.1 spec per supported version
+    tests/                                 # Parser + emitter unit tests
+  nifi-rust-client/           # Library crate — published to crates.io
+    build.rs                  # Calls nifi-openapi-gen to generate code at build time
     src/
-      lib.rs              # Hand-written: uses include!() for generated modules
-      client.rs           # Hand-written: NifiClient struct and HTTP helpers
-      builder.rs          # Hand-written: NifiClientBuilder
-      error.rs            # Hand-written: NifiError via snafu
-      config/
-        auth.rs           # Hand-written: AuthProvider trait and impls
-        retry.rs          # Hand-written: retry logic
-      dynamic/
-        strategy.rs       # Hand-written: VersionResolutionStrategy + resolve_version
-        client.rs         # Hand-written: DynamicClient (copied into $OUT_DIR/dynamic/ at build time)
-      # Generated at build time into $OUT_DIR (not tracked in git):
-      # vx_y_z/           — per-version api/, types/
-      # dynamic/          — canonical api/, types/, availability.rs, client.rs, mod.rs
-    tests/
-      *.rs                        # Hand-written wiremock tests per API group
-tests/                    # Integration test crate (not published, needs Docker)
-  Cargo.toml
-  docker-compose.yml      # NiFi 2.x for local integration testing
-  run.sh                  # Test orchestration script
-  tests/*.rs              # Integration tests per API group
+      lib.rs, client.rs, builder.rs, error.rs   # Hand-written core
+      config/{auth,retry}.rs                    # Hand-written
+      dynamic/{strategy,client}.rs              # Hand-written; client.rs copied into $OUT_DIR
+      # Generated into $OUT_DIR (not in git):
+      #   vx_y_z/    — per-version api/, types/
+      #   dynamic/   — canonical api/, types/, availability.rs, client.rs, mod.rs
+    tests/*.rs                # Hand-written wiremock tests per API group
+tests/                        # Integration test crate (needs Docker; not published)
+  docker-compose.yml, run.sh, tests/*.rs
 ```
 
 ## Architecture
 
 ### Client Design
 
-`NifiClient` is the central struct. It holds the HTTP client, base URL, and auth token.
-Private generic helpers handle all HTTP plumbing:
+`NifiClient` holds the HTTP client, base URL, and auth token. Private generic helpers do
+all HTTP plumbing (auth, error mapping, deserialization); public endpoint methods are
+one-liners that delegate.
 
-```rust
-async fn get<T: DeserializeOwned>(&self, path: &str) -> Result<T, NifiError>
-async fn post<B: Serialize, T: DeserializeOwned>(&self, path: &str, body: &B) -> Result<T, NifiError>
-async fn post_no_body<T: DeserializeOwned>(&self, path: &str) -> Result<T, NifiError>
-async fn post_void_no_body(&self, path: &str) -> Result<(), NifiError>
-async fn put<B: Serialize, T: DeserializeOwned>(&self, path: &str, body: &B) -> Result<T, NifiError>
-async fn put_no_body<T: DeserializeOwned>(&self, path: &str) -> Result<T, NifiError>
-async fn put_void_no_body(&self, path: &str) -> Result<(), NifiError>
-async fn delete(&self, path: &str) -> Result<(), NifiError>
-async fn post_octet_stream<T: DeserializeOwned>(&self, path: &str, filename: Option<&str>, data: bytes::Bytes) -> Result<T, NifiError>
-async fn post_void_octet_stream(&self, path: &str, filename: Option<&str>, data: bytes::Bytes) -> Result<(), NifiError>
-async fn get_bytes_stream(&self, path: &str, extra_headers: &[(&str, &str)]) -> Result<BytesStream, NifiError>
-async fn get_bytes_stream_with_query(&self, path: &str, extra_headers: &[(&str, &str)], query: &[(&str, String)]) -> Result<BytesStream, NifiError>
-```
+Helpers (in `client.rs`): `get`, `post`, `post_no_body`, `post_void_no_body`, `put`,
+`put_no_body`, `put_void_no_body`, `delete`, `post_octet_stream`, `post_void_octet_stream`,
+`get_bytes_stream`, `get_bytes_stream_with_query`. Variants for multipart, text, raw bytes
+exist alongside.
 
-These helpers attach the JWT auth token, map HTTP errors to `NifiError`, and deserialize responses.
-All public endpoint methods are one-liners that delegate to these helpers.
+All helpers route through `NifiClient::build_request`, which emits exactly one
+`tracing::debug!(method, path, "NiFi API request")` per call and attaches auth,
+`X-ProxiedEntitiesChain`, and the optional request-id header. **Helpers must NOT add their
+own request-side `tracing::debug!`.** Resource struct methods that delegate to a helper also
+must not add one.
 
-Every HTTP helper (`get`, `post`, `put`, `delete`, and their variants) routes through the
-internal `NifiClient::build_request` helper, which emits a single
-`tracing::debug!(method, path, "NiFi API request")` line per call and attaches auth,
-`X-ProxiedEntitiesChain`, and the optional request-id header to the outgoing request.
-Helpers must NOT add their own `tracing::debug!` call for the request-side event.
-
-One method bypasses `build_request` by design: `login` (pre-authentication, form-encoded
-body, no bearer). It keeps its own inline `tracing::debug!` line and calls
-`apply_request_id` directly to still attach a request-id when configured.
-
-Resource struct methods (e.g. `Flow::get_about_info`) that delegate to a generic helper do
-not add their own `tracing::debug!` call — the helper already emits it.
+Exception: `login` bypasses `build_request` (pre-auth, form-encoded, no bearer). It keeps
+its own inline `tracing::debug!` and calls `apply_request_id` directly.
 
 ### Streaming binary downloads
 
-Every endpoint whose OpenAPI response body is `application/octet-stream`
-or `*/*` is emitted in two variants:
+Every endpoint with response body `application/octet-stream` or `*/*` is emitted in two
+variants:
 
 - `download_nar(id) -> Result<Vec<u8>, NifiError>` — buffered.
 - `download_nar_stream(id) -> Result<BytesStream, NifiError>` — streaming.
 
-`BytesStream = Pin<Box<dyn futures_core::Stream<Item = Result<Bytes, NifiError>> + Send>>`
-is re-exported from the crate root alongside `bytes::Bytes`.
+`BytesStream = Pin<Box<dyn Stream<Item = Result<Bytes, NifiError>> + Send>>` is re-exported
+from the crate root with `bytes::Bytes`. Adapt to `tokio::io::AsyncRead` via
+`tokio_util::io::StreamReader`.
 
-Use the streaming variant for provenance content, flowfile content, and
-NAR / asset downloads where buffering into memory is undesirable. Adapt
-to `tokio::io::AsyncRead` via `tokio_util::io::StreamReader`.
+**Retry semantics:** the initial request (status-line) is auth-retry and transient-retry
+eligible. Once chunks start flowing, transport errors terminate the stream and are not retried.
 
-**Retry semantics:** the initial request (status-line exchange) is
-auth-retry and transient-retry eligible. Once the stream has started
-producing chunks, transport errors during body delivery terminate the
-stream and are not retried.
+Buffered + streaming siblings share one `Endpoint::FOO` availability entry — dynamic mode's
+`require_endpoint` gate applies to both.
 
-The streaming variant lives on the same `Endpoint::FOO` availability
-entry as its buffered sibling — dynamic mode's `require_endpoint` gate
-applies identically.
+### Pagination helpers
 
-#### Pagination helpers
+Live in `crates/nifi-rust-client/src/pagination.rs`. Currently `HistoryPaginator` for
+`GET /flow/history` (offset/count). Two constructors: `flow_history(&NifiClient, …)` (static)
+and `flow_history_dynamic(&DynamicClient, …)` (gated on `#[cfg(feature = "dynamic")]`).
+New paged endpoints follow the same pattern — new constructor in the same file, no generator work.
 
-Hand-written pagination helpers live in
-`crates/nifi-rust-client/src/pagination.rs`. Currently provides
-`HistoryPaginator` for `GET /flow/history` (offset/count paging) with
-two constructors: `flow_history(&NifiClient, ...)` for static mode and
-`flow_history_dynamic(&DynamicClient, ...)` for dynamic mode (gated on
-`#[cfg(feature = "dynamic")]`). Additional paged endpoints follow the
-same pattern — a new constructor in the same file, no generator work.
+### Workflow helpers
 
-#### Workflow helpers
+Live in `src/wait.rs` for state-transition / async-query polling:
 
-Hand-written helpers for common state-transition and async-query patterns
-live in `src/wait.rs`. Currently covers:
-
-- `wait::processor_state(&NifiClient, id, target, config)` — polls a
-  processor until `state` matches `ProcessorTargetState::{Running, Stopped,
-  Disabled}`.
-- `wait::controller_service_state(...)` — `Enabled` or `Disabled`.
-- `wait::parameter_context_update(...)` — async param-context update;
-  optional trailing DELETE via `WaitConfig::cleanup`.
+- `wait::processor_state(&NifiClient, id, target, config)` — `Running | Stopped | Disabled`.
+- `wait::controller_service_state(...)` — `Enabled | Disabled`.
+- `wait::parameter_context_update(...)` — async update; optional trailing DELETE via `WaitConfig::cleanup`.
 - `wait::provenance_query(...)` — async provenance query completion.
 
-Each has a `_dynamic` sibling under `#[cfg(feature = "dynamic")]`. On
-timeout, helpers return `NifiError::Timeout { operation }`.
+Each has a `_dynamic` sibling under `#[cfg(feature = "dynamic")]`. On timeout, helpers
+return `NifiError::Timeout { operation }`.
 
 One-shot bulk actions live in `src/bulk.rs`:
 
-- `bulk::start_process_group` / `stop_process_group` — PUT
-  `/flow/process-groups/{id}`.
-- `bulk::enable_all_controller_services` /
-  `disable_all_controller_services` — PUT
-  `/flow/process-groups/{id}/controller-services`.
+- `bulk::start_process_group` / `stop_process_group` — PUT `/flow/process-groups/{id}`.
+- `bulk::enable_all_controller_services` / `disable_all_controller_services` —
+  PUT `/flow/process-groups/{id}/controller-services`.
 
-Both modules follow the same free-fn + `_dynamic` sibling pattern as
-`pagination.rs`.
+Same free-fn + `_dynamic` sibling pattern as `pagination.rs`.
 
 ### Resource Struct Pattern
 
-The API surface is split into resource structs mirroring NiFi's own API grouping.
-Each resource borrows the client and adds methods for its API section:
+The API surface mirrors NiFi's tag grouping. Each resource borrows the client and adds
+methods for its tag:
 
 ```rust
 pub struct Flow<'a> { client: &'a NifiClient }
 pub struct Processors<'a> { client: &'a NifiClient }
-pub struct Access<'a> { client: &'a NifiClient }
-// etc.
+// …
+client.flow().get_about_info().await?;
+client.processors().get_processor("some-id").await?;
 ```
 
-`NifiClient` exposes accessor methods that return these structs:
-
-```rust
-client.flow().get_about_info().await?
-client.processors().get_processor("some-id").await?
-```
-
-Resource structs, types, and wiremock tests are **fully generated** from the OpenAPI spec via
-`nifi-openapi-gen`. Code generation runs automatically via `build.rs` at build time — generated files
-go to `$OUT_DIR` and are not tracked in git. For repo maintenance (README tables, docker-compose, etc.),
-run `cargo run -p nifi-openapi-gen --bin generate`.
-To add or change endpoints, update the spec parsing logic in `crates/nifi-openapi-gen/src/`.
+Resource structs, types, and wiremock tests are **fully generated** from the OpenAPI spec
+via `nifi-openapi-gen`. Generation runs from `build.rs` into `$OUT_DIR` (not tracked in git).
+For repo maintenance (README tables, docker-compose, etc.) run
+`cargo run -p nifi-openapi-gen --bin generate`. To add or change endpoints, update
+`crates/nifi-openapi-gen/src/`.
 
 ### Query Parameter Enum Types
 
-OpenAPI query parameters that declare an `"enum"` array are emitted as typed Rust enums instead of
-raw `&str`. The full pipeline:
+OpenAPI query params with `"enum"` are emitted as typed Rust enums (not `&str`). Pipeline:
 
-1. **Parser** (`parser.rs`): detects `schema.enum` on query params, sets `QueryParam::enum_type_name`
-   (e.g. `"ParameterContextHandlingStrategy"`) and `QueryParamType::Enum(variants)`, and pushes a
-   `TypeDef { kind: TypeKind::StringEnum(variants) }` into `all_types`.
-2. **Emit types** (`emit/types.rs`): `TypeKind::StringEnum` is handled by `emit_standalone_string_enum`,
-   which generates an enum with `#[serde(rename = "WIRE_VALUE")]` per variant and a `Display` impl
-   that outputs the wire value. No `Default` derive (these types always appear as `Option<T>`).
-   `types_referenced_by_tag` includes query param enum names so they land in the correct per-tag file.
-3. **Emit API** (`emit/api.rs`): `query_param_rust_type` returns `crate::types::TypeName` for enum
-   params; the query-building code calls `.to_string()` (which uses the `Display` impl).
+1. `parser.rs` sets `QueryParam::enum_type_name` and `QueryParamType::Enum(variants)`,
+   pushes a `TypeDef { kind: TypeKind::StringEnum(variants) }` into `all_types`.
+2. `emit/types.rs::emit_standalone_string_enum` generates an enum with `#[serde(rename = "WIRE")]`
+   per variant + a `Display` impl. No `Default` derive (always `Option<T>`).
+3. `emit/api.rs::query_param_rust_type` returns `crate::types::TypeName`; query-building
+   calls `.to_string()`.
 
-**Naming rules:**
-
-- Type name: capitalize first char of the camelCase param name → `parameterContextHandlingStrategy` →
-  `ParameterContextHandlingStrategy`
-- Variant name: PascalCase each underscore-separated word → `KEEP_EXISTING` → `KeepExisting`
-- Wire value preserved via `#[serde(rename = "KEEP_EXISTING")]` and the `Display` impl
+**Naming:** type = capitalize first char of camelCase param name; variants = PascalCase per
+underscore-separated word; wire value preserved via `#[serde(rename)]` + `Display`.
 
 **Current enum query params (NiFi 2.8.0):**
 
@@ -210,300 +145,178 @@ raw `&str`. The full pipeline:
 
 ### `string + format: date-time` → `FlexibleString`
 
-The OpenAPI spec declares timestamp fields like `StatusSnapshotDTO.timestamp`,
-`VersionInfoDTO.buildTimestamp`, and the various `lastUpdated` /
-`submissionTime` fields as `string + format: date-time`. NiFi 2.6.0 honours
-that and returns a formatted string; NiFi 2.9.0+ emits the same fields as
-JSON integers carrying Unix milliseconds (the server-side `@JsonFormat`
-annotation changed). Plain `Option<String>` rejects the integer shape and
-the entire response fails to deserialize.
+NiFi 2.6.0 emits date-time fields as strings; 2.9.0+ emits the same fields as JSON integers
+(Unix millis). `Option<String>` rejects integers and the whole response fails to deserialize.
 
 Pipeline:
 
-1. **Parser** (`parser.rs::parse_field_type`): a `type: string` property
-   with `format: date-time` becomes `FieldType::DateTimeStr` instead of
-   `FieldType::Str`. Other string formats fall through to plain `Str` for
-   now — add a new arm if a future spec needs them typed.
-2. **Emitter** (`emit/common.rs::field_type_to_rust`): `FieldType::DateTimeStr`
-   maps to `crate::compat::FlexibleString`. Both the per-version and dynamic
-   emitters route through this single function, so per-version `types/*.rs`
-   and dynamic `dynamic/types/*.rs` get the wrapper consistently.
-3. **Wrapper** (`crates/nifi-rust-client/src/compat.rs`): `FlexibleString`
-   is a transparent newtype around `String` whose `Deserialize` impl
-   accepts JSON strings and JSON numbers (all integer/float visitor
-   methods stringify to a decimal). Serializes as a JSON string. Derefs
-   to `&str` and implements `Display`/`AsRef<str>`/`From<&str>`/`From<String>`,
-   so most consumers (`as_deref`, `format!`, equality with `&str`) keep
-   working unchanged. Re-exported at the crate root as
-   `nifi_rust_client::FlexibleString`.
+1. `parser.rs::parse_field_type`: `type: string` + `format: date-time` →
+   `FieldType::DateTimeStr`. Other string formats fall through to plain `Str`.
+2. `emit/common.rs::field_type_to_rust`: `DateTimeStr` → `crate::compat::FlexibleString`.
+   Both per-version and dynamic emitters route through this single function.
+3. `compat::FlexibleString` (hand-written): transparent newtype around `String`, accepts JSON
+   strings and numbers on deserialize, serializes as a string. Implements
+   `Deref<Target=str>` / `Display` / `AsRef<str>` / `From<&str>` / `From<String>`. Re-exported
+   as `nifi_rust_client::FlexibleString`.
 
-This is a soft-breaking type change (`Option<String>` → `Option<FlexibleString>`
-on those fields). Pattern matches against `String`, owned-`String`
-construction, and direct `==` against `String` need a `.into()` /
-`.into_inner()` / `.0` on the consumer side; everything that goes through
-`&str` continues to compile.
+Soft-breaking change (`Option<String>` → `Option<FlexibleString>`): pattern matches against
+`String`, owned-`String` construction, and direct `==` against `String` need
+`.into()` / `.into_inner()` / `.0`. Anything going through `&str` keeps compiling.
 
-The same wrapper absorbs any future `format: date-time` field whose server
-implementation drifts from the spec — no further client changes needed.
-
-If a NiFi server is found to drift on a string field whose spec lacks
-`format: date-time` (e.g. `StatusHistoryDTO.generated`, which the spec
-declares as a plain string but is also a server-side timestamp), that
-specific field needs an explicit override — not yet implemented; add the
-mechanism alongside `naming_overrides.rs` if the case ever fires.
+If a future spec field drifts but lacks `format: date-time` (e.g. `StatusHistoryDTO.generated`),
+add an explicit override mechanism alongside `naming_overrides.rs` — not yet implemented.
 
 ### Response Types
 
-Response structs live in `src/types/<resource>.rs`, mirroring the resource grouping in `src/api/`.
-Use `#[serde(rename_all = "camelCase")]` on all structs.
-
-For endpoints that return a JSON envelope wrapping the real payload (e.g. `{ "about": { ... } }`):
-
-- Define a `pub(crate)` wrapper struct (e.g. `AboutEntity`) used only for deserialization.
-- Define a `pub` DTO struct (e.g. `AboutDto`) with the actual fields.
-- The API method unwraps the envelope and returns the DTO directly.
+Response structs live in `src/types/<resource>.rs` mirroring `src/api/`. Always
+`#[serde(rename_all = "camelCase")]`. For JSON-envelope endpoints (e.g. `{ "about": { … } }`):
+define a `pub(crate)` wrapper (`AboutEntity`) and a `pub` DTO (`AboutDto`); the API method
+unwraps and returns the DTO.
 
 #### Field-level enum helpers (dynamic mode)
 
-In dynamic mode, DTO fields whose OpenAPI schema declares a string enum
-keep their wire type as `Option<String>` (so unknown server values still
-deserialize), and a sibling helper enum is generated alongside the DTO:
+In dynamic mode, DTO string-enum fields keep wire type `Option<String>` (so unknown server
+values still deserialize), and a sibling helper enum is generated:
 
 ```rust
 let body = ScheduleComponentsEntity {
-    id: Some(group_id.to_string()),
     state: Some(ScheduleComponentsEntityState::Running.into()),
     ..Default::default()
 };
-
 if let Some(state) = entity.state.as_deref()
-    .and_then(ScheduleComponentsEntityState::from_wire)
-{
-    // typed match
-}
+    .and_then(ScheduleComponentsEntityState::from_wire) { /* typed match */ }
 ```
 
-Helpers are `#[non_exhaustive]`, carry no serde derives, and provide
-`as_str` / `from_wire` / `Display` / `From<T> for String`. Variants are
-the union across supported NiFi versions, sorted alphabetically by wire
-value.
-
-Static mode also exposes `as_str()` on its (typed) field-level enums for
-cross-mode parity.
+Helpers are `#[non_exhaustive]`, no serde derives, expose `as_str` / `from_wire` / `Display` /
+`From<T> for String`. Variants = union across supported versions, sorted alphabetically by
+wire value. Static mode also exposes `as_str()` for parity.
 
 ### Authentication
 
-NiFi 2.x uses JWT tokens. The client supports multiple authentication strategies
-via the `AuthProvider` trait:
+NiFi 2.x uses JWT. Auth strategies via `AuthProvider` trait:
 
 | Provider | Use case |
 |---|---|
-| `PasswordAuth` | Username/password login (single-user, LDAP) |
-| `EnvPasswordAuth` | Reads `NIFI_USERNAME`/`NIFI_PASSWORD` from environment |
-| `StaticTokenAuth` | Pre-obtained JWT (OIDC, vault, previous session) |
-| Custom `AuthProvider` impl | Any JWT-producing mechanism (OIDC exchange, Kerberos, etc.) |
+| `PasswordAuth` | Username/password (single-user, LDAP) |
+| `EnvPasswordAuth` | Reads `NIFI_USERNAME` / `NIFI_PASSWORD` from env |
+| `StaticTokenAuth` | Pre-obtained JWT (OIDC, vault, prior session) |
+| Custom impl | Any JWT-producing mechanism (OIDC exchange, Kerberos, …) |
 
-The login flow:
+Flow: `authenticate(&self, client)` obtains a JWT and calls `client.set_token(jwt)`. Token is
+sent as `Authorization: Bearer …`. On 401, `authenticate()` is called again and the request
+retried once. `client.login(...)` and `client.set_token(...)` remain as low-level primitives.
 
-1. `AuthProvider::authenticate(&self, client)` obtains a JWT and calls `client.set_token(jwt)`
-2. The token is sent as `Authorization: Bearer <token>` on every request
-3. On 401, the client calls `authenticate()` again and retries the request once
+**Transport-level auth** (orthogonal to `AuthProvider`):
 
-Direct `client.login(username, password)` and `client.set_token(jwt)` remain
-available as low-level primitives.
+- `.client_identity_pem(pem)` — mTLS client cert (PEM cert+key).
+- `.proxied_entities_chain("<u1><u2>")` — sets `X-ProxiedEntitiesChain` header on every
+  request (Knox / nginx-mTLS proxies).
 
-For integration tests, credentials are read from `NIFI_USERNAME` / `NIFI_PASSWORD` env vars.
+**Per-request correlation:** `NifiClientBuilder::request_id_header(Some(name))` attaches a
+fresh UUIDv4 to every outgoing request under the chosen header (`"X-Request-Id"`,
+`"X-Correlation-Id"`, …) and records it on the per-request span as `request_id`. Off by default.
 
-#### mTLS and proxy authentication
-
-`NifiClientBuilder` supports two transport-level auth mechanisms orthogonal to
-`AuthProvider`:
-
-- `.client_identity_pem(pem)` — mutual TLS client certificate (PEM-encoded cert+key).
-- `.proxied_entities_chain("<user1><user2>")` — sets the `X-ProxiedEntitiesChain`
-  header on every request, used behind trusted proxies (Knox, nginx with mTLS).
-
-#### Per-request correlation
-
-Enable `NifiClientBuilder::request_id_header(Some(name))` to attach a fresh
-UUIDv4 to every outgoing request. The id is sent as the chosen header
-(`"X-Request-Id"`, `"X-Correlation-Id"`, or any other name your infrastructure
-expects) and recorded on the per-request `tracing` span as the
-`request_id` field. Off by default.
-
-#### Cluster / load balancer deployments
-
-NiFi 2.x clusters share signing key material across all nodes, so a JWT
-issued by any node is valid on every other node. No sticky sessions or
-per-node token caching is required — point the client at a round-robin
-load balancer URL and the single stored token works cluster-wide.
-
-The existing 401 retry logic (re-authenticate via `AuthProvider`, then
-retry once) handles edge cases like mid-rotation key propagation delays
-transparently.
+**Cluster / load balancer:** NiFi 2.x clusters share signing keys, so a JWT from any node is
+valid on every other node. Point at a round-robin LB; no sticky sessions needed. The 401
+retry handles mid-rotation key-propagation delays.
 
 ### Error Handling
 
-Errors use `snafu`. All variants are in `crate::error::NifiError`.
-Use `#[snafu(display(...))]` and `.context(SomeSnafu)` at call sites.
-Do not use `unwrap` or `expect` in non-test code — clippy denies it.
+`snafu`-based; all variants in `crate::error::NifiError`. Use `#[snafu(display(…))]` and
+`.context(SomeSnafu)` at call sites. `unwrap` / `expect` are clippy-denied in non-test code.
 
-Only one "missing field" variant exists:
-
-- `NifiError::MissingField { path }` — emitted by end-user code calling
-  `RequireField::require` or the `require!` macro on an `Option<T>` that
-  turned out to be `None`. Carries only a dotted path string.
-
-This variant is not retryable.
+Only one "missing field" variant: `NifiError::MissingField { path }` — emitted by
+`RequireField::require` / the `require!` macro on `Option<T> = None`. Carries a dotted path
+string. **Not retryable.**
 
 ### Strict parsing & content-type allow-list
 
-`nifi-openapi-gen` refuses to silently drop OpenAPI shapes it doesn't
-recognize. The parser panics at build time with an actionable message
-pointing at the JSON path and the offending keys whenever it encounters:
+`nifi-openapi-gen` refuses to silently drop OpenAPI shapes. The parser **panics at build time**
+with an actionable JSON-pointer message on:
 
-- a schema `type` it hasn't seen (field types, query parameter types)
-- a request or response content type not in the allow-list
+- a schema `type` it hasn't seen;
+- a request or response content type not in the allow-list (`crates/nifi-openapi-gen/src/content_type.rs`).
 
-The allow-list lives in `crates/nifi-openapi-gen/src/content_type.rs`
-and is consumed by both the parser (body-kind detection) and the
-emitters (return-type selection, client-helper dispatch).
+**Recognized request bodies:** `application/json`, `application/octet-stream`,
+`multipart/form-data`, `application/x-www-form-urlencoded` (skipped — manual), `*/*` (no body).
 
-**Currently recognized request bodies:** `application/json`,
-`application/octet-stream`, `multipart/form-data`,
-`application/x-www-form-urlencoded` (skipped — manually handled),
-`*/*` (emitted as no-body).
+**Recognized response bodies:** `application/json`, `text/plain`, `application/octet-stream`,
+`application/xml`, `*/*`, empty.
 
-**Currently recognized response bodies:** `application/json`,
-`text/plain`, `application/octet-stream`, `application/xml`,
-`*/*`, and empty (no 2xx content).
+**Multi-content-type precedence:** `application/json` wins. Hence `/site-to-site/peers` is
+emitted as JSON (`PeersEntity`) even though it also advertises XML.
 
-**Precedence when a response advertises multiple content types:**
-`application/json` wins. This is why `/site-to-site/peers` is emitted
-as JSON (`PeersEntity`) even though it also advertises
-`application/xml`.
+**When a future spec introduces a new content type:** the build panics. Add a variant to
+`RequestBodyKind` / `ResponseBodyKind`, a match arm in `resolve_request_body` /
+`resolve_response_body`, then fix every emitter `match` site the compiler flags. Add a new
+HTTP helper in `client.rs` if needed (see `get_text`, `get_bytes`, `post_multipart`). Add a
+wiremock test. **Never merge into a `_ =>` catch-all** — surfacing new shapes at compile
+time is the whole point.
 
-**When a future NiFi spec introduces a new content type:**
-
-1. The build panics at `build.rs` time with
-   `nifi-openapi-gen: unknown {request,response}_body_content_type at
-   <json-pointer> (content keys=[...])`.
-2. Add a new variant to `RequestBodyKind` or `ResponseBodyKind` in
-   `crates/nifi-openapi-gen/src/content_type.rs`.
-3. Add a match arm in `resolve_request_body` or
-   `resolve_response_body`.
-4. The Rust compiler will flag every emitter `match` site that now
-   has an unhandled variant — fix each one. Do **not** merge the new
-   variant into a `_ =>` catch-all; the whole point of the allow-list
-   is to surface new shapes at compile time.
-5. If the new variant needs a new HTTP helper in
-   `crates/nifi-rust-client/src/client.rs`, add it (see
-   `get_text`, `get_bytes`, `post_multipart` as references).
-6. Add a wiremock test that exercises the new shape end-to-end.
-
-**When a future NiFi spec introduces a new schema `type`:**
-
-The parser panics at `parse_field_type` or the query-param parser
-with `nifi-openapi-gen: unknown field_type` /
-`unknown query_param_type`. The fix belongs in `parser.rs` — add a
-match arm that returns the appropriate `FieldType` / `QueryParamType`.
-If the new type has no sensible Rust representation, ask yourself
-whether it's really something you want to support rather than
-papering over the panic.
-
-**Do not add unknown shapes to a catch-all.** The panic is the
-feature — it surfaces NiFi API evolution the moment a new shape
-lands, before it can silently corrupt generated code.
+**When a future spec introduces a new schema `type`:** parser panics in `parse_field_type` or
+the query-param parser. Add the right `FieldType` / `QueryParamType` arm in `parser.rs`.
 
 ### Method name stability
 
-Generated method names on resource structs (e.g. `Processors::update_run_status`)
-are derived from the `operationId` with any trailing `_N` collision-counter
-suffix stripped. The raw `operationId` is preserved on `Endpoint::raw_operation_id`
-for override lookup and diagnostics.
+Generated method names are derived from `operationId` with any trailing `_N` collision
+suffix stripped. The raw id is preserved on `Endpoint::raw_operation_id`.
 
-Two build-time checks guarantee stability:
+Two build-time checks:
 
-1. **Same-tag collision check** — if two operations in the same tag would
-   generate the same method name, the generator panics with an actionable
-   message pointing at `crates/nifi-openapi-gen/src/naming_overrides.rs`.
-2. **Cross-version drift check** — if the same `(tag, method, path)` triple
-   resolves to different method names across supported NiFi versions, the
-   generator panics with the same kind of actionable message.
+1. **Same-tag collision** — two operations in one tag generating the same name → panic.
+2. **Cross-version drift** — same `(tag, method, path)` resolving to different names across
+   versions → panic.
 
-Both panics name the exact override entry the human should add. Overrides
-live in `NAMING_OVERRIDES` (`naming_overrides.rs`), keyed by
-`(spec_version, raw_operationId)`. The table ships empty and should stay
-empty unless one of the panics above fires.
+Both panics name the exact override entry to add. Overrides live in `NAMING_OVERRIDES`
+(`naming_overrides.rs`), keyed by `(spec_version, raw_operationId)`. The table ships empty
+and stays empty unless one of the panics fires.
 
-A committed golden file per version at
-`crates/nifi-openapi-gen/specs/<version>/fn_names.txt` lists every
-endpoint's resolved method name. `cargo test` reruns the table and
-asserts it matches the committed file. `cargo run -p nifi-openapi-gen --
---check` (the existing check mode) also catches drift via the
-`MutationPlan` pipeline.
-
-**Do not bypass a panic by editing the golden file.** The golden is a
-follow-up artifact; the source of truth is the parser + overrides. Fix
-the root cause (add an override or accept the rename) and regenerate.
+A committed golden file per version at `crates/nifi-openapi-gen/specs/<version>/fn_names.txt`
+lists every endpoint's resolved method name; `cargo test` re-runs the table and asserts
+match. **Do not bypass a panic by editing the golden file** — fix the parser/overrides root
+cause and regenerate.
 
 ### Inline-JSON responses (emitter correctness)
 
-When an OpenAPI endpoint declares `application/json` with an inline schema
-(no `$ref`) — e.g. `GET /process-groups/{id}/download` whose response
-schema is `{"type": "string"}` even though NiFi actually sends a JSON
-object — the generator emits the method as
-`-> Result<serde_json::Value, NifiError>` using the matching helper
-(`get` / `get_with_query` / `post` / `put`), NOT the `post_void_no_body`
-fallback that older versions used. The dynamic emitter's
-`dynamic_response_type_for` and `emit_dispatch_dynamic` in
-`crates/nifi-openapi-gen/src/emit/method.rs` dispatch on `response_kind`,
-not on whether a `response_type` string happens to be populated. Static
-mode has always been correct via `common.rs::response_return_type`.
+When an endpoint declares `application/json` with an inline schema (no `$ref`) — e.g.
+`GET /process-groups/{id}/download` whose schema is `{"type": "string"}` even though NiFi
+sends a JSON object — the generator emits `-> Result<serde_json::Value, NifiError>` using
+the matching helper, NOT the `post_void_no_body` fallback.
 
-If you add or change an emitter site that decides between a real helper
-and `post_void_no_body`, mirror this pattern — check `response_kind`, not
-`response_type`. The unit tests in `mod emit_fix_inline_json_tests` at
-the end of `emit/method.rs` pin the shape of the fix.
+Both `dynamic_response_type_for` and `emit_dispatch_dynamic` (in
+`crates/nifi-openapi-gen/src/emit/method.rs`) dispatch on `response_kind`, **not** on whether
+`response_type` happens to be populated. Static mode is correct via
+`common.rs::response_return_type`. New emitter sites that decide between a real helper and
+`post_void_no_body` must mirror this. `mod emit_fix_inline_json_tests` pins the shape.
 
 ### Multipart request-body schema coverage
 
-When a `multipart/form-data` request schema declares `properties` beyond
-the `file` part, the parser (`parser.rs`) populates
-`Endpoint::multipart_fields: Vec<MultipartField>` sorted alphabetically
-by wire name (deterministic regeneration; serde_json's default `Map` is
-not order-preserving workspace-wide). Each field becomes a typed
-function parameter (`&str`, `bool`, or `f64`, wrapped in `Option<T>` for
-non-required fields) in both the static and dynamic emitters, pushed
-into a `fields: Vec<(&str, String)>` at call time, and the dispatch
-routes through `NifiClient::post_multipart_with_fields` instead of the
-older `post_multipart` helper. Empty `multipart_fields` keeps the old
-`post_multipart` dispatch — future file-only multipart endpoints still
-work without parser changes.
+When a `multipart/form-data` schema declares `properties` beyond the `file` part, the parser
+populates `Endpoint::multipart_fields: Vec<MultipartField>` (sorted alphabetically by wire
+name for deterministic regen). Each field becomes a typed function param (`&str`, `bool`, or
+`f64`, wrapped in `Option<T>` for non-required), and dispatch routes through
+`NifiClient::post_multipart_with_fields`. Empty `multipart_fields` → keeps the older
+`post_multipart` dispatch.
 
-CLI-layer exposure of multipart endpoints is intentionally skipped by
-`emit/cli/commands.rs::is_skipped_body_kind` — hand-written porcelain
-(e.g. `porcelain::flow::import`) consumes the library method directly.
+CLI exposure of multipart endpoints is intentionally skipped via
+`emit/cli/commands.rs::is_skipped_body_kind` — hand-written porcelain (e.g.
+`porcelain::flow::import`) consumes the library method directly.
 
 ### nifictl `Commands` enum — manual resource enumeration
 
-The nifictl binary is split into three modules: `crates/nifictl/src/main.rs`
-is a thin entry point (~60 lines) that initializes tracing, parses the CLI,
-and delegates to `dispatch::run`. `crates/nifictl/src/cli.rs` holds every
-clap definition — the `Cli` struct, the `Commands` / `ConfigCommand` /
-`OpsCommand` / `FlowCommand` enums, and the `Flow*Args` structs for the
-porcelain verbs. `crates/nifictl/src/dispatch.rs` holds `run()`, the shared
-`dispatch_resource` helper, the `handle_config` handler, the config / context
-resolution helpers, and the `resolve_password_input` / `warn_password_flag_used`
-auth-resolution helpers.
+The nifictl binary is split:
 
-Historically `Commands` flattened `generated::GeneratedResource` to expose
-every generated tag as a top-level subcommand via
-`#[command(flatten)] Resource(Box<...>)`. Phase 3 changed this: porcelain
-`nifictl flow export|import|replace` shares the top-level `flow` name with
-the generator's `Flow` tag, and clap rejects duplicate variant names under a
-flatten. `Commands` now lists every generated resource explicitly
-(~29 variants), with `Flow` substituted by a custom `FlowCommand` wrapper:
+- `crates/nifictl/src/main.rs` — thin entry (~60 lines): tracing init, CLI parse, delegate
+  to `dispatch::run`.
+- `cli.rs` — every clap definition: `Cli`, `Commands` / `ConfigCommand` / `OpsCommand` /
+  `FlowCommand` enums, `Flow*Args` structs.
+- `dispatch.rs` — `run()`, the shared `dispatch_resource` helper, `handle_config`, config /
+  context resolution, password-input helpers.
+
+Historically `Commands` flattened `generated::GeneratedResource`. Phase 3 changed this:
+porcelain `nifictl flow export|import|replace` shares the top-level `flow` name with the
+generator's `Flow` tag and clap rejects duplicate variant names under flatten. `Commands`
+now lists every generated resource explicitly (~29 variants), with `Flow` substituted by:
 
 ```rust
 enum FlowCommand {
@@ -511,33 +324,20 @@ enum FlowCommand {
     Import(FlowImportArgs),
     Replace(FlowReplaceArgs),
     #[command(flatten)]
-    Generated(generated::FlowCommand),  // falls through to dispatch_resource
+    Generated(generated::FlowCommand),  // → dispatch_resource
 }
 ```
 
-The shared `dispatch_resource` helper in `dispatch.rs` holds the generated
-command dispatch body; each per-resource arm routes to it via the
-`dispatch_uniform!` macro (expanded once per variant) with the reconstructed
-`generated::GeneratedResource::<Variant>`. Adding a new porcelain verb on a
-different tag follows the same pattern (inline arm in `run()`, not the macro).
+Each per-resource arm in `run()` routes via the `dispatch_uniform!` macro (one expansion per
+variant) with the reconstructed `generated::GeneratedResource::<Variant>`. **A new tag means
+both `Commands` in `cli.rs` AND a matching `dispatch_uniform!(cli, command, Variant)` arm in
+`dispatch.rs` must grow by one.** The test `help_lists_all_generated_resources` catches drift.
 
-When the code generator adds a new tag, the `Commands` list in `cli.rs` AND
-the matching `dispatch_uniform!(cli, command, Variant)` arm in `dispatch.rs`
-must both grow by one — the coupling is manual; the test
-`help_lists_all_generated_resources` asserts every resource name appears in
-`nifictl --help` so drift is caught in CI.
-
-Also note: the global `--output` flag (which selects output format:
-json/yaml/table) has `global = true` and propagates into every
-subcommand. Per-subcommand flags named `--output` collide at clap
-parse-time. If porcelain needs a local `--output <file>`-style flag,
-rename it (e.g. `--output-file` as `flow export` does) and give the
-`clap::Arg` a distinct `id = "..."` so clap's internal registry does
-not double-register the `output` id.
+The global `--output` flag (json/yaml/table) has `global = true` and propagates everywhere.
+Per-subcommand `--output` flags collide at clap parse-time. Rename to `--output-file` (as
+`flow export` does) and give the `clap::Arg` a distinct `id = "..."`.
 
 ## Build & Test
-
-### Commands
 
 | When | Command |
 |------|---------|
@@ -548,310 +348,235 @@ not double-register the `output` id.
 | Test dynamic mode | `cargo test -p nifi-rust-client --features dynamic` |
 | Clippy dynamic mode | `cargo clippy -p nifi-rust-client --features dynamic -- -D warnings` |
 
-### Integration Tests
+**Wiremock tests** live in `crates/nifi-rust-client/tests/` — plain `cargo test`, no Docker.
 
-**Wiremock tests** live in `crates/nifi-rust-client/tests/` and run with plain `cargo test` — no Docker needed.
-
-**Integration tests** live in `tests/tests/` and require a running NiFi instance.
+**Integration tests** live in `tests/tests/` and require running NiFi:
 
 ```bash
-./tests/run.sh                 # start NiFi → run tests → stop NiFi
-./tests/run.sh --skip-cleanup  # leave NiFi running after tests (faster iteration)
-./tests/run-matrix.sh                        # test all supported NiFi versions
-./tests/run-matrix.sh --versions=2.6.0,2.8.0 # test specific versions only
+./tests/run.sh                                # start → run → stop
+./tests/run.sh --skip-cleanup                 # leave NiFi up after tests
+./tests/run-matrix.sh                         # all supported NiFi versions
+./tests/run-matrix.sh --versions=2.6.0,2.8.0  # specific versions
 ```
 
-Environment variables read by integration tests:
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `NIFI_URL` | `https://localhost:8443` | NiFi base URL |
-| `NIFI_USERNAME` | `admin` | Single-user login |
-| `NIFI_PASSWORD` | `adminpassword123` | Single-user password |
+Integration env vars: `NIFI_URL` (default `https://localhost:8443`), `NIFI_USERNAME`
+(default `admin`), `NIFI_PASSWORD` (default `adminpassword123`).
 
 ## Multi-Version Support
 
-### How versions are structured
+### Layout
 
-Generated files live in `$OUT_DIR/v{major}_{minor}_{patch}/` (written by `build.rs`; not tracked in
-git). Each version directory contains `api/`, `types/`, and `mod.rs`. The hand-written `lib.rs`
-re-exports `api` and `types` from the active version under a stable public path via
-`include!(concat!(env!("OUT_DIR"), "/generated_lib.rs"))`.
+Generated files live in `$OUT_DIR/v{major}_{minor}_{patch}/` (not in git). Each contains
+`api/`, `types/`, `mod.rs`. `lib.rs` re-exports the active version under a stable public
+path via `include!(concat!(env!("OUT_DIR"), "/generated_lib.rs"))`.
 
-Naming conventions:
-
-| Artifact | Example |
-|---|---|
-| Version string (spec path dir) | `x.y.z` |
-| Rust module name | `vx_y_z` |
-| Cargo feature flag | `nifi-x-y-z` |
+Naming: spec dir `x.y.z`, Rust module `vx_y_z`, Cargo feature `nifi-x-y-z`.
 
 ### Selecting a version
-
-Users add the feature flag to their `Cargo.toml`:
 
 ```toml
 nifi-rust-client = { version = "...", default-features = false, features = ["nifi-x-y-z"] }
 ```
 
-The default feature is always the semver-latest version present in the repo. IDE autocompletion
-resolves against the default feature automatically.
+Default feature = semver-latest spec. IDE autocomplete uses it.
 
 ### Dynamic mode
 
-The `dynamic` feature compiles all supported versions and enables runtime version detection:
+The `dynamic` feature compiles all supported versions and detects the running NiFi version
+at runtime:
 
 ```toml
 nifi-rust-client = { version = "...", features = ["dynamic"] }
 ```
 
-The `DynamicClient` lazily detects the NiFi version via the `/flow/about` endpoint. Unlike the
-legacy dispatch model that routed to per-version generated code, dynamic mode emits a single set
-of types (one struct per DTO, fields `Option<T>` where any version omits them) and a single set
-of API methods that start with a runtime `require_endpoint(Endpoint::FOO).await?` availability
-check. Version detection happens automatically on `login()`, or can be triggered explicitly via
-`detect_version()`.
+`DynamicClient` lazily detects the version via `/flow/about` (auto on `login()`, or
+explicit via `detect_version()`). It emits **one** set of types (fields `Option<T>` where any
+version omits them) and **one** set of API methods, each starting with a runtime
+`require_endpoint(Endpoint::FOO).await?` check.
 
-The canonical dynamic emitter lives at
-`crates/nifi-openapi-gen/src/emit/dynamic/{mod,api,types,availability,index}.rs`. It consumes
-`CanonicalSpec` (built by `canonicalize_or_panic` over all spec versions) and emits:
+The canonical emitter (`crates/nifi-openapi-gen/src/emit/dynamic/{mod,api,types,availability,index}.rs`)
+consumes `CanonicalSpec` (built by `canonicalize_or_panic` over all spec versions) and emits:
 
-- `$OUT_DIR/dynamic/api/<tag>.rs` — one `Flow`-style concrete struct per tag, with inherent
-  methods that route through `DynamicClient::inner()` (no traits, no dispatch enums).
+- `$OUT_DIR/dynamic/api/<tag>.rs` — one concrete struct per tag with inherent methods
+  routing through `DynamicClient::inner()`. No traits, no dispatch enums.
 - `$OUT_DIR/dynamic/types/<tag>.rs` — union DTOs. Fields present in every supporting version
-  stay at their natural type (String, i32, etc.); fields that only exist in some versions are
-  `Option<T>`. String enums emit the union of all versions' variants.
-- `$OUT_DIR/dynamic/availability.rs` — `pub enum Endpoint` (one variant per canonical endpoint)
-  plus `ENDPOINT_AVAILABILITY` and `QUERY_PARAM_AVAILABILITY` const tables consulted at runtime.
-- `$OUT_DIR/dynamic/mod.rs` — orchestrator that declares `api`, `types`, `availability`,
-  `strategy` (hand-written), and `client` (hand-written), and re-exports `DynamicClient`,
-  `VersionResolutionStrategy`, `Endpoint`, `DetectedVersion`, and `LATEST_NIFI_VERSION`.
+  stay at their natural type; version-specific fields are `Option<T>`. String enums = union
+  of all variants.
+- `$OUT_DIR/dynamic/availability.rs` — `pub enum Endpoint` plus `ENDPOINT_AVAILABILITY` and
+  `QUERY_PARAM_AVAILABILITY` const tables consulted at runtime.
+- `$OUT_DIR/dynamic/mod.rs` — orchestrator that re-exports `DynamicClient`,
+  `VersionResolutionStrategy`, `Endpoint`, `DetectedVersion`, `LATEST_NIFI_VERSION`.
 
-The hand-written `DynamicClient` lives at `crates/nifi-rust-client/src/dynamic/client.rs`.
-`build.rs` copies it (alongside `strategy.rs`) into `$OUT_DIR/dynamic/` so the generated
-`mod.rs` can declare it via `pub mod client;`.
+Hand-written `DynamicClient` (`src/dynamic/client.rs`) is copied (with `strategy.rs`) into
+`$OUT_DIR/dynamic/` by `build.rs`.
 
-Both static and dynamic modes expose a flat API shape — path parameters are passed
-as ordinary method arguments (first positional argument, in the same order as the
-OpenAPI path placeholders):
+API shape is flat in both modes — path params are ordinary positional arguments matching
+the OpenAPI placeholder order:
 
 ```rust
-let client = NifiClientBuilder::new("https://nifi:8443")?
-    .build_dynamic()?;
-// login() authenticates AND auto-detects the NiFi version.
-client.login("admin", "password").await?;
-
-// Top-level methods
+let client = NifiClientBuilder::new("https://nifi:8443")?.build_dynamic()?;
+client.login("admin", "password").await?;          // auth + auto-detect version
 let about = client.flow().get_about_info().await?;
-
-// Path parameters as method arguments
-let analysis = client
-    .controller_services()
-    .analyze_configuration("service-id", &body)
-    .await?;
+let analysis = client.controller_services()
+    .analyze_configuration("service-id", &body).await?;
 ```
 
-**Forward compatibility:** All dynamic structs and enums carry `#[non_exhaustive]`. Fields in
-some versions only are `Option<T>`. Endpoints not available on the detected version return
-`NifiError::UnsupportedEndpoint`; query parameters set to a non-`None` value on an unsupporting
-version return `NifiError::UnsupportedQueryParam` (design §7.3 "silent-when-None / error-when-set").
+**Forward compatibility:** all dynamic structs and enums carry `#[non_exhaustive]`. Endpoints
+unavailable on the detected version → `NifiError::UnsupportedEndpoint`. Query params set to
+non-`None` on an unsupporting version → `NifiError::UnsupportedQueryParam` (silent-when-None /
+error-when-set, design §7.3).
 
-To extract values from dynamic-mode `Option<T>` fields, use
-`RequireField::require` or the `require!` macro from the crate root
-(see `crates/nifi-rust-client/src/require.rs`). Nested extractions go
-through the macro so the error path reflects the full dotted identifier
-chain (`"component.name"`).
+To extract `Option<T>` field values, use `RequireField::require` or the `require!` macro
+(crate root; see `src/require.rs`). Nested extractions go through the macro so the error
+path reflects the full dotted identifier chain (`"component.name"`).
 
 #### VersionResolutionStrategy
 
-Controls how `DynamicClient` maps a detected NiFi version to a supported API module when there is no exact match.
+Maps a detected NiFi version → supported API module when no exact match exists.
 
 | Variant | Behavior |
 |---------|----------|
-| `Strict` | Exact major.minor match required; returns `NifiError::UnsupportedVersion` otherwise. **Default.** |
-| `Closest` | Nearest supported minor within the same major. Ties go to the lower version. |
-| `Latest` | Highest supported minor within the same major. |
+| `Strict` | Exact major.minor required; else `NifiError::UnsupportedVersion`. **Default.** |
+| `Closest` | Nearest supported minor in same major; ties → lower. |
+| `Latest` | Highest supported minor in same major. |
 
-Design decisions:
+- Major boundaries are never crossed (NiFi 1.x → 2.x is always an error).
+- Non-strict resolutions emit `tracing::warn!`.
+- Patch ignored — only major.minor compared (via `semver` crate).
 
-- Major version boundaries are never crossed (e.g. NiFi 1.x → 2.x is always an error).
-- Non-strict resolutions emit `tracing::warn!` with both the detected and resolved versions.
-- Patch component is ignored during comparison — only major.minor is matched.
-- Uses the `semver` crate for ordering.
-
-Implementation split:
-
-- `crates/nifi-rust-client/src/dynamic/strategy.rs` — hand-written; contains the enum, `resolve_version()` function, and unit tests.
-- `DynamicClient` integration — generated; `detect_version()` calls `strategy.resolve()` after fetching `/flow/about`.
-
-Configure via `NifiClientBuilder::version_strategy(VersionResolutionStrategy)` before calling `.build_dynamic()`.
+Implementation: `src/dynamic/strategy.rs` (hand-written enum + `resolve_version` + tests);
+`detect_version()` in `DynamicClient` calls `strategy.resolve()` after `/flow/about`.
+Configure via `NifiClientBuilder::version_strategy(...)` before `.build_dynamic()`.
 
 ### Adding or bumping a NiFi version
 
 ```bash
-# 1. Fetch spec from a running NiFi instance of the target version
+# 1. Fetch spec from a running NiFi of the target version
 NIFI_VERSION=x.y.z ./crates/nifi-openapi-gen/scripts/fetch-nifi-spec.sh
 
 # 2. Run generator — updates Cargo.toml features, README versions table,
-#    docker-compose default tag, and API changes doc.
-#    (Code generation is handled by build.rs automatically.)
+#    docker-compose default tag, API changes doc. (Code gen happens in build.rs.)
 NIFI_VERSION=x.y.z cargo run -p nifi-openapi-gen
 
 # 3. Verify all versions compile
 cargo build --features dynamic
 cargo build --no-default-features --features nifi-x-y-z
 
-# 4. Commit
+# 4. Commit the relevant tree
 git add crates/nifi-openapi-gen/specs/x.y.z/ \
-        crates/nifi-rust-client/Cargo.toml \
-        tests/Cargo.toml \
-        README.md \
-        tests/docker-compose.yml \
-        NIFI_API_CHANGES.md
+        crates/nifi-rust-client/Cargo.toml tests/Cargo.toml \
+        README.md tests/docker-compose.yml NIFI_API_CHANGES.md
 ```
 
-The generator uses **semver ordering** (via the `semver` crate) to determine the latest version
-when setting the `default` feature and when auto-detecting which spec to use.
+The generator uses **semver ordering** (`semver` crate) to pick the latest version when
+setting `default` and auto-detecting which spec to use.
 
 ### Version-specific integration tests
 
-Gate tests for endpoints that only exist in a specific NiFi version with `#[cfg(feature)]`:
+Gate version-only endpoints with `#[cfg(feature)]`:
 
 ```rust
 #[cfg(feature = "nifi-x-y-z")]
 #[tokio::test]
 #[ignore]
-async fn test_endpoint_only_in_x_y_z() { ... }
+async fn test_endpoint_only_in_x_y_z() { … }
 ```
 
 ### Integration test override registry
 
-Auto-generated endpoint-availability and field-presence tests assume uniform
-behavior: `id` path params resolve to the `"root"` sentinel, and every newly
-added field is populated on the stock test flow. Some NiFi resources break
-those assumptions (e.g. `/connectors/{id}` has no `"root"` sentinel,
-`ProvenanceEventDTO.connectorId` is conditional-by-design). These exceptions
-live in `crates/nifi-openapi-gen/src/emit/integration/overrides.rs`.
+Auto-generated endpoint-availability and field-presence tests assume `id` path params resolve
+to the `"root"` sentinel and that newly added fields are populated on the stock test flow.
+Some resources break those assumptions (e.g. `/connectors/{id}` has no `"root"`,
+`ProvenanceEventDTO.connectorId` is conditional-by-design). Exceptions live in
+`crates/nifi-openapi-gen/src/emit/integration/overrides.rs`:
 
-**Two override types:**
+- `ENDPOINT_OVERRIDES` — keyed by `EndpointScope::{Exact, Tag, PathPrefix}`. Lookup order:
+  `Exact → PathPrefix → Tag`, first match wins (so `Exact` can carve a single endpoint out
+  of a tag-wide skip). Today only `SkipPositiveTest { reason }`; add a `CustomSetup
+  { helper_fn, reason }` variant when a fixture-creating helper can return real path values.
+- `FIELD_PRESENCE_OVERRIDES` — keyed by `(type_name, field_name)` (Rust PascalCase /
+  snake_case). Marks a field as conditional-by-design; positive presence test skipped,
+  negative test on older versions still emitted.
 
-- `ENDPOINT_OVERRIDES` — keyed by `EndpointScope::{Exact, Tag, PathPrefix}`.
-  Lookup order is `Exact → PathPrefix → Tag`, first match wins, so an `Exact`
-  entry can carve out a single endpoint from a tag-wide skip without deleting
-  the tag entry. Only `SkipPositiveTest { reason }` exists today; add
-  `CustomSetup { helper_fn, reason }` variant when a helper can create the
-  required fixture and return real path param values.
-- `FIELD_PRESENCE_OVERRIDES` — keyed by `(type_name, field_name)` in Rust
-  PascalCase/snake_case. Marks a field as conditional-by-design so the
-  positive presence test is skipped (negative test on older versions still
-  emitted).
+Both emitters replace skipped positive tests with a `// skipped by overrides` block carrying
+the reason.
 
-Both emitters replace the skipped positive test with a `// skipped by
-overrides` comment block containing the reason, so the generated files stay
-self-documenting.
-
-**Conditional-wording scan.** On every build, `scan_new_conditional_fields`
-walks newly added fields across all spec diffs and fails if any field's
-description contains phrases like "will not be set", "may not be populated",
-etc. and isn't in `FIELD_PRESENCE_OVERRIDES`. On a version bump, if this test
-fails, read the flagged field's description and either add an override entry
-(documenting why) or verify the stock test flow actually populates it.
+**Conditional-wording scan:** every build, `scan_new_conditional_fields` walks newly added
+fields across spec diffs and fails if any description contains phrases like "will not be
+set" / "may not be populated" without a `FIELD_PRESENCE_OVERRIDES` entry. On a version
+bump, either add an override (with reason) or verify the stock flow really does populate it.
 
 ## Releases
 
-`nifi-openapi-gen` and `nifi-rust-client` are released **independently**.
-Each crate owns its own version (no `version.workspace = true`), its own
-changelog, its own tag prefix, and its own CI pipeline. This ended a
-long-running pain point where a spec addition to `nifi-openapi-gen` would
-force an unrelated `nifi-rust-client` release, and where the pre-update
-packaging check silently broke whenever the two crates drifted between
-releases.
+`nifi-openapi-gen`, `nifi-rust-client`, and `nifictl` are released **independently**. Each
+crate owns its version, changelog, tag prefix, and CI pipeline.
 
-### Crate release cadence
+### Cadence
 
-| Crate | Typical trigger for a release |
+| Crate | Trigger |
 |---|---|
-| `nifi-openapi-gen` | New NiFi spec bundled, emitter bug fix, API extension for new kinds of codegen overrides |
-| `nifi-rust-client` | Picks up a newer `nifi-openapi-gen`, or ships a hand-written client change (builder, retry, tracing, etc.) |
-| `nifictl` | CLI feature additions, porcelain commands, output formatting changes |
+| `nifi-openapi-gen` | New NiFi spec, emitter bug fix, codegen-override API extension |
+| `nifi-rust-client` | Picks up newer `nifi-openapi-gen`, or hand-written client change |
+| `nifictl` | CLI features, porcelain commands, output formatting |
 
-### Tag scheme
+### Tags
 
-| Crate | Tag format |
+| Crate | Tag |
 |---|---|
 | `nifi-openapi-gen` | `gen-vX.Y.Z` |
 | `nifi-rust-client` | `client-vX.Y.Z` |
 | `nifictl` | `ctl-vX.Y.Z` |
 
-`.github/workflows/release.yml` listens for all three prefixes and dispatches
-three jobs per crate: `{prefix}-test → {prefix}-publish → {prefix}-release`.
-The `test` job asserts the Git tag matches the corresponding crate's
-`Cargo.toml` version so mismatches fail fast.
+`.github/workflows/release.yml` listens for all three and runs `{prefix}-test → -publish →
+-release` per crate. The test job asserts the Git tag matches the crate's `Cargo.toml`
+version so mismatches fail fast.
 
-### release.py usage
+### release.py
 
 ```bash
-# Release nifi-openapi-gen (always runs first when gen has new commits)
+# Generator (must publish first when gen has new commits)
 python3 release/release.py gen patch --tag-message "release message"
 
-# Then — only once nifi-openapi-gen is on crates.io — pick it up on the
-# client side and release the client:
-#   1. Manually edit crates/nifi-rust-client/Cargo.toml to bump the
-#      nifi-openapi-gen build-dep version to the freshly published one.
+# Then — only after gen is on crates.io — bump the build-dep on the client:
+#   1. Edit crates/nifi-rust-client/Cargo.toml [build-dependencies] nifi-openapi-gen version.
 #   2. Commit: chore(client): bump nifi-openapi-gen build-dep to X.Y.Z
 #   3. Run:
 python3 release/release.py client patch --tag-message "release message"
 
-# Release nifictl (independent of gen and client)
+# nifictl is independent
 python3 release/release.py ctl patch --tag-message "release message"
 ```
 
-`release.py client` runs a crates.io lookup as its first gate: it parses
-the `nifi-openapi-gen` version from `crates/nifi-rust-client/Cargo.toml`'s
-`[build-dependencies]` and hits
-`https://crates.io/api/v1/crates/nifi-openapi-gen/<version>`. If the
-version isn't published, the script aborts with an actionable error. This
-is the only guard against accidentally releasing a client that depends on
-an unpublished generator.
+`release.py client` first hits `https://crates.io/api/v1/crates/nifi-openapi-gen/<version>`
+to confirm the build-dep is published; if not, it aborts. This is the only guard against
+releasing a client that depends on an unpublished generator.
 
 ### Changelogs
 
-- `crates/nifi-openapi-gen/CHANGELOG.md`
-- `crates/nifi-rust-client/CHANGELOG.md`
-- `crates/nifictl/CHANGELOG.md`
-
-All three are generated from conventional commits via `git log
-{old-tag}..HEAD -- <crate-paths>`, so each changelog only lists commits
-that touched its crate's files. A commit that touches multiple crates
-appears in each relevant changelog, which is almost always what you want.
-
-Commit scopes that are purely internal (`ci`, `release`, `rustfmt`,
-`rust-analyzer`) and the `chore` type are filtered out in all
-changelogs.
+`crates/{nifi-openapi-gen,nifi-rust-client,nifictl}/CHANGELOG.md` — generated from
+conventional commits via `git log {old-tag}..HEAD -- <crate-paths>`. A commit touching
+multiple crates appears in each relevant changelog. Internal scopes (`ci`, `release`,
+`rustfmt`, `rust-analyzer`) and the `chore` type are filtered out.
 
 ### First-release-under-new-scheme fallback
 
-When `release.py` runs for the first time after the prefixed-tag split,
-there is no `gen-v<old>` or `client-v<old>` tag yet. The script falls back
-to the legacy `v<old>` tag for both the git-log range and the
-"Unreleased" compare link. After that, every subsequent release uses the
-prefixed form.
+When `release.py` runs the first time after the prefixed-tag split there is no
+`gen-v<old>` / `client-v<old>` tag yet. The script falls back to the legacy `v<old>` tag
+for both git-log range and "Unreleased" compare link. Subsequent releases use the prefixed form.
 
 ### Skipping packaging checks
 
-`release.py` calls `cargo package -p <crate> --allow-dirty` twice: once
-before the version bump (as a sanity check on the previous state) and
-once after the lockfile is regenerated. Both are gated on
-`SKIP_PACKAGE_CHECK=1` for bootstrapping situations where nothing is on
-crates.io yet.
+`release.py` runs `cargo package -p <crate> --allow-dirty` twice (pre-bump sanity check +
+post-lockfile regen). Both gated on `SKIP_PACKAGE_CHECK=1` for bootstrap situations where
+nothing is on crates.io yet.
 
 ## References
 
 | Resource | URL |
 |----------|-----|
 | NiFi 2.8.0 REST API docs | <https://nifi.apache.org/nifi-docs/rest-api.html> |
-| NiFi OpenAPI specs (local) | `crates/nifi-openapi-gen/specs/{version}/nifi-api.json` — 237 paths each, full request/response schemas. Fetch with `./crates/nifi-openapi-gen/scripts/fetch-nifi-spec.sh` (requires NiFi running). Use `grep` or `python3 -c "import json..."` to look up response schemas instead of fetching the HTML docs. |
-| nipyapi (Python client — for API design reference) | <https://github.com/Chaffelson/nipyapi> |
-| octocrab (Rust API client — for ergonomics reference) | <https://github.com/XAMPPRocky/octocrab> |
+| NiFi OpenAPI specs (local) | `crates/nifi-openapi-gen/specs/{version}/nifi-api.json` — 237 paths each. Fetch with `./crates/nifi-openapi-gen/scripts/fetch-nifi-spec.sh`. Use `grep` / `python3 -c "import json…"` rather than fetching the HTML docs. |
+| nipyapi (Python client — API design reference) | <https://github.com/Chaffelson/nipyapi> |
+| octocrab (Rust API client — ergonomics reference) | <https://github.com/XAMPPRocky/octocrab> |
 | kube-rs (Rust K8s client — domain-adjacent reference) | <https://github.com/kube-rs/kube> |
 | snafu docs | <https://docs.rs/snafu> |
