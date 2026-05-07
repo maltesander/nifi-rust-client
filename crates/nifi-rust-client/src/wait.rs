@@ -136,8 +136,14 @@ enum PollOutcome {
 /// `fetch` returns the current resource state. `done` inspects it and
 /// returns one of `PollOutcome::{Pending, Ready, Failed(err)}`.
 ///
-/// Deadline is `Instant::now() + config.timeout`. The final sleep is
-/// clamped to the remaining time so we don't overshoot.
+/// Deadline is computed **after** the `initial_delay` sleep, so the full
+/// `config.timeout` window is available for actual polling. The final sleep
+/// is clamped to the remaining time so we don't overshoot.
+///
+/// Audit follow-up A6: previously the deadline snapshot ran before the
+/// initial-delay sleep. With `initial_delay >= timeout` the deadline was
+/// already in the past on the first iteration, so a single `fetch` fired
+/// and the loop returned `Timeout` immediately.
 async fn poll_until<T, FetchFn, FetchFut>(
     config: &WaitConfig,
     operation: &str,
@@ -148,11 +154,11 @@ where
     FetchFn: Fn() -> FetchFut,
     FetchFut: core::future::Future<Output = Result<T, NifiError>>,
 {
-    let deadline = tokio::time::Instant::now() + config.timeout;
-
     if !config.initial_delay.is_zero() {
         tokio::time::sleep(config.initial_delay).await;
     }
+
+    let deadline = tokio::time::Instant::now() + config.timeout;
 
     loop {
         let value = fetch().await?;
@@ -371,6 +377,27 @@ pub async fn processor_state_dynamic(
 
 // ── wait::parameter_context_update ─────────────────────────────────────────
 
+/// Audit follow-up A7: shared `(complete, failure_reason) -> PollOutcome`
+/// decision used by both the static and dynamic `parameter_context_update`
+/// helpers. Centralising it lets unit tests exercise the predicate without a
+/// full generated DTO. `failure_reason` is terminal regardless of `complete`.
+fn parameter_context_update_outcome(
+    complete: Option<bool>,
+    failure_reason: Option<&str>,
+) -> PollOutcome {
+    if let Some(reason) = failure_reason {
+        return PollOutcome::Failed(NifiError::Api {
+            status: STATUS_OPERATION_FAILED,
+            message: format!("parameter context update failed: {reason}"),
+        });
+    }
+    if complete.unwrap_or(false) {
+        PollOutcome::Ready
+    } else {
+        PollOutcome::Pending
+    }
+}
+
 #[cfg(not(feature = "dynamic"))]
 use crate::types::ParameterContextUpdateRequestEntity;
 
@@ -401,16 +428,10 @@ pub async fn parameter_context_update(
     };
     let done = |entity: &ParameterContextUpdateRequestEntity| {
         let req = entity.request.as_ref();
-        let complete = req.and_then(|r| r.complete).unwrap_or(false);
-        let failure = req.and_then(|r| r.failure_reason.as_ref());
-        match (complete, failure) {
-            (true, Some(reason)) => PollOutcome::Failed(NifiError::Api {
-                status: STATUS_OPERATION_FAILED,
-                message: format!("parameter context update failed: {reason}"),
-            }),
-            (true, None) => PollOutcome::Ready,
-            (false, _) => PollOutcome::Pending,
-        }
+        parameter_context_update_outcome(
+            req.and_then(|r| r.complete),
+            req.and_then(|r| r.failure_reason.as_deref()),
+        )
     };
     let result = poll_until(&config, &op, fetch, done).await;
 
@@ -445,16 +466,10 @@ pub async fn parameter_context_update_dynamic(
     };
     let done = |entity: &ParameterContextUpdateRequestEntity| {
         let req = entity.request.as_ref();
-        let complete = req.and_then(|r| r.complete).unwrap_or(false);
-        let failure = req.and_then(|r| r.failure_reason.as_ref());
-        match (complete, failure) {
-            (true, Some(reason)) => PollOutcome::Failed(NifiError::Api {
-                status: STATUS_OPERATION_FAILED,
-                message: format!("parameter context update failed: {reason}"),
-            }),
-            (true, None) => PollOutcome::Ready,
-            (false, _) => PollOutcome::Pending,
-        }
+        parameter_context_update_outcome(
+            req.and_then(|r| r.complete),
+            req.and_then(|r| r.failure_reason.as_deref()),
+        )
     };
     let result = poll_until(&config, &op, fetch, done).await;
 
@@ -659,6 +674,97 @@ mod tests {
         let done = |_: &i32| PollOutcome::Pending;
         let err = poll_until(&config, "op", fetch, done).await.unwrap_err();
         assert!(matches!(err, NifiError::Api { status: 404, .. }));
+    }
+
+    /// Audit follow-up A6: a `WaitConfig` whose `initial_delay >= timeout`
+    /// previously fired exactly one fetch and immediately returned `Timeout`,
+    /// because the deadline snapshot ran before the initial-delay sleep. With
+    /// the fix, the full `timeout` budget is available **after** the initial
+    /// delay elapses, so several fetches happen.
+    ///
+    /// Uses small real-time durations to keep the test fast — the absolute
+    /// numbers don't matter; what matters is that `initial_delay > timeout`
+    /// no longer causes a 1-fetch-then-Timeout sequence.
+    #[tokio::test]
+    async fn poll_until_initial_delay_does_not_consume_timeout_window() {
+        let config = WaitConfig {
+            timeout: Duration::from_millis(80),
+            poll_interval: Duration::from_millis(10),
+            initial_delay: Duration::from_millis(120),
+            cleanup: true,
+        };
+        let counter = Arc::new(AtomicUsize::new(0));
+        let c = Arc::clone(&counter);
+        let fetch = move || {
+            let c = Arc::clone(&c);
+            async move {
+                c.fetch_add(1, Ordering::SeqCst);
+                Ok::<i32, NifiError>(0)
+            }
+        };
+        let done = |_: &i32| PollOutcome::Pending;
+        let err = poll_until(&config, "delayed_op", fetch, done)
+            .await
+            .unwrap_err();
+        assert!(matches!(err, NifiError::Timeout { .. }));
+        // 80ms timeout / 10ms tick ≈ 8 polls. Pre-fix would be exactly 1.
+        let n = counter.load(Ordering::SeqCst);
+        assert!(
+            n >= 3,
+            "expected several polls within the timeout window after initial_delay, got {n}"
+        );
+    }
+
+    /// A7: `Some(failure_reason)` is terminal regardless of `complete`.
+    /// Previously, a NiFi response with `complete: null` and a populated
+    /// `failureReason` was treated as still-pending and the helper timed out.
+    #[test]
+    fn parameter_context_update_outcome_failure_reason_is_terminal() {
+        // complete: None, failureReason: Some
+        if let PollOutcome::Failed(NifiError::Api { status, message }) =
+            parameter_context_update_outcome(None, Some("boom"))
+        {
+            assert_eq!(status, STATUS_OPERATION_FAILED);
+            assert!(message.contains("boom"));
+        } else {
+            panic!("expected Failed(Api) for (complete=None, failure=Some)");
+        }
+
+        // complete: Some(false), failureReason: Some — also terminal
+        if let PollOutcome::Failed(NifiError::Api { message, .. }) =
+            parameter_context_update_outcome(Some(false), Some("nope"))
+        {
+            assert!(message.contains("nope"));
+        } else {
+            panic!("expected Failed(Api) for (complete=Some(false), failure=Some)");
+        }
+
+        // complete: Some(true), failureReason: Some — failure still wins
+        if let PollOutcome::Failed(NifiError::Api { message, .. }) =
+            parameter_context_update_outcome(Some(true), Some("failed-after-complete"))
+        {
+            assert!(message.contains("failed-after-complete"));
+        } else {
+            panic!("expected Failed(Api) for (complete=Some(true), failure=Some)");
+        }
+    }
+
+    /// A7: `complete: Some(true)` with no failure reason → Ready.
+    /// `complete: None | Some(false)` with no failure reason → Pending.
+    #[test]
+    fn parameter_context_update_outcome_no_failure_reason_paths() {
+        assert!(matches!(
+            parameter_context_update_outcome(Some(true), None),
+            PollOutcome::Ready
+        ));
+        assert!(matches!(
+            parameter_context_update_outcome(Some(false), None),
+            PollOutcome::Pending
+        ));
+        assert!(matches!(
+            parameter_context_update_outcome(None, None),
+            PollOutcome::Pending
+        ));
     }
 
     #[tokio::test]
