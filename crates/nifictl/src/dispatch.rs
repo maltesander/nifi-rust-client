@@ -42,6 +42,30 @@ fn resolve_password_input(cli_password: Option<String>) -> Option<String> {
     }
 }
 
+/// Fires once per process on stderr when `--token` was passed on the CLI.
+static TOKEN_FLAG_WARNED: std::sync::OnceLock<()> = std::sync::OnceLock::new();
+
+fn warn_token_flag_used() {
+    if TOKEN_FLAG_WARNED.set(()).is_ok() {
+        eprintln!(
+            "warning: --token is visible to other local users via the process list; \
+             prefer NIFI_TOKEN, a context's cached token, or `nifictl login`"
+        );
+    }
+}
+
+/// Resolve the token input the same way `resolve_password_input` resolves
+/// the password — split clap from the env-var fallback so the visibility
+/// warning fires only when the value actually came from the CLI.
+fn resolve_token_input(cli_token: Option<String>) -> Option<String> {
+    if cli_token.is_some() {
+        warn_token_flag_used();
+        cli_token
+    } else {
+        std::env::var("NIFI_TOKEN").ok()
+    }
+}
+
 #[allow(clippy::too_many_arguments)]
 async fn dispatch_resource(
     resource: generated::GeneratedResource,
@@ -138,7 +162,7 @@ macro_rules! dispatch_uniform {
             $cli.url.clone(),
             $cli.username.clone(),
             resolve_password_input($cli.password.clone()),
-            $cli.token.clone(),
+            resolve_token_input($cli.token.clone()),
             $cli.insecure,
             $cli.dry_run,
             $cli.yes,
@@ -160,7 +184,7 @@ pub(crate) async fn run(cli: Cli) -> Result<(), error::CliError> {
                 cli.url,
                 cli.username,
                 resolve_password_input(cli.password),
-                cli.token,
+                resolve_token_input(cli.token),
                 cli.insecure,
                 context,
             )?;
@@ -179,7 +203,7 @@ pub(crate) async fn run(cli: Cli) -> Result<(), error::CliError> {
                 cli.url,
                 cli.username,
                 resolve_password_input(cli.password),
-                cli.token,
+                resolve_token_input(cli.token),
                 cli.insecure,
                 context,
             )?;
@@ -201,12 +225,13 @@ pub(crate) async fn run(cli: Cli) -> Result<(), error::CliError> {
             let cfg = load_config(cli.config.as_deref())?;
             let context = resolve_context(&cfg, cli.context.as_deref())?;
 
-            // Resolve the password input up-front: this fires the
-            // `--password` visibility warning regardless of dry-run, since
-            // the password was already exposed on the process list the
-            // moment the user typed it. The dry-run branch then ignores
-            // the value; the live branch consumes it.
+            // Resolve the password / token input up-front: this fires the
+            // `--password` / `--token` visibility warning regardless of
+            // dry-run, since the secret was already exposed on the process
+            // list the moment the user typed it. The dry-run branch then
+            // ignores the value; the live branch consumes it.
             let password_input = resolve_password_input(cli.password);
+            let token_input = resolve_token_input(cli.token);
 
             // Resolve URL + insecure first — needed both for the confirm
             // gate's display string and for the dry-run client. Auth is
@@ -254,7 +279,7 @@ pub(crate) async fn run(cli: Cli) -> Result<(), error::CliError> {
                     cli.url,
                     cli.username,
                     password_input,
-                    cli.token,
+                    token_input,
                     cli.insecure,
                     context,
                 )?;
@@ -309,7 +334,7 @@ pub(crate) async fn run(cli: Cli) -> Result<(), error::CliError> {
                     cli.url,
                     cli.username,
                     resolve_password_input(cli.password),
-                    cli.token,
+                    resolve_token_input(cli.token),
                     cli.insecure,
                     cli.dry_run,
                     cli.yes,
@@ -330,12 +355,13 @@ pub(crate) async fn run(cli: Cli) -> Result<(), error::CliError> {
             let cfg = load_config(cli.config.as_deref())?;
             let context = resolve_context(&cfg, cli.context.as_deref())?;
 
-            // Resolve the password input up-front: this fires the
-            // `--password` visibility warning regardless of dry-run, since
-            // the password was already exposed on the process list the
-            // moment the user typed it. The dry-run branch then ignores
-            // the value; the live branch consumes it.
+            // Resolve the password / token input up-front: this fires the
+            // `--password` / `--token` visibility warning regardless of
+            // dry-run, since the secret was already exposed on the process
+            // list the moment the user typed it. The dry-run branch then
+            // ignores the value; the live branch consumes it.
             let password_input = resolve_password_input(cli.password);
+            let token_input = resolve_token_input(cli.token);
 
             // Resolve URL + insecure first — needed both for the confirm
             // gate's display string and for the dry-run client. Auth is
@@ -369,7 +395,7 @@ pub(crate) async fn run(cli: Cli) -> Result<(), error::CliError> {
                     cli.url,
                     cli.username,
                     password_input,
-                    cli.token,
+                    token_input,
                     cli.insecure,
                     context,
                 )?;

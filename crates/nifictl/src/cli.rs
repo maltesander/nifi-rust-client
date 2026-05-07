@@ -37,8 +37,12 @@ pub(crate) struct Cli {
     #[arg(long, global = true, hide = true)]
     pub(crate) password: Option<String>,
 
-    /// NiFi bearer token (overrides context)
-    #[arg(long, env = "NIFI_TOKEN", global = true)]
+    /// NiFi bearer token (overrides context).
+    ///
+    /// Hidden from --help because passing a token via CLI leaks it to
+    /// `/proc/<pid>/cmdline` and shell history. Prefer `NIFI_TOKEN`, a
+    /// context's cached token, or `nifictl login`.
+    #[arg(long, global = true, hide = true)]
     pub(crate) token: Option<String>,
 
     /// Disable TLS certificate verification

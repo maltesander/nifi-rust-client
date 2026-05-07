@@ -81,6 +81,68 @@ fn password_flag_triggers_visibility_warning() {
     );
 }
 
+#[test]
+fn token_is_hidden_from_help() {
+    let output = std::process::Command::new(env!("CARGO_BIN_EXE_nifictl"))
+        .arg("--help")
+        .output()
+        .expect("run nifictl --help");
+    assert!(output.status.success(), "nifictl --help exited non-zero");
+    let help = String::from_utf8_lossy(&output.stdout);
+    assert!(
+        !help.contains("--token"),
+        "--token should be hidden from help; help contained:\n{help}"
+    );
+}
+
+/// Passing `--token` on the CLI must emit the visibility warning to stderr
+/// (via `resolve_token_input` → `warn_token_flag_used`). Status would
+/// normally hit the network, but the unreachable URL means the warning
+/// fires before the connection error and is captured first.
+#[test]
+fn token_flag_triggers_visibility_warning() {
+    let output = std::process::Command::new(env!("CARGO_BIN_EXE_nifictl"))
+        .env_remove("NIFI_TOKEN")
+        .args([
+            "--url",
+            "http://127.0.0.1:1", // unreachable — we don't actually connect
+            "--token",
+            "shh",
+            "status",
+        ])
+        .output()
+        .expect("run nifictl");
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(
+        stderr.contains("--token is visible"),
+        "expected visibility warning on stderr; got:\n{stderr}"
+    );
+}
+
+/// The warning must NOT fire when the token is supplied via the
+/// `NIFI_TOKEN` env var — that path skips `warn_token_flag_used`.
+#[test]
+fn token_env_does_not_trigger_visibility_warning() {
+    let output = std::process::Command::new(env!("CARGO_BIN_EXE_nifictl"))
+        .env("NIFI_TOKEN", "shh")
+        .args([
+            "--url",
+            "http://127.0.0.1:1",
+            "--dry-run",
+            "ops",
+            "stop-pg",
+            "pg-1",
+            "--yes",
+        ])
+        .output()
+        .expect("run nifictl");
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(
+        !stderr.contains("--token is visible"),
+        "env var should not trigger warning; got:\n{stderr}"
+    );
+}
+
 /// The warning must NOT fire when the password is supplied via the
 /// `NIFI_PASSWORD` env var — that path skips `warn_password_flag_used`.
 #[test]
