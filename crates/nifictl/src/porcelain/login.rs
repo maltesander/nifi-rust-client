@@ -1,7 +1,7 @@
 use crate::client_factory::ResolvedParams;
 use crate::error::CliError;
 use crate::jwt;
-use std::path::PathBuf;
+use crate::porcelain::token_cache;
 use std::time::{Duration, SystemTime};
 
 const EXPIRY_WARNING_THRESHOLD: Duration = Duration::from_secs(24 * 3600);
@@ -25,14 +25,6 @@ fn expiry_warning_for(token: &str, now: SystemTime) -> Option<String> {
     }
 }
 
-fn token_dir() -> PathBuf {
-    let home = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
-    PathBuf::from(home).join(".nifictl").join("tokens")
-}
-
-fn token_path(context_name: &str) -> PathBuf {
-    token_dir().join(context_name)
-}
 
 /// Write the cached token to disk at `path`. On Unix, sets the file's
 /// permissions to `0o600` after write so a multi-user system does not
@@ -60,7 +52,7 @@ pub(crate) fn write_token_file(path: &std::path::Path, token: &str) -> std::io::
 pub async fn login(params: &ResolvedParams, context_name: &str) -> Result<(), CliError> {
     let client = params.build_client().await?;
     if let Some(token) = client.token().await {
-        write_token_file(&token_path(context_name), &token)?;
+        write_token_file(&token_cache::cache_path(context_name), &token)?;
         eprintln!("Logged in to {} (token cached)", params.url);
         if let Some(version) = client.detected_version() {
             eprintln!("NiFi version: {version}");
@@ -73,7 +65,7 @@ pub async fn login(params: &ResolvedParams, context_name: &str) -> Result<(), Cl
 }
 
 pub fn logout(context_name: &str) -> Result<(), CliError> {
-    let path = token_path(context_name);
+    let path = token_cache::cache_path(context_name);
     if path.exists() {
         std::fs::remove_file(&path)?;
         eprintln!("Logged out (token cleared for context '{context_name}')");
