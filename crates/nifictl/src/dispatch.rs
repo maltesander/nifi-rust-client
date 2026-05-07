@@ -59,6 +59,7 @@ async fn dispatch_resource(
     output: &str,
 ) -> Result<(), error::CliError> {
     let cfg = load_config(config_path)?;
+    let context_name = resolve_context_name(&cfg, context_name_override);
     let context = resolve_context(&cfg, context_name_override)?;
     let params =
         client_factory::ResolvedParams::resolve(url, username, password, token, insecure, context)?;
@@ -74,7 +75,7 @@ async fn dispatch_resource(
             .danger_accept_invalid_certs(params.insecure)
             .build_dynamic()?
     } else {
-        params.build_client().await?
+        params.build_client_with_cache(&context_name).await?
     };
 
     let wait_plan = if wait {
@@ -163,6 +164,7 @@ pub(crate) async fn run(cli: Cli) -> Result<(), error::CliError> {
         }
         Commands::Status => {
             let cfg = load_config(cli.config.as_deref())?;
+            let context_name = resolve_context_name(&cfg, cli.context.as_deref());
             let context = resolve_context(&cfg, cli.context.as_deref())?;
             let params = client_factory::ResolvedParams::resolve(
                 cli.url,
@@ -172,7 +174,7 @@ pub(crate) async fn run(cli: Cli) -> Result<(), error::CliError> {
                 cli.insecure,
                 context,
             )?;
-            let client = params.build_client().await?;
+            let client = params.build_client_with_cache(&context_name).await?;
             let result = porcelain::status::status(&client).await?;
             let fmt = output::OutputFormat::parse(&cli.output).map_err(error::CliError::User)?;
             let resolved = fmt.resolve();
@@ -188,6 +190,7 @@ pub(crate) async fn run(cli: Cli) -> Result<(), error::CliError> {
                 ));
             }
             let cfg = load_config(cli.config.as_deref())?;
+            let context_name = resolve_context_name(&cfg, cli.context.as_deref());
             let context = resolve_context(&cfg, cli.context.as_deref())?;
             let params = client_factory::ResolvedParams::resolve(
                 cli.url,
@@ -230,7 +233,7 @@ pub(crate) async fn run(cli: Cli) -> Result<(), error::CliError> {
                     .danger_accept_invalid_certs(params.insecure)
                     .build_dynamic()?
             } else {
-                params.build_client().await?
+                params.build_client_with_cache(&context_name).await?
             };
 
             let result = match cmd {
@@ -300,6 +303,7 @@ pub(crate) async fn run(cli: Cli) -> Result<(), error::CliError> {
             }
 
             let cfg = load_config(cli.config.as_deref())?;
+            let context_name = resolve_context_name(&cfg, cli.context.as_deref());
             let context = resolve_context(&cfg, cli.context.as_deref())?;
             let params = client_factory::ResolvedParams::resolve(
                 cli.url,
@@ -328,7 +332,7 @@ pub(crate) async fn run(cli: Cli) -> Result<(), error::CliError> {
                     .danger_accept_invalid_certs(params.insecure)
                     .build_dynamic()?
             } else {
-                params.build_client().await?
+                params.build_client_with_cache(&context_name).await?
             };
 
             let result = match command {
