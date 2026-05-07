@@ -268,12 +268,17 @@ impl NifiClient {
                 Err(e) => return Err(e),
             }
         }
-        // Safety: the loop always executes at least once (attempt 0..=max_retries),
-        // and every iteration that reaches here sets `last_err`.
+        // The loop always executes at least once (range `0..=max_retries`).
+        // Each iteration either returns directly (`Ok` or non-retryable `Err`)
+        // or sets `last_err` to `Some(_)`. So if we reach here, `last_err` is
+        // populated. Encoding the invariant with `unreachable!` prevents a
+        // future maintainer from silently re-issuing an extra HTTP request if
+        // the loop logic ever changes.
         match last_err {
             Some(e) => Err(e),
-            // unreachable: loop runs at least once and non-retryable errors return early
-            None => self.with_auth_retry(&f).await,
+            None => unreachable!(
+                "with_retry loop ran at least once and every retryable error stores last_err"
+            ),
         }
     }
 
@@ -1220,10 +1225,22 @@ fn apply_extra_headers(
 ///
 /// NiFi returns either a JSON object with a `"message"` field or plain text.
 /// Logs the raw body at `debug` level before extracting.
+///
+/// Only the **top-level** `"message"` is consulted. The previous
+/// `serde_json::Value` indexing (`v["message"]`) silently fell through arrays
+/// and nested objects, so a body like
+/// `{"errors": [{"message": "wrong"}], "message": "right"}` could surface
+/// the wrong text. Restricting the lookup to the top-level object keeps the
+/// behaviour predictable.
 pub fn extract_error_message(body: &str) -> String {
     serde_json::from_str::<serde_json::Value>(body)
         .ok()
-        .and_then(|v| v["message"].as_str().map(str::to_owned))
+        .and_then(|v| {
+            v.as_object()
+                .and_then(|o| o.get("message"))
+                .and_then(serde_json::Value::as_str)
+                .map(str::to_owned)
+        })
         .unwrap_or_else(|| body.to_owned())
 }
 
@@ -1256,5 +1273,62 @@ mod tests {
             clone2.as_ptr(),
             "Bytes::clone should share buffer"
         );
+    }
+
+    /// Pins audit follow-up A13: `extract_error_message` must look up
+    /// `"message"` only on the top-level JSON object. The previous
+    /// implementation used `serde_json::Value`'s index operator, which
+    /// silently traverses nested objects and arrays — a body with
+    /// `{"errors": [{"message": "wrong"}], "message": "right"}` could surface
+    /// the wrong string.
+    #[test]
+    fn extract_error_message_uses_top_level_only() {
+        use super::extract_error_message;
+
+        assert_eq!(
+            extract_error_message(
+                r#"{"errors": [{"message": "wrong"}], "message": "right"}"#
+            ),
+            "right"
+        );
+    }
+
+    /// Top-level `message` is still found when no other candidate exists.
+    #[test]
+    fn extract_error_message_finds_simple_top_level() {
+        use super::extract_error_message;
+
+        assert_eq!(
+            extract_error_message(r#"{"message": "boom"}"#),
+            "boom"
+        );
+    }
+
+    /// JSON without a top-level `message` (e.g. only nested) falls back to
+    /// the raw body — we no longer dig into nested objects/arrays.
+    #[test]
+    fn extract_error_message_no_top_level_returns_body() {
+        use super::extract_error_message;
+
+        let body = r#"{"errors": [{"message": "deep"}]}"#;
+        assert_eq!(extract_error_message(body), body);
+    }
+
+    /// Plain-text bodies are returned unchanged.
+    #[test]
+    fn extract_error_message_plain_text_passthrough() {
+        use super::extract_error_message;
+
+        assert_eq!(extract_error_message("not json at all"), "not json at all");
+    }
+
+    /// JSON arrays / scalars at the top level have no `message` field; fall
+    /// back to the body.
+    #[test]
+    fn extract_error_message_top_level_array_returns_body() {
+        use super::extract_error_message;
+
+        let body = r#"[{"message": "ignored"}]"#;
+        assert_eq!(extract_error_message(body), body);
     }
 }
