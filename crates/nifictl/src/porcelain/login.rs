@@ -25,7 +25,6 @@ fn expiry_warning_for(token: &str, now: SystemTime) -> Option<String> {
     }
 }
 
-
 /// Write the cached token to disk at `path`. On Unix, sets the file's
 /// permissions to `0o600` after write so a multi-user system does not
 /// expose the JWT. On non-Unix platforms the umask applies.

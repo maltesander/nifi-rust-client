@@ -631,12 +631,19 @@ mod tests {
         // Scan only the implementation code (before the test module).
         // Split at "mod tests" to exclude test code that might reference stdout.
         let full_src = include_str!("flow.rs");
-        let impl_src = full_src.split("\n#[cfg(test)]\nmod tests").next().unwrap_or("");
+        let impl_src = full_src
+            .split("\n#[cfg(test)]\nmod tests")
+            .next()
+            .unwrap_or("");
 
         // Count actual function calls: dry_run::print(&mut std::io::stderr(), ...)
         // There are 6 sites in export, import, and replace (including stop_first variants).
-        let stderr_print_sites = impl_src.matches("dry_run::print(&mut std::io::stderr()").count();
-        let stdout_print_sites = impl_src.matches("dry_run::print(&mut std::io::stdout()").count();
+        let stderr_print_sites = impl_src
+            .matches("dry_run::print(&mut std::io::stderr()")
+            .count();
+        let stdout_print_sites = impl_src
+            .matches("dry_run::print(&mut std::io::stdout()")
+            .count();
 
         assert_eq!(
             stdout_print_sites, 0,

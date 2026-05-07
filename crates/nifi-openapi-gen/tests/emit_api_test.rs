@@ -874,7 +874,10 @@ fn emits_stream_variant_for_octet_stream_response() {
     // rustfmt may wrap the method-chain across lines once the path expr
     // grows long enough (e.g. percent-encoded path-param substitution),
     // so check for the helper name independent of the receiver.
-    assert!(x_rs.contains(".get_bytes("), "missing get_bytes call: {x_rs}");
+    assert!(
+        x_rs.contains(".get_bytes("),
+        "missing get_bytes call: {x_rs}"
+    );
     assert!(
         x_rs.contains(".get_bytes_stream("),
         "missing get_bytes_stream call: {x_rs}"

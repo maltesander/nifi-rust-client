@@ -177,7 +177,6 @@ impl ResolvedParams {
     /// For `Token` and `Mtls` auth: behaviour is identical to
     /// [`Self::build_client`] — those paths don't burn a
     /// `/access/token` round-trip per call, so the cache is irrelevant.
-    #[allow(dead_code)] // dispatch arms route through this in Task 3
     pub async fn build_client_with_cache(
         &self,
         context_name: &str,

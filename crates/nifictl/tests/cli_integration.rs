@@ -739,7 +739,9 @@ async fn hint_fires_on_404() {
         "stderr should start with 'error: ': {stderr}"
     );
     assert!(
-        stderr.contains("hint: verify the id; use 'nifictl <resource> --help' to find list-style verbs"),
+        stderr.contains(
+            "hint: verify the id; use 'nifictl <resource> --help' to find list-style verbs"
+        ),
         "stderr should include the not-found hint: {stderr}"
     );
 }
