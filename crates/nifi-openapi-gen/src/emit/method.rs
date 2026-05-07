@@ -1018,11 +1018,38 @@ fn emit_dispatch_dynamic(
                     "        self.client.inner().put_void_no_body({path_arg}, {header_arg}).await\n"
                 ));
             }
-            _ => {
+            // GET with query: dispatch via the same helper the catch-all
+            // used, but with the real `&query` slice.
+            (HttpMethod::Get, _, true) => {
+                out.push_str(&format!(
+                    "        self.client.inner().get_void_with_query({path_arg}, {header_arg}, &query).await\n"
+                ));
+            }
+            // GET without query: keep the existing catch-all behaviour
+            // (passes an empty `&[]` slice). Explicit form makes the
+            // dispatch table exhaustive without changing semantics.
+            (HttpMethod::Get, _, false) => {
                 out.push_str(&format!(
                     "        self.client.inner().get_void_with_query({path_arg}, {header_arg}, &[]).await\n"
                 ));
             }
+            // No catch-all — surface unknown shapes at codegen time.
+            // AGENTS.md "Strict parsing & content-type allow-list" pins
+            // this invariant: never merge into a `_ =>` fallback.
+            //
+            // Today this arm is unreachable (HttpMethod has only 4 variants,
+            // all covered above). Kept as a tripwire: if a future
+            // `HttpMethod` variant is added without updating this match,
+            // the compiler will first force exhaustiveness here, and any
+            // shape that slips through still panics with an actionable
+            // message naming the endpoint.
+            #[allow(unreachable_patterns)]
+            (m, b, q) => panic!(
+                "unhandled (method, body, query) combination in dynamic \
+                 unit-return dispatch for {fn_name}: ({m:?}, {b:?}, {q}). \
+                 Add an explicit arm in emit/method.rs::emit_dispatch_dynamic.",
+                fn_name = ep.fn_name
+            ),
         }
         return;
     }
@@ -1295,6 +1322,46 @@ mod emit_fix_inline_json_tests {
             !out.contains("tracing::debug!"),
             "dynamic emitter must NOT emit tracing::debug! — build_request \
              in client.rs is the single request-side debug source. Got:\n{out}"
+        );
+    }
+
+    #[test]
+    fn dynamic_get_unit_with_query_uses_explicit_arm() {
+        use crate::parser::{QueryParam, QueryParamType};
+        let ep = Endpoint {
+            fn_name: "void_get".to_string(),
+            path: "/foo".to_string(),
+            method: HttpMethod::Get,
+            response_kind: ResponseBodyKind::Empty,
+            query_params: vec![QueryParam {
+                name: "q".to_string(),
+                rust_name: "q".to_string(),
+                required: true,
+                ty: QueryParamType::Str,
+                enum_type_name: None,
+                doc: None,
+            }],
+            ..inline_json_endpoint()
+        };
+        let endpoint_versions = crate::canonical::VersionSet::new();
+        let query_param_versions = std::collections::BTreeMap::new();
+        let ctx = DynamicMethodCtx {
+            endpoint_versions: &endpoint_versions,
+            query_param_versions: &query_param_versions,
+            endpoint_variant: "VoidGet".to_string(),
+            method_lit: "GET",
+        };
+        let mut out = String::new();
+        emit_method(&ep, &EmitMode::Dynamic(ctx), &mut out);
+        // Explicit GET-with-query arm: real query is passed (NOT the &[] catch-all stub).
+        assert!(
+            out.contains("get_void_with_query(&path,") && out.contains(", &query)"),
+            "dynamic GET unit-with-query must dispatch via the explicit arm with &query, \
+             not the &[] catch-all stub. Got:\n{out}"
+        );
+        assert!(
+            !out.contains(", &[]).await"),
+            "dynamic emitter must not emit the &[] catch-all stub for unit-return endpoints. Got:\n{out}"
         );
     }
 
