@@ -533,11 +533,16 @@ fn emit_method_body_static(ep: &Endpoint, stream: bool) -> String {
                 )
             }
             ResponseBodyKind::Text | ResponseBodyKind::Xml => {
-                // No current NiFi GET endpoint has query params AND text/xml response.
-                // Emit a todo!() so a future spec addition surfaces loudly at runtime.
-                format!(
-                    "{setup}\n        todo!(\"text/xml GET with query params not implemented\")\n"
-                )
+                // AGENTS.md "Strict parsing" pins that unknown shapes
+                // must fail at codegen time, not runtime. If a future
+                // spec adds a text/xml GET with query params, this
+                // panic names what to wire up.
+                panic!(
+                    "text/xml GET with query params not implemented for {} ({}). \
+                     Add a GET helper variant to client.rs (e.g. get_text_with_query) \
+                     and an arm here that delegates to it.",
+                    ep.fn_name, ep.path
+                );
             }
             ResponseBodyKind::Empty => {
                 format!(
@@ -1057,14 +1062,19 @@ fn emit_dispatch_dynamic(
     // ── Text / bytes returns ─────────────────────────────────────────────
     if returns_text {
         if use_query {
-            out.push_str(
-                "        todo!(\"text GET with query params not implemented in dynamic\")\n",
+            // AGENTS.md "Strict parsing" pins that unknown shapes must
+            // fail at codegen time. Static-mode emit_method_body_static
+            // panics in the matching branch — keep parity here.
+            panic!(
+                "text GET with query params not implemented for {} ({}) in dynamic mode. \
+                 Add a get_text_with_query helper to client.rs and an arm here that \
+                 delegates to it.",
+                ep.fn_name, ep.path
             );
-        } else {
-            out.push_str(&format!(
-                "        self.client.inner().get_text({path_arg}, {header_arg}).await\n"
-            ));
         }
+        out.push_str(&format!(
+            "        self.client.inner().get_text({path_arg}, {header_arg}).await\n"
+        ));
         return;
     }
 
@@ -1390,5 +1400,59 @@ mod emit_fix_inline_json_tests {
             "dynamic emitter must skip FormEncoded endpoints (manual handling \
              like NifiClient::login). Got:\n{out}"
         );
+    }
+
+    #[test]
+    #[should_panic(expected = "text/xml GET with query params")]
+    fn static_emitter_panics_on_text_xml_get_with_query() {
+        use crate::parser::{QueryParam, QueryParamType};
+        let ep = Endpoint {
+            fn_name: "weird_endpoint".to_string(),
+            path: "/weird".to_string(),
+            method: HttpMethod::Get,
+            response_kind: ResponseBodyKind::Xml,
+            query_params: vec![QueryParam {
+                name: "q".to_string(),
+                rust_name: "q".to_string(),
+                required: true,
+                ty: QueryParamType::Str,
+                enum_type_name: None,
+                doc: None,
+            }],
+            ..inline_json_endpoint()
+        };
+        let mut out = String::new();
+        emit_method(&ep, &EmitMode::Static, &mut out);
+    }
+
+    #[test]
+    #[should_panic(expected = "text GET with query params")]
+    fn dynamic_emitter_panics_on_text_get_with_query() {
+        use crate::parser::{QueryParam, QueryParamType};
+        let ep = Endpoint {
+            fn_name: "weird_endpoint".to_string(),
+            path: "/weird".to_string(),
+            method: HttpMethod::Get,
+            response_kind: ResponseBodyKind::Text,
+            query_params: vec![QueryParam {
+                name: "q".to_string(),
+                rust_name: "q".to_string(),
+                required: true,
+                ty: QueryParamType::Str,
+                enum_type_name: None,
+                doc: None,
+            }],
+            ..inline_json_endpoint()
+        };
+        let endpoint_versions = crate::canonical::VersionSet::new();
+        let query_param_versions = std::collections::BTreeMap::new();
+        let ctx = DynamicMethodCtx {
+            endpoint_versions: &endpoint_versions,
+            query_param_versions: &query_param_versions,
+            endpoint_variant: "WeirdEndpoint".to_string(),
+            method_lit: "GET",
+        };
+        let mut out = String::new();
+        emit_method(&ep, &EmitMode::Dynamic(ctx), &mut out);
     }
 }
