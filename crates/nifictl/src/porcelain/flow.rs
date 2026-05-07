@@ -35,7 +35,7 @@ pub async fn export(
             Vec::new()
         };
         let url = dry_run::format_url(ctx.base_url, &path, &query);
-        dry_run::print(&mut std::io::stdout(), "GET", &url, None).map_err(CliError::Io)?;
+        dry_run::print(&mut std::io::stderr(), "GET", &url, None).map_err(CliError::Io)?;
         return Ok(CliOutput::Empty);
     }
 
@@ -91,7 +91,7 @@ pub async fn import(
                 "positionY": 0.0,
             }
         });
-        dry_run::print(&mut std::io::stdout(), "POST", &url, Some(&summary))
+        dry_run::print(&mut std::io::stderr(), "POST", &url, Some(&summary))
             .map_err(CliError::Io)?;
         return Ok(CliOutput::Empty);
     }
@@ -146,12 +146,12 @@ pub async fn replace(
             let stop_url =
                 dry_run::format_url(ctx.base_url, &format!("/flow/process-groups/{pg_id}"), &[]);
             let stop_body = serde_json::json!({ "id": pg_id, "state": "STOPPED" });
-            dry_run::print(&mut std::io::stdout(), "PUT", &stop_url, Some(&stop_body))
+            dry_run::print(&mut std::io::stderr(), "PUT", &stop_url, Some(&stop_body))
                 .map_err(CliError::Io)?;
         }
         // 1. GET the target to show where the revision comes from.
         let get_url = dry_run::format_url(ctx.base_url, &format!("/process-groups/{pg_id}"), &[]);
-        dry_run::print(&mut std::io::stdout(), "GET", &get_url, None).map_err(CliError::Io)?;
+        dry_run::print(&mut std::io::stderr(), "GET", &get_url, None).map_err(CliError::Io)?;
         // 2. PUT the replace — summarise rather than inlining the snapshot.
         let put_url = dry_run::format_url(
             ctx.base_url,
@@ -163,14 +163,14 @@ pub async fn replace(
             "processGroupRevision": { "version": "<fetched from GET above>" },
             "versionedFlowSnapshot": format!("<contents of {}>", file.display()),
         });
-        dry_run::print(&mut std::io::stdout(), "PUT", &put_url, Some(&put_body))
+        dry_run::print(&mut std::io::stderr(), "PUT", &put_url, Some(&put_body))
             .map_err(CliError::Io)?;
         if stop_first {
             // 3. start
             let start_url =
                 dry_run::format_url(ctx.base_url, &format!("/flow/process-groups/{pg_id}"), &[]);
             let start_body = serde_json::json!({ "id": pg_id, "state": "RUNNING" });
-            dry_run::print(&mut std::io::stdout(), "PUT", &start_url, Some(&start_body))
+            dry_run::print(&mut std::io::stderr(), "PUT", &start_url, Some(&start_body))
                 .map_err(CliError::Io)?;
         }
         return Ok(CliOutput::Empty);
@@ -621,5 +621,30 @@ mod tests {
         };
         let result = replace(&client, "pg-3", &snap, true, &ctx).await.unwrap();
         assert!(matches!(result, CliOutput::Empty));
+    }
+
+    /// Pin the invariant that flow porcelain dry-run output goes to stderr.
+    /// This protects against regressing `nifictl --dry-run flow export | jq`
+    /// (data on stdout, diagnostics on stderr).
+    #[test]
+    fn dry_run_print_sites_use_stderr() {
+        // Scan only the implementation code (before the test module).
+        // Split at "mod tests" to exclude test code that might reference stdout.
+        let full_src = include_str!("flow.rs");
+        let impl_src = full_src.split("\n#[cfg(test)]\nmod tests").next().unwrap_or("");
+
+        // Count actual function calls: dry_run::print(&mut std::io::stderr(), ...)
+        // There are 6 sites in export, import, and replace (including stop_first variants).
+        let stderr_print_sites = impl_src.matches("dry_run::print(&mut std::io::stderr()").count();
+        let stdout_print_sites = impl_src.matches("dry_run::print(&mut std::io::stdout()").count();
+
+        assert_eq!(
+            stdout_print_sites, 0,
+            "all dry_run::print sites must use stderr, not stdout; found {stdout_print_sites} stdout calls"
+        );
+        assert!(
+            stderr_print_sites >= 6,
+            "expected at least 6 dry_run::print(&mut std::io::stderr()...) sites, found {stderr_print_sites}"
+        );
     }
 }

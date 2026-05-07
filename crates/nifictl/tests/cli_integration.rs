@@ -371,14 +371,14 @@ fn dry_run_on_flow_export_does_not_connect() {
         "dry-run should exit 0; stderr={}",
         String::from_utf8_lossy(&output.stderr),
     );
-    let stdout = String::from_utf8_lossy(&output.stdout);
+    let stderr = String::from_utf8_lossy(&output.stderr);
     assert!(
-        stdout.contains("DRY RUN"),
-        "stdout should contain dry-run preamble: {stdout}"
+        stderr.contains("DRY RUN"),
+        "stderr should contain dry-run preamble: {stderr}"
     );
     assert!(
-        stdout.contains("GET http://localhost:1/nifi-api/process-groups/pg-1/download"),
-        "stdout should contain the target URL: {stdout}"
+        stderr.contains("GET http://localhost:1/nifi-api/process-groups/pg-1/download"),
+        "stderr should contain the target URL: {stderr}"
     );
 }
 
@@ -436,22 +436,22 @@ fn dry_run_on_flow_replace_stop_first_prints_all_four_requests() {
         "dry-run should exit 0; stderr={}",
         String::from_utf8_lossy(&output.stderr),
     );
-    let stdout = String::from_utf8_lossy(&output.stdout);
-    let stop_idx = stdout
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    let stop_idx = stderr
         .find("\"state\": \"STOPPED\"")
         .expect("should contain STOPPED body");
-    let get_idx = stdout
+    let get_idx = stderr
         .find("GET http://localhost:1/nifi-api/process-groups/pg-1")
         .expect("should contain GET line");
-    let put_idx = stdout
+    let put_idx = stderr
         .find("PUT http://localhost:1/nifi-api/process-groups/pg-1/flow-contents")
         .expect("should contain PUT replace");
-    let start_idx = stdout
+    let start_idx = stderr
         .find("\"state\": \"RUNNING\"")
         .expect("should contain RUNNING body");
     assert!(
         stop_idx < get_idx && get_idx < put_idx && put_idx < start_idx,
-        "expected order stop \u{2192} get \u{2192} put \u{2192} start; stdout={stdout}"
+        "expected order stop \u{2192} get \u{2192} put \u{2192} start; stderr={stderr}"
     );
 }
 
