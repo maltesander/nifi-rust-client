@@ -20,6 +20,7 @@ use crate::jwt;
 /// Re-authentication takes a sub-second round-trip; a 60s skew avoids
 /// the rare case where the cached token expires while the request is
 /// in flight.
+#[allow(dead_code)] // wired into ResolvedParams::build_client_with_cache in the next commit
 const FRESHNESS_SKEW: Duration = Duration::from_secs(60);
 
 /// Resolve the on-disk cache path for a given context name.
@@ -34,6 +35,7 @@ pub(crate) fn cache_path(context_name: &str) -> PathBuf {
 /// Read the cached token for `context_name`. Returns `None` if the
 /// file is missing, unreadable, or empty. Callers should follow up
 /// with [`is_token_fresh`] before installing the token.
+#[allow(dead_code)] // wired into ResolvedParams::build_client_with_cache in the next commit
 pub(crate) fn read_cached_token(context_name: &str) -> Option<String> {
     let path = cache_path(context_name);
     let raw = std::fs::read_to_string(&path).ok()?;
@@ -47,6 +49,7 @@ pub(crate) fn read_cached_token(context_name: &str) -> Option<String> {
 /// `true` if the JWT's `exp` claim is at least [`FRESHNESS_SKEW`]
 /// seconds in the future relative to `now`. Returns `false` for
 /// malformed tokens, missing `exp`, or already-expired tokens.
+#[allow(dead_code)] // wired into ResolvedParams::build_client_with_cache in the next commit
 pub(crate) fn is_token_fresh(token: &str, now: SystemTime) -> bool {
     match jwt::expiry_remaining(token, now) {
         Some(remaining) => remaining > FRESHNESS_SKEW,
