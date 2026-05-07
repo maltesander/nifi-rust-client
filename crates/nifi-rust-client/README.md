@@ -226,6 +226,8 @@ client.authenticate().await?; // installs the token without contacting the serve
 After a successful `login()`, the JWT can be persisted and reused across process restarts:
 
 ```rust,no_run
+use std::fs;
+
 // Save token after login
 if let Some(token) = client.token().await {
     fs::write("nifi-token.txt", token)?;
@@ -319,8 +321,8 @@ stack expects.
 
 Endpoints returning `application/octet-stream` or `*/*` are emitted in
 two flavors: a buffered `Vec<u8>` method and a streaming `BytesStream`
-method named with a `_stream` suffix. See the top-level README for a
-worked example.
+method named with a `_stream` suffix. See `examples/streaming_download.rs`
+for a worked example.
 
 ## Retry policy
 
@@ -329,7 +331,7 @@ provider is configured). Enable transient error retry with exponential backoff:
 
 ```rust,no_run
 use nifi_rust_client::NifiClientBuilder;
-use nifi_rust_client::retry::RetryPolicy;
+use nifi_rust_client::config::retry::RetryPolicy;
 use std::time::Duration;
 
 let client = NifiClientBuilder::new("https://nifi:8443")?
