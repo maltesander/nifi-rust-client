@@ -160,7 +160,19 @@ impl<'de> Deserialize<'de> for FlexibleString {
             }
         }
 
-        de.deserialize_any(V)
+        // Audit follow-up A12: `deserialize_any` is unsupported by
+        // non-self-describing formats (bincode, postcard, …) and they fail
+        // the round-trip eagerly. The `Serialize` impl above is
+        // `#[serde(transparent)]`, so binary formats always see a `String`
+        // on the wire — `deserialize_str` is the correct ask there. JSON
+        // (and any other self-describing format) still needs
+        // `deserialize_any` so we can accept either a string or an integer
+        // / float (the whole point of `FlexibleString`).
+        if de.is_human_readable() {
+            de.deserialize_any(V)
+        } else {
+            de.deserialize_string(V)
+        }
     }
 }
 
@@ -243,5 +255,77 @@ mod tests {
         assert_eq!(s, "xyz");
         let v: FlexibleString = s.into();
         assert_eq!(&*v, "xyz");
+    }
+
+    /// Audit follow-up A12: a non-self-describing deserializer (`bincode`,
+    /// `postcard`, …) cannot fulfil `deserialize_any`. `FlexibleString`
+    /// previously called `deserialize_any` unconditionally, so any DTO
+    /// containing a `FlexibleString` failed to round-trip through binary
+    /// formats with an "unsupported" error.
+    ///
+    /// Rather than pull in a binary serde format as a dev-dep, this test
+    /// implements a minimal `Deserializer` that:
+    /// 1. Reports `is_human_readable() == false`.
+    /// 2. Returns an error from `deserialize_any` (mimicking bincode).
+    /// 3. Honours `deserialize_string` by delegating to `visit_string`.
+    ///
+    /// Pre-fix the test fails at step 2 because `FlexibleString::Deserialize`
+    /// always asked for `deserialize_any`. Post-fix it succeeds because the
+    /// fix routes non-human-readable formats through `deserialize_string`.
+    mod non_self_describing {
+        use super::super::FlexibleString;
+        use serde::Deserialize;
+        use serde::de::{self, Deserializer, Visitor};
+
+        struct StringOnlyDeserializer<'a>(&'a str);
+
+        impl<'de> Deserializer<'de> for StringOnlyDeserializer<'_> {
+            type Error = de::value::Error;
+
+            fn is_human_readable(&self) -> bool {
+                false
+            }
+
+            fn deserialize_any<V>(self, _v: V) -> Result<V::Value, Self::Error>
+            where
+                V: Visitor<'de>,
+            {
+                Err(de::Error::custom(
+                    "deserialize_any unsupported by non-self-describing format",
+                ))
+            }
+
+            fn deserialize_string<V>(self, v: V) -> Result<V::Value, Self::Error>
+            where
+                V: Visitor<'de>,
+            {
+                v.visit_string(self.0.to_owned())
+            }
+
+            fn deserialize_str<V>(self, v: V) -> Result<V::Value, Self::Error>
+            where
+                V: Visitor<'de>,
+            {
+                v.visit_str(self.0)
+            }
+
+            // Every other primitive forwards to `deserialize_any` (which
+            // errors), matching the spirit of binary deserializers that only
+            // know the type they were told to expect.
+            serde::forward_to_deserialize_any! {
+                bool i8 i16 i32 i64 i128 u8 u16 u32 u64 u128 f32 f64 char
+                bytes byte_buf option unit unit_struct newtype_struct seq
+                tuple tuple_struct map struct enum identifier ignored_any
+            }
+        }
+
+        #[test]
+        fn flexible_string_deserializes_via_deserialize_string() {
+            let de = StringOnlyDeserializer("04/27/2026 10:00:00 UTC");
+            let v = FlexibleString::deserialize(de).expect(
+                "non-self-describing format must deserialize FlexibleString via deserialize_string",
+            );
+            assert_eq!(&*v, "04/27/2026 10:00:00 UTC");
+        }
     }
 }
