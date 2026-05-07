@@ -139,6 +139,7 @@ pub mod pagination;
 mod require;
 /// Streaming byte responses for large binary downloads.
 pub mod streaming;
+mod url;
 /// Polling helpers for state transitions and async queries.
 pub mod wait;
 pub use builder::NifiClientBuilder;
