@@ -16,9 +16,7 @@ static INVALID_CERTS_WARNED: std::sync::OnceLock<()> = std::sync::OnceLock::new(
 
 fn warn_invalid_certs_once() {
     if INVALID_CERTS_WARNED.set(()).is_ok() {
-        eprintln!(
-            "warning: TLS verification disabled — production use is dangerous"
-        );
+        eprintln!("warning: TLS verification disabled — production use is dangerous");
     }
 }
 
@@ -294,12 +292,8 @@ impl NifiClientBuilder {
         // verify acceptance — the validated `HeaderName` is rebuilt in
         // `client.rs` per request.
         if let Some(name) = self.request_id_header.as_deref() {
-            reqwest::header::HeaderName::try_from(name).map_err(|_| {
-                NifiError::Configuration {
-                    message: format!(
-                        "request_id_header({name:?}) is not a valid HTTP header name"
-                    ),
-                }
+            reqwest::header::HeaderName::try_from(name).map_err(|_| NifiError::Configuration {
+                message: format!("request_id_header({name:?}) is not a valid HTTP header name"),
             })?;
         }
 
