@@ -1286,9 +1286,7 @@ mod tests {
         use super::extract_error_message;
 
         assert_eq!(
-            extract_error_message(
-                r#"{"errors": [{"message": "wrong"}], "message": "right"}"#
-            ),
+            extract_error_message(r#"{"errors": [{"message": "wrong"}], "message": "right"}"#),
             "right"
         );
     }
@@ -1298,10 +1296,7 @@ mod tests {
     fn extract_error_message_finds_simple_top_level() {
         use super::extract_error_message;
 
-        assert_eq!(
-            extract_error_message(r#"{"message": "boom"}"#),
-            "boom"
-        );
+        assert_eq!(extract_error_message(r#"{"message": "boom"}"#), "boom");
     }
 
     /// JSON without a top-level `message` (e.g. only nested) falls back to
