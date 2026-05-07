@@ -40,9 +40,11 @@ pub struct ResolvedParams {
 }
 
 /// Minimal connection parameters for `--dry-run` flows that don't authenticate.
-/// Wired into dispatch.rs in the next commit (Task 5).
+///
+/// Used by the dry-run branch in `dispatch.rs`: when `--dry-run` is set, the
+/// porcelain handlers short-circuit before any network call, so we only need
+/// URL + `insecure` to construct a (non-authenticated) `DynamicClient`.
 #[derive(Debug)]
-#[allow(dead_code)]
 pub struct DryRunParams {
     pub url: String,
     pub insecure: bool,
@@ -214,8 +216,6 @@ impl ResolvedParams {
     /// Resolve only URL + `insecure` from flags + context, skipping
     /// auth resolution entirely. Used by the dry-run paths in
     /// `dispatch.rs`, where authentication is unreachable code.
-    /// Wired into dispatch.rs in the next commit (Task 5).
-    #[allow(dead_code)]
     pub fn resolve_url_only(
         url: Option<String>,
         insecure: bool,
@@ -230,7 +230,10 @@ impl ResolvedParams {
                 )
             })?;
         let resolved_insecure = insecure || context.map(|c| c.insecure).unwrap_or(false);
-        Ok(DryRunParams { url, insecure: resolved_insecure })
+        Ok(DryRunParams {
+            url,
+            insecure: resolved_insecure,
+        })
     }
 }
 

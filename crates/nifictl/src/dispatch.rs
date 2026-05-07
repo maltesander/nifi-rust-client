@@ -59,23 +59,32 @@ async fn dispatch_resource(
     output: &str,
 ) -> Result<(), error::CliError> {
     let cfg = load_config(config_path)?;
-    let context_name = resolve_context_name(&cfg, context_name_override);
     let context = resolve_context(&cfg, context_name_override)?;
-    let params =
-        client_factory::ResolvedParams::resolve(url, username, password, token, insecure, context)?;
-    let base_url = params.url.clone();
+
+    // Dry-run: skip auth resolution entirely. Only URL + insecure are
+    // needed because porcelain handlers short-circuit before any
+    // network call. The live path resolves full auth (including any
+    // cached token) below.
+    let (client, base_url) = if dry_run {
+        let dr = client_factory::ResolvedParams::resolve_url_only(url, insecure, context)?;
+        let client = nifi_rust_client::NifiClientBuilder::new(&dr.url)?
+            .danger_accept_invalid_certs(dr.insecure)
+            .build_dynamic()?;
+        (client, dr.url)
+    } else {
+        let context_name = resolve_context_name(&cfg, context_name_override);
+        let params = client_factory::ResolvedParams::resolve(
+            url, username, password, token, insecure, context,
+        )?;
+        let url_clone = params.url.clone();
+        let client = params.build_client_with_cache(&context_name).await?;
+        (client, url_clone)
+    };
+
     let ctx = dry_run::CliCtx {
         dry_run,
         yes,
         base_url: &base_url,
-    };
-
-    let client = if ctx.dry_run {
-        nifi_rust_client::NifiClientBuilder::new(&base_url)?
-            .danger_accept_invalid_certs(params.insecure)
-            .build_dynamic()?
-    } else {
-        params.build_client_with_cache(&context_name).await?
     };
 
     let wait_plan = if wait {
@@ -190,21 +199,28 @@ pub(crate) async fn run(cli: Cli) -> Result<(), error::CliError> {
                 ));
             }
             let cfg = load_config(cli.config.as_deref())?;
-            let context_name = resolve_context_name(&cfg, cli.context.as_deref());
             let context = resolve_context(&cfg, cli.context.as_deref())?;
-            let params = client_factory::ResolvedParams::resolve(
-                cli.url,
-                cli.username,
-                resolve_password_input(cli.password),
-                cli.token,
+
+            // Resolve the password input up-front: this fires the
+            // `--password` visibility warning regardless of dry-run, since
+            // the password was already exposed on the process list the
+            // moment the user typed it. The dry-run branch then ignores
+            // the value; the live branch consumes it.
+            let password_input = resolve_password_input(cli.password);
+
+            // Resolve URL + insecure first — needed both for the confirm
+            // gate's display string and for the dry-run client. Auth is
+            // resolved later, only on the live path, so --dry-run works
+            // without --token / --username / context auth.
+            let dr = client_factory::ResolvedParams::resolve_url_only(
+                cli.url.clone(),
                 cli.insecure,
                 context,
             )?;
-            let base_url = params.url.clone();
             let ctx = dry_run::CliCtx {
                 dry_run: cli.dry_run,
                 yes: cli.yes,
-                base_url: &base_url,
+                base_url: &dr.url,
             };
 
             // For destructive commands, run the confirmation gate before
@@ -229,10 +245,19 @@ pub(crate) async fn run(cli: Cli) -> Result<(), error::CliError> {
             // before touching the client, so we only need a constructed
             // (not authenticated) DynamicClient for the signature.
             let client = if ctx.dry_run {
-                nifi_rust_client::NifiClientBuilder::new(&base_url)?
-                    .danger_accept_invalid_certs(params.insecure)
+                nifi_rust_client::NifiClientBuilder::new(&dr.url)?
+                    .danger_accept_invalid_certs(dr.insecure)
                     .build_dynamic()?
             } else {
+                let context_name = resolve_context_name(&cfg, cli.context.as_deref());
+                let params = client_factory::ResolvedParams::resolve(
+                    cli.url,
+                    cli.username,
+                    password_input,
+                    cli.token,
+                    cli.insecure,
+                    context,
+                )?;
                 params.build_client_with_cache(&context_name).await?
             };
 
@@ -303,21 +328,28 @@ pub(crate) async fn run(cli: Cli) -> Result<(), error::CliError> {
             }
 
             let cfg = load_config(cli.config.as_deref())?;
-            let context_name = resolve_context_name(&cfg, cli.context.as_deref());
             let context = resolve_context(&cfg, cli.context.as_deref())?;
-            let params = client_factory::ResolvedParams::resolve(
-                cli.url,
-                cli.username,
-                resolve_password_input(cli.password),
-                cli.token,
+
+            // Resolve the password input up-front: this fires the
+            // `--password` visibility warning regardless of dry-run, since
+            // the password was already exposed on the process list the
+            // moment the user typed it. The dry-run branch then ignores
+            // the value; the live branch consumes it.
+            let password_input = resolve_password_input(cli.password);
+
+            // Resolve URL + insecure first — needed both for the confirm
+            // gate's display string and for the dry-run client. Auth is
+            // resolved later, only on the live path, so --dry-run works
+            // without --token / --username / context auth.
+            let dr = client_factory::ResolvedParams::resolve_url_only(
+                cli.url.clone(),
                 cli.insecure,
                 context,
             )?;
-            let base_url = params.url.clone();
             let ctx = dry_run::CliCtx {
                 dry_run: cli.dry_run,
                 yes: cli.yes,
-                base_url: &base_url,
+                base_url: &dr.url,
             };
 
             // Pre-client confirm gate for `replace` — matches the Ops arm.
@@ -328,10 +360,19 @@ pub(crate) async fn run(cli: Cli) -> Result<(), error::CliError> {
             }
 
             let client = if ctx.dry_run {
-                nifi_rust_client::NifiClientBuilder::new(&base_url)?
-                    .danger_accept_invalid_certs(params.insecure)
+                nifi_rust_client::NifiClientBuilder::new(&dr.url)?
+                    .danger_accept_invalid_certs(dr.insecure)
                     .build_dynamic()?
             } else {
+                let context_name = resolve_context_name(&cfg, cli.context.as_deref());
+                let params = client_factory::ResolvedParams::resolve(
+                    cli.url,
+                    cli.username,
+                    password_input,
+                    cli.token,
+                    cli.insecure,
+                    context,
+                )?;
                 params.build_client_with_cache(&context_name).await?
             };
 
