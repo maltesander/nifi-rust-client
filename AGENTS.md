@@ -13,10 +13,17 @@ crates/
   nifi-openapi-gen/           # Code generator — published to crates.io as build-dependency
     src/
       bin/{generate.rs, openapi_diff.rs}   # Orchestrator + standalone diff tool
-      emit/                                # Code emitters (api, types, tests, dynamic/)
-        common.rs                          # Shared helpers (field_type_to_rust, …)
+      emit/                                # Code emitters (api, types, tests, method,
+                                           #   common, types_shared, cli/, dynamic/, integration/)
       docs/, repo/                         # Doc generators / repo sync
-      parser.rs, diff.rs, util.rs
+      diff/                                # Structural diff (endpoint, types, report, index)
+      parser.rs, parser_strict.rs          # OpenAPI parser + strict-shape validation
+      canonical.rs, plan.rs, layout.rs     # Canonicalization, build plan, on-disk layout
+      naming.rs, naming_overrides.rs       # Method-name resolution + overrides
+      non_additive_detector.rs,            # Cross-version drift detection + overrides
+        non_additive_overrides.rs
+      content_type.rs                      # Request/response content-type allow-list
+      build_api.rs, util.rs, lib.rs
     scripts/fetch-nifi-spec.sh             # Fetch OpenAPI spec from a running NiFi
     specs/x.y.z/nifi-api.json              # OpenAPI 3.0.1 spec per supported version
     tests/                                 # Parser + emitter unit tests
@@ -26,10 +33,14 @@ crates/
       lib.rs, client.rs, builder.rs, error.rs   # Hand-written core
       config/{auth,retry}.rs                    # Hand-written
       dynamic/{strategy,client}.rs              # Hand-written; client.rs copied into $OUT_DIR
+      pagination.rs, wait.rs, bulk.rs           # Workflow / paging / bulk helpers
+      streaming.rs, compat.rs                   # BytesStream type + FlexibleString
+      require.rs, url.rs                        # require! macro + URL helpers
       # Generated into $OUT_DIR (not in git):
       #   vx_y_z/    — per-version api/, types/
       #   dynamic/   — canonical api/, types/, availability.rs, client.rs, mod.rs
-    tests/*.rs                # Hand-written wiremock tests per API group
+    tests/*.rs                # Hand-written wiremock tests; per-endpoint stubs are generated
+                              #   into $OUT_DIR/tests/<tag>_generated_tests.rs
 tests/                        # Integration test crate (needs Docker; not published)
   docker-compose.yml, run.sh, tests/*.rs
 ```
@@ -42,10 +53,20 @@ tests/                        # Integration test crate (needs Docker; not publis
 all HTTP plumbing (auth, error mapping, deserialization); public endpoint methods are
 one-liners that delegate.
 
-Helpers (in `client.rs`): `get`, `post`, `post_no_body`, `post_void_no_body`, `put`,
-`put_no_body`, `put_void_no_body`, `delete`, `post_octet_stream`, `post_void_octet_stream`,
-`get_bytes_stream`, `get_bytes_stream_with_query`. Variants for multipart, text, raw bytes
-exist alongside.
+Helpers in `client.rs` cover every body / response-type combination the generator emits
+(~31 in total). Grouped by HTTP verb:
+
+- **GET:** `get`, `get_void`, `get_with_query`, `get_void_with_query`, `get_text`,
+  `get_bytes`, `get_bytes_with_query`, `get_bytes_stream`, `get_bytes_stream_with_query`.
+- **POST:** `post`, `post_void`, `post_no_body`, `post_void_no_body`, `post_with_query`,
+  `post_void_with_query`, `post_octet_stream`, `post_void_octet_stream`,
+  `post_octet_stream_returning_text`, `post_returning_text`, `post_multipart`,
+  `post_multipart_with_fields`, `post_void_multipart`.
+- **PUT:** `put`, `put_void`, `put_no_body`, `put_void_no_body`, `put_with_query`.
+- **DELETE:** `delete`, `delete_returning`, `delete_returning_with_query`,
+  `delete_with_query`.
+
+All public on `pub(crate)` and route through `NifiClient::build_request`.
 
 All helpers route through `NifiClient::build_request`, which emits exactly one
 `tracing::debug!(method, path, "NiFi API request")` per call and attaches auth,
@@ -134,7 +155,7 @@ OpenAPI query params with `"enum"` are emitted as typed Rust enums (not `&str`).
 **Naming:** type = capitalize first char of camelCase param name; variants = PascalCase per
 underscore-separated word; wire value preserved via `#[serde(rename)]` + `Display`.
 
-**Current enum query params (NiFi 2.8.0):**
+**Current enum query params:**
 
 | Type | Variants |
 |------|----------|
@@ -164,7 +185,8 @@ Soft-breaking change (`Option<String>` → `Option<FlexibleString>`): pattern ma
 `.into()` / `.into_inner()` / `.0`. Anything going through `&str` keeps compiling.
 
 If a future spec field drifts but lacks `format: date-time` (e.g. `StatusHistoryDTO.generated`),
-add an explicit override mechanism alongside `naming_overrides.rs` — not yet implemented.
+add an explicit per-field override mechanism (similar shape to `non_additive_overrides.rs`) —
+not yet implemented.
 
 ### Response Types
 
