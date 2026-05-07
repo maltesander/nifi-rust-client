@@ -195,30 +195,55 @@ impl DynamicClient {
     /// Discover cluster topology. Called from `login` and `from_client`.
     /// Silently ignores errors (non-clustered instances return a non-cluster
     /// summary; the cluster endpoint may be unauthorized).
+    ///
+    /// Audit follow-up A8: errors must NOT poison the `OnceCell`. Previously
+    /// the closure was driven by `get_or_init` and returned `None` on every
+    /// error path — that filled the cell with `Some(None)`, so a JWT refresh
+    /// or transient 401 on the discovery request was permanently cached as
+    /// "standalone instance". The fix splits success and failure: errors
+    /// leave the cell empty so a future retry can reattempt; only a definitive
+    /// answer (clustered → optional node id, or standalone → `None`) is
+    /// recorded, and via `set` so `get_or_init`'s implicit retry-on-empty
+    /// semantics are preserved.
     async fn discover_cluster(&self) {
-        let _ = self
-            .cluster_node_id
-            .get_or_init(|| async {
-                let summary: Result<ClusterSummaryResponse, NifiError> =
-                    self.client.get("/flow/cluster/summary", &[]).await;
-                match summary {
-                    Ok(s) if s.cluster_summary.clustered => {
-                        let cluster: Result<ClusterResponse, NifiError> =
-                            self.client.get("/controller/cluster", &[]).await;
-                        match cluster {
-                            Ok(c) => c
-                                .cluster
-                                .nodes
-                                .iter()
-                                .find(|n| n.status.as_deref() == Some("CONNECTED"))
-                                .and_then(|n| n.node_id.clone()),
-                            Err(_) => None,
-                        }
-                    }
-                    _ => None,
-                }
-            })
-            .await;
+        // Already discovered? Nothing to do.
+        if self.cluster_node_id.get().is_some() {
+            return;
+        }
+
+        let summary: Result<ClusterSummaryResponse, NifiError> =
+            self.client.get("/flow/cluster/summary", &[]).await;
+        let summary = match summary {
+            Ok(s) => s,
+            // Leave the cell empty so the next call retries. Standalone
+            // instances reach this branch only via a real error — successful
+            // discovery on a non-cluster goes through the `Ok` branch below
+            // and stores `None`.
+            Err(_) => return,
+        };
+
+        if !summary.cluster_summary.clustered {
+            // Definitive standalone answer — cache it.
+            let _ = self.cluster_node_id.set(None);
+            return;
+        }
+
+        let cluster: Result<ClusterResponse, NifiError> =
+            self.client.get("/controller/cluster", &[]).await;
+        let cluster = match cluster {
+            Ok(c) => c,
+            // Cluster endpoint failed — don't poison; allow retry.
+            Err(_) => return,
+        };
+
+        let node_id = cluster
+            .cluster
+            .nodes
+            .iter()
+            .find(|n| n.status.as_deref() == Some("CONNECTED"))
+            .and_then(|n| n.node_id.clone());
+
+        let _ = self.cluster_node_id.set(node_id);
     }
 
     /// Returns `Ok(())` if `endpoint` is supported by the currently-detected
