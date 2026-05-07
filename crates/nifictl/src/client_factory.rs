@@ -39,6 +39,15 @@ pub struct ResolvedParams {
     pub version_strategy: VersionResolutionStrategy,
 }
 
+/// Minimal connection parameters for `--dry-run` flows that don't authenticate.
+/// Wired into dispatch.rs in the next commit (Task 5).
+#[derive(Debug)]
+#[allow(dead_code)]
+pub struct DryRunParams {
+    pub url: String,
+    pub insecure: bool,
+}
+
 impl ResolvedParams {
     /// Resolve connection parameters by merging CLI flags with the active context.
     ///
@@ -200,6 +209,28 @@ impl ResolvedParams {
         client.set_token(token).await;
         client.detect_version().await?;
         Ok(client)
+    }
+
+    /// Resolve only URL + `insecure` from flags + context, skipping
+    /// auth resolution entirely. Used by the dry-run paths in
+    /// `dispatch.rs`, where authentication is unreachable code.
+    /// Wired into dispatch.rs in the next commit (Task 5).
+    #[allow(dead_code)]
+    pub fn resolve_url_only(
+        url: Option<String>,
+        insecure: bool,
+        context: Option<&Context>,
+    ) -> Result<DryRunParams, CliError> {
+        let url = url
+            .or_else(|| context.map(|c| c.url.clone()))
+            .ok_or_else(|| {
+                CliError::User(
+                    "no NiFi URL provided; use --url or set a context in the config file"
+                        .to_string(),
+                )
+            })?;
+        let resolved_insecure = insecure || context.map(|c| c.insecure).unwrap_or(false);
+        Ok(DryRunParams { url, insecure: resolved_insecure })
     }
 }
 
@@ -437,5 +468,44 @@ mod tests {
             .expect("build_client_with_cache failed");
         // build_client's Password path called login() and got "fresh-jwt".
         assert_eq!(client.token().await.as_deref(), Some("fresh-jwt"));
+    }
+
+    #[test]
+    fn resolve_url_only_succeeds_without_auth() {
+        let result = ResolvedParams::resolve_url_only(
+            Some("https://nifi.example".to_string()),
+            false,
+            None, // no context
+        );
+        let url_params = result.expect("resolve_url_only should succeed without auth");
+        assert_eq!(url_params.url, "https://nifi.example");
+        assert!(!url_params.insecure);
+    }
+
+    #[test]
+    fn resolve_url_only_falls_back_to_context_url() {
+        let ctx = Context {
+            name: "test".into(),
+            url: "https://from-ctx.example".into(),
+            insecure: true,
+            auth: AuthConfig::Password {
+                username: "u".into(),
+                password: None,
+                password_env: None,
+            },
+            ca_cert_path: None,
+            proxied_entities_chain: None,
+            version_strategy: None,
+        };
+        let result = ResolvedParams::resolve_url_only(None, false, Some(&ctx));
+        let url_params = result.expect("resolve_url_only with context should succeed");
+        assert_eq!(url_params.url, "https://from-ctx.example");
+        assert!(url_params.insecure); // context insecure honoured
+    }
+
+    #[test]
+    fn resolve_url_only_errors_when_no_url() {
+        let result = ResolvedParams::resolve_url_only(None, false, None);
+        assert!(result.is_err(), "expected error for missing URL");
     }
 }
