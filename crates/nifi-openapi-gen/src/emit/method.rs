@@ -846,7 +846,11 @@ fn emit_method_body_dynamic(
     for pp in &ep.path_params {
         let placeholder = format!("{{{}}}", pp.name);
         let value = escape_keyword(&pp.name);
-        path_expr = format!("{path_expr}.replace(\"{placeholder}\", {value})");
+        // Wrap each substitution in encode_path_segment so a `/` or `?`
+        // in the param value cannot reshape the URL.
+        path_expr = format!(
+            "{path_expr}.replace(\"{placeholder}\", &crate::url::encode_path_segment({value}))"
+        );
     }
     out.push_str(&format!("        let path = {path_expr};\n"));
 
@@ -1244,6 +1248,38 @@ mod emit_fix_inline_json_tests {
         assert!(
             !out.contains("/processors/{id}\")"),
             "static emitter must not emit raw {{id}} into the format string; got:\n{out}"
+        );
+    }
+
+    #[test]
+    fn dynamic_emitter_encodes_path_params() {
+        let ep = Endpoint {
+            fn_name: "get_processor".to_string(),
+            path: "/processors/{id}".to_string(),
+            method: HttpMethod::Get,
+            path_params: vec![PathParam {
+                name: "id".to_string(),
+                doc: None,
+            }],
+            ..inline_json_endpoint()
+        };
+        let endpoint_versions = crate::canonical::VersionSet::new();
+        let query_param_versions = std::collections::BTreeMap::new();
+        let ctx = DynamicMethodCtx {
+            endpoint_versions: &endpoint_versions,
+            query_param_versions: &query_param_versions,
+            endpoint_variant: "GetProcessor".to_string(),
+            method_lit: "GET",
+        };
+        let mut out = String::new();
+        emit_method(&ep, &EmitMode::Dynamic(ctx), &mut out);
+        assert!(
+            out.contains("crate::url::encode_path_segment(id)"),
+            "dynamic emitter must wrap path params in encode_path_segment; got:\n{out}"
+        );
+        assert!(
+            !out.contains(".replace(\"{id}\", id)"),
+            "dynamic emitter must not pass raw `id` to .replace; got:\n{out}"
         );
     }
 }
