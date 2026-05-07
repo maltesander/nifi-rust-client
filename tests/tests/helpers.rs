@@ -566,6 +566,7 @@ pub async fn get_test_processor_entity(
 /// polls until finished, and retries up to 10 times (with 2s sleeps) to allow
 /// the GenerateFlowFile processor to produce events.
 #[cfg(feature = "dynamic")]
+#[allow(clippy::panic)]
 pub async fn get_test_provenance_event(
     client: &nifi_rust_client::dynamic::DynamicClient,
 ) -> nifi_rust_client::dynamic::types::ProvenanceEventDto {

@@ -58,7 +58,7 @@ mod tests {
 
     #[test]
     fn encodes_path_traversal() {
-        assert_eq!(encode_path_segment(".."), "..");  // dots themselves are safe;
+        assert_eq!(encode_path_segment(".."), ".."); // dots themselves are safe;
         // the encoding rejects path separators which are what makes traversal possible.
         assert_eq!(encode_path_segment("../etc/passwd"), "..%2Fetc%2Fpasswd");
     }

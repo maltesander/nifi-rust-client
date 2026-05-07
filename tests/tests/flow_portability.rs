@@ -59,6 +59,7 @@ async fn delete_temp_pg(client: &nifi_rust_client::dynamic::DynamicClient, id: &
 /// NiFi refuses to delete a process group whose connections still have
 /// queued flowfiles. Tests that import a live root-level flow (where
 /// processors produce data on start) must drain queues before deletion.
+#[allow(clippy::panic)]
 async fn empty_all_queues(client: &nifi_rust_client::dynamic::DynamicClient, pg_id: &str) {
     let created = client
         .processgroups()
