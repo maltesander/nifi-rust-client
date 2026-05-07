@@ -30,7 +30,7 @@ reqwest = { version = "0.13", default-features = false, features = ["form", "jso
 semver = "1"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-serde_yaml = "0.9"
+serde_yml = "0.0.12"  # community-maintained fork of serde_yaml; tracks RUSTSEC-2024-0320 fix
 snafu = "0.9"
 syn = { version = "2", features = ["full"] }
 tokio = { version = "1", features = ["rt", "rt-multi-thread", "macros"] }
