@@ -337,13 +337,10 @@ nifictl controller_services get-controller-service <id>
 
 ## Multi-version support
 
-By default, nifictl compiles in dynamic mode (all supported NiFi versions).
-Version detection happens automatically on login. For a leaner binary targeting
-a single version:
-
-```bash
-cargo install --path crates/nifictl --no-default-features --features nifi-2-9-0
-```
+nifictl compiles in dynamic mode (all supported NiFi versions) by design;
+version detection happens automatically on login. There is no single-version
+build — the underlying `nifi-rust-client` dep is pinned with
+`features = ["dynamic"]`.
 
 ## Troubleshooting
 

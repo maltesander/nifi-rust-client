@@ -132,7 +132,7 @@ The generator is organized into four module groups plus two binaries:
 | `src/bin/generate.rs` | Thin orchestrator — version resolution, calls emit/docs/repo modules |
 | `src/bin/openapi_diff.rs` | Standalone CLI tool for diffing two OpenAPI specs (requires `--features cli`) |
 | `src/parser.rs` | Parse OpenAPI spec into `ApiSpec` — paths, operations, schemas, query param enums |
-| `src/diff.rs` | Structural diffing of two `ApiSpec` values |
+| `src/diff/` | Structural diffing of two `ApiSpec` values (`endpoint.rs`, `types.rs`, `report.rs`, `index.rs`, `mod.rs`) |
 | `src/util.rs` | Shared helpers (naming conventions, string manipulation) |
 | **`src/emit/`** | **Code emitters** |
 | `src/emit/types.rs` | Emit `types/<tag>.rs` — structs, enums, wrappers |
