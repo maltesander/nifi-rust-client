@@ -153,6 +153,54 @@ impl ResolvedParams {
 
         Ok(client)
     }
+
+    /// Build a `DynamicClient` that prefers the cached JWT for
+    /// `context_name` over re-authentication.
+    ///
+    /// For `Password` auth: if `~/.nifictl/tokens/<context_name>`
+    /// holds a JWT whose `exp` is at least 60 seconds in the future,
+    /// install it via `set_token` and call `detect_version` instead
+    /// of `login`. On cache miss, malformed token, or expired token,
+    /// fall back to [`Self::build_client`].
+    ///
+    /// For `Token` and `Mtls` auth: behaviour is identical to
+    /// [`Self::build_client`] — those paths don't burn a
+    /// `/access/token` round-trip per call, so the cache is irrelevant.
+    #[allow(dead_code)] // dispatch arms route through this in Task 3
+    pub async fn build_client_with_cache(
+        &self,
+        context_name: &str,
+    ) -> Result<DynamicClient, CliError> {
+        // Cache only helps the Password path; everything else delegates
+        // straight through to build_client.
+        if !matches!(self.auth, ResolvedAuth::Password { .. }) {
+            return self.build_client().await;
+        }
+
+        let Some(token) = crate::porcelain::token_cache::read_cached_token(context_name) else {
+            return self.build_client().await;
+        };
+        if !crate::porcelain::token_cache::is_token_fresh(&token, std::time::SystemTime::now()) {
+            return self.build_client().await;
+        }
+
+        // Build an unauthenticated client and install the cached token.
+        let mut builder = NifiClientBuilder::new(&self.url)?
+            .danger_accept_invalid_certs(self.insecure)
+            .version_strategy(self.version_strategy);
+        if let Some(ca_path) = &self.ca_cert_path {
+            let pem = std::fs::read(ca_path)?;
+            builder = builder.add_root_certificate(&pem);
+        }
+        if let Some(chain) = &self.proxied_entities_chain {
+            builder = builder.proxied_entities_chain(chain.clone());
+        }
+
+        let client = builder.build_dynamic()?;
+        client.set_token(token).await;
+        client.detect_version().await?;
+        Ok(client)
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -224,5 +272,170 @@ pub fn resolve_auth_from_context(ctx: &Context) -> Result<ResolvedAuth, CliError
         } => Ok(ResolvedAuth::Mtls {
             identity_path: client_identity_path.clone(),
         }),
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Tests
+// ---------------------------------------------------------------------------
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use base64::Engine;
+    use base64::engine::general_purpose::URL_SAFE_NO_PAD;
+    use std::sync::Mutex;
+    use std::time::{SystemTime, UNIX_EPOCH};
+    use wiremock::matchers::{method, path};
+    use wiremock::{Mock, MockServer, ResponseTemplate};
+
+    // Serializes tests that mutate HOME so they don't race each other
+    // under cargo's default parallel runner. `std::env::set_var` is
+    // process-global; only build_client_with_cache tests mutate HOME.
+    static ENV_LOCK: Mutex<()> = Mutex::new(());
+
+    fn jwt_with_exp_in(seconds: u64) -> String {
+        let now_secs = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs();
+        let exp = now_secs + seconds;
+        let header = URL_SAFE_NO_PAD.encode(br#"{"alg":"HS256"}"#);
+        let payload = URL_SAFE_NO_PAD.encode(format!(r#"{{"exp":{exp}}}"#));
+        let sig = URL_SAFE_NO_PAD.encode(b"sig");
+        format!("{header}.{payload}.{sig}")
+    }
+
+    // Held intentionally across awaits to serialize HOME mutation
+    // against concurrent tests in this module.
+    #[allow(clippy::await_holding_lock)]
+    #[tokio::test]
+    async fn cache_short_circuits_login_for_password_auth() {
+        let _guard = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+
+        let server = MockServer::start().await;
+        // /access/token must NOT be hit — the cached token short-circuits login.
+        Mock::given(method("POST"))
+            .and(path("/nifi-api/access/token"))
+            .respond_with(ResponseTemplate::new(500))
+            .expect(0)
+            .mount(&server)
+            .await;
+        // detect_version() probes /flow/about.
+        Mock::given(method("GET"))
+            .and(path("/nifi-api/flow/about"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+                "about": {
+                    "title": "NiFi",
+                    "version": "2.9.0",
+                    "uri": "https://localhost/nifi-api",
+                    "contentViewerUrl": "",
+                    "timezone": "UTC",
+                    "buildTag": "",
+                    "buildRevision": "",
+                    "buildBranch": "",
+                    "buildTimestamp": ""
+                }
+            })))
+            .mount(&server)
+            .await;
+
+        // Set HOME to a tempdir for cache lookup.
+        let tmp = tempfile::tempdir().expect("tempdir creation failed");
+        // SAFETY: tests are serialized via ENV_LOCK; HOME mutation is
+        // visible to the in-process file lookup only.
+        unsafe {
+            std::env::set_var("HOME", tmp.path());
+        }
+        let cache_dir = tmp.path().join(".nifictl/tokens");
+        std::fs::create_dir_all(&cache_dir).expect("cache dir creation failed");
+        let token = jwt_with_exp_in(3600);
+        std::fs::write(cache_dir.join("test-ctx"), &token).expect("token write failed");
+
+        let params = ResolvedParams {
+            url: server.uri(),
+            auth: ResolvedAuth::Password {
+                username: "admin".into(),
+                password: Some("ignored".into()),
+            },
+            insecure: false,
+            ca_cert_path: None,
+            proxied_entities_chain: None,
+            version_strategy: VersionResolutionStrategy::default(),
+        };
+
+        let client = params
+            .build_client_with_cache("test-ctx")
+            .await
+            .expect("build_client_with_cache failed");
+        assert_eq!(client.token().await.as_deref(), Some(token.as_str()));
+    }
+
+    #[allow(clippy::await_holding_lock)]
+    #[tokio::test]
+    async fn cache_falls_back_on_stale_token() {
+        let _guard = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+
+        let server = MockServer::start().await;
+        Mock::given(method("POST"))
+            .and(path("/nifi-api/access/token"))
+            .respond_with(ResponseTemplate::new(201).set_body_string("fresh-jwt"))
+            .expect(1)
+            .mount(&server)
+            .await;
+        Mock::given(method("GET"))
+            .and(path("/nifi-api/flow/about"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+                "about": {
+                    "title": "NiFi",
+                    "version": "2.9.0",
+                    "uri": "https://localhost/nifi-api",
+                    "contentViewerUrl": "",
+                    "timezone": "UTC",
+                    "buildTag": "",
+                    "buildRevision": "",
+                    "buildBranch": "",
+                    "buildTimestamp": ""
+                }
+            })))
+            .mount(&server)
+            .await;
+
+        let tmp = tempfile::tempdir().expect("tempdir creation failed");
+        // SAFETY: tests are serialized via ENV_LOCK.
+        unsafe {
+            std::env::set_var("HOME", tmp.path());
+        }
+        let cache_dir = tmp.path().join(".nifictl/tokens");
+        std::fs::create_dir_all(&cache_dir).expect("cache dir creation failed");
+        // Token already expired by 60s.
+        let now_secs = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs();
+        let header = URL_SAFE_NO_PAD.encode(br#"{"alg":"HS256"}"#);
+        let payload = URL_SAFE_NO_PAD.encode(format!(r#"{{"exp":{}}}"#, now_secs - 60));
+        let sig = URL_SAFE_NO_PAD.encode(b"sig");
+        let stale = format!("{header}.{payload}.{sig}");
+        std::fs::write(cache_dir.join("stale-ctx"), &stale).expect("token write failed");
+
+        let params = ResolvedParams {
+            url: server.uri(),
+            auth: ResolvedAuth::Password {
+                username: "admin".into(),
+                password: Some("hunter2".into()),
+            },
+            insecure: false,
+            ca_cert_path: None,
+            proxied_entities_chain: None,
+            version_strategy: VersionResolutionStrategy::default(),
+        };
+
+        let client = params
+            .build_client_with_cache("stale-ctx")
+            .await
+            .expect("build_client_with_cache failed");
+        // build_client's Password path called login() and got "fresh-jwt".
+        assert_eq!(client.token().await.as_deref(), Some("fresh-jwt"));
     }
 }
