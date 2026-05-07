@@ -113,13 +113,10 @@ pub fn emit_method(ep: &Endpoint, mode: &EmitMode<'_>, out: &mut String) {
 }
 
 fn emit_method_variant(ep: &Endpoint, mode: &EmitMode<'_>, stream: bool, out: &mut String) {
-    // Skip form-encoded endpoints for static — they require manual
-    // implementations (e.g. NifiClient::login). Dynamic preserves its
-    // existing (somewhat quirky) behavior of emitting a stub that
-    // routes through the normal dispatch fall-through.
-    if matches!(mode, EmitMode::Static)
-        && ep.body_kind == Some(crate::parser::RequestBodyKind::FormEncoded)
-    {
+    // Form-encoded endpoints require manual implementations
+    // (e.g. NifiClient::login) — skip them in BOTH modes.
+    // AGENTS.md "Strict parsing & content-type allow-list" pins this.
+    if ep.body_kind == Some(crate::parser::RequestBodyKind::FormEncoded) {
         return;
     }
 
@@ -1298,6 +1295,33 @@ mod emit_fix_inline_json_tests {
             !out.contains("tracing::debug!"),
             "dynamic emitter must NOT emit tracing::debug! — build_request \
              in client.rs is the single request-side debug source. Got:\n{out}"
+        );
+    }
+
+    #[test]
+    fn dynamic_emitter_skips_form_encoded() {
+        use crate::parser::RequestBodyKind;
+        let ep = Endpoint {
+            fn_name: "create_token".to_string(),
+            path: "/access/token".to_string(),
+            method: HttpMethod::Post,
+            body_kind: Some(RequestBodyKind::FormEncoded),
+            ..inline_json_endpoint()
+        };
+        let endpoint_versions = crate::canonical::VersionSet::new();
+        let query_param_versions = std::collections::BTreeMap::new();
+        let ctx = DynamicMethodCtx {
+            endpoint_versions: &endpoint_versions,
+            query_param_versions: &query_param_versions,
+            endpoint_variant: "CreateToken".to_string(),
+            method_lit: "POST",
+        };
+        let mut out = String::new();
+        emit_method(&ep, &EmitMode::Dynamic(ctx), &mut out);
+        assert!(
+            out.is_empty(),
+            "dynamic emitter must skip FormEncoded endpoints (manual handling \
+             like NifiClient::login). Got:\n{out}"
         );
     }
 }
