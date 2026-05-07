@@ -10,6 +10,59 @@ use crate::NifiError;
 use crate::config::auth::AuthProvider;
 use crate::error::{HttpSnafu, InvalidBaseUrlSnafu, InvalidCertificateSnafu};
 
+/// Fires once per process when a `NifiClient` is built with TLS
+/// verification disabled. Test-visible so unit tests can reset / inspect.
+static INVALID_CERTS_WARNED: std::sync::OnceLock<()> = std::sync::OnceLock::new();
+
+fn warn_invalid_certs_once() {
+    if INVALID_CERTS_WARNED.set(()).is_ok() {
+        eprintln!(
+            "warning: TLS verification disabled — production use is dangerous"
+        );
+    }
+}
+
+/// Validate the structural shape of a `X-ProxiedEntitiesChain` value.
+///
+/// Implements the regex `^(<[^<>\r\n]+>)+$` as a single-pass char walk so
+/// we don't pull in `regex` as a runtime dependency. Each entity must be
+/// angle-bracketed, non-empty, and contain no embedded `<`, `>`, CR, or LF.
+fn validate_proxied_entities_chain(s: &str) -> Result<(), NifiError> {
+    let invalid = || NifiError::Configuration {
+        message: format!(
+            "proxied_entities_chain({s:?}) must match `<id1><id2>…` — \
+             one or more angle-bracketed entities, no embedded `<`, `>`, CR, or LF"
+        ),
+    };
+
+    if s.is_empty() {
+        return Err(invalid());
+    }
+
+    let bytes = s.as_bytes();
+    let mut i = 0;
+    while i < bytes.len() {
+        if bytes[i] != b'<' {
+            return Err(invalid());
+        }
+        i += 1;
+        let entity_start = i;
+        while i < bytes.len()
+            && bytes[i] != b'>'
+            && bytes[i] != b'<'
+            && bytes[i] != b'\r'
+            && bytes[i] != b'\n'
+        {
+            i += 1;
+        }
+        if i == entity_start || i >= bytes.len() || bytes[i] != b'>' {
+            return Err(invalid());
+        }
+        i += 1; // consume the closing '>'
+    }
+    Ok(())
+}
+
 /// Builder for [`NifiClient`].
 ///
 /// Use this when you need to configure timeouts, proxies, or TLS options beyond
@@ -182,10 +235,16 @@ impl NifiClientBuilder {
     /// Set the `X-ProxiedEntitiesChain` header sent with every request.
     ///
     /// This header is used in NiFi proxy deployments to propagate the end-user
-    /// identity through one or more reverse proxies.
-    pub fn proxied_entities_chain(mut self, chain: impl Into<String>) -> Self {
-        self.proxied_entities_chain = Some(chain.into());
-        self
+    /// identity through one or more reverse proxies. The value must match the
+    /// shape `<id1><id2>…<idN>` — at least one angle-bracketed entity, no
+    /// embedded `<`, `>`, CR, or LF inside an entity. Invalid values surface
+    /// as `NifiError::Configuration` instead of producing a confusing 400
+    /// from NiFi on the first request.
+    pub fn proxied_entities_chain(mut self, chain: impl Into<String>) -> Result<Self, NifiError> {
+        let chain = chain.into();
+        validate_proxied_entities_chain(&chain)?;
+        self.proxied_entities_chain = Some(chain);
+        Ok(self)
     }
 
     /// Configure a [`RetryPolicy`](crate::config::retry::RetryPolicy) for transient error retry.
@@ -225,6 +284,25 @@ impl NifiClientBuilder {
 
     /// Build the [`NifiClient`].
     pub fn build(self) -> Result<NifiClient, NifiError> {
+        if self.danger_accept_invalid_certs {
+            warn_invalid_certs_once();
+        }
+
+        // Validate the configured request-id header name eagerly so that
+        // a misconfiguration surfaces at `.build()` rather than as a 400
+        // (or panic) on the first outbound request. We only need to
+        // verify acceptance — the validated `HeaderName` is rebuilt in
+        // `client.rs` per request.
+        if let Some(name) = self.request_id_header.as_deref() {
+            reqwest::header::HeaderName::try_from(name).map_err(|_| {
+                NifiError::Configuration {
+                    message: format!(
+                        "request_id_header({name:?}) is not a valid HTTP header name"
+                    ),
+                }
+            })?;
+        }
+
         let mut builder = reqwest::Client::builder()
             .danger_accept_invalid_certs(self.danger_accept_invalid_certs);
 
@@ -300,5 +378,122 @@ impl NifiClientBuilder {
         Ok(crate::dynamic::DynamicClient::with_strategy(
             client, strategy,
         ))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Building with `danger_accept_invalid_certs(true)` must trip the
+    /// process-wide `OnceLock` guard so the warning is emitted at most
+    /// once. We can't easily capture stderr from a `eprintln!` inside the
+    /// same process without forking, so this test verifies the lock state
+    /// instead — the audit doc explicitly allows this fallback.
+    #[test]
+    fn invalid_certs_sets_once_lock() {
+        let _ = NifiClientBuilder::new("https://example.com")
+            .expect("hard-coded URL is valid")
+            .danger_accept_invalid_certs(true)
+            .build()
+            .expect("builder succeeds with invalid-certs flag");
+        assert!(
+            INVALID_CERTS_WARNED.get().is_some(),
+            "OnceLock should be set after a build with invalid-certs"
+        );
+    }
+
+    #[test]
+    fn request_id_header_rejects_invalid_name_at_build_time() {
+        let err = NifiClientBuilder::new("https://example.com")
+            .expect("hard-coded URL is valid")
+            .request_id_header(Some("X Foo")) // space → invalid HTTP header
+            .build()
+            .expect_err("invalid header should error at build time");
+        match err {
+            NifiError::Configuration { message } => {
+                assert!(
+                    message.contains("X Foo"),
+                    "error should name the offending value: {message}"
+                );
+            }
+            other => panic!("expected NifiError::Configuration, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn request_id_header_accepts_valid_name() {
+        let _ = NifiClientBuilder::new("https://example.com")
+            .expect("hard-coded URL is valid")
+            .request_id_header(Some("X-Request-Id"))
+            .build()
+            .expect("valid header name should build");
+    }
+
+    #[test]
+    fn proxied_entities_chain_rejects_unframed_value() {
+        let err = NifiClientBuilder::new("https://example.com")
+            .expect("hard-coded URL is valid")
+            .proxied_entities_chain("alice")
+            .expect_err("unframed entity must error at builder time");
+        match err {
+            NifiError::Configuration { message } => {
+                assert!(
+                    message.contains("alice"),
+                    "error should name the offending value: {message}"
+                );
+            }
+            other => panic!("expected NifiError::Configuration, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn proxied_entities_chain_accepts_well_formed_value() {
+        let _ = NifiClientBuilder::new("https://example.com")
+            .expect("hard-coded URL is valid")
+            .proxied_entities_chain("<alice>")
+            .expect("single framed entity should validate")
+            .build()
+            .expect("build should succeed");
+    }
+
+    #[test]
+    fn proxied_entities_chain_accepts_multiple_entities() {
+        let _ = NifiClientBuilder::new("https://example.com")
+            .expect("hard-coded URL is valid")
+            .proxied_entities_chain("<alice><bob><CN=svc>")
+            .expect("multiple framed entities should validate");
+    }
+
+    #[test]
+    fn proxied_entities_chain_rejects_empty_entity() {
+        assert!(matches!(
+            validate_proxied_entities_chain("<>"),
+            Err(NifiError::Configuration { .. })
+        ));
+    }
+
+    #[test]
+    fn proxied_entities_chain_rejects_unclosed() {
+        assert!(matches!(
+            validate_proxied_entities_chain("<alice"),
+            Err(NifiError::Configuration { .. })
+        ));
+    }
+
+    #[test]
+    fn proxied_entities_chain_rejects_embedded_newline() {
+        assert!(matches!(
+            validate_proxied_entities_chain("<ali\nce>"),
+            Err(NifiError::Configuration { .. })
+        ));
+    }
+
+    #[test]
+    fn proxied_entities_chain_rejects_empty_string() {
+        assert!(matches!(
+            validate_proxied_entities_chain(""),
+            Err(NifiError::Configuration { .. })
+        ));
     }
 }

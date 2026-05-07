@@ -135,7 +135,7 @@ impl ResolvedParams {
         }
 
         if let Some(chain) = &self.proxied_entities_chain {
-            builder = builder.proxied_entities_chain(chain.clone());
+            builder = builder.proxied_entities_chain(chain.clone())?;
         }
 
         if let ResolvedAuth::Mtls { identity_path } = &self.auth {
@@ -203,7 +203,7 @@ impl ResolvedParams {
             builder = builder.add_root_certificate(&pem);
         }
         if let Some(chain) = &self.proxied_entities_chain {
-            builder = builder.proxied_entities_chain(chain.clone());
+            builder = builder.proxied_entities_chain(chain.clone())?;
         }
 
         let client = builder.build_dynamic()?;

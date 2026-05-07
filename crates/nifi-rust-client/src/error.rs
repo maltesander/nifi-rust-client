@@ -159,6 +159,18 @@ pub enum NifiError {
         /// A description of the operation that timed out.
         operation: String,
     },
+
+    /// Invalid configuration was passed to [`NifiClientBuilder`](crate::NifiClientBuilder).
+    ///
+    /// Surfaced when a setter (e.g. `request_id_header`,
+    /// `proxied_entities_chain`) receives a value that fails structural
+    /// validation, instead of letting the failure manifest as a confusing
+    /// runtime error on the first request.
+    #[snafu(display("Invalid configuration: {message}"))]
+    Configuration {
+        /// A description of the misconfiguration and how to fix it.
+        message: String,
+    },
 }
 
 impl NifiError {

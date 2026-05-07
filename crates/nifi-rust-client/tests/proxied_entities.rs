@@ -31,6 +31,7 @@ async fn proxied_entities_chain_header_sent_on_requests() {
     let client = NifiClientBuilder::new(&mock_server.uri())
         .unwrap()
         .proxied_entities_chain("<alice><bob>")
+        .unwrap()
         .build()
         .unwrap();
     client.set_token("some-jwt".to_string()).await;
