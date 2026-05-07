@@ -58,8 +58,8 @@ impl CliError {
                 Some("user lacks the required NiFi policy — check /users in the UI")
             }
             CliError::Nifi(NifiError::NotFound { .. }) => Some(
-                "verify the id with 'nifictl <resource> list' \
-                 or check 'nifictl status' for the NiFi version",
+                "verify the id; use 'nifictl <resource> --help' to find list-style verbs, \
+                 or 'nifictl status' for the NiFi version",
             ),
             CliError::Nifi(NifiError::InvalidCertificate { .. }) => {
                 Some("pass --insecure for dev environments only")
@@ -158,7 +158,7 @@ mod tests {
         assert_eq!(
             e.hint(),
             Some(
-                "verify the id with 'nifictl <resource> list' or check 'nifictl status' for the NiFi version"
+                "verify the id; use 'nifictl <resource> --help' to find list-style verbs, or 'nifictl status' for the NiFi version"
             )
         );
     }
