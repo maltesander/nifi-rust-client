@@ -389,3 +389,123 @@ async fn provenance_query_propagates_fetch_error() {
         "expected Api(500) or Timeout, got: {err:?}"
     );
 }
+
+// ── flowfile_drop ───────────────────────────────────────────────────────────
+
+fn drop_request_entity(finished: bool, failure: Option<&str>) -> serde_json::Value {
+    let mut req = json!({
+        "id": "drop-1",
+        "finished": finished,
+        "percentCompleted": if finished { 100 } else { 50 },
+    });
+    if let Some(reason) = failure {
+        req["failureReason"] = json!(reason);
+    }
+    json!({ "dropRequest": req })
+}
+
+#[tokio::test]
+async fn flowfile_drop_succeeds_and_cleans_up() {
+    let mock_server = MockServer::start().await;
+
+    Mock::given(method("GET"))
+        .and(path("/nifi-api/flowfile-queues/q-1/drop-requests/drop-1"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(drop_request_entity(false, None)))
+        .up_to_n_times(1)
+        .mount(&mock_server)
+        .await;
+    Mock::given(method("GET"))
+        .and(path("/nifi-api/flowfile-queues/q-1/drop-requests/drop-1"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(drop_request_entity(true, None)))
+        .mount(&mock_server)
+        .await;
+    Mock::given(method("DELETE"))
+        .and(path("/nifi-api/flowfile-queues/q-1/drop-requests/drop-1"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(drop_request_entity(true, None)))
+        .expect(1)
+        .mount(&mock_server)
+        .await;
+
+    let client = NifiClientBuilder::new(&mock_server.uri())
+        .unwrap()
+        .build()
+        .unwrap();
+    client.set_token("jwt".to_string()).await;
+
+    let dto = wait::flowfile_drop(&client, "q-1", "drop-1", fast_config(1000))
+        .await
+        .unwrap();
+    assert_eq!(dto.finished, Some(true));
+}
+
+#[tokio::test]
+async fn flowfile_drop_reports_failure() {
+    let mock_server = MockServer::start().await;
+
+    Mock::given(method("GET"))
+        .and(path("/nifi-api/flowfile-queues/q-1/drop-requests/drop-1"))
+        .respond_with(
+            ResponseTemplate::new(200)
+                .set_body_json(drop_request_entity(true, Some("queue locked"))),
+        )
+        .mount(&mock_server)
+        .await;
+    Mock::given(method("DELETE"))
+        .and(path("/nifi-api/flowfile-queues/q-1/drop-requests/drop-1"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(drop_request_entity(true, None)))
+        .expect(1)
+        .mount(&mock_server)
+        .await;
+
+    let client = NifiClientBuilder::new(&mock_server.uri())
+        .unwrap()
+        .build()
+        .unwrap();
+    client.set_token("jwt".to_string()).await;
+
+    let err = wait::flowfile_drop(&client, "q-1", "drop-1", fast_config(1000))
+        .await
+        .unwrap_err();
+    match err {
+        NifiError::Api { status, message } => {
+            assert_eq!(status, 500);
+            assert!(message.contains("drop request failed"));
+            assert!(message.contains("queue locked"));
+        }
+        other => panic!("expected Api, got {other:?}"),
+    }
+}
+
+#[tokio::test]
+async fn flowfile_drop_no_cleanup_when_disabled() {
+    let mock_server = MockServer::start().await;
+
+    Mock::given(method("GET"))
+        .and(path("/nifi-api/flowfile-queues/q-1/drop-requests/drop-1"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(drop_request_entity(true, None)))
+        .mount(&mock_server)
+        .await;
+    Mock::given(method("DELETE"))
+        .and(path("/nifi-api/flowfile-queues/q-1/drop-requests/drop-1"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(drop_request_entity(true, None)))
+        .expect(0)
+        .mount(&mock_server)
+        .await;
+
+    let client = NifiClientBuilder::new(&mock_server.uri())
+        .unwrap()
+        .build()
+        .unwrap();
+    client.set_token("jwt".to_string()).await;
+
+    let config = WaitConfig {
+        timeout: Duration::from_millis(500),
+        poll_interval: Duration::from_millis(10),
+        initial_delay: Duration::ZERO,
+        cleanup: false,
+    };
+    let dto = wait::flowfile_drop(&client, "q-1", "drop-1", config)
+        .await
+        .unwrap();
+    assert_eq!(dto.finished, Some(true));
+}

@@ -577,6 +577,92 @@ pub async fn provenance_query_dynamic(
     result
 }
 
+// ── wait::flowfile_drop ────────────────────────────────────────────────────
+
+#[cfg(not(feature = "dynamic"))]
+use crate::types::DropRequestDto;
+
+/// Poll a FlowFile-queue drop request until it reports `finished == true`.
+///
+/// Fetches `GET /flowfile-queues/{id}/drop-requests/{drop-request-id}`.
+/// Returns the final `DropRequestDto` on success. If the request reports
+/// a `failureReason`, returns [`NifiError::Api`] with status 500. On
+/// timeout, returns [`NifiError::Timeout`].
+///
+/// If [`WaitConfig::cleanup`] is `true` (default), issues a trailing
+/// `DELETE` to free server-side state. Best-effort — its errors are swallowed.
+#[cfg(not(feature = "dynamic"))]
+pub async fn flowfile_drop(
+    client: &crate::NifiClient,
+    queue_id: &str,
+    drop_request_id: &str,
+    config: WaitConfig,
+) -> Result<DropRequestDto, NifiError> {
+    let op = format!("wait_for_flowfile_drop({queue_id}/{drop_request_id})");
+    let fetch = || async {
+        client
+            .flowfilequeues()
+            .get_drop_request(queue_id, drop_request_id)
+            .await
+    };
+    let done = |dto: &DropRequestDto| {
+        terminal_outcome(
+            dto.finished,
+            dto.failure_reason.as_deref(),
+            "drop request",
+        )
+    };
+    let result = poll_until(&config, &op, fetch, done).await;
+
+    if config.cleanup {
+        let res = client
+            .flowfilequeues()
+            .remove_drop_request(queue_id, drop_request_id)
+            .await
+            .map(|_| ());
+        warn_cleanup_failure(&op, &format!("{queue_id}/{drop_request_id}"), res);
+    }
+    result
+}
+
+#[cfg(feature = "dynamic")]
+use crate::dynamic::types::DropRequestDto;
+
+/// Dynamic-mode counterpart of `flowfile_drop`.
+#[cfg(feature = "dynamic")]
+pub async fn flowfile_drop_dynamic(
+    client: &crate::dynamic::DynamicClient,
+    queue_id: &str,
+    drop_request_id: &str,
+    config: WaitConfig,
+) -> Result<DropRequestDto, NifiError> {
+    let op = format!("wait_for_flowfile_drop({queue_id}/{drop_request_id})");
+    let fetch = || async {
+        client
+            .flowfilequeues()
+            .get_drop_request(queue_id, drop_request_id)
+            .await
+    };
+    let done = |dto: &DropRequestDto| {
+        terminal_outcome(
+            dto.finished,
+            dto.failure_reason.as_deref(),
+            "drop request",
+        )
+    };
+    let result = poll_until(&config, &op, fetch, done).await;
+
+    if config.cleanup {
+        let res = client
+            .flowfilequeues()
+            .remove_drop_request(queue_id, drop_request_id)
+            .await
+            .map(|_| ());
+        warn_cleanup_failure(&op, &format!("{queue_id}/{drop_request_id}"), res);
+    }
+    result
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
