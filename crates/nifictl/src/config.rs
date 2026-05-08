@@ -1,7 +1,15 @@
 use std::fmt;
 use std::path::{Path, PathBuf};
+use std::sync::OnceLock;
 
 use serde::Deserialize;
+
+/// Fires at most once per process when [`Config::load`] detects a
+/// world/group-readable config that carries plaintext secrets or points
+/// at a world/group-readable mTLS identity file. Inspectable from tests
+/// to confirm the warn-only path triggered without having to capture
+/// stderr.
+pub(crate) static CONFIG_PERMS_WARNED: OnceLock<()> = OnceLock::new();
 
 // ---------------------------------------------------------------------------
 // Structs
@@ -109,10 +117,19 @@ impl From<toml::de::Error> for ConfigError {
 
 impl Config {
     /// Load and validate a config from the given path.
+    ///
+    /// Additionally, on Unix: if the config file is world- or group-readable
+    /// AND carries plaintext secrets (or names an mTLS identity file that is
+    /// itself non-0600), print a one-time warning to stderr advising
+    /// `chmod 600`. The warning is not an error — `NIFICTL_ALLOW_PLAINTEXT_SECRETS=1`
+    /// keeps working — but most users running with looser perms aren't aware
+    /// the file is exposed to other local users.
     pub fn load(path: &Path) -> Result<Self, ConfigError> {
         let raw = std::fs::read_to_string(path)?;
         let config: Config = toml::from_str(&raw)?;
         config.validate()?;
+        #[cfg(unix)]
+        warn_if_perms_loose(path, &config);
         Ok(config)
     }
 
@@ -193,6 +210,64 @@ impl Config {
     pub fn default_path() -> PathBuf {
         let home = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
         PathBuf::from(home).join(".nifictl").join("config.toml")
+    }
+}
+
+/// Returns `true` if the file at `path` exists and is world- or
+/// group-readable on Unix (any of the bits `0o077` set on the mode).
+/// Returns `false` if the file is missing, unreadable, or strictly 0600
+/// (or stricter).
+#[cfg(unix)]
+fn is_world_or_group_readable(path: &Path) -> bool {
+    use std::os::unix::fs::PermissionsExt;
+    match std::fs::metadata(path) {
+        Ok(md) => md.permissions().mode() & 0o077 != 0,
+        Err(_) => false,
+    }
+}
+
+/// Decide whether the loaded config carries any secret material that
+/// would be sensitive to disclose via permissive file modes:
+/// - plaintext `password` / `token` (only reachable when `validate()`
+///   was bypassed via `NIFICTL_ALLOW_PLAINTEXT_SECRETS=1`);
+/// - an mTLS `client_identity_path` that is itself non-0600.
+#[cfg(unix)]
+fn config_has_exposed_secret(config: &Config) -> bool {
+    for ctx in &config.contexts {
+        match &ctx.auth {
+            AuthConfig::Password {
+                password: Some(_), ..
+            } => return true,
+            AuthConfig::Token { token: Some(_), .. } => return true,
+            AuthConfig::Mtls {
+                client_identity_path,
+            } => {
+                if is_world_or_group_readable(Path::new(client_identity_path)) {
+                    return true;
+                }
+            }
+            _ => {}
+        }
+    }
+    false
+}
+
+/// Stderr warn-once when (config is permissive) AND (config carries
+/// secrets that disclosure would compromise). See [`Config::load`].
+#[cfg(unix)]
+fn warn_if_perms_loose(path: &Path, config: &Config) {
+    if !is_world_or_group_readable(path) {
+        return;
+    }
+    if !config_has_exposed_secret(config) {
+        return;
+    }
+    if CONFIG_PERMS_WARNED.set(()).is_ok() {
+        eprintln!(
+            "warning: {} is world/group-readable and carries credentials; \
+             chmod 600 to restrict to your user",
+            path.display()
+        );
     }
 }
 
@@ -411,5 +486,55 @@ token_env = "NIFI_TOKEN"
             matches!(result, Err(ConfigError::UnknownContext(ref name)) if name == "nonexistent"),
             "expected UnknownContext error, got {result:?}"
         );
+    }
+
+    /// B4: when the config file is world/group-readable AND carries a
+    /// plaintext password (allowed via the escape hatch), `Config::load`
+    /// must still succeed but emit the one-time perms warning.
+    #[cfg(unix)]
+    #[test]
+    fn warns_when_config_is_loose_with_plaintext_secret() {
+        use std::io::Write;
+        use std::os::unix::fs::PermissionsExt;
+
+        let _guard = ENV_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+        // SAFETY: ENV_LOCK serializes config-tests; no internal threads.
+        unsafe {
+            std::env::set_var("NIFICTL_ALLOW_PLAINTEXT_SECRETS", "1");
+        }
+
+        let dir = tempfile::tempdir().expect("tempdir");
+        let path = dir.path().join("config.toml");
+        let mut f = std::fs::File::create(&path).expect("create");
+        writeln!(
+            f,
+            r#"current_context = "prod"
+[[contexts]]
+name = "prod"
+url = "https://nifi:8443"
+[contexts.auth]
+type = "password"
+username = "admin"
+password = "hunter2"
+"#
+        )
+        .expect("write");
+        f.sync_all().expect("sync");
+        // mode 0o644 — world/group readable.
+        std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o644)).expect("chmod");
+
+        // Reset the OnceLock for this test run by hijacking it: since
+        // `OnceLock::set` returns Err on subsequent calls, we just check
+        // it was set after the load — initial state may already be set
+        // from another test, so confirm it ends up populated.
+        let _ = Config::load(&path).expect("load should succeed in warn-only mode");
+        assert!(
+            CONFIG_PERMS_WARNED.get().is_some(),
+            "expected CONFIG_PERMS_WARNED to be set after loading a permissive plaintext config"
+        );
+
+        unsafe {
+            std::env::remove_var("NIFICTL_ALLOW_PLAINTEXT_SECRETS");
+        }
     }
 }
