@@ -1068,6 +1068,79 @@ pub async fn controller_service_verify_config_dynamic(
     result
 }
 
+// ── wait::reporting_task_verify_config ─────────────────────────────────────
+
+/// Poll a reporting-task config-verification request until `complete == true`.
+///
+/// Fetches `GET /reporting-tasks/{id}/config/verification-requests/{requestId}`.
+/// Returns the final `VerifyConfigRequestDto` on success. If the request reports
+/// a `failureReason`, returns [`NifiError::Api`] with status 500. On timeout,
+/// returns [`NifiError::Timeout`].
+///
+/// If [`WaitConfig::cleanup`] is `true` (default), issues a trailing
+/// `DELETE /reporting-tasks/{id}/config/verification-requests/{requestId}`
+/// to free server-side state. Best-effort — its errors are swallowed.
+#[cfg(not(feature = "dynamic"))]
+pub async fn reporting_task_verify_config(
+    client: &crate::NifiClient,
+    task_id: &str,
+    request_id: &str,
+    config: WaitConfig,
+) -> Result<VerifyConfigRequestDto, NifiError> {
+    let op = format!("wait_for_reporting_task_verify_config({task_id}/{request_id})");
+    let fetch = || async {
+        client
+            .reportingtasks()
+            .get_verification_request(task_id, request_id)
+            .await
+    };
+    let done = |dto: &VerifyConfigRequestDto| {
+        terminal_outcome(dto.complete, dto.failure_reason.as_deref(), "verification")
+    };
+    let result = poll_until(&config, &op, fetch, done).await;
+
+    if config.cleanup {
+        let res = client
+            .reportingtasks()
+            .delete_verification_request(task_id, request_id)
+            .await
+            .map(|_| ());
+        warn_cleanup_failure(&op, &format!("{task_id}/{request_id}"), res);
+    }
+    result
+}
+
+/// Dynamic-mode counterpart of `reporting_task_verify_config`.
+#[cfg(feature = "dynamic")]
+pub async fn reporting_task_verify_config_dynamic(
+    client: &crate::dynamic::DynamicClient,
+    task_id: &str,
+    request_id: &str,
+    config: WaitConfig,
+) -> Result<VerifyConfigRequestDto, NifiError> {
+    let op = format!("wait_for_reporting_task_verify_config({task_id}/{request_id})");
+    let fetch = || async {
+        client
+            .reportingtasks()
+            .get_verification_request(task_id, request_id)
+            .await
+    };
+    let done = |dto: &VerifyConfigRequestDto| {
+        terminal_outcome(dto.complete, dto.failure_reason.as_deref(), "verification")
+    };
+    let result = poll_until(&config, &op, fetch, done).await;
+
+    if config.cleanup {
+        let res = client
+            .reportingtasks()
+            .delete_verification_request(task_id, request_id)
+            .await
+            .map(|_| ());
+        warn_cleanup_failure(&op, &format!("{task_id}/{request_id}"), res);
+    }
+    result
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
