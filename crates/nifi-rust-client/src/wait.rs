@@ -1141,6 +1141,79 @@ pub async fn reporting_task_verify_config_dynamic(
     result
 }
 
+// ── wait::parameter_provider_verify_config ─────────────────────────────────
+
+/// Poll a parameter-provider config-verification request until `complete == true`.
+///
+/// Fetches `GET /parameter-providers/{id}/config/verification-requests/{requestId}`.
+/// Returns the final `VerifyConfigRequestDto` on success. If the request reports
+/// a `failureReason`, returns [`NifiError::Api`] with status 500. On timeout,
+/// returns [`NifiError::Timeout`].
+///
+/// If [`WaitConfig::cleanup`] is `true` (default), issues a trailing
+/// `DELETE /parameter-providers/{id}/config/verification-requests/{requestId}`
+/// to free server-side state. Best-effort — its errors are swallowed.
+#[cfg(not(feature = "dynamic"))]
+pub async fn parameter_provider_verify_config(
+    client: &crate::NifiClient,
+    provider_id: &str,
+    request_id: &str,
+    config: WaitConfig,
+) -> Result<VerifyConfigRequestDto, NifiError> {
+    let op = format!("wait_for_parameter_provider_verify_config({provider_id}/{request_id})");
+    let fetch = || async {
+        client
+            .parameterproviders()
+            .get_verification_request(provider_id, request_id)
+            .await
+    };
+    let done = |dto: &VerifyConfigRequestDto| {
+        terminal_outcome(dto.complete, dto.failure_reason.as_deref(), "verification")
+    };
+    let result = poll_until(&config, &op, fetch, done).await;
+
+    if config.cleanup {
+        let res = client
+            .parameterproviders()
+            .delete_verification_request(provider_id, request_id)
+            .await
+            .map(|_| ());
+        warn_cleanup_failure(&op, &format!("{provider_id}/{request_id}"), res);
+    }
+    result
+}
+
+/// Dynamic-mode counterpart of `parameter_provider_verify_config`.
+#[cfg(feature = "dynamic")]
+pub async fn parameter_provider_verify_config_dynamic(
+    client: &crate::dynamic::DynamicClient,
+    provider_id: &str,
+    request_id: &str,
+    config: WaitConfig,
+) -> Result<VerifyConfigRequestDto, NifiError> {
+    let op = format!("wait_for_parameter_provider_verify_config({provider_id}/{request_id})");
+    let fetch = || async {
+        client
+            .parameterproviders()
+            .get_verification_request(provider_id, request_id)
+            .await
+    };
+    let done = |dto: &VerifyConfigRequestDto| {
+        terminal_outcome(dto.complete, dto.failure_reason.as_deref(), "verification")
+    };
+    let result = poll_until(&config, &op, fetch, done).await;
+
+    if config.cleanup {
+        let res = client
+            .parameterproviders()
+            .delete_verification_request(provider_id, request_id)
+            .await
+            .map(|_| ());
+        warn_cleanup_failure(&op, &format!("{provider_id}/{request_id}"), res);
+    }
+    result
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

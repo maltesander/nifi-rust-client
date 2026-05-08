@@ -832,3 +832,31 @@ async fn reporting_task_verify_config_succeeds_and_cleans_up() {
         .unwrap();
     assert_eq!(dto.complete, Some(true));
 }
+
+#[tokio::test]
+async fn parameter_provider_verify_config_succeeds_and_cleans_up() {
+    let mock_server = MockServer::start().await;
+
+    Mock::given(method("GET"))
+        .and(path("/nifi-api/parameter-providers/pp-1/config/verification-requests/req-1"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(verify_config_request_entity(true, None)))
+        .mount(&mock_server)
+        .await;
+    Mock::given(method("DELETE"))
+        .and(path("/nifi-api/parameter-providers/pp-1/config/verification-requests/req-1"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(verify_config_request_entity(true, None)))
+        .expect(1)
+        .mount(&mock_server)
+        .await;
+
+    let client = NifiClientBuilder::new(&mock_server.uri())
+        .unwrap()
+        .build()
+        .unwrap();
+    client.set_token("jwt".to_string()).await;
+
+    let dto = wait::parameter_provider_verify_config(&client, "pp-1", "req-1", fast_config(1000))
+        .await
+        .unwrap();
+    assert_eq!(dto.complete, Some(true));
+}
