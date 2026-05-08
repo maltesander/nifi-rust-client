@@ -888,3 +888,83 @@ async fn flow_analysis_rule_verify_config_succeeds_and_cleans_up() {
         .unwrap();
     assert_eq!(dto.complete, Some(true));
 }
+
+// ── parameter_provider_apply_parameters ─────────────────────────────────────
+
+fn apply_parameters_request_entity(complete: bool, failure: Option<&str>) -> serde_json::Value {
+    let mut req = json!({
+        "requestId": "req-1",
+        "complete": complete,
+        "percentCompleted": if complete { 100 } else { 50 },
+    });
+    if let Some(reason) = failure {
+        req["failureReason"] = json!(reason);
+    }
+    json!({ "request": req })
+}
+
+#[tokio::test]
+async fn parameter_provider_apply_parameters_succeeds_and_cleans_up() {
+    let mock_server = MockServer::start().await;
+
+    Mock::given(method("GET"))
+        .and(path("/nifi-api/parameter-providers/pp-1/apply-parameters-requests/req-1"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(apply_parameters_request_entity(true, None)))
+        .mount(&mock_server)
+        .await;
+    Mock::given(method("DELETE"))
+        .and(path("/nifi-api/parameter-providers/pp-1/apply-parameters-requests/req-1"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(apply_parameters_request_entity(true, None)))
+        .expect(1)
+        .mount(&mock_server)
+        .await;
+
+    let client = NifiClientBuilder::new(&mock_server.uri())
+        .unwrap()
+        .build()
+        .unwrap();
+    client.set_token("jwt".to_string()).await;
+
+    let dto = wait::parameter_provider_apply_parameters(&client, "pp-1", "req-1", fast_config(1000))
+        .await
+        .unwrap();
+    assert_eq!(dto.complete, Some(true));
+}
+
+#[tokio::test]
+async fn parameter_provider_apply_parameters_reports_failure() {
+    let mock_server = MockServer::start().await;
+
+    Mock::given(method("GET"))
+        .and(path("/nifi-api/parameter-providers/pp-1/apply-parameters-requests/req-1"))
+        .respond_with(
+            ResponseTemplate::new(200)
+                .set_body_json(apply_parameters_request_entity(true, Some("conflict"))),
+        )
+        .mount(&mock_server)
+        .await;
+    Mock::given(method("DELETE"))
+        .and(path("/nifi-api/parameter-providers/pp-1/apply-parameters-requests/req-1"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(apply_parameters_request_entity(true, None)))
+        .expect(1)
+        .mount(&mock_server)
+        .await;
+
+    let client = NifiClientBuilder::new(&mock_server.uri())
+        .unwrap()
+        .build()
+        .unwrap();
+    client.set_token("jwt".to_string()).await;
+
+    let err = wait::parameter_provider_apply_parameters(&client, "pp-1", "req-1", fast_config(1000))
+        .await
+        .unwrap_err();
+    match err {
+        NifiError::Api { status, message } => {
+            assert_eq!(status, 500);
+            assert!(message.contains("apply parameters failed"));
+            assert!(message.contains("conflict"));
+        }
+        other => panic!("expected Api, got {other:?}"),
+    }
+}

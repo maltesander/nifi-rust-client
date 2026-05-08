@@ -1287,6 +1287,86 @@ pub async fn flow_analysis_rule_verify_config_dynamic(
     result
 }
 
+// ── wait::parameter_provider_apply_parameters ──────────────────────────────
+
+#[cfg(not(feature = "dynamic"))]
+use crate::types::ParameterProviderApplyParametersRequestDto;
+
+/// Poll a parameter-provider apply-parameters request until `complete == true`.
+///
+/// Fetches `GET /parameter-providers/{providerId}/apply-parameters-requests/{requestId}`.
+/// Returns the final `ParameterProviderApplyParametersRequestDto` on success.
+/// If the request reports a `failureReason`, returns [`NifiError::Api`] with
+/// status 500. On timeout, returns [`NifiError::Timeout`].
+///
+/// If [`WaitConfig::cleanup`] is `true` (default), issues a trailing
+/// `DELETE /parameter-providers/{providerId}/apply-parameters-requests/{requestId}`
+/// with `disconnectedNodeAcknowledged=None` to free server-side state. Best-effort
+/// — its errors are swallowed.
+#[cfg(not(feature = "dynamic"))]
+pub async fn parameter_provider_apply_parameters(
+    client: &crate::NifiClient,
+    provider_id: &str,
+    request_id: &str,
+    config: WaitConfig,
+) -> Result<ParameterProviderApplyParametersRequestDto, NifiError> {
+    let op = format!("wait_for_parameter_provider_apply_parameters({provider_id}/{request_id})");
+    let fetch = || async {
+        client
+            .parameterproviders()
+            .get_parameter_provider_apply_parameters_request(provider_id, request_id)
+            .await
+    };
+    let done = |dto: &ParameterProviderApplyParametersRequestDto| {
+        terminal_outcome(dto.complete, dto.failure_reason.as_deref(), "apply parameters")
+    };
+    let result = poll_until(&config, &op, fetch, done).await;
+
+    if config.cleanup {
+        let res = client
+            .parameterproviders()
+            .delete_apply_parameters_request(provider_id, request_id, None)
+            .await
+            .map(|_| ());
+        warn_cleanup_failure(&op, &format!("{provider_id}/{request_id}"), res);
+    }
+    result
+}
+
+#[cfg(feature = "dynamic")]
+use crate::dynamic::types::ParameterProviderApplyParametersRequestDto;
+
+/// Dynamic-mode counterpart of `parameter_provider_apply_parameters`.
+#[cfg(feature = "dynamic")]
+pub async fn parameter_provider_apply_parameters_dynamic(
+    client: &crate::dynamic::DynamicClient,
+    provider_id: &str,
+    request_id: &str,
+    config: WaitConfig,
+) -> Result<ParameterProviderApplyParametersRequestDto, NifiError> {
+    let op = format!("wait_for_parameter_provider_apply_parameters({provider_id}/{request_id})");
+    let fetch = || async {
+        client
+            .parameterproviders()
+            .get_parameter_provider_apply_parameters_request(provider_id, request_id)
+            .await
+    };
+    let done = |dto: &ParameterProviderApplyParametersRequestDto| {
+        terminal_outcome(dto.complete, dto.failure_reason.as_deref(), "apply parameters")
+    };
+    let result = poll_until(&config, &op, fetch, done).await;
+
+    if config.cleanup {
+        let res = client
+            .parameterproviders()
+            .delete_apply_parameters_request(provider_id, request_id, None)
+            .await
+            .map(|_| ());
+        warn_cleanup_failure(&op, &format!("{provider_id}/{request_id}"), res);
+    }
+    result
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

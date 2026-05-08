@@ -11,6 +11,7 @@ use nifi_rust_client::wait::{
     controller_service_verify_config_dynamic, processor_verify_config_dynamic,
     reporting_task_verify_config_dynamic, parameter_provider_verify_config_dynamic,
     flow_analysis_rule_verify_config_dynamic,
+    parameter_provider_apply_parameters_dynamic,
     provenance_lineage_dynamic, provenance_query_dynamic,
 };
 use nifi_rust_client::{NifiClientBuilder, NifiError};
@@ -498,6 +499,43 @@ async fn flow_analysis_rule_verify_config_dynamic_succeeds() {
     let client = dynamic_client(&mock_server).await;
 
     let dto = flow_analysis_rule_verify_config_dynamic(&client, "far-1", "req-1", fast_config(1000))
+        .await
+        .unwrap();
+    assert_eq!(dto.complete, Some(true));
+}
+
+fn apply_parameters_request_entity(complete: bool, failure: Option<&str>) -> serde_json::Value {
+    let mut req = json!({
+        "requestId": "req-1",
+        "complete": complete,
+        "percentCompleted": if complete { 100 } else { 50 },
+    });
+    if let Some(reason) = failure {
+        req["failureReason"] = json!(reason);
+    }
+    json!({ "request": req })
+}
+
+#[tokio::test]
+async fn parameter_provider_apply_parameters_dynamic_succeeds() {
+    let mock_server = MockServer::start().await;
+    mount_about(&mock_server).await;
+
+    Mock::given(method("GET"))
+        .and(path("/nifi-api/parameter-providers/pp-1/apply-parameters-requests/req-1"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(apply_parameters_request_entity(true, None)))
+        .mount(&mock_server)
+        .await;
+    Mock::given(method("DELETE"))
+        .and(path("/nifi-api/parameter-providers/pp-1/apply-parameters-requests/req-1"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(apply_parameters_request_entity(true, None)))
+        .expect(1)
+        .mount(&mock_server)
+        .await;
+
+    let client = dynamic_client(&mock_server).await;
+
+    let dto = parameter_provider_apply_parameters_dynamic(&client, "pp-1", "req-1", fast_config(1000))
         .await
         .unwrap();
     assert_eq!(dto.complete, Some(true));
