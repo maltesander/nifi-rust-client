@@ -529,12 +529,16 @@ async fn flowfile_listing_succeeds_and_cleans_up() {
     let mock_server = MockServer::start().await;
 
     Mock::given(method("GET"))
-        .and(path("/nifi-api/flowfile-queues/q-1/listing-requests/list-1"))
+        .and(path(
+            "/nifi-api/flowfile-queues/q-1/listing-requests/list-1",
+        ))
         .respond_with(ResponseTemplate::new(200).set_body_json(listing_request_entity(true, None)))
         .mount(&mock_server)
         .await;
     Mock::given(method("DELETE"))
-        .and(path("/nifi-api/flowfile-queues/q-1/listing-requests/list-1"))
+        .and(path(
+            "/nifi-api/flowfile-queues/q-1/listing-requests/list-1",
+        ))
         .respond_with(ResponseTemplate::new(200).set_body_json(listing_request_entity(true, None)))
         .expect(1)
         .mount(&mock_server)
@@ -557,7 +561,9 @@ async fn flowfile_listing_reports_failure() {
     let mock_server = MockServer::start().await;
 
     Mock::given(method("GET"))
-        .and(path("/nifi-api/flowfile-queues/q-1/listing-requests/list-1"))
+        .and(path(
+            "/nifi-api/flowfile-queues/q-1/listing-requests/list-1",
+        ))
         .respond_with(
             ResponseTemplate::new(200)
                 .set_body_json(listing_request_entity(true, Some("queue too large"))),
@@ -565,7 +571,9 @@ async fn flowfile_listing_reports_failure() {
         .mount(&mock_server)
         .await;
     Mock::given(method("DELETE"))
-        .and(path("/nifi-api/flowfile-queues/q-1/listing-requests/list-1"))
+        .and(path(
+            "/nifi-api/flowfile-queues/q-1/listing-requests/list-1",
+        ))
         .respond_with(ResponseTemplate::new(200).set_body_json(listing_request_entity(true, None)))
         .expect(1)
         .mount(&mock_server)
@@ -597,12 +605,16 @@ async fn empty_all_connections_succeeds_and_cleans_up() {
     let mock_server = MockServer::start().await;
 
     Mock::given(method("GET"))
-        .and(path("/nifi-api/process-groups/pg-1/empty-all-connections-requests/drop-1"))
+        .and(path(
+            "/nifi-api/process-groups/pg-1/empty-all-connections-requests/drop-1",
+        ))
         .respond_with(ResponseTemplate::new(200).set_body_json(drop_request_entity(true, None)))
         .mount(&mock_server)
         .await;
     Mock::given(method("DELETE"))
-        .and(path("/nifi-api/process-groups/pg-1/empty-all-connections-requests/drop-1"))
+        .and(path(
+            "/nifi-api/process-groups/pg-1/empty-all-connections-requests/drop-1",
+        ))
         .respond_with(ResponseTemplate::new(200).set_body_json(drop_request_entity(true, None)))
         .expect(1)
         .mount(&mock_server)
@@ -625,7 +637,9 @@ async fn empty_all_connections_reports_failure() {
     let mock_server = MockServer::start().await;
 
     Mock::given(method("GET"))
-        .and(path("/nifi-api/process-groups/pg-1/empty-all-connections-requests/drop-1"))
+        .and(path(
+            "/nifi-api/process-groups/pg-1/empty-all-connections-requests/drop-1",
+        ))
         .respond_with(
             ResponseTemplate::new(200)
                 .set_body_json(drop_request_entity(true, Some("connection in use"))),
@@ -633,7 +647,9 @@ async fn empty_all_connections_reports_failure() {
         .mount(&mock_server)
         .await;
     Mock::given(method("DELETE"))
-        .and(path("/nifi-api/process-groups/pg-1/empty-all-connections-requests/drop-1"))
+        .and(path(
+            "/nifi-api/process-groups/pg-1/empty-all-connections-requests/drop-1",
+        ))
         .respond_with(ResponseTemplate::new(200).set_body_json(drop_request_entity(true, None)))
         .expect(1)
         .mount(&mock_server)
@@ -716,13 +732,21 @@ async fn processor_verify_config_succeeds_and_cleans_up() {
     let mock_server = MockServer::start().await;
 
     Mock::given(method("GET"))
-        .and(path("/nifi-api/processors/p-1/config/verification-requests/req-1"))
-        .respond_with(ResponseTemplate::new(200).set_body_json(verify_config_request_entity(true, None)))
+        .and(path(
+            "/nifi-api/processors/p-1/config/verification-requests/req-1",
+        ))
+        .respond_with(
+            ResponseTemplate::new(200).set_body_json(verify_config_request_entity(true, None)),
+        )
         .mount(&mock_server)
         .await;
     Mock::given(method("DELETE"))
-        .and(path("/nifi-api/processors/p-1/config/verification-requests/req-1"))
-        .respond_with(ResponseTemplate::new(200).set_body_json(verify_config_request_entity(true, None)))
+        .and(path(
+            "/nifi-api/processors/p-1/config/verification-requests/req-1",
+        ))
+        .respond_with(
+            ResponseTemplate::new(200).set_body_json(verify_config_request_entity(true, None)),
+        )
         .expect(1)
         .mount(&mock_server)
         .await;
@@ -744,7 +768,9 @@ async fn processor_verify_config_reports_failure() {
     let mock_server = MockServer::start().await;
 
     Mock::given(method("GET"))
-        .and(path("/nifi-api/processors/p-1/config/verification-requests/req-1"))
+        .and(path(
+            "/nifi-api/processors/p-1/config/verification-requests/req-1",
+        ))
         .respond_with(
             ResponseTemplate::new(200)
                 .set_body_json(verify_config_request_entity(true, Some("invalid prop"))),
@@ -752,8 +778,12 @@ async fn processor_verify_config_reports_failure() {
         .mount(&mock_server)
         .await;
     Mock::given(method("DELETE"))
-        .and(path("/nifi-api/processors/p-1/config/verification-requests/req-1"))
-        .respond_with(ResponseTemplate::new(200).set_body_json(verify_config_request_entity(true, None)))
+        .and(path(
+            "/nifi-api/processors/p-1/config/verification-requests/req-1",
+        ))
+        .respond_with(
+            ResponseTemplate::new(200).set_body_json(verify_config_request_entity(true, None)),
+        )
         .expect(1)
         .mount(&mock_server)
         .await;
@@ -782,13 +812,21 @@ async fn controller_service_verify_config_succeeds_and_cleans_up() {
     let mock_server = MockServer::start().await;
 
     Mock::given(method("GET"))
-        .and(path("/nifi-api/controller-services/cs-1/config/verification-requests/req-1"))
-        .respond_with(ResponseTemplate::new(200).set_body_json(verify_config_request_entity(true, None)))
+        .and(path(
+            "/nifi-api/controller-services/cs-1/config/verification-requests/req-1",
+        ))
+        .respond_with(
+            ResponseTemplate::new(200).set_body_json(verify_config_request_entity(true, None)),
+        )
         .mount(&mock_server)
         .await;
     Mock::given(method("DELETE"))
-        .and(path("/nifi-api/controller-services/cs-1/config/verification-requests/req-1"))
-        .respond_with(ResponseTemplate::new(200).set_body_json(verify_config_request_entity(true, None)))
+        .and(path(
+            "/nifi-api/controller-services/cs-1/config/verification-requests/req-1",
+        ))
+        .respond_with(
+            ResponseTemplate::new(200).set_body_json(verify_config_request_entity(true, None)),
+        )
         .expect(1)
         .mount(&mock_server)
         .await;
@@ -810,13 +848,21 @@ async fn reporting_task_verify_config_succeeds_and_cleans_up() {
     let mock_server = MockServer::start().await;
 
     Mock::given(method("GET"))
-        .and(path("/nifi-api/reporting-tasks/rt-1/config/verification-requests/req-1"))
-        .respond_with(ResponseTemplate::new(200).set_body_json(verify_config_request_entity(true, None)))
+        .and(path(
+            "/nifi-api/reporting-tasks/rt-1/config/verification-requests/req-1",
+        ))
+        .respond_with(
+            ResponseTemplate::new(200).set_body_json(verify_config_request_entity(true, None)),
+        )
         .mount(&mock_server)
         .await;
     Mock::given(method("DELETE"))
-        .and(path("/nifi-api/reporting-tasks/rt-1/config/verification-requests/req-1"))
-        .respond_with(ResponseTemplate::new(200).set_body_json(verify_config_request_entity(true, None)))
+        .and(path(
+            "/nifi-api/reporting-tasks/rt-1/config/verification-requests/req-1",
+        ))
+        .respond_with(
+            ResponseTemplate::new(200).set_body_json(verify_config_request_entity(true, None)),
+        )
         .expect(1)
         .mount(&mock_server)
         .await;
@@ -838,13 +884,21 @@ async fn parameter_provider_verify_config_succeeds_and_cleans_up() {
     let mock_server = MockServer::start().await;
 
     Mock::given(method("GET"))
-        .and(path("/nifi-api/parameter-providers/pp-1/config/verification-requests/req-1"))
-        .respond_with(ResponseTemplate::new(200).set_body_json(verify_config_request_entity(true, None)))
+        .and(path(
+            "/nifi-api/parameter-providers/pp-1/config/verification-requests/req-1",
+        ))
+        .respond_with(
+            ResponseTemplate::new(200).set_body_json(verify_config_request_entity(true, None)),
+        )
         .mount(&mock_server)
         .await;
     Mock::given(method("DELETE"))
-        .and(path("/nifi-api/parameter-providers/pp-1/config/verification-requests/req-1"))
-        .respond_with(ResponseTemplate::new(200).set_body_json(verify_config_request_entity(true, None)))
+        .and(path(
+            "/nifi-api/parameter-providers/pp-1/config/verification-requests/req-1",
+        ))
+        .respond_with(
+            ResponseTemplate::new(200).set_body_json(verify_config_request_entity(true, None)),
+        )
         .expect(1)
         .mount(&mock_server)
         .await;
@@ -866,13 +920,21 @@ async fn flow_analysis_rule_verify_config_succeeds_and_cleans_up() {
     let mock_server = MockServer::start().await;
 
     Mock::given(method("GET"))
-        .and(path("/nifi-api/controller/flow-analysis-rules/far-1/config/verification-requests/req-1"))
-        .respond_with(ResponseTemplate::new(200).set_body_json(verify_config_request_entity(true, None)))
+        .and(path(
+            "/nifi-api/controller/flow-analysis-rules/far-1/config/verification-requests/req-1",
+        ))
+        .respond_with(
+            ResponseTemplate::new(200).set_body_json(verify_config_request_entity(true, None)),
+        )
         .mount(&mock_server)
         .await;
     Mock::given(method("DELETE"))
-        .and(path("/nifi-api/controller/flow-analysis-rules/far-1/config/verification-requests/req-1"))
-        .respond_with(ResponseTemplate::new(200).set_body_json(verify_config_request_entity(true, None)))
+        .and(path(
+            "/nifi-api/controller/flow-analysis-rules/far-1/config/verification-requests/req-1",
+        ))
+        .respond_with(
+            ResponseTemplate::new(200).set_body_json(verify_config_request_entity(true, None)),
+        )
         .expect(1)
         .mount(&mock_server)
         .await;
@@ -908,13 +970,21 @@ async fn parameter_provider_apply_parameters_succeeds_and_cleans_up() {
     let mock_server = MockServer::start().await;
 
     Mock::given(method("GET"))
-        .and(path("/nifi-api/parameter-providers/pp-1/apply-parameters-requests/req-1"))
-        .respond_with(ResponseTemplate::new(200).set_body_json(apply_parameters_request_entity(true, None)))
+        .and(path(
+            "/nifi-api/parameter-providers/pp-1/apply-parameters-requests/req-1",
+        ))
+        .respond_with(
+            ResponseTemplate::new(200).set_body_json(apply_parameters_request_entity(true, None)),
+        )
         .mount(&mock_server)
         .await;
     Mock::given(method("DELETE"))
-        .and(path("/nifi-api/parameter-providers/pp-1/apply-parameters-requests/req-1"))
-        .respond_with(ResponseTemplate::new(200).set_body_json(apply_parameters_request_entity(true, None)))
+        .and(path(
+            "/nifi-api/parameter-providers/pp-1/apply-parameters-requests/req-1",
+        ))
+        .respond_with(
+            ResponseTemplate::new(200).set_body_json(apply_parameters_request_entity(true, None)),
+        )
         .expect(1)
         .mount(&mock_server)
         .await;
@@ -925,9 +995,10 @@ async fn parameter_provider_apply_parameters_succeeds_and_cleans_up() {
         .unwrap();
     client.set_token("jwt".to_string()).await;
 
-    let dto = wait::parameter_provider_apply_parameters(&client, "pp-1", "req-1", fast_config(1000))
-        .await
-        .unwrap();
+    let dto =
+        wait::parameter_provider_apply_parameters(&client, "pp-1", "req-1", fast_config(1000))
+            .await
+            .unwrap();
     assert_eq!(dto.complete, Some(true));
 }
 
@@ -936,7 +1007,9 @@ async fn parameter_provider_apply_parameters_reports_failure() {
     let mock_server = MockServer::start().await;
 
     Mock::given(method("GET"))
-        .and(path("/nifi-api/parameter-providers/pp-1/apply-parameters-requests/req-1"))
+        .and(path(
+            "/nifi-api/parameter-providers/pp-1/apply-parameters-requests/req-1",
+        ))
         .respond_with(
             ResponseTemplate::new(200)
                 .set_body_json(apply_parameters_request_entity(true, Some("conflict"))),
@@ -944,8 +1017,12 @@ async fn parameter_provider_apply_parameters_reports_failure() {
         .mount(&mock_server)
         .await;
     Mock::given(method("DELETE"))
-        .and(path("/nifi-api/parameter-providers/pp-1/apply-parameters-requests/req-1"))
-        .respond_with(ResponseTemplate::new(200).set_body_json(apply_parameters_request_entity(true, None)))
+        .and(path(
+            "/nifi-api/parameter-providers/pp-1/apply-parameters-requests/req-1",
+        ))
+        .respond_with(
+            ResponseTemplate::new(200).set_body_json(apply_parameters_request_entity(true, None)),
+        )
         .expect(1)
         .mount(&mock_server)
         .await;
@@ -956,9 +1033,10 @@ async fn parameter_provider_apply_parameters_reports_failure() {
         .unwrap();
     client.set_token("jwt".to_string()).await;
 
-    let err = wait::parameter_provider_apply_parameters(&client, "pp-1", "req-1", fast_config(1000))
-        .await
-        .unwrap_err();
+    let err =
+        wait::parameter_provider_apply_parameters(&client, "pp-1", "req-1", fast_config(1000))
+            .await
+            .unwrap_err();
     match err {
         NifiError::Api { status, message } => {
             assert_eq!(status, 500);
@@ -989,12 +1067,16 @@ async fn versioned_flow_update_succeeds_and_cleans_up() {
 
     Mock::given(method("GET"))
         .and(path("/nifi-api/versions/update-requests/req-1"))
-        .respond_with(ResponseTemplate::new(200).set_body_json(versioned_flow_update_entity(true, None)))
+        .respond_with(
+            ResponseTemplate::new(200).set_body_json(versioned_flow_update_entity(true, None)),
+        )
         .mount(&mock_server)
         .await;
     Mock::given(method("DELETE"))
         .and(path("/nifi-api/versions/update-requests/req-1"))
-        .respond_with(ResponseTemplate::new(200).set_body_json(versioned_flow_update_entity(true, None)))
+        .respond_with(
+            ResponseTemplate::new(200).set_body_json(versioned_flow_update_entity(true, None)),
+        )
         .expect(1)
         .mount(&mock_server)
         .await;
@@ -1018,14 +1100,18 @@ async fn versioned_flow_update_reports_failure() {
     Mock::given(method("GET"))
         .and(path("/nifi-api/versions/update-requests/req-1"))
         .respond_with(
-            ResponseTemplate::new(200)
-                .set_body_json(versioned_flow_update_entity(true, Some("conflicting changes"))),
+            ResponseTemplate::new(200).set_body_json(versioned_flow_update_entity(
+                true,
+                Some("conflicting changes"),
+            )),
         )
         .mount(&mock_server)
         .await;
     Mock::given(method("DELETE"))
         .and(path("/nifi-api/versions/update-requests/req-1"))
-        .respond_with(ResponseTemplate::new(200).set_body_json(versioned_flow_update_entity(true, None)))
+        .respond_with(
+            ResponseTemplate::new(200).set_body_json(versioned_flow_update_entity(true, None)),
+        )
         .expect(1)
         .mount(&mock_server)
         .await;
@@ -1057,12 +1143,16 @@ async fn versioned_flow_revert_succeeds_and_cleans_up() {
 
     Mock::given(method("GET"))
         .and(path("/nifi-api/versions/revert-requests/req-1"))
-        .respond_with(ResponseTemplate::new(200).set_body_json(versioned_flow_update_entity(true, None)))
+        .respond_with(
+            ResponseTemplate::new(200).set_body_json(versioned_flow_update_entity(true, None)),
+        )
         .mount(&mock_server)
         .await;
     Mock::given(method("DELETE"))
         .and(path("/nifi-api/versions/revert-requests/req-1"))
-        .respond_with(ResponseTemplate::new(200).set_body_json(versioned_flow_update_entity(true, None)))
+        .respond_with(
+            ResponseTemplate::new(200).set_body_json(versioned_flow_update_entity(true, None)),
+        )
         .expect(1)
         .mount(&mock_server)
         .await;
@@ -1098,13 +1188,21 @@ async fn parameter_context_validation_succeeds_and_cleans_up() {
     let mock_server = MockServer::start().await;
 
     Mock::given(method("GET"))
-        .and(path("/nifi-api/parameter-contexts/ctx-1/validation-requests/req-1"))
-        .respond_with(ResponseTemplate::new(200).set_body_json(validation_request_entity(true, None)))
+        .and(path(
+            "/nifi-api/parameter-contexts/ctx-1/validation-requests/req-1",
+        ))
+        .respond_with(
+            ResponseTemplate::new(200).set_body_json(validation_request_entity(true, None)),
+        )
         .mount(&mock_server)
         .await;
     Mock::given(method("DELETE"))
-        .and(path("/nifi-api/parameter-contexts/ctx-1/validation-requests/req-1"))
-        .respond_with(ResponseTemplate::new(200).set_body_json(validation_request_entity(true, None)))
+        .and(path(
+            "/nifi-api/parameter-contexts/ctx-1/validation-requests/req-1",
+        ))
+        .respond_with(
+            ResponseTemplate::new(200).set_body_json(validation_request_entity(true, None)),
+        )
         .expect(1)
         .mount(&mock_server)
         .await;
@@ -1126,7 +1224,9 @@ async fn parameter_context_validation_reports_failure() {
     let mock_server = MockServer::start().await;
 
     Mock::given(method("GET"))
-        .and(path("/nifi-api/parameter-contexts/ctx-1/validation-requests/req-1"))
+        .and(path(
+            "/nifi-api/parameter-contexts/ctx-1/validation-requests/req-1",
+        ))
         .respond_with(
             ResponseTemplate::new(200)
                 .set_body_json(validation_request_entity(true, Some("missing param"))),
@@ -1134,8 +1234,12 @@ async fn parameter_context_validation_reports_failure() {
         .mount(&mock_server)
         .await;
     Mock::given(method("DELETE"))
-        .and(path("/nifi-api/parameter-contexts/ctx-1/validation-requests/req-1"))
-        .respond_with(ResponseTemplate::new(200).set_body_json(validation_request_entity(true, None)))
+        .and(path(
+            "/nifi-api/parameter-contexts/ctx-1/validation-requests/req-1",
+        ))
+        .respond_with(
+            ResponseTemplate::new(200).set_body_json(validation_request_entity(true, None)),
+        )
         .expect(1)
         .mount(&mock_server)
         .await;

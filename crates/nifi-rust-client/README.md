@@ -418,9 +418,21 @@ async fn example(client: nifi_rust_client::NifiClient) -> Result<(), nifi_rust_c
 }
 ```
 
-Four helpers are available: `processor_state`, `controller_service_state`,
-`parameter_context_update`, and `provenance_query`. On timeout, all return
-`NifiError::Timeout { operation }`.
+Seventeen helpers are available, covering both state transitions
+(`processor_state`, `controller_service_state`) and the standard NiFi
+async-request pattern of `POST` → `GET poll` → optional cleanup `DELETE`:
+
+- Parameter contexts: `parameter_context_update`, `parameter_context_validation`.
+- Provenance: `provenance_query`, `provenance_lineage`.
+- FlowFile queues: `flowfile_drop`, `flowfile_listing`.
+- Process groups: `empty_all_connections`.
+- Config verification: `processor_verify_config`, `controller_service_verify_config`,
+  `reporting_task_verify_config`, `parameter_provider_verify_config`,
+  `flow_analysis_rule_verify_config`.
+- Parameter providers: `parameter_provider_apply_parameters`.
+- Versioned flows: `versioned_flow_update`, `versioned_flow_revert`.
+
+On timeout, all return `NifiError::Timeout { operation }`.
 
 For bulk control of a process group, `nifi_rust_client::bulk` wraps the
 native NiFi bulk endpoints:

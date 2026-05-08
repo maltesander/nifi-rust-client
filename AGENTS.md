@@ -106,10 +106,23 @@ New paged endpoints follow the same pattern — new constructor in the same file
 
 Live in `src/wait.rs` for state-transition / async-query polling:
 
+State transitions:
+
 - `wait::processor_state(&NifiClient, id, target, config)` — `Running | Stopped | Disabled`.
 - `wait::controller_service_state(...)` — `Enabled | Disabled`.
-- `wait::parameter_context_update(...)` — async update; optional trailing DELETE via `WaitConfig::cleanup`.
+
+Async-request polling (`POST` → `GET poll` → optional cleanup `DELETE` via `WaitConfig::cleanup`):
+
+- `wait::parameter_context_update(...)` — async parameter-context update.
+- `wait::parameter_context_validation(...)` — async parameter-context validation.
 - `wait::provenance_query(...)` — async provenance query completion.
+- `wait::provenance_lineage(...)` — async lineage query completion (no `failureReason`).
+- `wait::flowfile_drop(...)` — async drop request for a FlowFile queue.
+- `wait::flowfile_listing(...)` — async listing request for a FlowFile queue.
+- `wait::empty_all_connections(...)` — process-group "empty all connections" drop request.
+- `wait::processor_verify_config(...)` / `controller_service_verify_config` / `reporting_task_verify_config` / `parameter_provider_verify_config` / `flow_analysis_rule_verify_config` — async config-verification requests.
+- `wait::parameter_provider_apply_parameters(...)` — async apply-parameters request.
+- `wait::versioned_flow_update(...)` / `wait::versioned_flow_revert(...)` — async PG version update / revert.
 
 Each has a `_dynamic` sibling under `#[cfg(feature = "dynamic")]`. On timeout, helpers
 return `NifiError::Timeout { operation }`.

@@ -606,11 +606,7 @@ pub async fn flowfile_drop(
             .await
     };
     let done = |dto: &DropRequestDto| {
-        terminal_outcome(
-            dto.finished,
-            dto.failure_reason.as_deref(),
-            "drop request",
-        )
+        terminal_outcome(dto.finished, dto.failure_reason.as_deref(), "drop request")
     };
     let result = poll_until(&config, &op, fetch, done).await;
 
@@ -644,11 +640,7 @@ pub async fn flowfile_drop_dynamic(
             .await
     };
     let done = |dto: &DropRequestDto| {
-        terminal_outcome(
-            dto.finished,
-            dto.failure_reason.as_deref(),
-            "drop request",
-        )
+        terminal_outcome(dto.finished, dto.failure_reason.as_deref(), "drop request")
     };
     let result = poll_until(&config, &op, fetch, done).await;
 
@@ -853,12 +845,7 @@ pub async fn provenance_lineage(
     config: WaitConfig,
 ) -> Result<LineageDto, NifiError> {
     let op = format!("wait_for_provenance_lineage({lineage_id})");
-    let fetch = || async {
-        client
-            .provenance()
-            .get_lineage(lineage_id, None)
-            .await
-    };
+    let fetch = || async { client.provenance().get_lineage(lineage_id, None).await };
     let done = |dto: &LineageDto| {
         if dto.finished.unwrap_or(false) {
             PollOutcome::Ready
@@ -890,12 +877,7 @@ pub async fn provenance_lineage_dynamic(
     config: WaitConfig,
 ) -> Result<LineageDto, NifiError> {
     let op = format!("wait_for_provenance_lineage({lineage_id})");
-    let fetch = || async {
-        client
-            .provenance()
-            .get_lineage(lineage_id, None)
-            .await
-    };
+    let fetch = || async { client.provenance().get_lineage(lineage_id, None).await };
     let done = |dto: &LineageDto| {
         if dto.finished.unwrap_or(false) {
             PollOutcome::Ready
@@ -1318,7 +1300,11 @@ pub async fn parameter_provider_apply_parameters(
             .await
     };
     let done = |dto: &ParameterProviderApplyParametersRequestDto| {
-        terminal_outcome(dto.complete, dto.failure_reason.as_deref(), "apply parameters")
+        terminal_outcome(
+            dto.complete,
+            dto.failure_reason.as_deref(),
+            "apply parameters",
+        )
     };
     let result = poll_until(&config, &op, fetch, done).await;
 
@@ -1352,7 +1338,11 @@ pub async fn parameter_provider_apply_parameters_dynamic(
             .await
     };
     let done = |dto: &ParameterProviderApplyParametersRequestDto| {
-        terminal_outcome(dto.complete, dto.failure_reason.as_deref(), "apply parameters")
+        terminal_outcome(
+            dto.complete,
+            dto.failure_reason.as_deref(),
+            "apply parameters",
+        )
     };
     let result = poll_until(&config, &op, fetch, done).await;
 
@@ -1390,12 +1380,7 @@ pub async fn versioned_flow_update(
     config: WaitConfig,
 ) -> Result<VersionedFlowUpdateRequestEntity, NifiError> {
     let op = format!("wait_for_versioned_flow_update({request_id})");
-    let fetch = || async {
-        client
-            .versions()
-            .get_update_request(request_id)
-            .await
-    };
+    let fetch = || async { client.versions().get_update_request(request_id).await };
     let done = |entity: &VersionedFlowUpdateRequestEntity| {
         let req = entity.request.as_ref();
         terminal_outcome(
@@ -1428,12 +1413,7 @@ pub async fn versioned_flow_update_dynamic(
     config: WaitConfig,
 ) -> Result<VersionedFlowUpdateRequestEntity, NifiError> {
     let op = format!("wait_for_versioned_flow_update({request_id})");
-    let fetch = || async {
-        client
-            .versions()
-            .get_update_request(request_id)
-            .await
-    };
+    let fetch = || async { client.versions().get_update_request(request_id).await };
     let done = |entity: &VersionedFlowUpdateRequestEntity| {
         let req = entity.request.as_ref();
         terminal_outcome(
@@ -1475,12 +1455,7 @@ pub async fn versioned_flow_revert(
     config: WaitConfig,
 ) -> Result<VersionedFlowUpdateRequestEntity, NifiError> {
     let op = format!("wait_for_versioned_flow_revert({request_id})");
-    let fetch = || async {
-        client
-            .versions()
-            .get_revert_request(request_id)
-            .await
-    };
+    let fetch = || async { client.versions().get_revert_request(request_id).await };
     let done = |entity: &VersionedFlowUpdateRequestEntity| {
         let req = entity.request.as_ref();
         terminal_outcome(
@@ -1510,12 +1485,7 @@ pub async fn versioned_flow_revert_dynamic(
     config: WaitConfig,
 ) -> Result<VersionedFlowUpdateRequestEntity, NifiError> {
     let op = format!("wait_for_versioned_flow_revert({request_id})");
-    let fetch = || async {
-        client
-            .versions()
-            .get_revert_request(request_id)
-            .await
-    };
+    let fetch = || async { client.versions().get_revert_request(request_id).await };
     let done = |entity: &VersionedFlowUpdateRequestEntity| {
         let req = entity.request.as_ref();
         terminal_outcome(
@@ -1799,9 +1769,11 @@ mod tests {
         }
 
         // complete: Some(true), failureReason: Some — failure still wins
-        if let PollOutcome::Failed(NifiError::Api { message, .. }) =
-            terminal_outcome(Some(true), Some("failed-after-complete"), "parameter context update")
-        {
+        if let PollOutcome::Failed(NifiError::Api { message, .. }) = terminal_outcome(
+            Some(true),
+            Some("failed-after-complete"),
+            "parameter context update",
+        ) {
             assert!(message.contains("failed-after-complete"));
         } else {
             panic!("expected Failed(Api) for (complete=Some(true), failure=Some)");

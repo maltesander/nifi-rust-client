@@ -6,16 +6,14 @@ use std::time::Duration;
 use nifi_rust_client::dynamic::DynamicClient;
 use nifi_rust_client::wait::{
     ControllerServiceTargetState, ProcessorTargetState, WaitConfig,
-    controller_service_state_dynamic, empty_all_connections_dynamic, flowfile_drop_dynamic,
-    flowfile_listing_dynamic, parameter_context_update_dynamic, processor_state_dynamic,
-    controller_service_verify_config_dynamic, processor_verify_config_dynamic,
-    reporting_task_verify_config_dynamic, parameter_provider_verify_config_dynamic,
-    flow_analysis_rule_verify_config_dynamic,
-    parameter_provider_apply_parameters_dynamic,
-    provenance_lineage_dynamic, provenance_query_dynamic,
+    controller_service_state_dynamic, controller_service_verify_config_dynamic,
+    empty_all_connections_dynamic, flow_analysis_rule_verify_config_dynamic, flowfile_drop_dynamic,
+    flowfile_listing_dynamic, parameter_context_update_dynamic,
+    parameter_context_validation_dynamic, parameter_provider_apply_parameters_dynamic,
+    parameter_provider_verify_config_dynamic, processor_state_dynamic,
+    processor_verify_config_dynamic, provenance_lineage_dynamic, provenance_query_dynamic,
+    reporting_task_verify_config_dynamic, versioned_flow_revert_dynamic,
     versioned_flow_update_dynamic,
-    versioned_flow_revert_dynamic,
-    parameter_context_validation_dynamic,
 };
 use nifi_rust_client::{NifiClientBuilder, NifiError};
 use serde_json::json;
@@ -297,12 +295,16 @@ async fn flowfile_listing_dynamic_succeeds() {
     mount_about(&mock_server).await;
 
     Mock::given(method("GET"))
-        .and(path("/nifi-api/flowfile-queues/q-1/listing-requests/list-1"))
+        .and(path(
+            "/nifi-api/flowfile-queues/q-1/listing-requests/list-1",
+        ))
         .respond_with(ResponseTemplate::new(200).set_body_json(listing_request_entity(true, None)))
         .mount(&mock_server)
         .await;
     Mock::given(method("DELETE"))
-        .and(path("/nifi-api/flowfile-queues/q-1/listing-requests/list-1"))
+        .and(path(
+            "/nifi-api/flowfile-queues/q-1/listing-requests/list-1",
+        ))
         .respond_with(ResponseTemplate::new(200).set_body_json(listing_request_entity(true, None)))
         .expect(1)
         .mount(&mock_server)
@@ -322,12 +324,16 @@ async fn empty_all_connections_dynamic_succeeds() {
     mount_about(&mock_server).await;
 
     Mock::given(method("GET"))
-        .and(path("/nifi-api/process-groups/pg-1/empty-all-connections-requests/drop-1"))
+        .and(path(
+            "/nifi-api/process-groups/pg-1/empty-all-connections-requests/drop-1",
+        ))
         .respond_with(ResponseTemplate::new(200).set_body_json(drop_request_entity(true, None)))
         .mount(&mock_server)
         .await;
     Mock::given(method("DELETE"))
-        .and(path("/nifi-api/process-groups/pg-1/empty-all-connections-requests/drop-1"))
+        .and(path(
+            "/nifi-api/process-groups/pg-1/empty-all-connections-requests/drop-1",
+        ))
         .respond_with(ResponseTemplate::new(200).set_body_json(drop_request_entity(true, None)))
         .expect(1)
         .mount(&mock_server)
@@ -388,13 +394,21 @@ async fn processor_verify_config_dynamic_succeeds() {
     mount_about(&mock_server).await;
 
     Mock::given(method("GET"))
-        .and(path("/nifi-api/processors/p-1/config/verification-requests/req-1"))
-        .respond_with(ResponseTemplate::new(200).set_body_json(verify_config_request_entity(true, None)))
+        .and(path(
+            "/nifi-api/processors/p-1/config/verification-requests/req-1",
+        ))
+        .respond_with(
+            ResponseTemplate::new(200).set_body_json(verify_config_request_entity(true, None)),
+        )
         .mount(&mock_server)
         .await;
     Mock::given(method("DELETE"))
-        .and(path("/nifi-api/processors/p-1/config/verification-requests/req-1"))
-        .respond_with(ResponseTemplate::new(200).set_body_json(verify_config_request_entity(true, None)))
+        .and(path(
+            "/nifi-api/processors/p-1/config/verification-requests/req-1",
+        ))
+        .respond_with(
+            ResponseTemplate::new(200).set_body_json(verify_config_request_entity(true, None)),
+        )
         .expect(1)
         .mount(&mock_server)
         .await;
@@ -413,13 +427,21 @@ async fn controller_service_verify_config_dynamic_succeeds() {
     mount_about(&mock_server).await;
 
     Mock::given(method("GET"))
-        .and(path("/nifi-api/controller-services/cs-1/config/verification-requests/req-1"))
-        .respond_with(ResponseTemplate::new(200).set_body_json(verify_config_request_entity(true, None)))
+        .and(path(
+            "/nifi-api/controller-services/cs-1/config/verification-requests/req-1",
+        ))
+        .respond_with(
+            ResponseTemplate::new(200).set_body_json(verify_config_request_entity(true, None)),
+        )
         .mount(&mock_server)
         .await;
     Mock::given(method("DELETE"))
-        .and(path("/nifi-api/controller-services/cs-1/config/verification-requests/req-1"))
-        .respond_with(ResponseTemplate::new(200).set_body_json(verify_config_request_entity(true, None)))
+        .and(path(
+            "/nifi-api/controller-services/cs-1/config/verification-requests/req-1",
+        ))
+        .respond_with(
+            ResponseTemplate::new(200).set_body_json(verify_config_request_entity(true, None)),
+        )
         .expect(1)
         .mount(&mock_server)
         .await;
@@ -438,13 +460,21 @@ async fn reporting_task_verify_config_dynamic_succeeds() {
     mount_about(&mock_server).await;
 
     Mock::given(method("GET"))
-        .and(path("/nifi-api/reporting-tasks/rt-1/config/verification-requests/req-1"))
-        .respond_with(ResponseTemplate::new(200).set_body_json(verify_config_request_entity(true, None)))
+        .and(path(
+            "/nifi-api/reporting-tasks/rt-1/config/verification-requests/req-1",
+        ))
+        .respond_with(
+            ResponseTemplate::new(200).set_body_json(verify_config_request_entity(true, None)),
+        )
         .mount(&mock_server)
         .await;
     Mock::given(method("DELETE"))
-        .and(path("/nifi-api/reporting-tasks/rt-1/config/verification-requests/req-1"))
-        .respond_with(ResponseTemplate::new(200).set_body_json(verify_config_request_entity(true, None)))
+        .and(path(
+            "/nifi-api/reporting-tasks/rt-1/config/verification-requests/req-1",
+        ))
+        .respond_with(
+            ResponseTemplate::new(200).set_body_json(verify_config_request_entity(true, None)),
+        )
         .expect(1)
         .mount(&mock_server)
         .await;
@@ -463,13 +493,21 @@ async fn parameter_provider_verify_config_dynamic_succeeds() {
     mount_about(&mock_server).await;
 
     Mock::given(method("GET"))
-        .and(path("/nifi-api/parameter-providers/pp-1/config/verification-requests/req-1"))
-        .respond_with(ResponseTemplate::new(200).set_body_json(verify_config_request_entity(true, None)))
+        .and(path(
+            "/nifi-api/parameter-providers/pp-1/config/verification-requests/req-1",
+        ))
+        .respond_with(
+            ResponseTemplate::new(200).set_body_json(verify_config_request_entity(true, None)),
+        )
         .mount(&mock_server)
         .await;
     Mock::given(method("DELETE"))
-        .and(path("/nifi-api/parameter-providers/pp-1/config/verification-requests/req-1"))
-        .respond_with(ResponseTemplate::new(200).set_body_json(verify_config_request_entity(true, None)))
+        .and(path(
+            "/nifi-api/parameter-providers/pp-1/config/verification-requests/req-1",
+        ))
+        .respond_with(
+            ResponseTemplate::new(200).set_body_json(verify_config_request_entity(true, None)),
+        )
         .expect(1)
         .mount(&mock_server)
         .await;
@@ -488,22 +526,31 @@ async fn flow_analysis_rule_verify_config_dynamic_succeeds() {
     mount_about(&mock_server).await;
 
     Mock::given(method("GET"))
-        .and(path("/nifi-api/controller/flow-analysis-rules/far-1/config/verification-requests/req-1"))
-        .respond_with(ResponseTemplate::new(200).set_body_json(verify_config_request_entity(true, None)))
+        .and(path(
+            "/nifi-api/controller/flow-analysis-rules/far-1/config/verification-requests/req-1",
+        ))
+        .respond_with(
+            ResponseTemplate::new(200).set_body_json(verify_config_request_entity(true, None)),
+        )
         .mount(&mock_server)
         .await;
     Mock::given(method("DELETE"))
-        .and(path("/nifi-api/controller/flow-analysis-rules/far-1/config/verification-requests/req-1"))
-        .respond_with(ResponseTemplate::new(200).set_body_json(verify_config_request_entity(true, None)))
+        .and(path(
+            "/nifi-api/controller/flow-analysis-rules/far-1/config/verification-requests/req-1",
+        ))
+        .respond_with(
+            ResponseTemplate::new(200).set_body_json(verify_config_request_entity(true, None)),
+        )
         .expect(1)
         .mount(&mock_server)
         .await;
 
     let client = dynamic_client(&mock_server).await;
 
-    let dto = flow_analysis_rule_verify_config_dynamic(&client, "far-1", "req-1", fast_config(1000))
-        .await
-        .unwrap();
+    let dto =
+        flow_analysis_rule_verify_config_dynamic(&client, "far-1", "req-1", fast_config(1000))
+            .await
+            .unwrap();
     assert_eq!(dto.complete, Some(true));
 }
 
@@ -525,22 +572,31 @@ async fn parameter_provider_apply_parameters_dynamic_succeeds() {
     mount_about(&mock_server).await;
 
     Mock::given(method("GET"))
-        .and(path("/nifi-api/parameter-providers/pp-1/apply-parameters-requests/req-1"))
-        .respond_with(ResponseTemplate::new(200).set_body_json(apply_parameters_request_entity(true, None)))
+        .and(path(
+            "/nifi-api/parameter-providers/pp-1/apply-parameters-requests/req-1",
+        ))
+        .respond_with(
+            ResponseTemplate::new(200).set_body_json(apply_parameters_request_entity(true, None)),
+        )
         .mount(&mock_server)
         .await;
     Mock::given(method("DELETE"))
-        .and(path("/nifi-api/parameter-providers/pp-1/apply-parameters-requests/req-1"))
-        .respond_with(ResponseTemplate::new(200).set_body_json(apply_parameters_request_entity(true, None)))
+        .and(path(
+            "/nifi-api/parameter-providers/pp-1/apply-parameters-requests/req-1",
+        ))
+        .respond_with(
+            ResponseTemplate::new(200).set_body_json(apply_parameters_request_entity(true, None)),
+        )
         .expect(1)
         .mount(&mock_server)
         .await;
 
     let client = dynamic_client(&mock_server).await;
 
-    let dto = parameter_provider_apply_parameters_dynamic(&client, "pp-1", "req-1", fast_config(1000))
-        .await
-        .unwrap();
+    let dto =
+        parameter_provider_apply_parameters_dynamic(&client, "pp-1", "req-1", fast_config(1000))
+            .await
+            .unwrap();
     assert_eq!(dto.complete, Some(true));
 }
 
@@ -565,12 +621,16 @@ async fn versioned_flow_update_dynamic_succeeds() {
 
     Mock::given(method("GET"))
         .and(path("/nifi-api/versions/update-requests/req-1"))
-        .respond_with(ResponseTemplate::new(200).set_body_json(versioned_flow_update_entity(true, None)))
+        .respond_with(
+            ResponseTemplate::new(200).set_body_json(versioned_flow_update_entity(true, None)),
+        )
         .mount(&mock_server)
         .await;
     Mock::given(method("DELETE"))
         .and(path("/nifi-api/versions/update-requests/req-1"))
-        .respond_with(ResponseTemplate::new(200).set_body_json(versioned_flow_update_entity(true, None)))
+        .respond_with(
+            ResponseTemplate::new(200).set_body_json(versioned_flow_update_entity(true, None)),
+        )
         .expect(1)
         .mount(&mock_server)
         .await;
@@ -590,12 +650,16 @@ async fn versioned_flow_revert_dynamic_succeeds() {
 
     Mock::given(method("GET"))
         .and(path("/nifi-api/versions/revert-requests/req-1"))
-        .respond_with(ResponseTemplate::new(200).set_body_json(versioned_flow_update_entity(true, None)))
+        .respond_with(
+            ResponseTemplate::new(200).set_body_json(versioned_flow_update_entity(true, None)),
+        )
         .mount(&mock_server)
         .await;
     Mock::given(method("DELETE"))
         .and(path("/nifi-api/versions/revert-requests/req-1"))
-        .respond_with(ResponseTemplate::new(200).set_body_json(versioned_flow_update_entity(true, None)))
+        .respond_with(
+            ResponseTemplate::new(200).set_body_json(versioned_flow_update_entity(true, None)),
+        )
         .expect(1)
         .mount(&mock_server)
         .await;
@@ -626,13 +690,21 @@ async fn parameter_context_validation_dynamic_succeeds() {
     mount_about(&mock_server).await;
 
     Mock::given(method("GET"))
-        .and(path("/nifi-api/parameter-contexts/ctx-1/validation-requests/req-1"))
-        .respond_with(ResponseTemplate::new(200).set_body_json(validation_request_entity(true, None)))
+        .and(path(
+            "/nifi-api/parameter-contexts/ctx-1/validation-requests/req-1",
+        ))
+        .respond_with(
+            ResponseTemplate::new(200).set_body_json(validation_request_entity(true, None)),
+        )
         .mount(&mock_server)
         .await;
     Mock::given(method("DELETE"))
-        .and(path("/nifi-api/parameter-contexts/ctx-1/validation-requests/req-1"))
-        .respond_with(ResponseTemplate::new(200).set_body_json(validation_request_entity(true, None)))
+        .and(path(
+            "/nifi-api/parameter-contexts/ctx-1/validation-requests/req-1",
+        ))
+        .respond_with(
+            ResponseTemplate::new(200).set_body_json(validation_request_entity(true, None)),
+        )
         .expect(1)
         .mount(&mock_server)
         .await;
