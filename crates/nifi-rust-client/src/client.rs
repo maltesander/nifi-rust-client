@@ -20,11 +20,18 @@ const APPLICATION_OCTET_STREAM: &str = "application/octet-stream";
 /// header names are case-insensitive on the wire.
 const PROXIED_ENTITIES_CHAIN: HeaderName = HeaderName::from_static("x-proxiedentitieschain");
 
+/// Internal handle to the bearer token. Stored as `Arc<Zeroizing<String>>` so
+/// that snapshots used by [`NifiClient::with_auth_retry`] are cheap refcount
+/// bumps with no plaintext heap copies, and the underlying string is wiped
+/// when the last reference drops. `Arc::ptr_eq` distinguishes "same token"
+/// from "rotated token" without comparing bytes.
+type TokenHandle = Arc<zeroize::Zeroizing<String>>;
+
 /// Client for the Apache NiFi REST API.
 pub struct NifiClient {
     base_url: Url,
     http: Client,
-    token: Arc<RwLock<Option<zeroize::Zeroizing<String>>>>,
+    token: Arc<RwLock<Option<TokenHandle>>>,
     auth_provider: Option<Arc<dyn AuthProvider>>,
     proxied_entities_chain: Option<String>,
     retry_policy: Option<crate::config::retry::RetryPolicy>,
@@ -91,7 +98,27 @@ impl NifiClient {
     /// it securely. The in-client copy is zeroized when cleared or when the
     /// client is dropped.
     pub async fn token(&self) -> Option<String> {
-        self.token.read().await.as_ref().map(|t| (**t).clone())
+        // NOTE (audit B9): the returned `String` is a fresh non-zeroized heap
+        // allocation. The internal cell is wiped on drop, but this clone is
+        // a known leak path until the public surface changes in Batch 3.
+        // Internal callers (e.g. `with_auth_retry`) use `token_handle()`
+        // instead to avoid the byte-clone.
+        self.token
+            .read()
+            .await
+            .as_ref()
+            .map(|t| t.as_str().to_owned())
+    }
+
+    /// Internal: cheap refcount-bump snapshot of the current token handle.
+    ///
+    /// Used by [`Self::with_auth_retry`] to detect "did the token rotate while
+    /// we were in `f`" via [`Arc::ptr_eq`] — no plaintext clone, no equality
+    /// comparison over bytes. Token rotation in [`Self::set_token`] /
+    /// [`Self::login`] always replaces the cell with a fresh `Arc::new(...)`,
+    /// so pointer identity is a sound proxy for "same token instance".
+    pub(crate) async fn token_handle(&self) -> Option<TokenHandle> {
+        self.token.read().await.as_ref().map(Arc::clone)
     }
 
     /// Restore a previously obtained bearer token.
@@ -101,7 +128,7 @@ impl NifiClient {
     /// [`NifiError::Unauthorized`]; re-call [`login`][Self::login]
     /// to obtain a fresh one.
     pub async fn set_token(&self, token: String) {
-        *self.token.write().await = Some(zeroize::Zeroizing::new(token));
+        *self.token.write().await = Some(Arc::new(zeroize::Zeroizing::new(token)));
     }
 
     /// Invalidate the current bearer token and clear it from the client.
@@ -175,7 +202,7 @@ impl NifiClient {
         }
 
         let token = resp.text().await.context(HttpSnafu)?;
-        *self.token.write().await = Some(zeroize::Zeroizing::new(token));
+        *self.token.write().await = Some(Arc::new(zeroize::Zeroizing::new(token)));
         tracing::info!("NiFi login successful for {username}");
         Ok(())
     }
@@ -200,6 +227,11 @@ impl NifiClient {
     /// responses only trigger a single re-authentication: whichever task wins
     /// the lock re-auths; tasks that arrive later skip re-auth because they
     /// observe a changed token.
+    ///
+    /// The snapshot is an [`Arc`] handle, not a cloned `String` — comparison
+    /// is [`Arc::ptr_eq`] so the token's plaintext bytes never leak into a
+    /// non-zeroized heap allocation just to drive the retry decision (audit
+    /// follow-up B9.1).
     #[tracing::instrument(skip_all)]
     async fn with_auth_retry<T, F, Fut>(&self, f: F) -> Result<T, NifiError>
     where
@@ -208,13 +240,13 @@ impl NifiClient {
     {
         // Snapshot the token at entry so we can detect whether a concurrent
         // task already re-authed while we were waiting on the lock.
-        let token_before = self.token.read().await.as_ref().map(|t| (**t).clone());
+        let token_before = self.token_handle().await;
 
         match f().await {
             Err(NifiError::Unauthorized { .. }) if self.auth_provider.is_some() => {
                 let _guard = self.auth_lock.lock().await;
-                let token_now = self.token.read().await.as_ref().map(|t| (**t).clone());
-                if token_now == token_before {
+                let token_now = self.token_handle().await;
+                if token_handle_eq(&token_before, &token_now) {
                     tracing::info!("received 401, refreshing token via auth provider");
                     self.authenticate().await?;
                 } else {
@@ -1077,7 +1109,7 @@ impl NifiClient {
         tracing::debug!(method = %method, path, "NiFi API request");
 
         let guard = self.token.read().await;
-        let mut req = match guard.as_deref() {
+        let mut req = match guard.as_ref() {
             Some(token) => req.bearer_auth(token.as_str()),
             None => {
                 tracing::warn!(
@@ -1177,6 +1209,25 @@ impl NifiClient {
         let mut url = self.base_url.clone();
         url.set_path(&format!("/nifi-api{path}"));
         url
+    }
+}
+
+/// Compare two token snapshots for "same token instance" using
+/// [`Arc::ptr_eq`]. Used by [`NifiClient::with_auth_retry`] to decide
+/// whether a concurrent task already rotated the token while the current
+/// task was waiting on the auth lock — without ever cloning the token's
+/// plaintext bytes into a non-zeroized `String` (audit follow-up B9.1).
+///
+/// Token rotation in [`NifiClient::set_token`] / [`NifiClient::login`]
+/// always installs a fresh `Arc::new(Zeroizing::new(...))`, so pointer
+/// identity is a sound proxy for byte-equality here: two snapshots that
+/// point at the same allocation cannot have observed an intervening
+/// rotation.
+fn token_handle_eq(a: &Option<TokenHandle>, b: &Option<TokenHandle>) -> bool {
+    match (a, b) {
+        (Some(a), Some(b)) => Arc::ptr_eq(a, b),
+        (None, None) => true,
+        _ => false,
     }
 }
 
@@ -1307,6 +1358,56 @@ mod tests {
             clone2.as_ptr(),
             "Bytes::clone should share buffer"
         );
+    }
+
+    /// Pins audit follow-up B9.1: the auth-retry token snapshot must be a
+    /// cheap [`Arc`] handle, not a cloned `String`. Two snapshots taken
+    /// before any rotation must be `Arc::ptr_eq`. After [`set_token`], a
+    /// fresh `Arc` is installed and `ptr_eq` against the pre-rotation
+    /// handle must return `false` — that's how `with_auth_retry` decides
+    /// whether a concurrent task already re-authed.
+    ///
+    /// If anyone ever swaps `token_handle` back to a byte-cloning approach,
+    /// this test still passes for the equality semantics, but the leak path
+    /// it guards (plaintext JWT in non-zeroized heap) returns. The doc
+    /// comment is the canary; please don't bypass the test by reverting the
+    /// internals.
+    #[tokio::test]
+    async fn token_handle_uses_arc_ptr_eq() {
+        use std::sync::Arc;
+
+        let client = crate::NifiClientBuilder::new("https://nifi.example")
+            .expect("valid base url")
+            .build()
+            .expect("client builds without network");
+
+        client.set_token("alpha".to_string()).await;
+        let h1 = client.token_handle().await;
+        let h2 = client.token_handle().await;
+        match (&h1, &h2) {
+            (Some(a), Some(b)) => assert!(
+                Arc::ptr_eq(a, b),
+                "two snapshots of the same token must be ptr-equal"
+            ),
+            _ => panic!("expected Some/Some after set_token"),
+        }
+
+        // Rotate the token: ptr_eq with the pre-rotation handle must fail.
+        client.set_token("beta".to_string()).await;
+        let h3 = client.token_handle().await;
+        match (&h1, &h3) {
+            (Some(a), Some(b)) => assert!(
+                !Arc::ptr_eq(a, b),
+                "rotated token must NOT be ptr-equal to the pre-rotation handle"
+            ),
+            _ => panic!("expected Some/Some after rotation"),
+        }
+
+        // None/None handles compare equal via the helper.
+        assert!(super::token_handle_eq(&None, &None));
+        assert!(!super::token_handle_eq(&None, &h3));
+        assert!(!super::token_handle_eq(&h1, &h3));
+        assert!(super::token_handle_eq(&h1, &h2));
     }
 
     /// Pins audit follow-up A13: `extract_error_message` must look up
