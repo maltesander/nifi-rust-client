@@ -175,7 +175,6 @@ pub async fn replace(
         return Ok(CliOutput::Empty);
     }
 
-
     // 0. Stop (if --stop-first).
     if stop_first {
         nifi_rust_client::bulk::stop_process_group_dynamic(client, pg_id).await?;

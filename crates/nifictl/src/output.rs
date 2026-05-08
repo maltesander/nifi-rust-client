@@ -11,6 +11,12 @@ pub enum OutputFormat {
     Json,
     JsonCompact,
     Yaml,
+    /// Reachable only via `Auto.resolve()` on a TTY. `parse("table")` is
+    /// rejected (C4-drop) so this variant cannot be constructed from
+    /// user input — the `#[allow]` silences a dead-code warning that
+    /// would otherwise fire because the only construction sites are
+    /// the `Auto` resolution arm and the unit test below.
+    #[allow(dead_code)]
     Table,
     Raw,
 }
@@ -201,7 +207,10 @@ mod tests {
         let mut buf = Vec::new();
         render(&output, &ResolvedFormat::Json, &[], &mut buf).unwrap();
         let s = String::from_utf8(buf).unwrap();
-        assert!(s.trim_start().starts_with('['), "expected JSON array, got: {s}");
+        assert!(
+            s.trim_start().starts_with('['),
+            "expected JSON array, got: {s}"
+        );
         assert!(s.trim_end().ends_with(']'), "expected JSON array, got: {s}");
         // Confirm it's NOT NDJSON: parsing the whole blob as a single
         // serde_json::Value must succeed.
