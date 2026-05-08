@@ -831,6 +831,91 @@ pub async fn empty_all_connections_dynamic(
     result
 }
 
+// ── wait::provenance_lineage ───────────────────────────────────────────────
+
+#[cfg(not(feature = "dynamic"))]
+use crate::types::LineageDto;
+
+/// Poll a provenance lineage query until it reports `finished == true`.
+///
+/// Fetches `GET /provenance/lineage/{id}` with no `clusterNodeId`. Returns
+/// the final `LineageDto` on success. `LineageDto` carries no `failureReason`
+/// — only `finished` and `percentCompleted` — so this helper never resolves
+/// to a server-side failure (only fetch errors and timeouts can fail).
+///
+/// If [`WaitConfig::cleanup`] is `true` (default), issues a trailing
+/// `DELETE /provenance/lineage/{id}` to free server-side state. Best-effort —
+/// its errors are swallowed.
+#[cfg(not(feature = "dynamic"))]
+pub async fn provenance_lineage(
+    client: &crate::NifiClient,
+    lineage_id: &str,
+    config: WaitConfig,
+) -> Result<LineageDto, NifiError> {
+    let op = format!("wait_for_provenance_lineage({lineage_id})");
+    let fetch = || async {
+        client
+            .provenance()
+            .get_lineage(lineage_id, None)
+            .await
+    };
+    let done = |dto: &LineageDto| {
+        if dto.finished.unwrap_or(false) {
+            PollOutcome::Ready
+        } else {
+            PollOutcome::Pending
+        }
+    };
+    let result = poll_until(&config, &op, fetch, done).await;
+
+    if config.cleanup {
+        let res = client
+            .provenance()
+            .delete_lineage(lineage_id, None)
+            .await
+            .map(|_| ());
+        warn_cleanup_failure(&op, lineage_id, res);
+    }
+    result
+}
+
+#[cfg(feature = "dynamic")]
+use crate::dynamic::types::LineageDto;
+
+/// Dynamic-mode counterpart of `provenance_lineage`.
+#[cfg(feature = "dynamic")]
+pub async fn provenance_lineage_dynamic(
+    client: &crate::dynamic::DynamicClient,
+    lineage_id: &str,
+    config: WaitConfig,
+) -> Result<LineageDto, NifiError> {
+    let op = format!("wait_for_provenance_lineage({lineage_id})");
+    let fetch = || async {
+        client
+            .provenance()
+            .get_lineage(lineage_id, None)
+            .await
+    };
+    let done = |dto: &LineageDto| {
+        if dto.finished.unwrap_or(false) {
+            PollOutcome::Ready
+        } else {
+            PollOutcome::Pending
+        }
+    };
+    let result = poll_until(&config, &op, fetch, done).await;
+
+    if config.cleanup {
+        let res = client
+            .provenance()
+            .delete_lineage(lineage_id, None)
+            .await
+            .map(|_| ());
+        warn_cleanup_failure(&op, lineage_id, res);
+    }
+    result
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

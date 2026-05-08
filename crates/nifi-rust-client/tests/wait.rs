@@ -650,3 +650,49 @@ async fn empty_all_connections_reports_failure() {
         .unwrap_err();
     assert!(matches!(err, NifiError::Api { status: 500, .. }));
 }
+
+// ── provenance_lineage ──────────────────────────────────────────────────────
+
+fn lineage_entity(finished: bool) -> serde_json::Value {
+    json!({
+        "lineage": {
+            "id": "lin-1",
+            "finished": finished,
+            "percentCompleted": if finished { 100 } else { 50 },
+        }
+    })
+}
+
+#[tokio::test]
+async fn provenance_lineage_succeeds_and_cleans_up() {
+    let mock_server = MockServer::start().await;
+
+    Mock::given(method("GET"))
+        .and(path("/nifi-api/provenance/lineage/lin-1"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(lineage_entity(false)))
+        .up_to_n_times(1)
+        .mount(&mock_server)
+        .await;
+    Mock::given(method("GET"))
+        .and(path("/nifi-api/provenance/lineage/lin-1"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(lineage_entity(true)))
+        .mount(&mock_server)
+        .await;
+    Mock::given(method("DELETE"))
+        .and(path("/nifi-api/provenance/lineage/lin-1"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(lineage_entity(true)))
+        .expect(1)
+        .mount(&mock_server)
+        .await;
+
+    let client = NifiClientBuilder::new(&mock_server.uri())
+        .unwrap()
+        .build()
+        .unwrap();
+    client.set_token("jwt".to_string()).await;
+
+    let dto = wait::provenance_lineage(&client, "lin-1", fast_config(1000))
+        .await
+        .unwrap();
+    assert_eq!(dto.finished, Some(true));
+}
