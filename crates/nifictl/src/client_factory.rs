@@ -401,7 +401,10 @@ mod tests {
             .build_client_with_cache("test-ctx")
             .await
             .expect("build_client_with_cache failed");
-        assert_eq!(client.token().await.as_deref(), Some(token.as_str()));
+        assert_eq!(
+            client.token().await.as_deref().map(String::as_str),
+            Some(token.as_str())
+        );
     }
 
     #[allow(clippy::await_holding_lock)]
@@ -469,7 +472,10 @@ mod tests {
             .await
             .expect("build_client_with_cache failed");
         // build_client's Password path called login() and got "fresh-jwt".
-        assert_eq!(client.token().await.as_deref(), Some("fresh-jwt"));
+        assert_eq!(
+            client.token().await.as_deref().map(String::as_str),
+            Some("fresh-jwt")
+        );
     }
 
     #[test]

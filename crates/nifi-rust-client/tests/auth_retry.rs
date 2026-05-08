@@ -60,7 +60,10 @@ async fn auto_refreshes_token_on_401() {
     assert!(result.is_ok(), "expected Ok, got: {result:?}");
 
     // Token should be the fresh one.
-    assert_eq!(client.token().await.as_deref(), Some("fresh-jwt-token"));
+    assert_eq!(
+        client.token().await.as_deref().map(String::as_str),
+        Some("fresh-jwt-token")
+    );
 }
 
 // -- no retry without auth provider ──────────────────────────────────────────
@@ -149,7 +152,10 @@ async fn authenticate_uses_auth_provider() {
         .unwrap();
 
     client.authenticate().await.unwrap();
-    assert_eq!(client.token().await.as_deref(), Some("provider-jwt-token"));
+    assert_eq!(
+        client.token().await.as_deref().map(String::as_str),
+        Some("provider-jwt-token")
+    );
 }
 
 // -- login still works with explicit credentials ──────────────────────────────
@@ -173,5 +179,8 @@ async fn login_still_works_with_explicit_credentials() {
 
     // Explicit login still works.
     client.login("admin", "password").await.unwrap();
-    assert_eq!(client.token().await.as_deref(), Some("explicit-jwt-token"));
+    assert_eq!(
+        client.token().await.as_deref().map(String::as_str),
+        Some("explicit-jwt-token")
+    );
 }

@@ -197,5 +197,8 @@ async fn retry_composes_with_auth_refresh() {
         result.is_ok(),
         "expected Ok after retry + auth refresh, got: {result:?}"
     );
-    assert_eq!(client.token().await.as_deref(), Some("fresh-jwt-token"));
+    assert_eq!(
+        client.token().await.as_deref().map(String::as_str),
+        Some("fresh-jwt-token")
+    );
 }

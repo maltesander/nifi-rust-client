@@ -171,7 +171,9 @@ impl fmt::Debug for StaticTokenAuth {
 #[async_trait::async_trait]
 impl AuthProvider for StaticTokenAuth {
     async fn authenticate(&self, client: &NifiClient) -> Result<(), NifiError> {
-        client.set_token((*self.token).clone()).await;
+        // `set_token` accepts `impl Into<Zeroizing<String>>`, so we can hand
+        // it the existing wrapper directly — no detour through a plain `String`.
+        client.set_token(self.token.clone()).await;
         Ok(())
     }
 }

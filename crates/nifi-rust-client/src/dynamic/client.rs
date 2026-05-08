@@ -130,16 +130,18 @@ impl DynamicClient {
 
     /// Return the current bearer token, if any.
     ///
-    /// Useful for persisting the token between process restarts.
-    /// See [`NifiClient::token`] for details.
-    pub async fn token(&self) -> Option<String> {
+    /// Useful for persisting the token between process restarts. The returned
+    /// [`zeroize::Zeroizing<String>`] is wiped on drop. See [`NifiClient::token`]
+    /// for details.
+    pub async fn token(&self) -> Option<zeroize::Zeroizing<String>> {
         self.client.token().await
     }
 
     /// Restore a previously obtained bearer token.
     ///
+    /// Accepts both `String` and [`zeroize::Zeroizing<String>`] via [`Into`].
     /// See [`NifiClient::set_token`] for details.
-    pub async fn set_token(&self, token: String) {
+    pub async fn set_token(&self, token: impl Into<zeroize::Zeroizing<String>>) {
         self.client.set_token(token).await;
     }
 

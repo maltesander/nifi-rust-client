@@ -60,5 +60,8 @@ async fn concurrent_401s_trigger_single_reauth() {
     let (r1, r2) = tokio::join!(flow.get_about_info(), flow.get_about_info(),);
     assert!(r1.is_ok(), "first call failed: {r1:?}");
     assert!(r2.is_ok(), "second call failed: {r2:?}");
-    assert_eq!(client.token().await.as_deref(), Some("fresh-jwt"));
+    assert_eq!(
+        client.token().await.as_deref().map(String::as_str),
+        Some("fresh-jwt")
+    );
 }

@@ -38,7 +38,10 @@ async fn password_auth_calls_login() {
         .unwrap();
 
     client.authenticate().await.unwrap();
-    assert_eq!(client.token().await.as_deref(), Some("test-jwt"));
+    assert_eq!(
+        client.token().await.as_deref().map(String::as_str),
+        Some("test-jwt")
+    );
 }
 
 // ── StaticTokenAuth ──────────────────────────────────────────────────────────
@@ -53,7 +56,10 @@ async fn static_token_auth_sets_token() {
         .unwrap();
 
     client.authenticate().await.unwrap();
-    assert_eq!(client.token().await.as_deref(), Some("pre-obtained-jwt"));
+    assert_eq!(
+        client.token().await.as_deref().map(String::as_str),
+        Some("pre-obtained-jwt")
+    );
 }
 
 // ── EnvPasswordAuth ──────────────────────────────────────────────────────────
@@ -84,7 +90,10 @@ async fn env_password_auth_reads_env_and_logs_in() {
         .unwrap();
 
     client.authenticate().await.unwrap();
-    assert_eq!(client.token().await.as_deref(), Some("env-jwt"));
+    assert_eq!(
+        client.token().await.as_deref().map(String::as_str),
+        Some("env-jwt")
+    );
 
     // SAFETY: test cleanup; no other thread reads these variables.
     unsafe {

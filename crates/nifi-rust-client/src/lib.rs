@@ -150,6 +150,9 @@ pub use config::auth::AuthProvider;
 pub use error::NifiError;
 pub use require::RequireField;
 pub use streaming::BytesStream;
+// Re-exported so consumers of [`NifiClient::token`] / [`NifiClient::set_token`]
+// can name the wrapper without taking a direct dependency on the `zeroize` crate.
+pub use zeroize::Zeroizing;
 
 // Generated: version modules, re-exports, dynamic module
 include!(concat!(env!("OUT_DIR"), "/generated_lib.rs"));

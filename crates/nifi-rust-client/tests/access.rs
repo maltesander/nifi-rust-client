@@ -22,7 +22,7 @@ async fn login_stores_token_on_success() {
     assert!(client.token().await.is_none());
     client.login("admin", "password").await.unwrap();
     assert_eq!(
-        client.token().await.as_deref(),
+        client.token().await.as_deref().map(String::as_str),
         Some("eyJhbGciOiJSUzI1NiJ9.test-token")
     );
 }

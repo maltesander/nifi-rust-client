@@ -228,12 +228,14 @@ After a successful `login()`, the JWT can be persisted and reused across process
 ```rust,no_run
 use std::fs;
 
-// Save token after login
+// Save token after login. `client.token()` returns `Option<Zeroizing<String>>`,
+// which derefs to `&str` for I/O and zeroizes on drop.
 if let Some(token) = client.token().await {
-    fs::write("nifi-token.txt", token)?;
+    fs::write("nifi-token.txt", &*token)?;
 }
 
-// Restore on the next run instead of re-authenticating
+// Restore on the next run instead of re-authenticating. `set_token` accepts
+// both `String` and `Zeroizing<String>` via `Into`.
 let token = fs::read_to_string("nifi-token.txt")?;
 client.set_token(token).await;
 ```
@@ -293,8 +295,8 @@ No per-node token cache or special routing headers are needed. The existing retr
 | `client.login(user, pass)` | `POST /access/token` — authenticate and store the JWT |
 | `client.authenticate()` | Authenticate using the configured auth provider |
 | `client.logout()` | `DELETE /access/logout` — invalidate server-side and clear local token |
-| `client.token()` | Return the current bearer token as `Option<String>` (async) |
-| `client.set_token(token)` | Restore a previously obtained token (async) |
+| `client.token()` | Return the current bearer token as `Option<Zeroizing<String>>` — wiped on drop (async) |
+| `client.set_token(token)` | Restore a previously obtained token; accepts `String` or `Zeroizing<String>` via `Into` (async) |
 
 ### Request correlation
 

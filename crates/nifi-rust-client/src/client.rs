@@ -93,21 +93,21 @@ impl NifiClient {
 
     /// Return the current bearer token, if one has been set.
     ///
-    /// The token is a NiFi-issued JWT. The returned `String` is a clone that is
-    /// **not** zeroized on drop — it is your responsibility to persist or destroy
-    /// it securely. The in-client copy is zeroized when cleared or when the
-    /// client is dropped.
-    pub async fn token(&self) -> Option<String> {
-        // NOTE (audit B9): the returned `String` is a fresh non-zeroized heap
-        // allocation. The internal cell is wiped on drop, but this clone is
-        // a known leak path until the public surface changes in Batch 3.
-        // Internal callers (e.g. `with_auth_retry`) use `token_handle()`
-        // instead to avoid the byte-clone.
+    /// The token is a NiFi-issued JWT. The returned [`zeroize::Zeroizing<String>`]
+    /// is a fresh allocation that is wiped from memory when it drops, so the
+    /// JWT bytes do not leak through deallocation. Callers that want a plain
+    /// `String` can call [`Zeroizing::to_string`] or move out of the wrapper
+    /// via `Zeroizing::into_inner`-equivalent dereferencing — at which point
+    /// the zeroize-on-drop guarantee is the caller's to keep.
+    ///
+    /// The in-client copy is independent of the returned value and is zeroized
+    /// when cleared (via [`Self::logout`]) or when the client is dropped.
+    pub async fn token(&self) -> Option<zeroize::Zeroizing<String>> {
         self.token
             .read()
             .await
             .as_ref()
-            .map(|t| t.as_str().to_owned())
+            .map(|t| zeroize::Zeroizing::new(t.as_str().to_owned()))
     }
 
     /// Internal: cheap refcount-bump snapshot of the current token handle.
@@ -124,11 +124,17 @@ impl NifiClient {
     /// Restore a previously obtained bearer token.
     ///
     /// Useful for CLI tools that persist the token in a file between sessions.
+    /// Accepts both a plain `String` and a [`zeroize::Zeroizing<String>`] via
+    /// [`Into`] — callers that already own a zeroizing wrapper don't have to
+    /// unwrap it before handing the token to the client. Plain `String`
+    /// callers continue to compile thanks to `From<String> for Zeroizing<String>`.
+    ///
     /// If the token has expired, the next API call will return
     /// [`NifiError::Unauthorized`]; re-call [`login`][Self::login]
     /// to obtain a fresh one.
-    pub async fn set_token(&self, token: String) {
-        *self.token.write().await = Some(Arc::new(zeroize::Zeroizing::new(token)));
+    pub async fn set_token(&self, token: impl Into<zeroize::Zeroizing<String>>) {
+        let zeroizing: zeroize::Zeroizing<String> = token.into();
+        *self.token.write().await = Some(Arc::new(zeroizing));
     }
 
     /// Invalidate the current bearer token and clear it from the client.
@@ -1408,6 +1414,55 @@ mod tests {
         assert!(!super::token_handle_eq(&None, &h3));
         assert!(!super::token_handle_eq(&h1, &h3));
         assert!(super::token_handle_eq(&h1, &h2));
+    }
+
+    /// Pins audit follow-up B9.2: the public [`NifiClient::token`] return type
+    /// is [`zeroize::Zeroizing<String>`] (not plain `String`). The byte buffer
+    /// returned to callers is wiped on drop, instead of leaking through
+    /// reallocation. The type assertion in the body fails to compile if
+    /// anyone widens the signature back to `Option<String>`.
+    #[tokio::test]
+    async fn token_returns_zeroizing_wrapper() {
+        let client = crate::NifiClientBuilder::new("https://nifi.example")
+            .expect("valid base url")
+            .build()
+            .expect("client builds without network");
+
+        client.set_token("alpha".to_string()).await;
+        let token = client.token().await.expect("set_token then token");
+        assert_eq!(token.as_str(), "alpha");
+        // Compile-time assertion: the public return type is Zeroizing<String>.
+        let _: zeroize::Zeroizing<String> = token;
+    }
+
+    /// Pins audit follow-up B9.2: [`NifiClient::set_token`] takes
+    /// `impl Into<Zeroizing<String>>` and therefore accepts both a plain
+    /// `String` (via the blanket `From<T> for Zeroizing<T>` impl in the
+    /// `zeroize` crate) and an existing `Zeroizing<String>`. The latter is
+    /// the path used by [`crate::config::auth::StaticTokenAuth`] to avoid
+    /// detouring through a non-zeroized `String`.
+    #[tokio::test]
+    async fn set_token_accepts_string_or_zeroizing() {
+        let client = crate::NifiClientBuilder::new("https://nifi.example")
+            .expect("valid base url")
+            .build()
+            .expect("client builds without network");
+
+        // Plain String — exercised by all existing call sites.
+        client.set_token("from_string".to_string()).await;
+        assert_eq!(
+            client.token().await.as_deref().map(String::as_str),
+            Some("from_string")
+        );
+
+        // Pre-wrapped Zeroizing<String> — passes through without an extra clone.
+        client
+            .set_token(zeroize::Zeroizing::new("from_zeroizing".to_string()))
+            .await;
+        assert_eq!(
+            client.token().await.as_deref().map(String::as_str),
+            Some("from_zeroizing")
+        );
     }
 
     /// Pins audit follow-up A13: `extract_error_message` must look up
