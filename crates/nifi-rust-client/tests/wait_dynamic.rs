@@ -8,7 +8,7 @@ use nifi_rust_client::wait::{
     ControllerServiceTargetState, ProcessorTargetState, WaitConfig,
     controller_service_state_dynamic, empty_all_connections_dynamic, flowfile_drop_dynamic,
     flowfile_listing_dynamic, parameter_context_update_dynamic, processor_state_dynamic,
-    provenance_lineage_dynamic, provenance_query_dynamic,
+    processor_verify_config_dynamic, provenance_lineage_dynamic, provenance_query_dynamic,
 };
 use nifi_rust_client::{NifiClientBuilder, NifiError};
 use serde_json::json;
@@ -361,4 +361,41 @@ async fn provenance_lineage_dynamic_succeeds() {
         .await
         .unwrap();
     assert_eq!(dto.finished, Some(true));
+}
+
+fn verify_config_request_entity(complete: bool, failure: Option<&str>) -> serde_json::Value {
+    let mut req = json!({
+        "requestId": "req-1",
+        "complete": complete,
+        "percentCompleted": if complete { 100 } else { 50 },
+    });
+    if let Some(reason) = failure {
+        req["failureReason"] = json!(reason);
+    }
+    json!({ "request": req })
+}
+
+#[tokio::test]
+async fn processor_verify_config_dynamic_succeeds() {
+    let mock_server = MockServer::start().await;
+    mount_about(&mock_server).await;
+
+    Mock::given(method("GET"))
+        .and(path("/nifi-api/processors/p-1/config/verification-requests/req-1"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(verify_config_request_entity(true, None)))
+        .mount(&mock_server)
+        .await;
+    Mock::given(method("DELETE"))
+        .and(path("/nifi-api/processors/p-1/config/verification-requests/req-1"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(verify_config_request_entity(true, None)))
+        .expect(1)
+        .mount(&mock_server)
+        .await;
+
+    let client = dynamic_client(&mock_server).await;
+
+    let dto = processor_verify_config_dynamic(&client, "p-1", "req-1", fast_config(1000))
+        .await
+        .unwrap();
+    assert_eq!(dto.complete, Some(true));
 }
