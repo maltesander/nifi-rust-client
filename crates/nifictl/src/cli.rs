@@ -10,8 +10,26 @@ use std::path::PathBuf;
 
 use crate::generated;
 
+/// Multi-line `--version` output: nifictl version on the first line,
+/// then the list of supported NiFi spec versions and the default.
+///
+/// Hardcoded rather than enumerating Cargo features at compile time —
+/// the feature set is small and cheaply updated, and trying to derive
+/// it from `cfg!(feature = "nifi-x-y-z")` requires expanding a fixed
+/// list anyway.
+const LONG_VERSION: &str = concat!(
+    env!("CARGO_PKG_VERSION"),
+    "\n",
+    "Supports NiFi: 2.6.0, 2.7.2, 2.8.0, 2.9.0 (default)"
+);
+
 #[derive(clap::Parser)]
-#[command(name = "nifictl", version, about = "CLI tool for Apache NiFi 2.x")]
+#[command(
+    name = "nifictl",
+    version,
+    long_version = LONG_VERSION,
+    about = "CLI tool for Apache NiFi 2.x",
+)]
 pub(crate) struct Cli {
     /// Path to the config file
     #[arg(long, env = "NIFICTL_CONFIG", global = true)]
@@ -50,6 +68,11 @@ pub(crate) struct Cli {
     pub(crate) insecure: bool,
 
     /// Output format
+    ///
+    /// `table` was removed: it never produced a true table — only a
+    /// best-effort JSON-flattened pseudo-table that broke on nested DTOs.
+    /// `auto` (the default) renders human-friendly text on a TTY and
+    /// JSON when piped, which is what most users actually want.
     #[arg(
         short,
         long,
@@ -60,7 +83,6 @@ pub(crate) struct Cli {
             "json",
             "json-compact",
             "yaml",
-            "table",
             "raw",
         ]),
     )]
@@ -117,6 +139,12 @@ pub(crate) enum Commands {
     // substitute our own `Flow` wrapper (see `FlowCommand`). When the
     // code generator adds a new tag, extend this list AND the matching
     // arm in `crate::dispatch::run`.
+    //
+    // Porcelain commands (Login, Logout, Status, Config, Ops, Completions)
+    // are declared first so they appear at the top of `--help`; the
+    // generated resources follow in alphabetical order. clap derive does
+    // not support a "subcommand heading" inside the `Commands:` block,
+    // so the visual separation is purely declaration-order based.
     /// Manage Access resources
     #[command(name = "access")]
     Access {

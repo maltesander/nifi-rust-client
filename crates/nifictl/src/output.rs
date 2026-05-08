@@ -16,16 +16,23 @@ pub enum OutputFormat {
 }
 
 impl OutputFormat {
+    /// Parse the user's `-o`/`--output` value.
+    ///
+    /// `table` is intentionally rejected here even though `OutputFormat::Table`
+    /// still exists internally — the `Table` variant is reachable only via
+    /// `Auto` resolving on a TTY (where the comfy-table renderer produces a
+    /// best-effort key-value display). It was never a real columnar table
+    /// for arbitrary DTOs and exposing it via `-o table` confused users.
+    /// See C4-drop in the audit follow-ups for the rationale.
     pub fn parse(s: &str) -> Result<Self, String> {
         match s {
             "auto" => Ok(Self::Auto),
             "json" => Ok(Self::Json),
             "json-compact" => Ok(Self::JsonCompact),
             "yaml" => Ok(Self::Yaml),
-            "table" => Ok(Self::Table),
             "raw" => Ok(Self::Raw),
             other => Err(format!(
-                "unknown output format '{other}'; valid values: auto, json, json-compact, yaml, table, raw"
+                "unknown output format '{other}'; valid values: auto, json, json-compact, yaml, raw"
             )),
         }
     }
@@ -141,6 +148,27 @@ mod tests {
         assert_eq!(OutputFormat::Yaml.resolve(), ResolvedFormat::Yaml);
         assert_eq!(OutputFormat::Table.resolve(), ResolvedFormat::Table);
         assert_eq!(OutputFormat::Raw.resolve(), ResolvedFormat::Raw);
+    }
+
+    /// C4-drop: `parse("table")` is rejected so the only way to reach
+    /// `OutputFormat::Table` is via `Auto` resolving on a TTY. The
+    /// "valid values" list in the message must NOT advertise table any
+    /// more — we check that explicitly so a future regression that
+    /// reintroduces table doesn't slip past the test.
+    #[test]
+    fn parse_table_is_rejected() {
+        let err = OutputFormat::parse("table").expect_err("table must not parse");
+        // The error echoes the input ('table'); inspect only the
+        // "valid values:" portion to confirm table is no longer listed.
+        let valid_list = err
+            .split("valid values:")
+            .nth(1)
+            .expect("error should contain 'valid values:' suffix");
+        assert!(
+            !valid_list.contains("table"),
+            "'table' must not appear in valid values: {err}"
+        );
+        assert!(valid_list.contains("auto") && valid_list.contains("json"));
     }
 
     #[test]
