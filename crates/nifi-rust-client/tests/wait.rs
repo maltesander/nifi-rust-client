@@ -968,3 +968,83 @@ async fn parameter_provider_apply_parameters_reports_failure() {
         other => panic!("expected Api, got {other:?}"),
     }
 }
+
+// ── versioned_flow_update ───────────────────────────────────────────────────
+
+fn versioned_flow_update_entity(complete: bool, failure: Option<&str>) -> serde_json::Value {
+    let mut req = json!({
+        "requestId": "req-1",
+        "complete": complete,
+        "percentCompleted": if complete { 100 } else { 50 },
+    });
+    if let Some(reason) = failure {
+        req["failureReason"] = json!(reason);
+    }
+    json!({ "request": req })
+}
+
+#[tokio::test]
+async fn versioned_flow_update_succeeds_and_cleans_up() {
+    let mock_server = MockServer::start().await;
+
+    Mock::given(method("GET"))
+        .and(path("/nifi-api/versions/update-requests/req-1"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(versioned_flow_update_entity(true, None)))
+        .mount(&mock_server)
+        .await;
+    Mock::given(method("DELETE"))
+        .and(path("/nifi-api/versions/update-requests/req-1"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(versioned_flow_update_entity(true, None)))
+        .expect(1)
+        .mount(&mock_server)
+        .await;
+
+    let client = NifiClientBuilder::new(&mock_server.uri())
+        .unwrap()
+        .build()
+        .unwrap();
+    client.set_token("jwt".to_string()).await;
+
+    let entity = wait::versioned_flow_update(&client, "req-1", fast_config(1000))
+        .await
+        .unwrap();
+    assert_eq!(entity.request.and_then(|r| r.complete), Some(true));
+}
+
+#[tokio::test]
+async fn versioned_flow_update_reports_failure() {
+    let mock_server = MockServer::start().await;
+
+    Mock::given(method("GET"))
+        .and(path("/nifi-api/versions/update-requests/req-1"))
+        .respond_with(
+            ResponseTemplate::new(200)
+                .set_body_json(versioned_flow_update_entity(true, Some("conflicting changes"))),
+        )
+        .mount(&mock_server)
+        .await;
+    Mock::given(method("DELETE"))
+        .and(path("/nifi-api/versions/update-requests/req-1"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(versioned_flow_update_entity(true, None)))
+        .expect(1)
+        .mount(&mock_server)
+        .await;
+
+    let client = NifiClientBuilder::new(&mock_server.uri())
+        .unwrap()
+        .build()
+        .unwrap();
+    client.set_token("jwt".to_string()).await;
+
+    let err = wait::versioned_flow_update(&client, "req-1", fast_config(1000))
+        .await
+        .unwrap_err();
+    match err {
+        NifiError::Api { status, message } => {
+            assert_eq!(status, 500);
+            assert!(message.contains("versioned flow update failed"));
+            assert!(message.contains("conflicting changes"));
+        }
+        other => panic!("expected Api, got {other:?}"),
+    }
+}

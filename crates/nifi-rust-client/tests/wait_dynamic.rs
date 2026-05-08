@@ -13,6 +13,7 @@ use nifi_rust_client::wait::{
     flow_analysis_rule_verify_config_dynamic,
     parameter_provider_apply_parameters_dynamic,
     provenance_lineage_dynamic, provenance_query_dynamic,
+    versioned_flow_update_dynamic,
 };
 use nifi_rust_client::{NifiClientBuilder, NifiError};
 use serde_json::json;
@@ -539,4 +540,43 @@ async fn parameter_provider_apply_parameters_dynamic_succeeds() {
         .await
         .unwrap();
     assert_eq!(dto.complete, Some(true));
+}
+
+// ── versioned_flow_update_dynamic ──────────────────────────────────────────
+
+fn versioned_flow_update_entity(complete: bool, failure: Option<&str>) -> serde_json::Value {
+    let mut req = json!({
+        "requestId": "req-1",
+        "complete": complete,
+        "percentCompleted": if complete { 100 } else { 50 },
+    });
+    if let Some(reason) = failure {
+        req["failureReason"] = json!(reason);
+    }
+    json!({ "request": req })
+}
+
+#[tokio::test]
+async fn versioned_flow_update_dynamic_succeeds() {
+    let mock_server = MockServer::start().await;
+    mount_about(&mock_server).await;
+
+    Mock::given(method("GET"))
+        .and(path("/nifi-api/versions/update-requests/req-1"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(versioned_flow_update_entity(true, None)))
+        .mount(&mock_server)
+        .await;
+    Mock::given(method("DELETE"))
+        .and(path("/nifi-api/versions/update-requests/req-1"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(versioned_flow_update_entity(true, None)))
+        .expect(1)
+        .mount(&mock_server)
+        .await;
+
+    let client = dynamic_client(&mock_server).await;
+
+    let entity = versioned_flow_update_dynamic(&client, "req-1", fast_config(1000))
+        .await
+        .unwrap();
+    assert_eq!(entity.request.and_then(|r| r.complete), Some(true));
 }
