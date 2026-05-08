@@ -776,3 +776,31 @@ async fn processor_verify_config_reports_failure() {
         other => panic!("expected Api, got {other:?}"),
     }
 }
+
+#[tokio::test]
+async fn controller_service_verify_config_succeeds_and_cleans_up() {
+    let mock_server = MockServer::start().await;
+
+    Mock::given(method("GET"))
+        .and(path("/nifi-api/controller-services/cs-1/config/verification-requests/req-1"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(verify_config_request_entity(true, None)))
+        .mount(&mock_server)
+        .await;
+    Mock::given(method("DELETE"))
+        .and(path("/nifi-api/controller-services/cs-1/config/verification-requests/req-1"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(verify_config_request_entity(true, None)))
+        .expect(1)
+        .mount(&mock_server)
+        .await;
+
+    let client = NifiClientBuilder::new(&mock_server.uri())
+        .unwrap()
+        .build()
+        .unwrap();
+    client.set_token("jwt".to_string()).await;
+
+    let dto = wait::controller_service_verify_config(&client, "cs-1", "req-1", fast_config(1000))
+        .await
+        .unwrap();
+    assert_eq!(dto.complete, Some(true));
+}
