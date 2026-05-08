@@ -1214,6 +1214,79 @@ pub async fn parameter_provider_verify_config_dynamic(
     result
 }
 
+// ── wait::flow_analysis_rule_verify_config ─────────────────────────────────
+
+/// Poll a flow-analysis-rule config-verification request until `complete == true`.
+///
+/// Fetches `GET /controller/flow-analysis-rules/{id}/config/verification-requests/{requestId}`.
+/// Returns the final `VerifyConfigRequestDto` on success. If the request reports
+/// a `failureReason`, returns [`NifiError::Api`] with status 500. On timeout,
+/// returns [`NifiError::Timeout`].
+///
+/// If [`WaitConfig::cleanup`] is `true` (default), issues a trailing
+/// `DELETE /controller/flow-analysis-rules/{id}/config/verification-requests/{requestId}`
+/// to free server-side state. Best-effort — its errors are swallowed.
+#[cfg(not(feature = "dynamic"))]
+pub async fn flow_analysis_rule_verify_config(
+    client: &crate::NifiClient,
+    rule_id: &str,
+    request_id: &str,
+    config: WaitConfig,
+) -> Result<VerifyConfigRequestDto, NifiError> {
+    let op = format!("wait_for_flow_analysis_rule_verify_config({rule_id}/{request_id})");
+    let fetch = || async {
+        client
+            .controller()
+            .get_flow_analysis_rule_verification_request(rule_id, request_id)
+            .await
+    };
+    let done = |dto: &VerifyConfigRequestDto| {
+        terminal_outcome(dto.complete, dto.failure_reason.as_deref(), "verification")
+    };
+    let result = poll_until(&config, &op, fetch, done).await;
+
+    if config.cleanup {
+        let res = client
+            .controller()
+            .delete_flow_analysis_rule_verification_request(rule_id, request_id)
+            .await
+            .map(|_| ());
+        warn_cleanup_failure(&op, &format!("{rule_id}/{request_id}"), res);
+    }
+    result
+}
+
+/// Dynamic-mode counterpart of `flow_analysis_rule_verify_config`.
+#[cfg(feature = "dynamic")]
+pub async fn flow_analysis_rule_verify_config_dynamic(
+    client: &crate::dynamic::DynamicClient,
+    rule_id: &str,
+    request_id: &str,
+    config: WaitConfig,
+) -> Result<VerifyConfigRequestDto, NifiError> {
+    let op = format!("wait_for_flow_analysis_rule_verify_config({rule_id}/{request_id})");
+    let fetch = || async {
+        client
+            .controller()
+            .get_flow_analysis_rule_verification_request(rule_id, request_id)
+            .await
+    };
+    let done = |dto: &VerifyConfigRequestDto| {
+        terminal_outcome(dto.complete, dto.failure_reason.as_deref(), "verification")
+    };
+    let result = poll_until(&config, &op, fetch, done).await;
+
+    if config.cleanup {
+        let res = client
+            .controller()
+            .delete_flow_analysis_rule_verification_request(rule_id, request_id)
+            .await
+            .map(|_| ());
+        warn_cleanup_failure(&op, &format!("{rule_id}/{request_id}"), res);
+    }
+    result
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
