@@ -1455,6 +1455,88 @@ pub async fn versioned_flow_update_dynamic(
     result
 }
 
+// ── wait::versioned_flow_revert ────────────────────────────────────────────
+
+/// Poll a versioned-flow revert request until `request.complete == true`.
+///
+/// Fetches `GET /versions/revert-requests/{id}`. Returns the final
+/// `VersionedFlowUpdateRequestEntity` on success. If the request reports a
+/// `failureReason`, returns [`NifiError::Api`] with status 500. On timeout,
+/// returns [`NifiError::Timeout`].
+///
+/// If [`WaitConfig::cleanup`] is `true` (default), issues a trailing
+/// `DELETE /versions/revert-requests/{id}` with
+/// `disconnectedNodeAcknowledged=None` to free server-side state.
+/// Best-effort — its errors are swallowed.
+#[cfg(not(feature = "dynamic"))]
+pub async fn versioned_flow_revert(
+    client: &crate::NifiClient,
+    request_id: &str,
+    config: WaitConfig,
+) -> Result<VersionedFlowUpdateRequestEntity, NifiError> {
+    let op = format!("wait_for_versioned_flow_revert({request_id})");
+    let fetch = || async {
+        client
+            .versions()
+            .get_revert_request(request_id)
+            .await
+    };
+    let done = |entity: &VersionedFlowUpdateRequestEntity| {
+        let req = entity.request.as_ref();
+        terminal_outcome(
+            req.and_then(|r| r.complete),
+            req.and_then(|r| r.failure_reason.as_deref()),
+            "versioned flow revert",
+        )
+    };
+    let result = poll_until(&config, &op, fetch, done).await;
+
+    if config.cleanup {
+        let res = client
+            .versions()
+            .delete_revert_request(request_id, None)
+            .await
+            .map(|_| ());
+        warn_cleanup_failure(&op, request_id, res);
+    }
+    result
+}
+
+/// Dynamic-mode counterpart of `versioned_flow_revert`.
+#[cfg(feature = "dynamic")]
+pub async fn versioned_flow_revert_dynamic(
+    client: &crate::dynamic::DynamicClient,
+    request_id: &str,
+    config: WaitConfig,
+) -> Result<VersionedFlowUpdateRequestEntity, NifiError> {
+    let op = format!("wait_for_versioned_flow_revert({request_id})");
+    let fetch = || async {
+        client
+            .versions()
+            .get_revert_request(request_id)
+            .await
+    };
+    let done = |entity: &VersionedFlowUpdateRequestEntity| {
+        let req = entity.request.as_ref();
+        terminal_outcome(
+            req.and_then(|r| r.complete),
+            req.and_then(|r| r.failure_reason.as_deref()),
+            "versioned flow revert",
+        )
+    };
+    let result = poll_until(&config, &op, fetch, done).await;
+
+    if config.cleanup {
+        let res = client
+            .versions()
+            .delete_revert_request(request_id, None)
+            .await
+            .map(|_| ());
+        warn_cleanup_failure(&op, request_id, res);
+    }
+    result
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

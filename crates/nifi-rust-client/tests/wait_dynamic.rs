@@ -14,6 +14,7 @@ use nifi_rust_client::wait::{
     parameter_provider_apply_parameters_dynamic,
     provenance_lineage_dynamic, provenance_query_dynamic,
     versioned_flow_update_dynamic,
+    versioned_flow_revert_dynamic,
 };
 use nifi_rust_client::{NifiClientBuilder, NifiError};
 use serde_json::json;
@@ -576,6 +577,31 @@ async fn versioned_flow_update_dynamic_succeeds() {
     let client = dynamic_client(&mock_server).await;
 
     let entity = versioned_flow_update_dynamic(&client, "req-1", fast_config(1000))
+        .await
+        .unwrap();
+    assert_eq!(entity.request.and_then(|r| r.complete), Some(true));
+}
+
+#[tokio::test]
+async fn versioned_flow_revert_dynamic_succeeds() {
+    let mock_server = MockServer::start().await;
+    mount_about(&mock_server).await;
+
+    Mock::given(method("GET"))
+        .and(path("/nifi-api/versions/revert-requests/req-1"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(versioned_flow_update_entity(true, None)))
+        .mount(&mock_server)
+        .await;
+    Mock::given(method("DELETE"))
+        .and(path("/nifi-api/versions/revert-requests/req-1"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(versioned_flow_update_entity(true, None)))
+        .expect(1)
+        .mount(&mock_server)
+        .await;
+
+    let client = dynamic_client(&mock_server).await;
+
+    let entity = versioned_flow_revert_dynamic(&client, "req-1", fast_config(1000))
         .await
         .unwrap();
     assert_eq!(entity.request.and_then(|r| r.complete), Some(true));

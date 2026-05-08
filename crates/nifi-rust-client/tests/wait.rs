@@ -1048,3 +1048,33 @@ async fn versioned_flow_update_reports_failure() {
         other => panic!("expected Api, got {other:?}"),
     }
 }
+
+// ── versioned_flow_revert ───────────────────────────────────────────────────
+
+#[tokio::test]
+async fn versioned_flow_revert_succeeds_and_cleans_up() {
+    let mock_server = MockServer::start().await;
+
+    Mock::given(method("GET"))
+        .and(path("/nifi-api/versions/revert-requests/req-1"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(versioned_flow_update_entity(true, None)))
+        .mount(&mock_server)
+        .await;
+    Mock::given(method("DELETE"))
+        .and(path("/nifi-api/versions/revert-requests/req-1"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(versioned_flow_update_entity(true, None)))
+        .expect(1)
+        .mount(&mock_server)
+        .await;
+
+    let client = NifiClientBuilder::new(&mock_server.uri())
+        .unwrap()
+        .build()
+        .unwrap();
+    client.set_token("jwt".to_string()).await;
+
+    let entity = wait::versioned_flow_revert(&client, "req-1", fast_config(1000))
+        .await
+        .unwrap();
+    assert_eq!(entity.request.and_then(|r| r.complete), Some(true));
+}
