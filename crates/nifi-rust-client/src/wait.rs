@@ -750,6 +750,87 @@ pub async fn flowfile_listing_dynamic(
     result
 }
 
+// ── wait::empty_all_connections ────────────────────────────────────────────
+
+/// Poll a process-group "empty all connections" drop request until finished.
+///
+/// Fetches `GET /process-groups/{id}/empty-all-connections-requests/{drop-request-id}`.
+/// Returns the final `DropRequestDto` on success. If the request reports a
+/// `failureReason`, returns [`NifiError::Api`] with status 500. On timeout,
+/// returns [`NifiError::Timeout`].
+///
+/// If [`WaitConfig::cleanup`] is `true` (default), issues a trailing
+/// `DELETE /process-groups/{id}/empty-all-connections-requests/{drop-request-id}`
+/// to free server-side state. Best-effort — its errors are swallowed.
+#[cfg(not(feature = "dynamic"))]
+pub async fn empty_all_connections(
+    client: &crate::NifiClient,
+    process_group_id: &str,
+    drop_request_id: &str,
+    config: WaitConfig,
+) -> Result<DropRequestDto, NifiError> {
+    let op = format!("wait_for_empty_all_connections({process_group_id}/{drop_request_id})");
+    let fetch = || async {
+        client
+            .processgroups()
+            .get_drop_all_flowfiles_request(process_group_id, drop_request_id)
+            .await
+    };
+    let done = |dto: &DropRequestDto| {
+        terminal_outcome(
+            dto.finished,
+            dto.failure_reason.as_deref(),
+            "empty-all-connections request",
+        )
+    };
+    let result = poll_until(&config, &op, fetch, done).await;
+
+    if config.cleanup {
+        let res = client
+            .processgroups()
+            .remove_drop_request(process_group_id, drop_request_id)
+            .await
+            .map(|_| ());
+        warn_cleanup_failure(&op, &format!("{process_group_id}/{drop_request_id}"), res);
+    }
+    result
+}
+
+/// Dynamic-mode counterpart of `empty_all_connections`.
+#[cfg(feature = "dynamic")]
+pub async fn empty_all_connections_dynamic(
+    client: &crate::dynamic::DynamicClient,
+    process_group_id: &str,
+    drop_request_id: &str,
+    config: WaitConfig,
+) -> Result<DropRequestDto, NifiError> {
+    let op = format!("wait_for_empty_all_connections({process_group_id}/{drop_request_id})");
+    let fetch = || async {
+        client
+            .processgroups()
+            .get_drop_all_flowfiles_request(process_group_id, drop_request_id)
+            .await
+    };
+    let done = |dto: &DropRequestDto| {
+        terminal_outcome(
+            dto.finished,
+            dto.failure_reason.as_deref(),
+            "empty-all-connections request",
+        )
+    };
+    let result = poll_until(&config, &op, fetch, done).await;
+
+    if config.cleanup {
+        let res = client
+            .processgroups()
+            .remove_drop_request(process_group_id, drop_request_id)
+            .await
+            .map(|_| ());
+        warn_cleanup_failure(&op, &format!("{process_group_id}/{drop_request_id}"), res);
+    }
+    result
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

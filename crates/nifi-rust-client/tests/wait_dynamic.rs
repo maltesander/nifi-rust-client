@@ -6,8 +6,9 @@ use std::time::Duration;
 use nifi_rust_client::dynamic::DynamicClient;
 use nifi_rust_client::wait::{
     ControllerServiceTargetState, ProcessorTargetState, WaitConfig,
-    controller_service_state_dynamic, flowfile_drop_dynamic, flowfile_listing_dynamic,
-    parameter_context_update_dynamic, processor_state_dynamic, provenance_query_dynamic,
+    controller_service_state_dynamic, empty_all_connections_dynamic, flowfile_drop_dynamic,
+    flowfile_listing_dynamic, parameter_context_update_dynamic, processor_state_dynamic,
+    provenance_query_dynamic,
 };
 use nifi_rust_client::{NifiClientBuilder, NifiError};
 use serde_json::json;
@@ -303,6 +304,31 @@ async fn flowfile_listing_dynamic_succeeds() {
     let client = dynamic_client(&mock_server).await;
 
     let dto = flowfile_listing_dynamic(&client, "q-1", "list-1", fast_config(1000))
+        .await
+        .unwrap();
+    assert_eq!(dto.finished, Some(true));
+}
+
+#[tokio::test]
+async fn empty_all_connections_dynamic_succeeds() {
+    let mock_server = MockServer::start().await;
+    mount_about(&mock_server).await;
+
+    Mock::given(method("GET"))
+        .and(path("/nifi-api/process-groups/pg-1/empty-all-connections-requests/drop-1"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(drop_request_entity(true, None)))
+        .mount(&mock_server)
+        .await;
+    Mock::given(method("DELETE"))
+        .and(path("/nifi-api/process-groups/pg-1/empty-all-connections-requests/drop-1"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(drop_request_entity(true, None)))
+        .expect(1)
+        .mount(&mock_server)
+        .await;
+
+    let client = dynamic_client(&mock_server).await;
+
+    let dto = empty_all_connections_dynamic(&client, "pg-1", "drop-1", fast_config(1000))
         .await
         .unwrap();
     assert_eq!(dto.finished, Some(true));

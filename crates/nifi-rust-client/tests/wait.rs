@@ -589,3 +589,64 @@ async fn flowfile_listing_reports_failure() {
         other => panic!("expected Api, got {other:?}"),
     }
 }
+
+// ── empty_all_connections ───────────────────────────────────────────────────
+
+#[tokio::test]
+async fn empty_all_connections_succeeds_and_cleans_up() {
+    let mock_server = MockServer::start().await;
+
+    Mock::given(method("GET"))
+        .and(path("/nifi-api/process-groups/pg-1/empty-all-connections-requests/drop-1"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(drop_request_entity(true, None)))
+        .mount(&mock_server)
+        .await;
+    Mock::given(method("DELETE"))
+        .and(path("/nifi-api/process-groups/pg-1/empty-all-connections-requests/drop-1"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(drop_request_entity(true, None)))
+        .expect(1)
+        .mount(&mock_server)
+        .await;
+
+    let client = NifiClientBuilder::new(&mock_server.uri())
+        .unwrap()
+        .build()
+        .unwrap();
+    client.set_token("jwt".to_string()).await;
+
+    let dto = wait::empty_all_connections(&client, "pg-1", "drop-1", fast_config(1000))
+        .await
+        .unwrap();
+    assert_eq!(dto.finished, Some(true));
+}
+
+#[tokio::test]
+async fn empty_all_connections_reports_failure() {
+    let mock_server = MockServer::start().await;
+
+    Mock::given(method("GET"))
+        .and(path("/nifi-api/process-groups/pg-1/empty-all-connections-requests/drop-1"))
+        .respond_with(
+            ResponseTemplate::new(200)
+                .set_body_json(drop_request_entity(true, Some("connection in use"))),
+        )
+        .mount(&mock_server)
+        .await;
+    Mock::given(method("DELETE"))
+        .and(path("/nifi-api/process-groups/pg-1/empty-all-connections-requests/drop-1"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(drop_request_entity(true, None)))
+        .expect(1)
+        .mount(&mock_server)
+        .await;
+
+    let client = NifiClientBuilder::new(&mock_server.uri())
+        .unwrap()
+        .build()
+        .unwrap();
+    client.set_token("jwt".to_string()).await;
+
+    let err = wait::empty_all_connections(&client, "pg-1", "drop-1", fast_config(1000))
+        .await
+        .unwrap_err();
+    assert!(matches!(err, NifiError::Api { status: 500, .. }));
+}
