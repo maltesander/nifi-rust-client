@@ -6,8 +6,8 @@ use std::time::Duration;
 use nifi_rust_client::dynamic::DynamicClient;
 use nifi_rust_client::wait::{
     ControllerServiceTargetState, ProcessorTargetState, WaitConfig,
-    controller_service_state_dynamic, flowfile_drop_dynamic, parameter_context_update_dynamic,
-    processor_state_dynamic, provenance_query_dynamic,
+    controller_service_state_dynamic, flowfile_drop_dynamic, flowfile_listing_dynamic,
+    parameter_context_update_dynamic, processor_state_dynamic, provenance_query_dynamic,
 };
 use nifi_rust_client::{NifiClientBuilder, NifiError};
 use serde_json::json;
@@ -266,6 +266,43 @@ async fn flowfile_drop_dynamic_succeeds_and_cleans_up() {
     let client = dynamic_client(&mock_server).await;
 
     let dto = flowfile_drop_dynamic(&client, "q-1", "drop-1", fast_config(1000))
+        .await
+        .unwrap();
+    assert_eq!(dto.finished, Some(true));
+}
+
+fn listing_request_entity(finished: bool, failure: Option<&str>) -> serde_json::Value {
+    let mut req = json!({
+        "id": "list-1",
+        "finished": finished,
+        "percentCompleted": if finished { 100 } else { 50 },
+    });
+    if let Some(reason) = failure {
+        req["failureReason"] = json!(reason);
+    }
+    json!({ "listingRequest": req })
+}
+
+#[tokio::test]
+async fn flowfile_listing_dynamic_succeeds() {
+    let mock_server = MockServer::start().await;
+    mount_about(&mock_server).await;
+
+    Mock::given(method("GET"))
+        .and(path("/nifi-api/flowfile-queues/q-1/listing-requests/list-1"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(listing_request_entity(true, None)))
+        .mount(&mock_server)
+        .await;
+    Mock::given(method("DELETE"))
+        .and(path("/nifi-api/flowfile-queues/q-1/listing-requests/list-1"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(listing_request_entity(true, None)))
+        .expect(1)
+        .mount(&mock_server)
+        .await;
+
+    let client = dynamic_client(&mock_server).await;
+
+    let dto = flowfile_listing_dynamic(&client, "q-1", "list-1", fast_config(1000))
         .await
         .unwrap();
     assert_eq!(dto.finished, Some(true));

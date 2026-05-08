@@ -509,3 +509,83 @@ async fn flowfile_drop_no_cleanup_when_disabled() {
         .unwrap();
     assert_eq!(dto.finished, Some(true));
 }
+
+// ── flowfile_listing ────────────────────────────────────────────────────────
+
+fn listing_request_entity(finished: bool, failure: Option<&str>) -> serde_json::Value {
+    let mut req = json!({
+        "id": "list-1",
+        "finished": finished,
+        "percentCompleted": if finished { 100 } else { 50 },
+    });
+    if let Some(reason) = failure {
+        req["failureReason"] = json!(reason);
+    }
+    json!({ "listingRequest": req })
+}
+
+#[tokio::test]
+async fn flowfile_listing_succeeds_and_cleans_up() {
+    let mock_server = MockServer::start().await;
+
+    Mock::given(method("GET"))
+        .and(path("/nifi-api/flowfile-queues/q-1/listing-requests/list-1"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(listing_request_entity(true, None)))
+        .mount(&mock_server)
+        .await;
+    Mock::given(method("DELETE"))
+        .and(path("/nifi-api/flowfile-queues/q-1/listing-requests/list-1"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(listing_request_entity(true, None)))
+        .expect(1)
+        .mount(&mock_server)
+        .await;
+
+    let client = NifiClientBuilder::new(&mock_server.uri())
+        .unwrap()
+        .build()
+        .unwrap();
+    client.set_token("jwt".to_string()).await;
+
+    let dto = wait::flowfile_listing(&client, "q-1", "list-1", fast_config(1000))
+        .await
+        .unwrap();
+    assert_eq!(dto.finished, Some(true));
+}
+
+#[tokio::test]
+async fn flowfile_listing_reports_failure() {
+    let mock_server = MockServer::start().await;
+
+    Mock::given(method("GET"))
+        .and(path("/nifi-api/flowfile-queues/q-1/listing-requests/list-1"))
+        .respond_with(
+            ResponseTemplate::new(200)
+                .set_body_json(listing_request_entity(true, Some("queue too large"))),
+        )
+        .mount(&mock_server)
+        .await;
+    Mock::given(method("DELETE"))
+        .and(path("/nifi-api/flowfile-queues/q-1/listing-requests/list-1"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(listing_request_entity(true, None)))
+        .expect(1)
+        .mount(&mock_server)
+        .await;
+
+    let client = NifiClientBuilder::new(&mock_server.uri())
+        .unwrap()
+        .build()
+        .unwrap();
+    client.set_token("jwt".to_string()).await;
+
+    let err = wait::flowfile_listing(&client, "q-1", "list-1", fast_config(1000))
+        .await
+        .unwrap_err();
+    match err {
+        NifiError::Api { status, message } => {
+            assert_eq!(status, 500);
+            assert!(message.contains("listing request failed"));
+            assert!(message.contains("queue too large"));
+        }
+        other => panic!("expected Api, got {other:?}"),
+    }
+}

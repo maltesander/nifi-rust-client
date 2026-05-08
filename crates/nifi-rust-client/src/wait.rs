@@ -663,6 +663,93 @@ pub async fn flowfile_drop_dynamic(
     result
 }
 
+// ── wait::flowfile_listing ─────────────────────────────────────────────────
+
+#[cfg(not(feature = "dynamic"))]
+use crate::types::ListingRequestDto;
+
+/// Poll a FlowFile-queue listing request until it reports `finished == true`.
+///
+/// Fetches `GET /flowfile-queues/{id}/listing-requests/{listing-request-id}`.
+/// Returns the final `ListingRequestDto` on success. If the request reports
+/// a `failureReason`, returns [`NifiError::Api`] with status 500. On
+/// timeout, returns [`NifiError::Timeout`].
+///
+/// If [`WaitConfig::cleanup`] is `true` (default), issues a trailing
+/// `DELETE /flowfile-queues/{id}/listing-requests/{listing-request-id}`
+/// to free server-side state. Best-effort — its errors are swallowed.
+#[cfg(not(feature = "dynamic"))]
+pub async fn flowfile_listing(
+    client: &crate::NifiClient,
+    queue_id: &str,
+    listing_request_id: &str,
+    config: WaitConfig,
+) -> Result<ListingRequestDto, NifiError> {
+    let op = format!("wait_for_flowfile_listing({queue_id}/{listing_request_id})");
+    let fetch = || async {
+        client
+            .flowfilequeues()
+            .get_listing_request(queue_id, listing_request_id)
+            .await
+    };
+    let done = |dto: &ListingRequestDto| {
+        terminal_outcome(
+            dto.finished,
+            dto.failure_reason.as_deref(),
+            "listing request",
+        )
+    };
+    let result = poll_until(&config, &op, fetch, done).await;
+
+    if config.cleanup {
+        let res = client
+            .flowfilequeues()
+            .delete_listing_request(queue_id, listing_request_id)
+            .await
+            .map(|_| ());
+        warn_cleanup_failure(&op, &format!("{queue_id}/{listing_request_id}"), res);
+    }
+    result
+}
+
+#[cfg(feature = "dynamic")]
+use crate::dynamic::types::ListingRequestDto;
+
+/// Dynamic-mode counterpart of `flowfile_listing`.
+#[cfg(feature = "dynamic")]
+pub async fn flowfile_listing_dynamic(
+    client: &crate::dynamic::DynamicClient,
+    queue_id: &str,
+    listing_request_id: &str,
+    config: WaitConfig,
+) -> Result<ListingRequestDto, NifiError> {
+    let op = format!("wait_for_flowfile_listing({queue_id}/{listing_request_id})");
+    let fetch = || async {
+        client
+            .flowfilequeues()
+            .get_listing_request(queue_id, listing_request_id)
+            .await
+    };
+    let done = |dto: &ListingRequestDto| {
+        terminal_outcome(
+            dto.finished,
+            dto.failure_reason.as_deref(),
+            "listing request",
+        )
+    };
+    let result = poll_until(&config, &op, fetch, done).await;
+
+    if config.cleanup {
+        let res = client
+            .flowfilequeues()
+            .delete_listing_request(queue_id, listing_request_id)
+            .await
+            .map(|_| ());
+        warn_cleanup_failure(&op, &format!("{queue_id}/{listing_request_id}"), res);
+    }
+    result
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
