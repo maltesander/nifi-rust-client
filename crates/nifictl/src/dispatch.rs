@@ -248,23 +248,11 @@ pub(crate) async fn run(cli: Cli) -> Result<(), error::CliError> {
                 base_url: &dr.url,
             };
 
-            // For destructive commands, run the confirmation gate before
-            // attempting any network calls so that a non-TTY / missing --yes
-            // refuses immediately without touching the server.
-            if !ctx.dry_run {
-                match &cmd {
-                    OpsCommand::StopPg { pg_id } => {
-                        confirm::confirm_destructive(&porcelain::ops::stop_pg_what(pg_id), &ctx)?;
-                    }
-                    OpsCommand::DisableServices { pg_id } => {
-                        confirm::confirm_destructive(
-                            &porcelain::ops::disable_services_what(pg_id),
-                            &ctx,
-                        )?;
-                    }
-                    OpsCommand::StartPg { .. } | OpsCommand::EnableServices { .. } => {}
-                }
-            }
+            // Single canonical confirm gate for destructive Ops commands —
+            // runs before any network call so a non-TTY / missing --yes
+            // refuses immediately. Porcelain handlers no longer re-gate;
+            // see `confirm::run_for_ops` for the full contract.
+            confirm::run_for_ops(&cmd, &ctx)?;
 
             // On --dry-run, skip authentication: the handler short-circuits
             // before touching the client, so we only need a constructed
@@ -291,19 +279,13 @@ pub(crate) async fn run(cli: Cli) -> Result<(), error::CliError> {
                     porcelain::ops::start_pg(&client, &pg_id, &ctx).await?
                 }
                 OpsCommand::StopPg { pg_id } => {
-                    // confirm already ran above; pass yes=true to skip the
-                    // redundant check inside the porcelain helper.
-                    let ctx_yes = dry_run::CliCtx { yes: true, ..ctx };
-                    porcelain::ops::stop_pg(&client, &pg_id, &ctx_yes).await?
+                    porcelain::ops::stop_pg(&client, &pg_id, &ctx).await?
                 }
                 OpsCommand::EnableServices { pg_id } => {
                     porcelain::ops::enable_services(&client, &pg_id, &ctx).await?
                 }
                 OpsCommand::DisableServices { pg_id } => {
-                    // confirm already ran above; pass yes=true to skip the
-                    // redundant check inside the porcelain helper.
-                    let ctx_yes = dry_run::CliCtx { yes: true, ..ctx };
-                    porcelain::ops::disable_services(&client, &pg_id, &ctx_yes).await?
+                    porcelain::ops::disable_services(&client, &pg_id, &ctx).await?
                 }
             };
             let fmt = output::OutputFormat::parse(&cli.output).map_err(error::CliError::User)?;
@@ -378,12 +360,9 @@ pub(crate) async fn run(cli: Cli) -> Result<(), error::CliError> {
                 base_url: &dr.url,
             };
 
-            // Pre-client confirm gate for `replace` — matches the Ops arm.
-            if !ctx.dry_run
-                && let FlowCommand::Replace(args) = &command
-            {
-                confirm::confirm_destructive(&porcelain::flow::replace_what(&args.pg_id), &ctx)?;
-            }
+            // Single canonical confirm gate for destructive Flow porcelain
+            // commands. Same contract as `confirm::run_for_ops`.
+            confirm::run_for_flow(&command, &ctx)?;
 
             let client = if ctx.dry_run {
                 nifi_rust_client::NifiClientBuilder::new(&dr.url)?
@@ -424,15 +403,12 @@ pub(crate) async fn run(cli: Cli) -> Result<(), error::CliError> {
                     .await?
                 }
                 FlowCommand::Replace(args) => {
-                    // Confirm already ran above; pass yes=true so the porcelain's
-                    // internal gate is a no-op.
-                    let ctx_yes = dry_run::CliCtx { yes: true, ..ctx };
                     porcelain::flow::replace(
                         &client,
                         &args.pg_id,
                         &args.file,
                         args.stop_first,
-                        &ctx_yes,
+                        &ctx,
                     )
                     .await?
                 }

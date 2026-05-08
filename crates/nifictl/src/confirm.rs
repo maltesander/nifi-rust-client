@@ -4,11 +4,24 @@
 //! * `--yes` / `-y` bypasses.
 //! * Non-TTY without `--yes` → error, no silent skip.
 //! * TTY → read one line from stdin, require exact `y`/`yes` (case-insensitive).
+//!
+//! ## Single canonical gate site (C10)
+//!
+//! [`run_for_ops`] and [`run_for_flow`] are the canonical gates for the
+//! `Commands::Ops` and `Commands::Flow` arms in `dispatch.rs`. They run
+//! BEFORE any network call and do not touch the client. Porcelain
+//! handlers (`porcelain::ops::stop_pg`, `disable_services`,
+//! `porcelain::flow::replace`) used to also call `confirm_destructive`
+//! defensively; that call was removed once the dispatch layer became
+//! the single owner of the gate, eliminating the `ctx_yes = CliCtx { yes: true, ..ctx }`
+//! workaround in dispatch.
 
 use std::io::{self, BufRead, IsTerminal, Write};
 
+use crate::cli::{FlowCommand, OpsCommand};
 use crate::dry_run::CliCtx;
 use crate::error::CliError;
+use crate::porcelain;
 
 /// Error message returned when a confirmable command is run in a
 /// non-interactive environment without `--yes`. Exposed as a const so
@@ -41,6 +54,43 @@ pub fn confirm_destructive(what: &str, ctx: &CliCtx) -> Result<(), CliError> {
         Ok(())
     } else {
         Err(CliError::User("cancelled".to_string()))
+    }
+}
+
+/// Run the destructive-action gate for an [`OpsCommand`] arm.
+///
+/// Skips on `--dry-run` (no network call to gate) and on non-destructive
+/// variants. The single call site replaces the per-variant match block
+/// that used to live inline in `dispatch::run`'s `Commands::Ops` arm.
+pub fn run_for_ops(cmd: &OpsCommand, ctx: &CliCtx<'_>) -> Result<(), CliError> {
+    if ctx.dry_run {
+        return Ok(());
+    }
+    match cmd {
+        OpsCommand::StopPg { pg_id } => {
+            confirm_destructive(&porcelain::ops::stop_pg_what(pg_id), ctx)
+        }
+        OpsCommand::DisableServices { pg_id } => {
+            confirm_destructive(&porcelain::ops::disable_services_what(pg_id), ctx)
+        }
+        OpsCommand::StartPg { .. } | OpsCommand::EnableServices { .. } => Ok(()),
+    }
+}
+
+/// Run the destructive-action gate for a [`FlowCommand`] arm.
+///
+/// Only `Replace` is destructive today. Skips on `--dry-run`. Generated
+/// flow subcommands (`FlowCommand::Generated`) are routed through
+/// `dispatch_resource` and never reach this helper.
+pub fn run_for_flow(cmd: &FlowCommand, ctx: &CliCtx<'_>) -> Result<(), CliError> {
+    if ctx.dry_run {
+        return Ok(());
+    }
+    match cmd {
+        FlowCommand::Replace(args) => {
+            confirm_destructive(&porcelain::flow::replace_what(&args.pg_id), ctx)
+        }
+        FlowCommand::Export(_) | FlowCommand::Import(_) | FlowCommand::Generated(_) => Ok(()),
     }
 }
 

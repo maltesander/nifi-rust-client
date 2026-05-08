@@ -2,9 +2,9 @@
 //!
 //! Each fn is a thin wrapper over the generated `processgroups()` method
 //! plus the existing `bulk::*_dynamic` helpers. Dry-run branches print
-//! the would-be request via `dry_run::print`; destructive commands run
-//! `confirm::confirm_destructive` at the point they would send real
-//! bytes.
+//! the would-be request via `dry_run::print`. Destructive commands rely
+//! on the dispatch-layer gate (`confirm::run_for_flow`); see [`replace`]
+//! for the contract.
 
 use std::io::Write;
 use std::path::Path;
@@ -12,7 +12,6 @@ use std::path::Path;
 use nifi_rust_client::dynamic::DynamicClient;
 use serde_json::Value;
 
-use crate::confirm;
 use crate::dry_run::{self, CliCtx};
 use crate::error::CliError;
 use crate::output::CliOutput;
@@ -129,10 +128,10 @@ pub fn replace_what(pg_id: &str) -> String {
 
 /// Overwrite a process group's contents with a snapshot file.
 ///
-/// **Destructive.** Runs `confirm::confirm_destructive` internally as
-/// defense-in-depth; production callers in `main.rs` run the confirm
-/// gate before touching the client so the internal call is a no-op when
-/// `ctx.yes = true`. `stop_first` handled in Task 9.
+/// **Destructive.** The `Commands::Flow` arm in `dispatch.rs` runs
+/// [`crate::confirm::run_for_flow`] before reaching this function. There
+/// is no internal gate — direct callers (tests, future library use) are
+/// responsible for gating themselves. `stop_first` handled in Task 9.
 pub async fn replace(
     client: &DynamicClient,
     pg_id: &str,
@@ -176,7 +175,6 @@ pub async fn replace(
         return Ok(CliOutput::Empty);
     }
 
-    confirm::confirm_destructive(&replace_what(pg_id), ctx)?;
 
     // 0. Stop (if --stop-first).
     if stop_first {
