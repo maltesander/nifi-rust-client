@@ -1166,7 +1166,8 @@ impl NifiClient {
             return Ok(());
         }
         let body = resp.text().await.unwrap_or_else(|_| status.to_string());
-        tracing::debug!(method = %method, path, status = status.as_u16(), %body, "NiFi API raw error body");
+        let logged_body = truncate_for_log(&body);
+        tracing::debug!(method = %method, path, status = status.as_u16(), body = %logged_body, "NiFi API raw error body");
         let message = extract_error_message(&body);
         tracing::warn!(method = %method, path, status = status.as_u16(), %message, "NiFi API error");
         Err(crate::error::api_error(status.as_u16(), message))
@@ -1203,10 +1204,43 @@ async fn handle_response_status(
         return Ok(resp);
     }
     let body = resp.text().await.unwrap_or_else(|_| status.to_string());
-    tracing::debug!(method = %method, path, status = status.as_u16(), %body, "NiFi API raw error body");
+    let logged_body = truncate_for_log(&body);
+    tracing::debug!(method = %method, path, status = status.as_u16(), body = %logged_body, "NiFi API raw error body");
     let message = extract_error_message(&body);
     tracing::warn!(method = %method, path, status = status.as_u16(), %message, "NiFi API error");
     Err(crate::error::api_error(status.as_u16(), message))
+}
+
+/// Truncate a (potentially huge) response body for `tracing::debug!`.
+///
+/// NiFi error responses are usually small JSON envelopes, but the body can
+/// occasionally be a multi-megabyte stack trace or HTML page from an upstream
+/// proxy. Logging the full text balloons trace output, eats disk on
+/// long-running services, and slows tracing subscribers that copy strings.
+///
+/// The cap (`MAX`) is chosen so a single truncated line — including the
+/// `... (truncated, N bytes)` suffix — fits comfortably in a 300-byte
+/// debug-line budget.
+///
+/// Truncation is byte-based but kept on a UTF-8 char boundary so the
+/// returned slice is always valid UTF-8. The suffix records the *original*
+/// byte length so a reader can tell how much was elided.
+pub(crate) fn truncate_for_log(body: &str) -> std::borrow::Cow<'_, str> {
+    const MAX: usize = 256;
+    if body.len() <= MAX {
+        return std::borrow::Cow::Borrowed(body);
+    }
+    // Walk back to a char boundary at or below MAX so we never split a UTF-8
+    // sequence. `is_char_boundary` is constant-time.
+    let mut cut = MAX;
+    while cut > 0 && !body.is_char_boundary(cut) {
+        cut -= 1;
+    }
+    std::borrow::Cow::Owned(format!(
+        "{} ... (truncated, {} bytes)",
+        &body[..cut],
+        body.len()
+    ))
 }
 
 /// Apply a fold of `(name, value)` header pairs to a `RequestBuilder`.
@@ -1325,5 +1359,51 @@ mod tests {
 
         let body = r#"[{"message": "ignored"}]"#;
         assert_eq!(extract_error_message(body), body);
+    }
+
+    /// Pins audit follow-up B7: `truncate_for_log` caps debug output so a
+    /// multi-MB error body cannot blow up tracing buffers / log files.
+    /// The truncated string fits inside a ~300-byte debug-line budget and
+    /// records the original size so readers know how much was elided.
+    #[test]
+    fn truncate_for_log_caps_long_body() {
+        use super::truncate_for_log;
+
+        let body = "x".repeat(10 * 1024 * 1024);
+        let logged = truncate_for_log(&body);
+        assert!(
+            logged.len() <= 300,
+            "truncated log line was {} bytes; expected ≤ 300",
+            logged.len()
+        );
+        assert!(
+            logged.ends_with(&format!("(truncated, {} bytes)", body.len())),
+            "missing/incorrect truncation suffix: {logged}"
+        );
+    }
+
+    /// Short bodies pass through untouched (no allocation, no suffix).
+    #[test]
+    fn truncate_for_log_passthrough_short() {
+        use super::truncate_for_log;
+
+        let body = r#"{"message":"boom"}"#;
+        let logged = truncate_for_log(body);
+        assert_eq!(&*logged, body);
+        assert!(matches!(logged, std::borrow::Cow::Borrowed(_)));
+    }
+
+    /// Truncation respects UTF-8 char boundaries — splitting in the middle
+    /// of a multi-byte sequence would produce invalid UTF-8 and panic on the
+    /// `format!`.
+    #[test]
+    fn truncate_for_log_respects_utf8_boundary() {
+        use super::truncate_for_log;
+
+        // 4-byte char repeated past the cap; cut MUST land on a boundary.
+        let body = "💥".repeat(100);
+        let logged = truncate_for_log(&body);
+        assert!(logged.len() <= 300);
+        assert!(logged.contains("(truncated"));
     }
 }
