@@ -1078,3 +1078,83 @@ async fn versioned_flow_revert_succeeds_and_cleans_up() {
         .unwrap();
     assert_eq!(entity.request.and_then(|r| r.complete), Some(true));
 }
+
+// ── parameter_context_validation ────────────────────────────────────────────
+
+fn validation_request_entity(complete: bool, failure: Option<&str>) -> serde_json::Value {
+    let mut req = json!({
+        "requestId": "req-1",
+        "complete": complete,
+        "percentCompleted": if complete { 100 } else { 50 },
+    });
+    if let Some(reason) = failure {
+        req["failureReason"] = json!(reason);
+    }
+    json!({ "request": req })
+}
+
+#[tokio::test]
+async fn parameter_context_validation_succeeds_and_cleans_up() {
+    let mock_server = MockServer::start().await;
+
+    Mock::given(method("GET"))
+        .and(path("/nifi-api/parameter-contexts/ctx-1/validation-requests/req-1"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(validation_request_entity(true, None)))
+        .mount(&mock_server)
+        .await;
+    Mock::given(method("DELETE"))
+        .and(path("/nifi-api/parameter-contexts/ctx-1/validation-requests/req-1"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(validation_request_entity(true, None)))
+        .expect(1)
+        .mount(&mock_server)
+        .await;
+
+    let client = NifiClientBuilder::new(&mock_server.uri())
+        .unwrap()
+        .build()
+        .unwrap();
+    client.set_token("jwt".to_string()).await;
+
+    let entity = wait::parameter_context_validation(&client, "ctx-1", "req-1", fast_config(1000))
+        .await
+        .unwrap();
+    assert_eq!(entity.request.and_then(|r| r.complete), Some(true));
+}
+
+#[tokio::test]
+async fn parameter_context_validation_reports_failure() {
+    let mock_server = MockServer::start().await;
+
+    Mock::given(method("GET"))
+        .and(path("/nifi-api/parameter-contexts/ctx-1/validation-requests/req-1"))
+        .respond_with(
+            ResponseTemplate::new(200)
+                .set_body_json(validation_request_entity(true, Some("missing param"))),
+        )
+        .mount(&mock_server)
+        .await;
+    Mock::given(method("DELETE"))
+        .and(path("/nifi-api/parameter-contexts/ctx-1/validation-requests/req-1"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(validation_request_entity(true, None)))
+        .expect(1)
+        .mount(&mock_server)
+        .await;
+
+    let client = NifiClientBuilder::new(&mock_server.uri())
+        .unwrap()
+        .build()
+        .unwrap();
+    client.set_token("jwt".to_string()).await;
+
+    let err = wait::parameter_context_validation(&client, "ctx-1", "req-1", fast_config(1000))
+        .await
+        .unwrap_err();
+    match err {
+        NifiError::Api { status, message } => {
+            assert_eq!(status, 500);
+            assert!(message.contains("parameter context validation failed"));
+            assert!(message.contains("missing param"));
+        }
+        other => panic!("expected Api, got {other:?}"),
+    }
+}

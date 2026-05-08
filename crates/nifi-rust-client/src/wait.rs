@@ -1537,6 +1537,96 @@ pub async fn versioned_flow_revert_dynamic(
     result
 }
 
+// ── wait::parameter_context_validation ─────────────────────────────────────
+
+#[cfg(not(feature = "dynamic"))]
+use crate::types::ParameterContextValidationRequestEntity;
+
+/// Poll a parameter-context validation request until `request.complete == true`.
+///
+/// Fetches `GET /parameter-contexts/{contextId}/validation-requests/{id}`.
+/// Returns the final `ParameterContextValidationRequestEntity` on success.
+/// If the request reports a `failureReason`, returns [`NifiError::Api`] with
+/// status 500. On timeout, returns [`NifiError::Timeout`].
+///
+/// If [`WaitConfig::cleanup`] is `true` (default), issues a trailing
+/// `DELETE /parameter-contexts/{contextId}/validation-requests/{id}` with
+/// `disconnectedNodeAcknowledged=None` to free server-side state.
+/// Best-effort — its errors are swallowed.
+#[cfg(not(feature = "dynamic"))]
+pub async fn parameter_context_validation(
+    client: &crate::NifiClient,
+    context_id: &str,
+    request_id: &str,
+    config: WaitConfig,
+) -> Result<ParameterContextValidationRequestEntity, NifiError> {
+    let op = format!("wait_for_parameter_context_validation({context_id}/{request_id})");
+    let fetch = || async {
+        client
+            .parametercontexts()
+            .get_validation_request(context_id, request_id)
+            .await
+    };
+    let done = |entity: &ParameterContextValidationRequestEntity| {
+        let req = entity.request.as_ref();
+        terminal_outcome(
+            req.and_then(|r| r.complete),
+            req.and_then(|r| r.failure_reason.as_deref()),
+            "parameter context validation",
+        )
+    };
+    let result = poll_until(&config, &op, fetch, done).await;
+
+    if config.cleanup {
+        let res = client
+            .parametercontexts()
+            .delete_validation_request(context_id, request_id, None)
+            .await
+            .map(|_| ());
+        warn_cleanup_failure(&op, &format!("{context_id}/{request_id}"), res);
+    }
+    result
+}
+
+#[cfg(feature = "dynamic")]
+use crate::dynamic::types::ParameterContextValidationRequestEntity;
+
+/// Dynamic-mode counterpart of `parameter_context_validation`.
+#[cfg(feature = "dynamic")]
+pub async fn parameter_context_validation_dynamic(
+    client: &crate::dynamic::DynamicClient,
+    context_id: &str,
+    request_id: &str,
+    config: WaitConfig,
+) -> Result<ParameterContextValidationRequestEntity, NifiError> {
+    let op = format!("wait_for_parameter_context_validation({context_id}/{request_id})");
+    let fetch = || async {
+        client
+            .parametercontexts()
+            .get_validation_request(context_id, request_id)
+            .await
+    };
+    let done = |entity: &ParameterContextValidationRequestEntity| {
+        let req = entity.request.as_ref();
+        terminal_outcome(
+            req.and_then(|r| r.complete),
+            req.and_then(|r| r.failure_reason.as_deref()),
+            "parameter context validation",
+        )
+    };
+    let result = poll_until(&config, &op, fetch, done).await;
+
+    if config.cleanup {
+        let res = client
+            .parametercontexts()
+            .delete_validation_request(context_id, request_id, None)
+            .await
+            .map(|_| ());
+        warn_cleanup_failure(&op, &format!("{context_id}/{request_id}"), res);
+    }
+    result
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
