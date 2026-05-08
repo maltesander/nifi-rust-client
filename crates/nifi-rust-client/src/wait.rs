@@ -122,6 +122,7 @@ impl ControllerServiceTargetState {
 /// Internal outcome of a single poll check. The fetched value itself flows
 /// back to the caller through [`poll_until`]'s `Result<T, _>` return — this
 /// enum just signals the control flow.
+#[derive(Debug)]
 enum PollOutcome {
     /// State not satisfied yet — keep polling.
     Pending,
@@ -375,28 +376,34 @@ pub async fn processor_state_dynamic(
     poll_until(&config, &op, fetch, done).await
 }
 
-// ── wait::parameter_context_update ─────────────────────────────────────────
+// ── Shared outcome predicate ───────────────────────────────────────────────
 
-/// Audit follow-up A7: shared `(complete, failure_reason) -> PollOutcome`
-/// decision used by both the static and dynamic `parameter_context_update`
-/// helpers. Centralising it lets unit tests exercise the predicate without a
-/// full generated DTO. `failure_reason` is terminal regardless of `complete`.
-fn parameter_context_update_outcome(
-    complete: Option<bool>,
+/// Shared `(terminal, failure_reason) -> PollOutcome` decision used by every
+/// async-request helper that polls a `(complete | finished, failureReason)`
+/// pair. `failure_reason` is terminal regardless of the boolean; an absent
+/// boolean (server has not yet populated the field) is treated as Pending.
+///
+/// `op_kind` is a short noun phrase interpolated into the failure message
+/// (e.g. `"parameter context update"`, `"drop request"`, `"verification"`).
+fn terminal_outcome(
+    terminal: Option<bool>,
     failure_reason: Option<&str>,
+    op_kind: &str,
 ) -> PollOutcome {
     if let Some(reason) = failure_reason {
         return PollOutcome::Failed(NifiError::Api {
             status: STATUS_OPERATION_FAILED,
-            message: format!("parameter context update failed: {reason}"),
+            message: format!("{op_kind} failed: {reason}"),
         });
     }
-    if complete.unwrap_or(false) {
+    if terminal.unwrap_or(false) {
         PollOutcome::Ready
     } else {
         PollOutcome::Pending
     }
 }
+
+// ── wait::parameter_context_update ─────────────────────────────────────────
 
 #[cfg(not(feature = "dynamic"))]
 use crate::types::ParameterContextUpdateRequestEntity;
@@ -428,9 +435,10 @@ pub async fn parameter_context_update(
     };
     let done = |entity: &ParameterContextUpdateRequestEntity| {
         let req = entity.request.as_ref();
-        parameter_context_update_outcome(
+        terminal_outcome(
             req.and_then(|r| r.complete),
             req.and_then(|r| r.failure_reason.as_deref()),
+            "parameter context update",
         )
     };
     let result = poll_until(&config, &op, fetch, done).await;
@@ -466,9 +474,10 @@ pub async fn parameter_context_update_dynamic(
     };
     let done = |entity: &ParameterContextUpdateRequestEntity| {
         let req = entity.request.as_ref();
-        parameter_context_update_outcome(
+        terminal_outcome(
             req.and_then(|r| r.complete),
             req.and_then(|r| r.failure_reason.as_deref()),
+            "parameter context update",
         )
     };
     let result = poll_until(&config, &op, fetch, done).await;
@@ -722,7 +731,7 @@ mod tests {
     fn parameter_context_update_outcome_failure_reason_is_terminal() {
         // complete: None, failureReason: Some
         if let PollOutcome::Failed(NifiError::Api { status, message }) =
-            parameter_context_update_outcome(None, Some("boom"))
+            terminal_outcome(None, Some("boom"), "parameter context update")
         {
             assert_eq!(status, STATUS_OPERATION_FAILED);
             assert!(message.contains("boom"));
@@ -732,7 +741,7 @@ mod tests {
 
         // complete: Some(false), failureReason: Some — also terminal
         if let PollOutcome::Failed(NifiError::Api { message, .. }) =
-            parameter_context_update_outcome(Some(false), Some("nope"))
+            terminal_outcome(Some(false), Some("nope"), "parameter context update")
         {
             assert!(message.contains("nope"));
         } else {
@@ -741,7 +750,7 @@ mod tests {
 
         // complete: Some(true), failureReason: Some — failure still wins
         if let PollOutcome::Failed(NifiError::Api { message, .. }) =
-            parameter_context_update_outcome(Some(true), Some("failed-after-complete"))
+            terminal_outcome(Some(true), Some("failed-after-complete"), "parameter context update")
         {
             assert!(message.contains("failed-after-complete"));
         } else {
@@ -754,15 +763,15 @@ mod tests {
     #[test]
     fn parameter_context_update_outcome_no_failure_reason_paths() {
         assert!(matches!(
-            parameter_context_update_outcome(Some(true), None),
+            terminal_outcome(Some(true), None, "parameter context update"),
             PollOutcome::Ready
         ));
         assert!(matches!(
-            parameter_context_update_outcome(Some(false), None),
+            terminal_outcome(Some(false), None, "parameter context update"),
             PollOutcome::Pending
         ));
         assert!(matches!(
-            parameter_context_update_outcome(None, None),
+            terminal_outcome(None, None, "parameter context update"),
             PollOutcome::Pending
         ));
     }
@@ -793,5 +802,54 @@ mod tests {
             "initial_delay not honored, elapsed = {elapsed:?}"
         );
         assert_eq!(counter.load(Ordering::SeqCst), 1);
+    }
+}
+
+#[cfg(test)]
+mod outcome_tests {
+    use super::*;
+
+    #[test]
+    fn terminal_outcome_pending_when_not_terminal() {
+        match terminal_outcome(Some(false), None, "drop request") {
+            PollOutcome::Pending => {}
+            other => panic!("expected Pending, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn terminal_outcome_pending_when_none() {
+        match terminal_outcome(None, None, "drop request") {
+            PollOutcome::Pending => {}
+            other => panic!("expected Pending, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn terminal_outcome_ready_when_terminal() {
+        match terminal_outcome(Some(true), None, "drop request") {
+            PollOutcome::Ready => {}
+            other => panic!("expected Ready, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn terminal_outcome_failed_when_failure_reason_set() {
+        match terminal_outcome(Some(true), Some("queue empty"), "drop request") {
+            PollOutcome::Failed(NifiError::Api { status, message }) => {
+                assert_eq!(status, 500);
+                assert!(message.contains("drop request failed:"));
+                assert!(message.contains("queue empty"));
+            }
+            other => panic!("expected Failed(Api), got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn terminal_outcome_failure_overrides_pending_terminal() {
+        match terminal_outcome(Some(false), Some("oops"), "verification") {
+            PollOutcome::Failed(_) => {}
+            other => panic!("expected Failed, got {other:?}"),
+        }
     }
 }
