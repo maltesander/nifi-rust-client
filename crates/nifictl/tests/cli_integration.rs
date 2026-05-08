@@ -341,34 +341,34 @@ fn help_lists_all_generated_resources() {
         "connections",
         "connectors",
         "controller",
-        "controller_services",
+        "controller-services",
         "counters",
-        "datatransfer",
+        "data-transfer",
         "flow",
-        "flowfilequeues",
+        "flow-file-queues",
         "funnels",
-        "inputports",
+        "input-ports",
         "labels",
-        "outputports",
-        "parametercontexts",
-        "parameterproviders",
+        "output-ports",
+        "parameter-contexts",
+        "parameter-providers",
         "policies",
-        "processgroups",
+        "process-groups",
         "processors",
         "provenance",
-        "provenanceevents",
-        "remoteprocessgroups",
-        "reportingtasks",
+        "provenance-events",
+        "remote-process-groups",
+        "reporting-tasks",
         "resources",
-        "sitetosite",
+        "site-to-site",
         "snippets",
-        "systemdiagnostics",
+        "system-diagnostics",
         "tenants",
         "versions",
     ] {
         // Whole-word match anchored on clap's subcommand-listing format
         // ("  <name>  <description>"). Substring matching would falsely
-        // pass on e.g. "system" if `systemdiagnostics` were the only
+        // pass on e.g. "system" if `system-diagnostics` were the only
         // listed variant.
         let found = stdout
             .lines()
@@ -378,6 +378,73 @@ fn help_lists_all_generated_resources() {
             "top-level help missing whole-word '{resource}': {stdout}"
         );
     }
+}
+
+/// C9 — top-level `--help` must NOT advertise the deprecated
+/// snake/no-separator names. Aliases keep working but should not be
+/// surfaced to new users.
+#[test]
+fn deprecated_snake_names_not_in_help() {
+    let output = nifictl()
+        .arg("--help")
+        .output()
+        .expect("failed to run nifictl");
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    for old in [
+        "controller_services",
+        "datatransfer",
+        "flowfilequeues",
+        "inputports",
+        "outputports",
+        "parametercontexts",
+        "parameterproviders",
+        "processgroups",
+        "provenanceevents",
+        "remoteprocessgroups",
+        "reportingtasks",
+        "sitetosite",
+        "systemdiagnostics",
+    ] {
+        let leaked = stdout
+            .lines()
+            .any(|l| l.trim_start().starts_with(&format!("{old} ")));
+        assert!(
+            !leaked,
+            "top-level help leaked deprecated name '{old}': {stdout}"
+        );
+    }
+}
+
+/// C9 — kebab-case canonical name parses cleanly.
+#[test]
+fn kebab_canonical_name_parses() {
+    let output = nifictl()
+        .args(["controller-services", "--help"])
+        .output()
+        .expect("failed to run nifictl");
+    assert!(
+        output.status.success(),
+        "expected `controller-services --help` to exit 0; status={:?} stderr={}",
+        output.status,
+        String::from_utf8_lossy(&output.stderr)
+    );
+}
+
+/// C9 — backward-compat: previous snake-case alias still works for one
+/// release cycle.
+#[test]
+fn snake_alias_still_works() {
+    let output = nifictl()
+        .args(["controller_services", "--help"])
+        .output()
+        .expect("failed to run nifictl");
+    assert!(
+        output.status.success(),
+        "expected `controller_services --help` (alias) to exit 0; status={:?} stderr={}",
+        output.status,
+        String::from_utf8_lossy(&output.stderr)
+    );
 }
 
 /// `ops stop-pg` without `--yes` in non-TTY must refuse with a clear error.

@@ -176,7 +176,7 @@ pub(crate) enum Commands {
         command: generated::ControllerCommand,
     },
     /// Manage ControllerServices resources
-    #[command(name = "controller_services")]
+    #[command(name = "controller-services", alias = "controller_services")]
     ControllerServices {
         #[command(subcommand)]
         command: generated::ControllerServicesCommand,
@@ -188,7 +188,7 @@ pub(crate) enum Commands {
         command: generated::CountersCommand,
     },
     /// Manage DataTransfer resources
-    #[command(name = "datatransfer")]
+    #[command(name = "data-transfer", alias = "datatransfer")]
     DataTransfer {
         #[command(subcommand)]
         command: generated::DataTransferCommand,
@@ -200,7 +200,7 @@ pub(crate) enum Commands {
         command: FlowCommand,
     },
     /// Manage FlowFileQueues resources
-    #[command(name = "flowfilequeues")]
+    #[command(name = "flow-file-queues", alias = "flowfilequeues")]
     FlowFileQueues {
         #[command(subcommand)]
         command: generated::FlowFileQueuesCommand,
@@ -212,7 +212,7 @@ pub(crate) enum Commands {
         command: generated::FunnelsCommand,
     },
     /// Manage InputPorts resources
-    #[command(name = "inputports")]
+    #[command(name = "input-ports", alias = "inputports")]
     InputPorts {
         #[command(subcommand)]
         command: generated::InputPortsCommand,
@@ -224,19 +224,19 @@ pub(crate) enum Commands {
         command: generated::LabelsCommand,
     },
     /// Manage OutputPorts resources
-    #[command(name = "outputports")]
+    #[command(name = "output-ports", alias = "outputports")]
     OutputPorts {
         #[command(subcommand)]
         command: generated::OutputPortsCommand,
     },
     /// Manage ParameterContexts resources
-    #[command(name = "parametercontexts")]
+    #[command(name = "parameter-contexts", alias = "parametercontexts")]
     ParameterContexts {
         #[command(subcommand)]
         command: generated::ParameterContextsCommand,
     },
     /// Manage ParameterProviders resources
-    #[command(name = "parameterproviders")]
+    #[command(name = "parameter-providers", alias = "parameterproviders")]
     ParameterProviders {
         #[command(subcommand)]
         command: generated::ParameterProvidersCommand,
@@ -248,7 +248,7 @@ pub(crate) enum Commands {
         command: generated::PoliciesCommand,
     },
     /// Manage ProcessGroups resources
-    #[command(name = "processgroups")]
+    #[command(name = "process-groups", alias = "processgroups")]
     ProcessGroups {
         #[command(subcommand)]
         command: generated::ProcessGroupsCommand,
@@ -266,19 +266,19 @@ pub(crate) enum Commands {
         command: generated::ProvenanceCommand,
     },
     /// Manage ProvenanceEvents resources
-    #[command(name = "provenanceevents")]
+    #[command(name = "provenance-events", alias = "provenanceevents")]
     ProvenanceEvents {
         #[command(subcommand)]
         command: generated::ProvenanceEventsCommand,
     },
     /// Manage RemoteProcessGroups resources
-    #[command(name = "remoteprocessgroups")]
+    #[command(name = "remote-process-groups", alias = "remoteprocessgroups")]
     RemoteProcessGroups {
         #[command(subcommand)]
         command: generated::RemoteProcessGroupsCommand,
     },
     /// Manage ReportingTasks resources
-    #[command(name = "reportingtasks")]
+    #[command(name = "reporting-tasks", alias = "reportingtasks")]
     ReportingTasks {
         #[command(subcommand)]
         command: generated::ReportingTasksCommand,
@@ -290,7 +290,7 @@ pub(crate) enum Commands {
         command: generated::ResourcesCommand,
     },
     /// Manage SiteToSite resources
-    #[command(name = "sitetosite")]
+    #[command(name = "site-to-site", alias = "sitetosite")]
     SiteToSite {
         #[command(subcommand)]
         command: generated::SiteToSiteCommand,
@@ -302,7 +302,7 @@ pub(crate) enum Commands {
         command: generated::SnippetsCommand,
     },
     /// Manage SystemDiagnostics resources
-    #[command(name = "systemdiagnostics")]
+    #[command(name = "system-diagnostics", alias = "systemdiagnostics")]
     SystemDiagnostics {
         #[command(subcommand)]
         command: generated::SystemDiagnosticsCommand,

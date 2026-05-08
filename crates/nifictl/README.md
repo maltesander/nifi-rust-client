@@ -167,8 +167,8 @@ the final entity when it converges to the requested state.
 | Command | Waits for |
 |---------|-----------|
 | `processors update-run-status <id> --wait` | processor state matches the body's `state` (RUNNING, STOPPED, or DISABLED) |
-| `controller_services update-run-status <id> --wait` | service state matches the body's `state` (ENABLED or DISABLED) |
-| `parametercontexts submit-parameter-context-update <context-id> --wait` | update request reports `complete: true` (polls the request id returned by submit; trailing DELETE is best-effort) |
+| `controller-services update-run-status <id> --wait` | service state matches the body's `state` (ENABLED or DISABLED) |
+| `parameter-contexts submit-parameter-context-update <context-id> --wait` | update request reports `complete: true` (polls the request id returned by submit; trailing DELETE is best-effort) |
 | `provenance submit-provenance-request --wait` | query reports `finished: true` (polls the query id returned by submit; trailing DELETE is best-effort) |
 
 Default timeout is 30s; override with `--wait-timeout=<duration>`
@@ -233,7 +233,7 @@ replace is **not** rolled back.
 **Parameter contexts.** Flow snapshots reference parameter contexts by
 name. Import or replace into an environment where those contexts do not
 exist surfaces the NiFi server error verbatim. Create the contexts first
-with `nifictl parametercontexts …`.
+with `nifictl parameter-contexts …`.
 
 #### Environment promotion recipe
 
@@ -330,10 +330,36 @@ surface is 1:1 with `nifi-rust-client`'s public API:
 nifictl processors get-processor <id>
 nifictl processors delete-processor <id>
 nifictl processors update-processor <id> --body-file processor.json
-nifictl processgroups get-process-groups <parent-id>
+nifictl process-groups get-process-groups <parent-id>
 nifictl flow search-cluster --q "my processor"
-nifictl controller_services get-controller-service <id>
+nifictl controller-services get-controller-service <id>
 ```
+
+### Deprecated subcommand names (one release of compat)
+
+Several resource subcommands previously used `snake_case` or
+no-separator names (e.g. `controller_services`, `flowfilequeues`).
+The canonical form is now kebab-case across the board, matching the
+porcelain commands. Old names continue to work as clap aliases for one
+release cycle; please migrate scripts:
+
+| Old | New |
+|---|---|
+| `controller_services` | `controller-services` |
+| `datatransfer` | `data-transfer` |
+| `flowfilequeues` | `flow-file-queues` |
+| `inputports` | `input-ports` |
+| `outputports` | `output-ports` |
+| `parametercontexts` | `parameter-contexts` |
+| `parameterproviders` | `parameter-providers` |
+| `processgroups` | `process-groups` |
+| `provenanceevents` | `provenance-events` |
+| `remoteprocessgroups` | `remote-process-groups` |
+| `reportingtasks` | `reporting-tasks` |
+| `sitetosite` | `site-to-site` |
+| `systemdiagnostics` | `system-diagnostics` |
+
+After upgrading, regenerate shell completions: `nifictl completions <shell>`.
 
 ## Multi-version support
 
