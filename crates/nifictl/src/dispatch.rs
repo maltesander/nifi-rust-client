@@ -96,7 +96,7 @@ async fn dispatch_resource(
             .build_dynamic()?;
         (client, dr.url)
     } else {
-        let context_name = resolve_context_name(&cfg, context_name_override);
+        let context_name = resolve_context_name(&cfg, context_name_override)?;
         let params = client_factory::ResolvedParams::resolve(
             url, username, password, token, insecure, context,
         )?;
@@ -178,7 +178,7 @@ pub(crate) async fn run(cli: Cli) -> Result<(), error::CliError> {
     match cli.command {
         Commands::Login => {
             let cfg = load_config(cli.config.as_deref())?;
-            let context_name = resolve_context_name(&cfg, cli.context.as_deref());
+            let context_name = resolve_context_name(&cfg, cli.context.as_deref())?;
             let context = resolve_context(&cfg, cli.context.as_deref())?;
             let params = client_factory::ResolvedParams::resolve(
                 cli.url,
@@ -192,12 +192,12 @@ pub(crate) async fn run(cli: Cli) -> Result<(), error::CliError> {
         }
         Commands::Logout => {
             let cfg = load_config(cli.config.as_deref())?;
-            let context_name = resolve_context_name(&cfg, cli.context.as_deref());
+            let context_name = resolve_context_name(&cfg, cli.context.as_deref())?;
             porcelain::login::logout(&context_name)
         }
         Commands::Status => {
             let cfg = load_config(cli.config.as_deref())?;
-            let context_name = resolve_context_name(&cfg, cli.context.as_deref());
+            let context_name = resolve_context_name(&cfg, cli.context.as_deref())?;
             let context = resolve_context(&cfg, cli.context.as_deref())?;
             let params = client_factory::ResolvedParams::resolve(
                 cli.url,
@@ -274,7 +274,7 @@ pub(crate) async fn run(cli: Cli) -> Result<(), error::CliError> {
                     .danger_accept_invalid_certs(dr.insecure)
                     .build_dynamic()?
             } else {
-                let context_name = resolve_context_name(&cfg, cli.context.as_deref());
+                let context_name = resolve_context_name(&cfg, cli.context.as_deref())?;
                 let params = client_factory::ResolvedParams::resolve(
                     cli.url,
                     cli.username,
@@ -390,7 +390,7 @@ pub(crate) async fn run(cli: Cli) -> Result<(), error::CliError> {
                     .danger_accept_invalid_certs(dr.insecure)
                     .build_dynamic()?
             } else {
-                let context_name = resolve_context_name(&cfg, cli.context.as_deref());
+                let context_name = resolve_context_name(&cfg, cli.context.as_deref())?;
                 let params = client_factory::ResolvedParams::resolve(
                     cli.url,
                     cli.username,
@@ -582,16 +582,51 @@ fn load_config(path: Option<&std::path::Path>) -> Result<Option<config::Config>,
 
 /// Resolve the context name for token caching purposes.
 /// Uses --context flag, then config's current_context, then "default" as fallback.
-fn resolve_context_name(cfg: &Option<config::Config>, name: Option<&str>) -> String {
-    if let Some(n) = name {
-        return n.to_string();
-    }
-    if let Some(config) = cfg
+///
+/// The resolved name is later concatenated into a filesystem path
+/// (`~/.nifictl/tokens/<context>`), so it MUST not contain path separators
+/// or `..` segments. A user passing `--context "../etc/passwd"` would
+/// otherwise read/write outside the tokens dir. We reject path-traversal
+/// shapes up front with [`error::CliError::User`] before any filesystem
+/// access.
+fn resolve_context_name(
+    cfg: &Option<config::Config>,
+    name: Option<&str>,
+) -> Result<String, error::CliError> {
+    let resolved = if let Some(n) = name {
+        n.to_string()
+    } else if let Some(config) = cfg
         && let Some(ctx) = &config.current_context
     {
-        return ctx.clone();
+        ctx.clone()
+    } else {
+        "default".to_string()
+    };
+    validate_context_name(&resolved)?;
+    Ok(resolved)
+}
+
+/// Reject context names that would escape `~/.nifictl/tokens/` when joined
+/// into a path: separators (`/`, `\`), `..` segments, or NUL bytes. Empty
+/// names are also rejected (would resolve to the tokens dir itself).
+pub(crate) fn validate_context_name(name: &str) -> Result<(), error::CliError> {
+    if name.is_empty() {
+        return Err(error::CliError::User(
+            "context name must not be empty".to_string(),
+        ));
     }
-    "default".to_string()
+    if name.contains('/')
+        || name.contains('\\')
+        || name.contains('\0')
+        || name.split(['/', '\\']).any(|seg| seg == "..")
+        || name == ".."
+        || name == "."
+    {
+        return Err(error::CliError::User(format!(
+            "invalid context name '{name}': must not contain '/', '\\\\', '..', or NUL"
+        )));
+    }
+    Ok(())
 }
 
 /// Find a context by name, or return the active context from config.
@@ -610,4 +645,41 @@ fn resolve_context<'a>(
     }
 
     Ok(config.active_context())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// B3: context names must be safe to concatenate into a path under
+    /// `~/.nifictl/tokens/`. Anything that could escape (path separators,
+    /// `..`, NUL) is rejected at command entry, before any filesystem call.
+    #[test]
+    fn validate_context_name_rejects_path_traversal() {
+        for bad in [
+            "../etc/passwd",
+            "..",
+            ".",
+            "foo/bar",
+            "foo\\bar",
+            "with\0nul",
+            "",
+            "a/../b",
+        ] {
+            let err = validate_context_name(bad)
+                .err()
+                .unwrap_or_else(|| panic!("expected rejection for {bad:?}"));
+            assert!(matches!(err, error::CliError::User(_)));
+        }
+    }
+
+    #[test]
+    fn validate_context_name_accepts_normal_names() {
+        for good in ["default", "prod", "staging-1", "dev_test", "a.b", "team:1"] {
+            assert!(
+                validate_context_name(good).is_ok(),
+                "expected {good:?} to be accepted"
+            );
+        }
+    }
 }

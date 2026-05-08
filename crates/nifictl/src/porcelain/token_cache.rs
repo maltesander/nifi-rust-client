@@ -23,7 +23,22 @@ use crate::jwt;
 const FRESHNESS_SKEW: Duration = Duration::from_secs(60);
 
 /// Resolve the on-disk cache path for a given context name.
+///
+/// `context_name` is assumed to have already been validated by
+/// [`crate::dispatch::validate_context_name`] (which is called for every
+/// context-name resolution at command entry). The `debug_assert!` here is
+/// defence-in-depth so a future caller that bypasses dispatch trips a
+/// debug-build panic instead of silently writing outside `~/.nifictl/tokens/`.
 pub(crate) fn cache_path(context_name: &str) -> PathBuf {
+    debug_assert!(
+        !context_name.is_empty()
+            && !context_name.contains('/')
+            && !context_name.contains('\\')
+            && !context_name.contains('\0')
+            && context_name != ".."
+            && context_name != ".",
+        "cache_path called with unvalidated context name: {context_name:?}"
+    );
     let home = std::env::var("HOME").unwrap_or_else(|_| ".".to_string());
     PathBuf::from(home)
         .join(".nifictl")
