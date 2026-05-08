@@ -38,13 +38,20 @@ impl OutputFormat {
     }
 
     /// Resolve `Auto` to a concrete format based on whether stdout is a TTY.
+    ///
+    /// **C5:** `Auto` on a non-TTY now resolves to `Json` (JSON array for
+    /// lists, pretty-printed object for singles) rather than `JsonCompact`
+    /// (which emits NDJSON for lists). The previous behaviour broke
+    /// downstream `jq` invocations expecting a single document — `jq '.'`
+    /// over an NDJSON stream errors with "trailing garbage". Pipelines that
+    /// genuinely want NDJSON keep working with explicit `-o json-compact`.
     pub fn resolve(&self) -> ResolvedFormat {
         match self {
             Self::Auto => {
                 if std::io::stdout().is_terminal() {
                     ResolvedFormat::Table
                 } else {
-                    ResolvedFormat::JsonCompact
+                    ResolvedFormat::Json
                 }
             }
             Self::Json => ResolvedFormat::Json,
@@ -172,13 +179,34 @@ mod tests {
     }
 
     #[test]
-    fn auto_resolves_to_table_or_json_compact() {
-        // Auto depends on whether stdout is a TTY — both are valid.
+    fn auto_resolves_to_table_or_json() {
+        // Auto depends on whether stdout is a TTY:
+        // - TTY: Table (key-value pretty render)
+        // - non-TTY: Json (array for lists; previously JsonCompact/NDJSON)
         let resolved = OutputFormat::Auto.resolve();
         assert!(
-            resolved == ResolvedFormat::Table || resolved == ResolvedFormat::JsonCompact,
-            "Auto should resolve to Table or JsonCompact, got {resolved:?}"
+            resolved == ResolvedFormat::Table || resolved == ResolvedFormat::Json,
+            "Auto should resolve to Table or Json, got {resolved:?}"
         );
+    }
+
+    /// C5: Auto on non-TTY + List output produces a single JSON array,
+    /// not NDJSON. We can't directly force a non-TTY in this unit test,
+    /// but we can simulate the resolution result and confirm that
+    /// `ResolvedFormat::Json` for a list emits one document with a
+    /// top-level `[` / `]`.
+    #[test]
+    fn auto_pipe_list_renders_json_array() {
+        let output = CliOutput::List(vec![json!({"id": "1"}), json!({"id": "2"})]);
+        let mut buf = Vec::new();
+        render(&output, &ResolvedFormat::Json, &[], &mut buf).unwrap();
+        let s = String::from_utf8(buf).unwrap();
+        assert!(s.trim_start().starts_with('['), "expected JSON array, got: {s}");
+        assert!(s.trim_end().ends_with(']'), "expected JSON array, got: {s}");
+        // Confirm it's NOT NDJSON: parsing the whole blob as a single
+        // serde_json::Value must succeed.
+        let parsed: Vec<Value> = serde_json::from_str(&s).expect("must parse as JSON array");
+        assert_eq!(parsed.len(), 2);
     }
 
     #[test]
