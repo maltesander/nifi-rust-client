@@ -48,7 +48,7 @@ async fn dynamic_get_about_info_happy_path() {
 
 #[tokio::test]
 async fn dynamic_get_access_policy_for_resource_preserves_slashes() {
-    // Dynamic-mode regression for the 0.13.0 path-encoding change: the
+    // Dynamic-mode regression for the path-encoding change: the
     // policy `{resource}` param is multi-segment (`pattern: ".+"`) and its
     // `/` separators must reach NiFi un-encoded.
     let server = MockServer::start().await;

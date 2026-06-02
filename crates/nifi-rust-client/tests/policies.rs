@@ -46,7 +46,7 @@ async fn get_access_policy_for_resource_preserves_multi_segment_resource() {
     // NiFi's `{resource}` path param is a multi-segment path (it carries
     // `pattern: ".+"` in the spec). Its `/` separators must reach NiFi
     // intact — they must NOT be percent-encoded to `%2F`, or NiFi won't
-    // match the route. Regression test for the 0.13.0 path-encoding change.
+    // match the route.
     let mock_server = MockServer::start().await;
     Mock::given(method("GET"))
         .and(path("/nifi-api/policies/read/process-groups/root"))
