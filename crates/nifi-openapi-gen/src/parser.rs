@@ -121,8 +121,8 @@ pub struct PathParam {
     /// `true` when the param's OpenAPI schema declares a slash-permitting
     /// `pattern` (e.g. NiFi's policy `{resource}` with `pattern: ".+"`),
     /// meaning the value is a *multi-segment* path. The emitter then
-    /// substitutes it with [`crate::url::encode_path_multi_segment`]
-    /// (slashes preserved) instead of [`crate::url::encode_path_segment`]
+    /// substitutes it with `crate::url::encode_path_multi_segment`
+    /// (slashes preserved) instead of `crate::url::encode_path_segment`
     /// (slashes percent-encoded). Defaults to `false` for plain params.
     pub multi_segment: bool,
 }
