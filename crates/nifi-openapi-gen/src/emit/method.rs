@@ -9,7 +9,9 @@
 use std::collections::BTreeMap;
 
 use crate::canonical::VersionSet;
-use crate::parser::{Endpoint, HttpMethod, MultipartField, MultipartFieldType, QueryParam};
+use crate::parser::{
+    Endpoint, HttpMethod, MultipartField, MultipartFieldType, PathParam, QueryParam,
+};
 use crate::util::escape_keyword;
 
 /// Rust type for a multipart field in a generated method signature.
@@ -449,20 +451,33 @@ fn emit_headers_setup(ep: &Endpoint, indent: &str) -> (String, String) {
 
 // ───────────────────────────── Static body ─────────────────────────────
 
+/// Name of the `crate::url` helper used to substitute a path param.
+/// Multi-segment params (slash-permitting OpenAPI `pattern`) preserve
+/// their `/` separators; everything else encodes them.
+fn path_encode_fn(pp: &PathParam) -> &'static str {
+    if pp.multi_segment {
+        "encode_path_multi_segment"
+    } else {
+        "encode_path_segment"
+    }
+}
+
 fn emit_method_body_static(ep: &Endpoint, stream: bool) -> String {
     let path_expr = if ep.path_params.is_empty() {
         format!("\"{}\"", ep.path)
     } else {
         // Replace `{name}` placeholders with `{}` and supply each value
-        // wrapped in `crate::url::encode_path_segment(...)` so a `/` or
-        // `?` in the value cannot reshape the URL.
+        // wrapped in the URL helper so a `/` or `?` in the value cannot
+        // reshape the URL. Multi-segment params (slash-permitting OpenAPI
+        // `pattern`, e.g. policy `{resource}`) keep their slashes.
         let positional_path = positional_path_for_format(&ep.path);
         let args: Vec<String> = ep
             .path_params
             .iter()
             .map(|p| {
                 format!(
-                    "crate::url::encode_path_segment({})",
+                    "crate::url::{}({})",
+                    path_encode_fn(p),
                     escape_keyword(&p.name)
                 )
             })
@@ -848,11 +863,12 @@ fn emit_method_body_dynamic(
     for pp in &ep.path_params {
         let placeholder = format!("{{{}}}", pp.name);
         let value = escape_keyword(&pp.name);
-        // Wrap each substitution in encode_path_segment so a `/` or `?`
-        // in the param value cannot reshape the URL.
-        path_expr = format!(
-            "{path_expr}.replace(\"{placeholder}\", &crate::url::encode_path_segment({value}))"
-        );
+        // Wrap each substitution in the URL helper so a `/` or `?` in the
+        // param value cannot reshape the URL. Multi-segment params
+        // (slash-permitting OpenAPI `pattern`) keep their slashes.
+        let encode_fn = path_encode_fn(pp);
+        path_expr =
+            format!("{path_expr}.replace(\"{placeholder}\", &crate::url::{encode_fn}({value}))");
     }
     out.push_str(&format!("        let path = {path_expr};\n"));
 
@@ -1190,6 +1206,7 @@ mod emit_fix_inline_json_tests {
             path_params: vec![PathParam {
                 name: "id".to_string(),
                 doc: None,
+                multi_segment: false,
             }],
             request_type: None,
             body_kind: None,
@@ -1268,6 +1285,7 @@ mod emit_fix_inline_json_tests {
             path_params: vec![PathParam {
                 name: "id".to_string(),
                 doc: None,
+                multi_segment: false,
             }],
             ..inline_json_endpoint()
         };
@@ -1292,6 +1310,7 @@ mod emit_fix_inline_json_tests {
             path_params: vec![PathParam {
                 name: "id".to_string(),
                 doc: None,
+                multi_segment: false,
             }],
             ..inline_json_endpoint()
         };
@@ -1312,6 +1331,65 @@ mod emit_fix_inline_json_tests {
         assert!(
             !out.contains(".replace(\"{id}\", id)"),
             "dynamic emitter must not pass raw `id` to .replace; got:\n{out}"
+        );
+    }
+
+    fn multi_segment_endpoint() -> Endpoint {
+        Endpoint {
+            fn_name: "get_access_policy_for_resource".to_string(),
+            path: "/policies/{action}/{resource}".to_string(),
+            method: HttpMethod::Get,
+            path_params: vec![
+                PathParam {
+                    name: "action".to_string(),
+                    doc: None,
+                    multi_segment: false,
+                },
+                PathParam {
+                    name: "resource".to_string(),
+                    doc: None,
+                    multi_segment: true,
+                },
+            ],
+            ..inline_json_endpoint()
+        }
+    }
+
+    #[test]
+    fn static_emitter_uses_multi_segment_for_pattern_params() {
+        let mut out = String::new();
+        emit_method(&multi_segment_endpoint(), &EmitMode::Static, &mut out);
+        // Single-segment param keeps the slash-encoding helper.
+        assert!(
+            out.contains("crate::url::encode_path_segment(action)"),
+            "action must use encode_path_segment; got:\n{out}"
+        );
+        // Multi-segment param must preserve its slashes.
+        assert!(
+            out.contains("crate::url::encode_path_multi_segment(resource)"),
+            "resource must use encode_path_multi_segment; got:\n{out}"
+        );
+    }
+
+    #[test]
+    fn dynamic_emitter_uses_multi_segment_for_pattern_params() {
+        let endpoint_versions = crate::canonical::VersionSet::new();
+        let query_param_versions = std::collections::BTreeMap::new();
+        let ctx = DynamicMethodCtx {
+            endpoint_versions: &endpoint_versions,
+            query_param_versions: &query_param_versions,
+            endpoint_variant: "GetAccessPolicyForResource".to_string(),
+            method_lit: "GET",
+        };
+        let mut out = String::new();
+        emit_method(&multi_segment_endpoint(), &EmitMode::Dynamic(ctx), &mut out);
+        assert!(
+            out.contains("crate::url::encode_path_segment(action)"),
+            "action must use encode_path_segment; got:\n{out}"
+        );
+        assert!(
+            out.contains("crate::url::encode_path_multi_segment(resource)"),
+            "resource must use encode_path_multi_segment; got:\n{out}"
         );
     }
 

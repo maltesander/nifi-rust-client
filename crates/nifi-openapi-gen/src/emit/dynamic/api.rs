@@ -193,6 +193,7 @@ mod tests {
                     path_params: vec![PathParam {
                         name: "id".to_string(),
                         doc: None,
+                        multi_segment: false,
                     }],
                     request_type: None,
                     body_kind: None,
@@ -227,6 +228,7 @@ mod tests {
                     path_params: vec![PathParam {
                         name: "id".to_string(),
                         doc: None,
+                        multi_segment: false,
                     }],
                     request_type: None,
                     body_kind: None,
@@ -292,6 +294,7 @@ mod tests {
                     path_params: vec![PathParam {
                         name: "component_id".to_string(),
                         doc: None,
+                        multi_segment: false,
                     }],
                     request_type: None,
                     body_kind: None,
@@ -319,10 +322,12 @@ mod tests {
                         PathParam {
                             name: "id".to_string(),
                             doc: None,
+                            multi_segment: false,
                         },
                         PathParam {
                             name: "drop_request_id".to_string(),
                             doc: None,
+                            multi_segment: false,
                         },
                     ],
                     request_type: None,

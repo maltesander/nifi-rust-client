@@ -33,6 +33,23 @@ pub fn encode_path_segment(s: &str) -> String {
     utf8_percent_encode(s, PATH_SEGMENT).to_string()
 }
 
+/// Percent-encode an arbitrary string for use as a *multi-segment* URL
+/// path value — i.e. a value that legitimately contains `/` separators
+/// (e.g. NiFi policy resources like `process-groups/root`).
+///
+/// Slashes are preserved as structural delimiters, but every other
+/// reserved/unsafe byte is still encoded *within* each segment, so a `?`
+/// or `#` in the value cannot reshape the URL into a query/fragment.
+///
+/// Used by emitter-generated code for path params whose OpenAPI schema
+/// declares a slash-permitting `pattern` (see `parser.rs`).
+pub fn encode_path_multi_segment(s: &str) -> String {
+    s.split('/')
+        .map(encode_path_segment)
+        .collect::<Vec<_>>()
+        .join("/")
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -61,5 +78,26 @@ mod tests {
         assert_eq!(encode_path_segment(".."), ".."); // dots themselves are safe;
         // the encoding rejects path separators which are what makes traversal possible.
         assert_eq!(encode_path_segment("../etc/passwd"), "..%2Fetc%2Fpasswd");
+    }
+
+    #[test]
+    fn multi_segment_preserves_slashes() {
+        // NiFi policy resources are genuinely multi-segment paths.
+        assert_eq!(
+            encode_path_multi_segment("process-groups/root"),
+            "process-groups/root"
+        );
+        assert_eq!(
+            encode_path_multi_segment("processors/8f3b2d1c-4a5e-4f6a-9b8c-1d2e3f4a5b6c"),
+            "processors/8f3b2d1c-4a5e-4f6a-9b8c-1d2e3f4a5b6c"
+        );
+    }
+
+    #[test]
+    fn multi_segment_still_encodes_within_segments() {
+        // Slashes stay structural, but query/fragment injection inside a
+        // segment is still neutralized.
+        assert_eq!(encode_path_multi_segment("a?b/c#d"), "a%3Fb/c%23d");
+        assert_eq!(encode_path_multi_segment("a b/c d"), "a%20b/c%20d");
     }
 }

@@ -37,6 +37,7 @@ fn fixture(
                 .map(|name| PathParam {
                     name: name.to_string(),
                     doc: None,
+                    multi_segment: false,
                 })
         })
         .collect();

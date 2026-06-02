@@ -473,3 +473,30 @@ fn parse_security_no_auth_required() {
         "expected empty vec for no-auth, got: {sec:?}"
     );
 }
+
+#[test]
+fn multi_segment_path_param_flagged_from_pattern() {
+    let spec = load(&fixture("multi_segment_path.json"));
+    let ep = spec
+        .tags
+        .iter()
+        .flat_map(|t| &t.endpoints)
+        .find(|e| e.fn_name == "get_access_policy_for_resource")
+        .expect("get_access_policy_for_resource endpoint");
+
+    let action = ep
+        .path_params
+        .iter()
+        .find(|p| p.name == "action")
+        .expect("action param");
+    let resource = ep
+        .path_params
+        .iter()
+        .find(|p| p.name == "resource")
+        .expect("resource param");
+
+    // Plain string param → single-segment, slashes must be encoded.
+    assert!(!action.multi_segment, "action must not be multi-segment");
+    // `pattern: ".+"` permits slashes → multi-segment.
+    assert!(resource.multi_segment, "resource must be multi-segment");
+}

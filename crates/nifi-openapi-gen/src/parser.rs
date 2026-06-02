@@ -118,6 +118,13 @@ pub struct PathParam {
     pub name: String,
     /// Human-readable description from the spec, if any.
     pub doc: Option<String>,
+    /// `true` when the param's OpenAPI schema declares a slash-permitting
+    /// `pattern` (e.g. NiFi's policy `{resource}` with `pattern: ".+"`),
+    /// meaning the value is a *multi-segment* path. The emitter then
+    /// substitutes it with [`crate::url::encode_path_multi_segment`]
+    /// (slashes preserved) instead of [`crate::url::encode_path_segment`]
+    /// (slashes percent-encoded). Defaults to `false` for plain params.
+    pub multi_segment: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -465,6 +472,35 @@ fn pascal_case_param(s: &str) -> String {
     }
 }
 
+/// Decide whether a path param is a *multi-segment* value — one that
+/// legitimately contains `/` separators and must therefore NOT have its
+/// slashes percent-encoded (e.g. NiFi's `/policies/{action}/{resource}`,
+/// where `{resource}` is `process-groups/root`).
+///
+/// The discriminator is the OpenAPI schema `pattern`: a plain param has
+/// none and stays single-segment; `.+` / `.*` permit any character
+/// including `/`, marking the param multi-segment. Any *other* pattern is
+/// an unrecognized shape — we panic with an actionable message rather than
+/// silently guessing slash-handling (consistent with the strict-parsing
+/// philosophy in `content_type.rs` / `parse_field_type`).
+fn path_param_is_multi_segment(param: &Value, raw_name: &str) -> bool {
+    let pattern = param
+        .get("schema")
+        .and_then(|s| s.get("pattern"))
+        .and_then(|p| p.as_str());
+    match pattern {
+        None => false,
+        Some(".+") | Some(".*") => true,
+        Some(other) => panic!(
+            "Unrecognized OpenAPI `pattern` {other:?} on path param `{raw_name}`. \
+             Classify its slash-handling in `parser.rs::path_param_is_multi_segment`: \
+             return `true` if the pattern permits `/` (multi-segment, substituted via \
+             `encode_path_multi_segment`), `false` otherwise (single-segment, \
+             `encode_path_segment`)."
+        ),
+    }
+}
+
 fn parse_tags(
     spec: &Value,
     _schemas: &serde_json::Map<String, Value>,
@@ -528,12 +564,14 @@ fn parse_tags(
                 .filter(|p| p.get("in").and_then(|i| i.as_str()) == Some("path"))
                 .filter_map(|p| {
                     let raw = p.get("name").and_then(|n| n.as_str())?;
+                    let multi_segment = path_param_is_multi_segment(p, raw);
                     Some(PathParam {
                         name: prop_name_to_rust(&raw.replace('-', "_")),
                         doc: p
                             .get("description")
                             .and_then(|d| d.as_str())
                             .map(String::from),
+                        multi_segment,
                     })
                 })
                 .collect();

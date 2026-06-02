@@ -337,6 +337,22 @@ CLI exposure of multipart endpoints is intentionally skipped via
 `emit/cli/commands.rs::is_skipped_body_kind` — hand-written porcelain (e.g.
 `porcelain::flow::import`) consumes the library method directly.
 
+### Path-param URL encoding (single- vs multi-segment)
+
+Every path-param substitution is percent-encoded so a `/` or `?` in the value can't reshape
+the URL. Two helpers in `src/url.rs`, selected per param by the emitter:
+
+- `encode_path_segment` — encodes `/` → `%2F`. Default for ordinary params (UUIDs, names).
+- `encode_path_multi_segment` — splits on `/`, encodes each segment, rejoins with `/`. Slashes
+  are preserved as structural delimiters; `?`/`#`/`%`/space inside a segment are still encoded.
+
+The discriminator is `PathParam::multi_segment`, set by `parser.rs::path_param_is_multi_segment`
+from the OpenAPI schema `pattern`: none → single-segment; `.+`/`.*` → multi-segment; **any other
+pattern panics** (strict, like the content-type allow-list — classify new patterns explicitly).
+Today the only multi-segment param is `GET /policies/{action}/{resource}`'s `{resource}`
+(NiFi policy resources are paths like `process-groups/root`). The emitter wraps each param via
+`emit/method.rs::path_encode_fn` in both static and dynamic modes.
+
 ### nifictl `Commands` enum — manual resource enumeration
 
 The nifictl binary is split:

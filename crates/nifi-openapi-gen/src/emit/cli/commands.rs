@@ -663,6 +663,7 @@ mod tests {
             vec![PathParam {
                 name: "id".to_string(),
                 doc: None,
+                multi_segment: false,
             }],
             Some("ProcessorEntity"),
         );
@@ -673,6 +674,7 @@ mod tests {
             vec![PathParam {
                 name: "id".to_string(),
                 doc: None,
+                multi_segment: false,
             }],
             None,
         );
@@ -699,6 +701,7 @@ mod tests {
             vec![PathParam {
                 name: "id".to_string(),
                 doc: None,
+                multi_segment: false,
             }],
             Some("ProcessorEntity"),
         );
@@ -709,6 +712,7 @@ mod tests {
             vec![PathParam {
                 name: "id".to_string(),
                 doc: None,
+                multi_segment: false,
             }],
             None,
         );
@@ -750,6 +754,7 @@ mod tests {
             vec![PathParam {
                 name: "id".to_string(),
                 doc: None,
+                multi_segment: false,
             }],
             Some("ProcessorEntity"),
         );
@@ -780,6 +785,7 @@ mod tests {
             vec![PathParam {
                 name: "id".to_string(),
                 doc: None,
+                multi_segment: false,
             }],
             Some("ProcessorEntity"),
         );
@@ -811,6 +817,7 @@ mod tests {
             vec![PathParam {
                 name: "id".to_string(),
                 doc: None,
+                multi_segment: false,
             }],
             None,
         );
@@ -833,6 +840,7 @@ mod tests {
             vec![PathParam {
                 name: "id".to_string(),
                 doc: None,
+                multi_segment: false,
             }],
             Some("ProcessorEntity"),
         );

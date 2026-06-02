@@ -210,6 +210,7 @@ mod tests {
         ep.path_params.push(PathParam {
             name: param_name.to_string(),
             doc: None,
+            multi_segment: false,
         });
         ep
     }
@@ -1168,6 +1169,7 @@ mod tests {
         ep.path_params.push(PathParam {
             name: "cluster_id".to_string(),
             doc: None,
+            multi_segment: false,
         });
         let to = make_spec(vec![make_tag("Flow", vec![ep])], vec![]);
         let diff = compute_diff(&from, &to, "2.7.2", "2.8.0");

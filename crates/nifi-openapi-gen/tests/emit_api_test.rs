@@ -48,6 +48,7 @@ fn flow_spec() -> ApiSpec {
                     path_params: vec![PathParam {
                         name: "id".into(),
                         doc: None,
+                        multi_segment: false,
                     }],
                     request_type: None,
                     body_doc: None,
@@ -202,6 +203,7 @@ fn services_spec() -> ApiSpec {
                     path_params: vec![PathParam {
                         name: "id".into(),
                         doc: None,
+                        multi_segment: false,
                     }],
                     request_type: None,
                     body_doc: None,
@@ -231,10 +233,12 @@ fn services_spec() -> ApiSpec {
                         PathParam {
                             name: "id".into(),
                             doc: None,
+                            multi_segment: false,
                         },
                         PathParam {
                             name: "request_id".into(),
                             doc: None,
+                            multi_segment: false,
                         },
                     ],
                     request_type: None,
@@ -337,6 +341,7 @@ fn spec_with_enum_query_param() -> ApiSpec {
                 path_params: vec![PathParam {
                     name: "id".into(),
                     doc: None,
+                    multi_segment: false,
                 }],
                 request_type: Some("ProcessGroupEntity".into()),
                 body_doc: None,
@@ -482,6 +487,7 @@ fn spec_with_query_params() -> ApiSpec {
                     path_params: vec![PathParam {
                         name: "id".into(),
                         doc: None,
+                        multi_segment: false,
                     }],
                     request_type: None,
                     body_doc: None,
@@ -646,6 +652,7 @@ fn spec_with_multi_security() -> ApiSpec {
                 path_params: vec![PathParam {
                     name: "id".into(),
                     doc: None,
+                    multi_segment: false,
                 }],
                 request_type: None,
                 body_doc: None,
@@ -822,6 +829,7 @@ fn emits_stream_variant_for_octet_stream_response() {
         path_params: vec![PathParam {
             name: "id".into(),
             doc: None,
+            multi_segment: false,
         }],
         request_type: None,
         body_kind: None,
@@ -913,6 +921,7 @@ fn emits_stream_variant_for_wildcard_with_query() {
         path_params: vec![PathParam {
             name: "id".into(),
             doc: None,
+            multi_segment: false,
         }],
         request_type: None,
         body_kind: None,

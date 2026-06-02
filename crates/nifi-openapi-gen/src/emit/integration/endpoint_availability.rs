@@ -267,6 +267,7 @@ mod tests {
             path_params: vec![PathParam {
                 name: "id".to_string(),
                 doc: None,
+                multi_segment: false,
             }],
             request_type: None,
             body_kind: None,

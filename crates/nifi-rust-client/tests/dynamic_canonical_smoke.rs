@@ -47,6 +47,39 @@ async fn dynamic_get_about_info_happy_path() {
 }
 
 #[tokio::test]
+async fn dynamic_get_access_policy_for_resource_preserves_slashes() {
+    // Dynamic-mode regression for the 0.13.0 path-encoding change: the
+    // policy `{resource}` param is multi-segment (`pattern: ".+"`) and its
+    // `/` separators must reach NiFi un-encoded.
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/nifi-api/flow/about"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+            "about": { "version": "2.8.0", "title": "NiFi" }
+        })))
+        .mount(&server)
+        .await;
+    Mock::given(method("GET"))
+        .and(path("/nifi-api/policies/read/process-groups/root"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+            "id": "policy-id",
+            "component": { "id": "policy-id", "resource": "/process-groups/root", "action": "read" }
+        })))
+        .mount(&server)
+        .await;
+
+    let client = make_client(&server).await;
+    client.detect_version().await.expect("detect");
+
+    let policy = client
+        .policies()
+        .get_access_policy_for_resource("read", "process-groups/root")
+        .await
+        .expect("get_access_policy_for_resource");
+    assert_eq!(policy.id.as_deref(), Some("policy-id"));
+}
+
+#[tokio::test]
 async fn dynamic_unsupported_endpoint_error() {
     // Pick an endpoint that exists in newer spec(s) but not in 2.6.0. The exact
     // endpoint depends on the supported spec set; walk the availability table

@@ -254,6 +254,7 @@ fn mod_rs_reexports_all_modules() {
                         path_params: vec![PathParam {
                             name: "id".into(),
                             doc: None,
+                            multi_segment: false,
                         }],
                         request_type: None,
                         body_doc: None,

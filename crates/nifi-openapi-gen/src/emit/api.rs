@@ -80,6 +80,7 @@ mod tests {
             path_params: vec![PathParam {
                 name: "id".to_string(),
                 doc: None,
+                multi_segment: false,
             }],
             request_type: None,
             body_kind: None,
@@ -108,6 +109,7 @@ mod tests {
             path_params: vec![PathParam {
                 name: "id".to_string(),
                 doc: None,
+                multi_segment: false,
             }],
             request_type: Some("ConfigurationAnalysisEntity".to_string()),
             body_kind: Some(RequestBodyKind::Json),
