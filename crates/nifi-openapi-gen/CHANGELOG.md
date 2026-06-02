@@ -14,6 +14,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.13.1] - 2026-06-02
+
+### Fixed
+
+- Use code spans instead of intra-doc links in PathParam doc ([ab6e3b3](https://github.com/maltesander/nifi-rust-client/commit/ab6e3b3))
+- Preserve slashes in multi-segment path params ([357466f](https://github.com/maltesander/nifi-rust-client/commit/357466f))
+
 ## [0.13.0] - 2026-06-02
 
 ### Fixed
@@ -263,6 +270,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Stable method names across NiFi versions via path-based grouping ([a058972](https://github.com/maltesander/nifi-rust-client/commit/a058972))
 
+[0.13.1]: https://github.com/maltesander/nifi-rust-client/compare/gen-v0.13.0...gen-v0.13.1
 [0.13.0]: https://github.com/maltesander/nifi-rust-client/compare/gen-v0.12.0...gen-v0.13.0
 [0.12.0]: https://github.com/maltesander/nifi-rust-client/compare/gen-v0.11.1...gen-v0.12.0
 [0.11.1]: https://github.com/maltesander/nifi-rust-client/compare/gen-v0.11.0...gen-v0.11.1
