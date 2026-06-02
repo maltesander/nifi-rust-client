@@ -8,6 +8,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-06-02
+
+### Breaking Changes
+
+- Rename resource subcommands to kebab-case (C9) ([ba5ee96](https://github.com/maltesander/nifi-rust-client/commit/ba5ee96))
+- Tighten public Zeroizing API on token/set_token (B9.2) ([fe49656](https://github.com/maltesander/nifi-rust-client/commit/fe49656))
+
+### Added
+
+- JSON array on auto-pipe; honour NO_COLOR (C5 + C13) ([32a7946](https://github.com/maltesander/nifi-rust-client/commit/32a7946))
+- Warn on world-readable config with plaintext secrets (B4) ([1f1925d](https://github.com/maltesander/nifi-rust-client/commit/1f1925d))
+- Builder-time validation for insecure/header/chain (B6 + B8 + B10) ([457e584](https://github.com/maltesander/nifi-rust-client/commit/457e584))
+- Hide --token from help and warn on use (B2) ([1c89a6c](https://github.com/maltesander/nifi-rust-client/commit/1c89a6c))
+- Add ResolvedParams::resolve_url_only for dry-run flows ([53ad9e9](https://github.com/maltesander/nifi-rust-client/commit/53ad9e9))
+- Use cached JWT in every dispatch arm (was always re-login) ([63ce5ce](https://github.com/maltesander/nifi-rust-client/commit/63ce5ce))
+- Build_client_with_cache for token reuse across commands ([633b6e4](https://github.com/maltesander/nifi-rust-client/commit/633b6e4))
+
+### Changed
+
+- Single confirm-gate site for destructive commands (C10) ([c780668](https://github.com/maltesander/nifi-rust-client/commit/c780668))
+- Extract token-cache helpers into porcelain/token_cache ([21c675e](https://github.com/maltesander/nifi-rust-client/commit/21c675e))
+
+### Fixed
+
+- Replace unsound serde_yml with serde_norway, fix doc link, bump deps ([49e5efa](https://github.com/maltesander/nifi-rust-client/commit/49e5efa))
+- Reject path-traversal in --context name (B3) ([f4a59c8](https://github.com/maltesander/nifi-rust-client/commit/f4a59c8))
+- Route flow porcelain dry-run output to stderr ([ea0c7a7](https://github.com/maltesander/nifi-rust-client/commit/ea0c7a7))
+- 404 hint no longer suggests nonexistent 'list' verb ([1416de6](https://github.com/maltesander/nifi-rust-client/commit/1416de6))
+- --dry-run no longer requires authentication ([38cb002](https://github.com/maltesander/nifi-rust-client/commit/38cb002))
+- Allow dead_code on token_cache helpers wired in by next task ([f05359e](https://github.com/maltesander/nifi-rust-client/commit/f05359e))
+
+### Documentation
+
+- Fix gen + nifictl README sync issues ([7bfa776](https://github.com/maltesander/nifi-rust-client/commit/7bfa776))
+
 ## [0.2.0] - 2026-04-21
 
 ### Added
@@ -102,6 +137,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Use nifi-rust-client 0.10.0 instead of workspace dependency. ([291d281](https://github.com/maltesander/nifi-rust-client/commit/291d281))
 
 [Unreleased]: https://github.com/maltesander/nifi-rust-client/commits/HEAD
+[0.3.0]: https://github.com/maltesander/nifi-rust-client/compare/ctl-v0.2.0...ctl-v0.3.0
 [0.2.0]: https://github.com/maltesander/nifi-rust-client/compare/ctl-v0.1.1...ctl-v0.2.0
 [0.1.1]: https://github.com/maltesander/nifi-rust-client/compare/ctl-v0.1.0...ctl-v0.1.1
 [0.1.0]: https://github.com/maltesander/nifi-rust-client/compare/ctl-v0.0.0...ctl-v0.1.0
