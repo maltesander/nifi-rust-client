@@ -13,6 +13,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.13.1] - 2026-06-02
+
+### Fixed
+
+- Remove version references ([659ec38](https://github.com/maltesander/nifi-rust-client/commit/659ec38))
+- Preserve slashes in multi-segment path params ([357466f](https://github.com/maltesander/nifi-rust-client/commit/357466f))
+
 ## [0.13.0] - 2026-06-02
 
 ### Breaking Changes
@@ -619,7 +626,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Structured error handling** — `NifiError` via `snafu` with distinct variants for HTTP, auth, serialization, and network errors.
 - **Tracing** — all HTTP requests emit a `tracing::debug!` event with method and path before sending.
 
-[Unreleased]: https://github.com/maltesander/nifi-rust-client/compare/client-v0.13.0...HEAD
+[Unreleased]: https://github.com/maltesander/nifi-rust-client/compare/client-v0.13.1...HEAD
+[0.13.1]: https://github.com/maltesander/nifi-rust-client/compare/client-v0.13.0...client-v0.13.1
 [0.13.0]: https://github.com/maltesander/nifi-rust-client/compare/client-v0.12.0...client-v0.13.0
 [0.12.0]: https://github.com/maltesander/nifi-rust-client/compare/client-v0.11.1...client-v0.12.0
 [0.11.1]: https://github.com/maltesander/nifi-rust-client/compare/client-v0.11.0...client-v0.11.1
