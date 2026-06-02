@@ -14,6 +14,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.13.0] - 2026-06-02
+
+### Fixed
+
+- Replace inline todo!() with build-time panics ([9795758](https://github.com/maltesander/nifi-rust-client/commit/9795758))
+- Make dynamic unit-return dispatch exhaustive (was _ => fallback) ([4b7548c](https://github.com/maltesander/nifi-rust-client/commit/4b7548c))
+- Skip FormEncoded endpoints in dynamic emitter (was stubbed) ([3ceac0e](https://github.com/maltesander/nifi-rust-client/commit/3ceac0e))
+- Remove duplicate tracing::debug! in dynamic emitter ([e7d5515](https://github.com/maltesander/nifi-rust-client/commit/e7d5515))
+- Percent-encode path-param substitutions in dynamic emitter ([507549a](https://github.com/maltesander/nifi-rust-client/commit/507549a))
+- Percent-encode path-param substitutions in static emitter ([b5ac063](https://github.com/maltesander/nifi-rust-client/commit/b5ac063))
+
+### Documentation
+
+- Fix gen + nifictl README sync issues ([7bfa776](https://github.com/maltesander/nifi-rust-client/commit/7bfa776))
+
 ## [0.12.0] - 2026-04-28
 
 ### Breaking Changes
@@ -248,6 +263,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Stable method names across NiFi versions via path-based grouping ([a058972](https://github.com/maltesander/nifi-rust-client/commit/a058972))
 
+[0.13.0]: https://github.com/maltesander/nifi-rust-client/compare/gen-v0.12.0...gen-v0.13.0
 [0.12.0]: https://github.com/maltesander/nifi-rust-client/compare/gen-v0.11.1...gen-v0.12.0
 [0.11.1]: https://github.com/maltesander/nifi-rust-client/compare/gen-v0.11.0...gen-v0.11.1
 [0.11.0]: https://github.com/maltesander/nifi-rust-client/compare/gen-v0.10.1...gen-v0.11.0
