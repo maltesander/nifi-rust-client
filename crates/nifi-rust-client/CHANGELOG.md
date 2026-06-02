@@ -13,6 +13,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.13.0] - 2026-06-02
+
+### Breaking Changes
+
+- Tighten public Zeroizing API on token/set_token (B9.2) ([fe49656](https://github.com/maltesander/nifi-rust-client/commit/fe49656))
+
+### Added
+
+- Add wait::parameter_context_validation helper ([7be2f35](https://github.com/maltesander/nifi-rust-client/commit/7be2f35))
+- Add wait::versioned_flow_revert helper ([68eb4a6](https://github.com/maltesander/nifi-rust-client/commit/68eb4a6))
+- Add wait::versioned_flow_update helper ([d1a0118](https://github.com/maltesander/nifi-rust-client/commit/d1a0118))
+- Add wait::parameter_provider_apply_parameters helper ([2ff2194](https://github.com/maltesander/nifi-rust-client/commit/2ff2194))
+- Add wait::flow_analysis_rule_verify_config helper ([f4f91e8](https://github.com/maltesander/nifi-rust-client/commit/f4f91e8))
+- Add wait::parameter_provider_verify_config helper ([26b3a85](https://github.com/maltesander/nifi-rust-client/commit/26b3a85))
+- Add wait::reporting_task_verify_config helper ([ea7dd8e](https://github.com/maltesander/nifi-rust-client/commit/ea7dd8e))
+- Add wait::controller_service_verify_config helper ([543fc2e](https://github.com/maltesander/nifi-rust-client/commit/543fc2e))
+- Add wait::processor_verify_config helper ([ae07178](https://github.com/maltesander/nifi-rust-client/commit/ae07178))
+- Add wait::provenance_lineage helper ([a299dfb](https://github.com/maltesander/nifi-rust-client/commit/a299dfb))
+- Add wait::empty_all_connections helper ([e50f05b](https://github.com/maltesander/nifi-rust-client/commit/e50f05b))
+- Add wait::flowfile_listing helper ([29113cb](https://github.com/maltesander/nifi-rust-client/commit/29113cb))
+- Add wait::flowfile_drop helper ([256bf1e](https://github.com/maltesander/nifi-rust-client/commit/256bf1e))
+- Builder-time validation for insecure/header/chain (B6 + B8 + B10) ([457e584](https://github.com/maltesander/nifi-rust-client/commit/457e584))
+- Add encode_path_segment helper for path-param substitution ([b7a1316](https://github.com/maltesander/nifi-rust-client/commit/b7a1316))
+
+### Changed
+
+- Generalize wait outcome predicate to terminal_outcome ([7c4bea9](https://github.com/maltesander/nifi-rust-client/commit/7c4bea9))
+
+### Fixed
+
+- Replace unsound serde_yml with serde_norway, fix doc link, bump deps ([49e5efa](https://github.com/maltesander/nifi-rust-client/commit/49e5efa))
+- Use Arc::ptr_eq for token snapshot in with_auth_retry (B9.1) ([e51b80a](https://github.com/maltesander/nifi-rust-client/commit/e51b80a))
+- Truncate response body in tracing::debug! (B7) ([62d7296](https://github.com/maltesander/nifi-rust-client/commit/62d7296))
+- FlexibleString deserialization for non-self-describing formats (A12) ([63b52ef](https://github.com/maltesander/nifi-rust-client/commit/63b52ef))
+- Discover_cluster must not poison OnceCell on error (A8) ([31a6dc2](https://github.com/maltesander/nifi-rust-client/commit/31a6dc2))
+- Poll_until deadline + parameter_context_update failure path (A6 + A7) ([2b52b9a](https://github.com/maltesander/nifi-rust-client/commit/2b52b9a))
+- Tighten with_retry None arm and extract_error_message lookup (A9 + A13) ([341ef9d](https://github.com/maltesander/nifi-rust-client/commit/341ef9d))
+
+### Documentation
+
+- Document the 13 new wait::* async-request helpers ([c4ecdb0](https://github.com/maltesander/nifi-rust-client/commit/c4ecdb0))
+- Fix README import paths and example pointers ([ef27f69](https://github.com/maltesander/nifi-rust-client/commit/ef27f69))
+
 ## [0.12.0] - 2026-04-28
 
 ### Breaking Changes
@@ -576,7 +619,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Structured error handling** — `NifiError` via `snafu` with distinct variants for HTTP, auth, serialization, and network errors.
 - **Tracing** — all HTTP requests emit a `tracing::debug!` event with method and path before sending.
 
-[Unreleased]: https://github.com/maltesander/nifi-rust-client/compare/client-v0.12.0...HEAD
+[Unreleased]: https://github.com/maltesander/nifi-rust-client/compare/client-v0.13.0...HEAD
+[0.13.0]: https://github.com/maltesander/nifi-rust-client/compare/client-v0.12.0...client-v0.13.0
 [0.12.0]: https://github.com/maltesander/nifi-rust-client/compare/client-v0.11.1...client-v0.12.0
 [0.11.1]: https://github.com/maltesander/nifi-rust-client/compare/client-v0.11.0...client-v0.11.1
 [0.11.0]: https://github.com/maltesander/nifi-rust-client/compare/client-v0.10.1...client-v0.11.0
