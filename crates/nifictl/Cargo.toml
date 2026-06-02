@@ -19,7 +19,7 @@ nifi-rust-client = { path = "../nifi-rust-client", version = "0.12.0", features 
 rpassword = "7"
 serde = { workspace = true }
 serde_json.workspace = true
-serde_yml.workspace = true
+serde_norway.workspace = true
 tokio.workspace = true
 toml.workspace = true
 tracing.workspace = true

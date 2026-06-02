@@ -96,7 +96,7 @@ impl NifiClient {
     /// The token is a NiFi-issued JWT. The returned [`zeroize::Zeroizing<String>`]
     /// is a fresh allocation that is wiped from memory when it drops, so the
     /// JWT bytes do not leak through deallocation. Callers that want a plain
-    /// `String` can call [`Zeroizing::to_string`] or move out of the wrapper
+    /// `String` can call [`ToString::to_string`] or move out of the wrapper
     /// via `Zeroizing::into_inner`-equivalent dereferencing — at which point
     /// the zeroize-on-drop guarantee is the caller's to keep.
     ///

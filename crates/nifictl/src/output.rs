@@ -118,7 +118,7 @@ pub fn render(
                 writeln!(writer)
             }
             ResolvedFormat::Yaml => {
-                let s = serde_yml::to_string(val).map_err(io::Error::other)?;
+                let s = serde_norway::to_string(val).map_err(io::Error::other)?;
                 write!(writer, "{s}")
             }
             ResolvedFormat::Table => table::render_single(val, columns, writer),
@@ -138,7 +138,7 @@ pub fn render(
                 Ok(())
             }
             ResolvedFormat::Yaml => {
-                let s = serde_yml::to_string(items).map_err(io::Error::other)?;
+                let s = serde_norway::to_string(items).map_err(io::Error::other)?;
                 write!(writer, "{s}")
             }
             ResolvedFormat::Table => table::render_list(items, columns, writer),
