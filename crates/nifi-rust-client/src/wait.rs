@@ -1711,9 +1711,11 @@ pub async fn process_group_state_dynamic(
 /// For `Enabled`, every service must be `ENABLED`, or `DISABLED` with an
 /// `INVALID` validation status (services that cannot enable are not waited on
 /// indefinitely). For `Disabled`, every service must be `DISABLED`. Both
-/// directions require movement away from the pre-request state, so the wait
-/// cannot return prematurely on the first poll. An empty service list is
-/// trivially settled.
+/// Each target checks for the steady end-state, not merely the absence of
+/// transitions. Because services issued the opposite request start in the other
+/// steady state, the first poll after that request reads pending until the
+/// transition completes; if services are already in the target state, the wait
+/// returns immediately. An empty service list is trivially settled.
 ///
 /// Returns the final
 /// [`ControllerServicesEntity`](crate::types::ControllerServicesEntity), or

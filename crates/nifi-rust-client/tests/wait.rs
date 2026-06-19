@@ -1413,7 +1413,40 @@ async fn pg_controller_services_state_reaches_enabled() {
     )
     .await
     .unwrap();
-    assert!(entity.controller_services.is_some());
+    let services = entity.controller_services.unwrap();
+    assert!(services.iter().all(|s| matches!(
+        s.component.as_ref().and_then(|c| c.state.as_ref()),
+        Some(nifi_rust_client::types::ControllerServiceDtoState::Enabled)
+    )));
+}
+
+#[tokio::test]
+async fn pg_controller_services_empty_list_is_settled() {
+    let mock_server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path(
+            "/nifi-api/flow/process-groups/pg-1/controller-services",
+        ))
+        .respond_with(ResponseTemplate::new(200).set_body_json(cs_list(json!([]))))
+        .mount(&mock_server)
+        .await;
+    let client = NifiClientBuilder::new(&mock_server.uri())
+        .unwrap()
+        .build()
+        .unwrap();
+    client.set_token("jwt".to_string()).await;
+    let entity = wait::process_group_controller_services_state(
+        &client,
+        "pg-1",
+        ControllerServiceTargetState::Enabled,
+        fast_config(1000),
+    )
+    .await
+    .unwrap();
+    assert_eq!(
+        entity.controller_services.as_deref().map(<[_]>::len),
+        Some(0)
+    );
 }
 
 #[tokio::test]
