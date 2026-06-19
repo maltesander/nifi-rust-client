@@ -35,7 +35,7 @@ Use this when you're building a deployment pipeline, custom processor manager, o
 <!-- STATIC_FEATURE_EXAMPLE_START -->
 ```toml
 [dependencies]
-nifi-rust-client = { version = "0.13", features = ["nifi-2-10-0"] }
+nifi-rust-client = { version = "0.14", features = ["nifi-2-10-0"] }
 ```
 <!-- STATIC_FEATURE_EXAMPLE_END -->
 
@@ -58,7 +58,7 @@ Use this when you're building a monitoring dashboard, CLI tool, or fleet managem
 <!-- DYNAMIC_FEATURE_EXAMPLE_START -->
 ```toml
 [dependencies]
-nifi-rust-client = { version = "0.13", features = ["dynamic"] }
+nifi-rust-client = { version = "0.14", features = ["dynamic"] }
 ```
 <!-- DYNAMIC_FEATURE_EXAMPLE_END -->
 
