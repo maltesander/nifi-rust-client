@@ -40,7 +40,9 @@ pub async fn export(
 
     let snapshot: Value = client
         .processgroups()
-        .export_process_group(pg_id, Some(include_referenced_services))
+        // `includeComponentState` (added in NiFi 2.10.0) left unset to preserve
+        // existing export behavior; not yet surfaced as a CLI flag.
+        .export_process_group(pg_id, Some(include_referenced_services), None)
         .await?;
 
     match output {

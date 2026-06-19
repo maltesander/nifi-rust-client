@@ -40,7 +40,7 @@ async fn export_process_group_returns_raw_json_value() {
     let client = dynamic_client_on(&mock, "2.9.0").await;
     let result = client
         .processgroups()
-        .export_process_group("pg-1", None)
+        .export_process_group("pg-1", None, None)
         .await
         .unwrap();
     assert_eq!(result, snapshot);
@@ -60,7 +60,26 @@ async fn export_process_group_forwards_include_referenced_services() {
     let client = dynamic_client_on(&mock, "2.9.0").await;
     let _ = client
         .processgroups()
-        .export_process_group("pg-2", Some(true))
+        .export_process_group("pg-2", Some(true), None)
+        .await
+        .unwrap();
+}
+
+#[tokio::test]
+async fn export_process_group_forwards_include_component_state() {
+    let mock = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/nifi-api/process-groups/pg-3/download"))
+        .and(query_param("includeComponentState", "true"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "flowContents": {} })))
+        .expect(1)
+        .mount(&mock)
+        .await;
+
+    let client = dynamic_client_on(&mock, "2.10.0").await;
+    let _ = client
+        .processgroups()
+        .export_process_group("pg-3", None, Some(true))
         .await
         .unwrap();
 }

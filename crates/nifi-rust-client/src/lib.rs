@@ -30,7 +30,7 @@
 //! <!-- LIB_STATIC_FEATURE_EXAMPLE_START -->
 //! ```toml
 //! [dependencies]
-//! nifi-rust-client = { version = "0.13", features = ["nifi-2-9-0"] }
+//! nifi-rust-client = { version = "0.13", features = ["nifi-2-10-0"] }
 //! ```
 //! <!-- LIB_STATIC_FEATURE_EXAMPLE_END -->
 //!
@@ -97,7 +97,7 @@
 //! | Feature | Purpose |
 //! |---|---|
 //! <!-- NIFI_FEATURE_FLAGS_START -->
-//! | `nifi-2-6-0`, `nifi-2-7-2`, `nifi-2-8-0`, `nifi-2-9-0` | Compile against a specific NiFi version. The semver-latest is the default. |
+//! | `nifi-2-6-0`, `nifi-2-7-2`, `nifi-2-8-0`, `nifi-2-9-0`, `nifi-2-10-0` | Compile against a specific NiFi version. The semver-latest is the default. |
 //! <!-- NIFI_FEATURE_FLAGS_END -->
 //! | `dynamic` | Compile all versions and enable runtime version detection. Pulls in every version feature. |
 //!

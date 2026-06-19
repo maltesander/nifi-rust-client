@@ -21,6 +21,7 @@
 <!-- SUPPORTED_VERSIONS_START -->
 | NiFi Version | Feature flag | Endpoints | Types | Changes |
 |---|---|---|---|---|
+| 2.10.0 | `nifi-2-10-0` | 356 | 438 | +4 endpoints, +1 types vs 2.9.0 |
 | 2.9.0 | `nifi-2-9-0` | 352 | 437 | +35 endpoints, +32 types, +10 fields vs 2.8.0 |
 | 2.8.0 | `nifi-2-8-0` | 317 | 405 | +2 fields, +2 enum values vs 2.7.2 |
 | 2.7.2 | `nifi-2-7-2` | 317 | 405 | +17 endpoints, +10 types, +8 fields vs 2.6.0 |
