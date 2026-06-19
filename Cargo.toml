@@ -1,5 +1,16 @@
 [workspace]
 members = ["crates/*", "tests"]
+# The `tests` integration crate is intentionally omitted from default-members so
+# a bare `cargo test` skips it. It targets the static `NifiClient` API, but
+# nifictl pulls in `nifi-rust-client` with the `dynamic` feature, and a
+# whole-workspace build unifies `dynamic` on — which removes the static
+# accessors the integration tests need. Run it explicitly via `./tests/run.sh`
+# (it needs a live NiFi anyway). See AGENTS.md → "Build & Test".
+default-members = [
+    "crates/nifi-openapi-gen",
+    "crates/nifi-rust-client",
+    "crates/nifictl",
+]
 resolver = "3"
 
 [workspace.package]

@@ -401,6 +401,15 @@ Per-subcommand `--output` flags collide at clap parse-time. Rename to `--output-
 
 **Wiremock tests** live in `crates/nifi-rust-client/tests/` — plain `cargo test`, no Docker.
 
+**`default-members` excludes the `tests` integration crate** (workspace `Cargo.toml`), so a
+bare `cargo test` / `cargo build` skips it and "just works". This is required because
+`nifictl` depends on `nifi-rust-client` with the `dynamic` feature; a whole-workspace build
+unifies `dynamic` on, which removes the static `NifiClient` accessors the integration tests
+(static-mode, `#![cfg(not(feature = "dynamic"))]`) compile against. `cargo test --workspace`
+still includes the integration crate and will hit that unification error — use
+`--exclude nifi-integration-tests`, or run the integration suite via its own `-p` invocation
+(`./tests/run.sh`), which is unaffected by `default-members`.
+
 **Integration tests** live in `tests/tests/` and require running NiFi:
 
 ```bash
