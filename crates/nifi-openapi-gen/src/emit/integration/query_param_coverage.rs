@@ -92,23 +92,7 @@ pub fn emit_query_param_coverage_tests(
                 );
 
                 // Build the argument expression for the target param.
-                let (param_arg, extra_use) = match &qp.ty {
-                    QueryParamType::Enum(variants) => {
-                        let enum_type_name = qp
-                            .enum_type_name
-                            .clone()
-                            .unwrap_or_else(|| capitalize_first(&qp.name));
-                        let first_variant = variants
-                            .first()
-                            .map(|v| wire_to_pascal(v))
-                            .unwrap_or_else(|| "Unknown".to_string());
-                        let arg = format!("Some({enum_type_name}::{first_variant})");
-                        let use_stmt =
-                            format!("use nifi_rust_client::dynamic::types::{enum_type_name};");
-                        (arg, Some(use_stmt))
-                    }
-                    _ => ("Some(\"test-value\")".to_string(), None),
-                };
+                let (param_arg, extra_use) = param_sample_arg(qp);
 
                 let call_args = build_call_args(endpoint, &qp.rust_name, &param_arg);
 
@@ -248,11 +232,70 @@ pub fn collect_query_param_metadata(
     tested
 }
 
+/// Build the `Some(...)` sample argument (and optional `use` statement) for a
+/// query param in the generated coverage test. Explicit arms per
+/// `QueryParamType` — no catch-all — so a future variant fails to compile here
+/// instead of emitting a wrong-typed sample (e.g. a `&str` for a `bool` param).
+fn param_sample_arg(qp: &crate::parser::QueryParam) -> (String, Option<String>) {
+    match &qp.ty {
+        QueryParamType::Enum(variants) => {
+            let enum_type_name = qp
+                .enum_type_name
+                .clone()
+                .unwrap_or_else(|| capitalize_first(&qp.name));
+            let first_variant = variants
+                .first()
+                .map(|v| wire_to_pascal(v))
+                .unwrap_or_else(|| "Unknown".to_string());
+            let arg = format!("Some({enum_type_name}::{first_variant})");
+            let use_stmt = format!("use nifi_rust_client::dynamic::types::{enum_type_name};");
+            (arg, Some(use_stmt))
+        }
+        QueryParamType::Str => ("Some(\"test-value\")".to_string(), None),
+        QueryParamType::Bool => ("Some(true)".to_string(), None),
+        QueryParamType::I32 | QueryParamType::I64 => ("Some(1)".to_string(), None),
+        QueryParamType::F64 => ("Some(1.0)".to_string(), None),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::diff::{EndpointDiff, TypesDiff, VersionDiff};
-    use crate::parser::ApiSpec;
+    use crate::parser::{ApiSpec, QueryParam};
+
+    fn qp(ty: QueryParamType) -> QueryParam {
+        QueryParam {
+            name: "includeComponentState".to_string(),
+            rust_name: "include_component_state".to_string(),
+            ty,
+            required: false,
+            doc: None,
+            enum_type_name: None,
+        }
+    }
+
+    #[test]
+    fn param_sample_arg_is_typed_per_query_param_type() {
+        assert_eq!(
+            param_sample_arg(&qp(QueryParamType::Str)).0,
+            "Some(\"test-value\")"
+        );
+        assert_eq!(param_sample_arg(&qp(QueryParamType::Bool)).0, "Some(true)");
+        assert_eq!(param_sample_arg(&qp(QueryParamType::I32)).0, "Some(1)");
+        assert_eq!(param_sample_arg(&qp(QueryParamType::I64)).0, "Some(1)");
+        assert_eq!(param_sample_arg(&qp(QueryParamType::F64)).0, "Some(1.0)");
+
+        let (arg, use_stmt) = param_sample_arg(&QueryParam {
+            enum_type_name: Some("DiagnosticLevel".to_string()),
+            ..qp(QueryParamType::Enum(vec!["BASIC".to_string()]))
+        });
+        assert_eq!(arg, "Some(DiagnosticLevel::Basic)");
+        assert_eq!(
+            use_stmt.as_deref(),
+            Some("use nifi_rust_client::dynamic::types::DiagnosticLevel;")
+        );
+    }
 
     fn empty_spec() -> ApiSpec {
         ApiSpec {
