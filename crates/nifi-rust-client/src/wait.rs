@@ -1676,7 +1676,7 @@ pub async fn process_group_state(
     poll_until(&config, &op, fetch, done).await
 }
 
-/// Dynamic-mode counterpart of [`process_group_state`].
+/// Dynamic-mode counterpart of `process_group_state`.
 #[cfg(feature = "dynamic")]
 pub async fn process_group_state_dynamic(
     client: &crate::dynamic::DynamicClient,
@@ -1785,7 +1785,7 @@ pub async fn process_group_controller_services_state(
     poll_until(&config, &op, fetch, done).await
 }
 
-/// Dynamic-mode counterpart of [`process_group_controller_services_state`].
+/// Dynamic-mode counterpart of `process_group_controller_services_state`.
 #[cfg(feature = "dynamic")]
 pub async fn process_group_controller_services_state_dynamic(
     client: &crate::dynamic::DynamicClient,
