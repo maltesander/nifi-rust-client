@@ -743,7 +743,10 @@ async fn process_group_state_dynamic_reaches_running() {
     let client = dynamic_client(&mock_server).await;
 
     let entity = process_group_state_dynamic(
-        &client, "pg-1", ProcessGroupTargetState::Running, fast_config(1000),
+        &client,
+        "pg-1",
+        ProcessGroupTargetState::Running,
+        fast_config(1000),
     )
     .await
     .unwrap();
@@ -759,7 +762,9 @@ async fn pg_controller_services_state_dynamic_reaches_disabled() {
 
     // First poll: one service still DISABLING. Second: all DISABLED.
     Mock::given(method("GET"))
-        .and(path("/nifi-api/flow/process-groups/pg-1/controller-services"))
+        .and(path(
+            "/nifi-api/flow/process-groups/pg-1/controller-services",
+        ))
         .respond_with(ResponseTemplate::new(200).set_body_json(json!({
             "controllerServices": [
                 { "component": { "state": "DISABLED", "validationStatus": "VALID" } },
@@ -770,7 +775,9 @@ async fn pg_controller_services_state_dynamic_reaches_disabled() {
         .mount(&mock_server)
         .await;
     Mock::given(method("GET"))
-        .and(path("/nifi-api/flow/process-groups/pg-1/controller-services"))
+        .and(path(
+            "/nifi-api/flow/process-groups/pg-1/controller-services",
+        ))
         .respond_with(ResponseTemplate::new(200).set_body_json(json!({
             "controllerServices": [
                 { "component": { "state": "DISABLED", "validationStatus": "VALID" } },
@@ -783,7 +790,10 @@ async fn pg_controller_services_state_dynamic_reaches_disabled() {
     let client = dynamic_client(&mock_server).await;
 
     let entity = process_group_controller_services_state_dynamic(
-        &client, "pg-1", ControllerServiceTargetState::Disabled, fast_config(1000),
+        &client,
+        "pg-1",
+        ControllerServiceTargetState::Disabled,
+        fast_config(1000),
     )
     .await
     .unwrap();

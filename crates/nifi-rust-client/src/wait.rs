@@ -1756,7 +1756,10 @@ pub async fn process_group_controller_services_state(
         let services = entity.controller_services.as_deref().unwrap_or(&[]);
         let settled = services.iter().all(|svc| {
             let state = svc.component.as_ref().and_then(|c| c.state.as_ref());
-            let validation = svc.component.as_ref().and_then(|c| c.validation_status.as_ref());
+            let validation = svc
+                .component
+                .as_ref()
+                .and_then(|c| c.validation_status.as_ref());
             match target {
                 ControllerServiceTargetState::Enabled => {
                     matches!(state, Some(ControllerServiceDtoState::Enabled))

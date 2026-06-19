@@ -419,8 +419,9 @@ async fn example(client: nifi_rust_client::NifiClient) -> Result<(), nifi_rust_c
 }
 ```
 
-Seventeen helpers are available, covering both state transitions
-(`processor_state`, `controller_service_state`) and the standard NiFi
+Nineteen helpers are available, covering both state transitions
+(`processor_state`, `controller_service_state`, `process_group_state`,
+`process_group_controller_services_state`) and the standard NiFi
 async-request pattern of `POST` → `GET poll` → optional cleanup `DELETE`:
 
 - Parameter contexts: `parameter_context_update`, `parameter_context_validation`.

@@ -110,6 +110,8 @@ State transitions:
 
 - `wait::processor_state(&NifiClient, id, target, config)` — `Running | Stopped | Disabled`.
 - `wait::controller_service_state(...)` — `Enabled | Disabled`.
+- `wait::process_group_state(&NifiClient, pg_id, target, config)` — PG-level `Running | Stopped` via aggregate component counts (`stopped_count == 0` / `running_count == 0`).
+- `wait::process_group_controller_services_state(&NifiClient, pg_id, target, config)` — `Enabled | Disabled` for all controller services in a PG; "settled" check tolerates `INVALID` services on enable.
 
 Async-request polling (`POST` → `GET poll` → optional cleanup `DELETE` via `WaitConfig::cleanup`):
 
