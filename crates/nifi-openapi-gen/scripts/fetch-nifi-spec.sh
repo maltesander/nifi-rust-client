@@ -7,6 +7,10 @@
 # The spec is saved as:
 #   $OUT_DIR/<version>/nifi-api.json
 #
+# For brand-new versions an empty $OUT_DIR/<version>/fn_names.txt golden is also
+# seeded (never clobbering an existing one) so the generator's Overwrite step,
+# which requires the file to pre-exist, can populate it on the next run.
+#
 # Environment variables:
 #   NIFI_URL       Base URL of NiFi       (default: https://localhost:8443)
 #   NIFI_USERNAME  Login username         (default: admin)
@@ -70,6 +74,11 @@ if command -v docker &>/dev/null && \
     cat "/opt/nifi/nifi-current/work/jetty/$WAR_DIR/webapp/docs/rest-api/swagger.json" \
     > "$OUT_DIR/nifi-api.json"
 
+  # Seed an empty fn_names.txt golden for brand-new versions so the generator's
+  # Overwrite step (which requires the file to pre-exist) can populate it.
+  # Never clobber an existing golden.
+  [[ -f "$OUT_DIR/fn_names.txt" ]] || : > "$OUT_DIR/fn_names.txt"
+
   echo "Wrote spec to $OUT_DIR/nifi-api.json"
   exit 0
 fi
@@ -121,6 +130,11 @@ HTTP_STATUS=$(curl -sk \
   "$NIFI_URL/nifi-api/docs/rest-api/swagger.json")
 
 if [[ "$HTTP_STATUS" == "200" ]]; then
+  # Seed an empty fn_names.txt golden for brand-new versions so the generator's
+  # Overwrite step (which requires the file to pre-exist) can populate it.
+  # Never clobber an existing golden.
+  [[ -f "$OUT_DIR/fn_names.txt" ]] || : > "$OUT_DIR/fn_names.txt"
+
   echo "Wrote spec to $OUT_DIR/nifi-api.json"
   exit 0
 fi
