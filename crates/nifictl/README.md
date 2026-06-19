@@ -217,7 +217,7 @@ Round-trip a process group's flow definition between NiFi instances.
 
 | Command | Effect |
 |---------|--------|
-| `nifictl flow export <pg-id> [--output-file <file>] [--include-referenced-services]` | `GET /process-groups/{id}/download` — dumps the `RegisteredFlowSnapshot` JSON. Writes to stdout if `--output-file` is omitted. |
+| `nifictl flow export <pg-id> [--output-file <file>] [--include-referenced-services] [--include-component-state]` | `GET /process-groups/{id}/download` — dumps the `RegisteredFlowSnapshot` JSON. Writes to stdout if `--output-file` is omitted. `--include-component-state` requires NiFi 2.10.0+. |
 | `nifictl flow import <parent-pg-id> <file> [--name <name>]` | `POST /process-groups/{id}/process-groups/upload` — creates a new child process group under `<parent-pg-id>` from a snapshot file. Non-destructive; no prompt. |
 | `nifictl flow replace <pg-id> <file> [--stop-first] [--dry-run] [-y]` | `PUT /process-groups/{id}/flow-contents` — overwrites `<pg-id>`'s contents. Destructive — prompts unless `--yes`; refuses in non-TTY without `--yes`. |
 

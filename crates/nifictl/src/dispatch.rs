@@ -388,6 +388,7 @@ pub(crate) async fn run(cli: Cli) -> Result<(), error::CliError> {
                         &args.pg_id,
                         args.output.as_deref(),
                         args.include_referenced_services,
+                        args.include_component_state,
                         &ctx,
                     )
                     .await?

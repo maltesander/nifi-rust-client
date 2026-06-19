@@ -24,25 +24,30 @@ pub async fn export(
     pg_id: &str,
     output: Option<&Path>,
     include_referenced_services: bool,
+    include_component_state: bool,
     ctx: &CliCtx<'_>,
 ) -> Result<CliOutput, CliError> {
     if ctx.dry_run {
         let path = format!("/process-groups/{pg_id}/download");
-        let query: Vec<(&str, String)> = if include_referenced_services {
-            vec![("includeReferencedServices", "true".to_string())]
-        } else {
-            Vec::new()
-        };
+        let mut query: Vec<(&str, String)> = Vec::new();
+        if include_referenced_services {
+            query.push(("includeReferencedServices", "true".to_string()));
+        }
+        if include_component_state {
+            query.push(("includeComponentState", "true".to_string()));
+        }
         let url = dry_run::format_url(ctx.base_url, &path, &query);
         dry_run::print(&mut std::io::stderr(), "GET", &url, None).map_err(CliError::Io)?;
         return Ok(CliOutput::Empty);
     }
 
+    // `includeComponentState` is honored only by NiFi 2.10.0+; older servers
+    // ignore the (omitted) param. `None` when the flag is unset preserves the
+    // pre-2.10.0 request shape.
+    let component_state = include_component_state.then_some(true);
     let snapshot: Value = client
         .processgroups()
-        // `includeComponentState` (added in NiFi 2.10.0) left unset to preserve
-        // existing export behavior; not yet surfaced as a CLI flag.
-        .export_process_group(pg_id, Some(include_referenced_services), None)
+        .export_process_group(pg_id, Some(include_referenced_services), component_state)
         .await?;
 
     match output {
@@ -266,7 +271,9 @@ mod tests {
             yes: false,
             base_url: &base_url,
         };
-        let result = export(&client, "pg-1", None, false, &ctx).await.unwrap();
+        let result = export(&client, "pg-1", None, false, false, &ctx)
+            .await
+            .unwrap();
         match result {
             CliOutput::Single(v) => assert_eq!(v, snapshot),
             _ => panic!("expected Single"),
@@ -292,7 +299,7 @@ mod tests {
             yes: false,
             base_url: &base_url,
         };
-        let result = export(&client, "pg-2", Some(&out), false, &ctx)
+        let result = export(&client, "pg-2", Some(&out), false, false, &ctx)
             .await
             .unwrap();
         assert!(matches!(result, CliOutput::Empty));
@@ -317,7 +324,9 @@ mod tests {
             yes: false,
             base_url: &base_url,
         };
-        let result = export(&client, "pg-3", None, false, &ctx).await.unwrap();
+        let result = export(&client, "pg-3", None, false, false, &ctx)
+            .await
+            .unwrap();
         assert!(matches!(result, CliOutput::Empty));
     }
 

@@ -390,6 +390,9 @@ pub(crate) struct FlowExportArgs {
     /// Include externally-referenced controller services in the snapshot
     #[arg(long = "include-referenced-services")]
     pub(crate) include_referenced_services: bool,
+    /// Include component state in the snapshot (requires NiFi 2.10.0+)
+    #[arg(long = "include-component-state")]
+    pub(crate) include_component_state: bool,
 }
 
 #[derive(clap::Args)]

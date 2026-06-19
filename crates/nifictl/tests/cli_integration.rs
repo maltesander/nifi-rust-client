@@ -511,6 +511,38 @@ fn dry_run_on_flow_export_does_not_connect() {
     );
 }
 
+/// `flow export --include-component-state --dry-run` must add the
+/// `includeComponentState=true` query param to the previewed URL.
+#[test]
+fn dry_run_on_flow_export_includes_component_state_query() {
+    let output = nifictl()
+        .args([
+            "--url",
+            "http://localhost:1",
+            "--username",
+            "admin",
+            "--password",
+            "x",
+            "--dry-run",
+            "flow",
+            "export",
+            "pg-1",
+            "--include-component-state",
+        ])
+        .output()
+        .expect("failed to run nifictl");
+    assert!(
+        output.status.success(),
+        "dry-run should exit 0; stderr={}",
+        String::from_utf8_lossy(&output.stderr),
+    );
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(
+        stderr.contains("includeComponentState=true"),
+        "stderr should contain the includeComponentState query param: {stderr}"
+    );
+}
+
 /// `flow replace` without `--yes` in non-TTY must refuse with a clear
 /// error, without creating the snapshot file or touching the server.
 #[test]
