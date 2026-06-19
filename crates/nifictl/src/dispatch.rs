@@ -216,12 +216,6 @@ pub(crate) async fn run(cli: Cli) -> Result<(), error::CliError> {
         }
         Commands::Config(cmd) => handle_config(cmd, cli.config.as_deref()).await,
         Commands::Ops(cmd) => {
-            if cli.wait {
-                return Err(error::CliError::User(
-                    "--wait on 'ops' subcommands is not yet supported; omit --wait to proceed without polling"
-                        .to_string(),
-                ));
-            }
             let cfg = load_config(cli.config.as_deref())?;
             let context = resolve_context(&cfg, cli.context.as_deref())?;
 
@@ -274,20 +268,33 @@ pub(crate) async fn run(cli: Cli) -> Result<(), error::CliError> {
                 params.build_client_with_cache(&context_name).await?
             };
 
-            let result = match cmd {
+            let result = match &cmd {
                 OpsCommand::StartPg { pg_id } => {
-                    porcelain::ops::start_pg(&client, &pg_id, &ctx).await?
+                    porcelain::ops::start_pg(&client, pg_id, &ctx).await?
                 }
                 OpsCommand::StopPg { pg_id } => {
-                    porcelain::ops::stop_pg(&client, &pg_id, &ctx).await?
+                    porcelain::ops::stop_pg(&client, pg_id, &ctx).await?
                 }
                 OpsCommand::EnableServices { pg_id } => {
-                    porcelain::ops::enable_services(&client, &pg_id, &ctx).await?
+                    porcelain::ops::enable_services(&client, pg_id, &ctx).await?
                 }
                 OpsCommand::DisableServices { pg_id } => {
-                    porcelain::ops::disable_services(&client, &pg_id, &ctx).await?
+                    porcelain::ops::disable_services(&client, pg_id, &ctx).await?
                 }
             };
+
+            // `--wait` (live path only): block until the requested state is
+            // reached. Dry-run never hits the server, so there is nothing to
+            // poll.
+            if cli.wait && !ctx.dry_run {
+                let timeout = wait_wire::parse_wait_timeout(&cli.wait_timeout)?;
+                let config = nifi_rust_client::wait::WaitConfig {
+                    timeout,
+                    ..Default::default()
+                };
+                porcelain::ops::wait_for_ops(&client, &cmd, config).await?;
+            }
+
             let fmt = output::OutputFormat::parse(&cli.output).map_err(error::CliError::User)?;
             let resolved = fmt.resolve();
             output::render(&result, &resolved, &[], &mut std::io::stdout())

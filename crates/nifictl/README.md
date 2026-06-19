@@ -206,10 +206,12 @@ applies an all-or-nothing state transition across a process group.
 | `nifictl ops enable-services <pg-id>` | `PUT /flow/process-groups/{id}/controller-services` (state: ENABLED) |
 | `nifictl ops disable-services <pg-id>` | `PUT /flow/process-groups/{id}/controller-services` (state: DISABLED) |
 
-The `--wait` flag is **not yet supported** on `ops` subcommands (a
-client-side process-group wait helper is needed first). These commands
-return immediately after the server acknowledges the state-change
-request.
+Pass `--wait` to block until the process group reaches the requested state
+instead of returning as soon as the server acknowledges the request:
+`start-pg` waits for all components to be running, `stop-pg` for all stopped,
+and `enable-services` / `disable-services` for the controller services to
+settle. `--wait-timeout` (default `30s`, e.g. `2m`) bounds the poll; on
+expiry the command exits with a timeout error.
 
 ### Flow portability
 

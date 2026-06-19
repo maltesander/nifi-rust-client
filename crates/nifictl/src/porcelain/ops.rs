@@ -1,14 +1,18 @@
 //! Operator porcelain — bulk state changes on a process group.
 //!
 //! Each function is a thin wrapper over a `bulk::*_dynamic` helper,
-//! chosen for its value to daily operator workflow. Phase 1 does not
-//! support `--wait` on these commands (requires wait helpers that do
-//! not yet exist in the client library).
+//! chosen for its value to daily operator workflow. With `--wait`, the
+//! dispatch layer follows the action with [`wait_for_ops`], which polls
+//! the process group until the requested state is reached.
 
 use nifi_rust_client::bulk;
 use nifi_rust_client::dynamic::DynamicClient;
+use nifi_rust_client::wait::{
+    self, ControllerServiceTargetState, ProcessGroupTargetState, WaitConfig,
+};
 use serde_json::json;
 
+use crate::cli::OpsCommand;
 use crate::dry_run::{self, CliCtx};
 use crate::error::CliError;
 use crate::output::CliOutput;
@@ -111,13 +115,86 @@ pub async fn disable_services(
     Ok(CliOutput::Single(value))
 }
 
+/// Poll the process group until the state requested by `cmd` is reached.
+///
+/// Called by the dispatch layer after the bulk action when `--wait` is set
+/// (never on `--dry-run`). Each `ops` subcommand maps to the matching
+/// process-group wait helper:
+///
+/// - `start-pg` / `stop-pg` → [`wait::process_group_state_dynamic`]
+///   (`Running` / `Stopped`).
+/// - `enable-services` / `disable-services` →
+///   [`wait::process_group_controller_services_state_dynamic`]
+///   (`Enabled` / `Disabled`).
+///
+/// Returns `NifiError::Timeout` (mapped to [`CliError`]) if the state is not
+/// reached within `config.timeout`.
+pub async fn wait_for_ops(
+    client: &DynamicClient,
+    cmd: &OpsCommand,
+    config: WaitConfig,
+) -> Result<(), CliError> {
+    match cmd {
+        OpsCommand::StartPg { pg_id } => {
+            wait::process_group_state_dynamic(
+                client,
+                pg_id,
+                ProcessGroupTargetState::Running,
+                config,
+            )
+            .await?;
+        }
+        OpsCommand::StopPg { pg_id } => {
+            wait::process_group_state_dynamic(
+                client,
+                pg_id,
+                ProcessGroupTargetState::Stopped,
+                config,
+            )
+            .await?;
+        }
+        OpsCommand::EnableServices { pg_id } => {
+            wait::process_group_controller_services_state_dynamic(
+                client,
+                pg_id,
+                ControllerServiceTargetState::Enabled,
+                config,
+            )
+            .await?;
+        }
+        OpsCommand::DisableServices { pg_id } => {
+            wait::process_group_controller_services_state_dynamic(
+                client,
+                pg_id,
+                ControllerServiceTargetState::Disabled,
+                config,
+            )
+            .await?;
+        }
+    }
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
+    use std::time::Duration;
+
     use nifi_rust_client::NifiClientBuilder;
     use nifi_rust_client::dynamic::DynamicClient;
+    use nifi_rust_client::wait::WaitConfig;
     use serde_json::json;
     use wiremock::matchers::{body_partial_json, method, path};
     use wiremock::{Mock, MockServer, ResponseTemplate};
+
+    use crate::cli::OpsCommand;
+
+    fn fast_config(timeout_ms: u64) -> WaitConfig {
+        WaitConfig {
+            timeout: Duration::from_millis(timeout_ms),
+            poll_interval: Duration::from_millis(10),
+            ..Default::default()
+        }
+    }
 
     async fn dynamic_client_on(mock: &MockServer, version: &str) -> DynamicClient {
         Mock::given(method("GET"))
@@ -310,5 +387,77 @@ mod tests {
         };
 
         super::stop_pg(&client, "pg-3", &ctx).await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn wait_for_ops_start_pg_resolves_when_running() {
+        let mock = MockServer::start().await;
+        // process_group_state_dynamic(Running) is satisfied by stopped_count == 0.
+        Mock::given(method("GET"))
+            .and(path("/nifi-api/process-groups/pg-1"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+                "id": "pg-1", "runningCount": 2, "stoppedCount": 0
+            })))
+            .mount(&mock)
+            .await;
+
+        let client = dynamic_client_on(&mock, "2.9.0").await;
+        let cmd = OpsCommand::StartPg {
+            pg_id: "pg-1".to_string(),
+        };
+        super::wait_for_ops(&client, &cmd, fast_config(1000))
+            .await
+            .expect("start-pg wait should resolve");
+    }
+
+    #[tokio::test]
+    async fn wait_for_ops_disable_services_resolves_when_disabled() {
+        let mock = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path(
+                "/nifi-api/flow/process-groups/pg-2/controller-services",
+            ))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+                "controllerServices": [
+                    { "component": { "state": "DISABLED", "validationStatus": "VALID" } }
+                ]
+            })))
+            .mount(&mock)
+            .await;
+
+        let client = dynamic_client_on(&mock, "2.9.0").await;
+        let cmd = OpsCommand::DisableServices {
+            pg_id: "pg-2".to_string(),
+        };
+        super::wait_for_ops(&client, &cmd, fast_config(1000))
+            .await
+            .expect("disable-services wait should resolve");
+    }
+
+    #[tokio::test]
+    async fn wait_for_ops_times_out_when_state_never_reached() {
+        let mock = MockServer::start().await;
+        // stopped_count stays non-zero → Running target never satisfied.
+        Mock::given(method("GET"))
+            .and(path("/nifi-api/process-groups/pg-9"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+                "id": "pg-9", "runningCount": 1, "stoppedCount": 3
+            })))
+            .mount(&mock)
+            .await;
+
+        let client = dynamic_client_on(&mock, "2.9.0").await;
+        let cmd = OpsCommand::StartPg {
+            pg_id: "pg-9".to_string(),
+        };
+        let err = super::wait_for_ops(&client, &cmd, fast_config(50))
+            .await
+            .expect_err("should time out");
+        let rendered = format!("{err}");
+        assert!(
+            rendered.to_lowercase().contains("timed out")
+                || rendered.to_lowercase().contains("timeout"),
+            "expected a timeout error, got: {rendered}"
+        );
     }
 }
