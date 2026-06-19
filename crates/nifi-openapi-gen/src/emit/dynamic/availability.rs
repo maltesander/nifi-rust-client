@@ -113,7 +113,13 @@ pub fn emit_availability(canonical: &CanonicalSpec, index: &EndpointIndex<'_>) -
 
 /// Versions discovered in the canonical spec, in semver order.
 fn canonical_versions(canonical: &CanonicalSpec) -> Vec<String> {
-    canonical.per_version_specs.keys().cloned().collect()
+    // `per_version_specs` is a BTreeMap, so its keys are in lexical order, which
+    // misorders versions once a two-digit minor appears (e.g. "2.10.0" < "2.9.0"
+    // as strings). Sort by semver so `versions.last()` — used for
+    // `LATEST_NIFI_VERSION` — and the emitted tables reflect true version order.
+    let mut versions: Vec<String> = canonical.per_version_specs.keys().cloned().collect();
+    crate::util::sort_versions_semver(&mut versions);
+    versions
 }
 
 /// Rust variant name for a version string, e.g. `"2.9.0"` → `"V2_9_0"`.
@@ -286,5 +292,22 @@ mod tests {
         assert!(src.contains("fn version_from_str"));
         assert!(src.contains("SUPPORTED_VERSIONS"));
         assert!(src.contains("pub const LATEST_NIFI_VERSION"));
+    }
+
+    #[test]
+    fn latest_version_uses_semver_order_not_lexical() {
+        use crate::canonical::canonicalize;
+        // Two-digit minor: lexical order would put "2.9.0" after "2.10.0" and
+        // pick the wrong latest. Semver order must select "2.10.0".
+        let canonical = canonicalize(&[
+            ("2.9.0".to_string(), minimal_spec()),
+            ("2.10.0".to_string(), minimal_spec()),
+        ]);
+        let index = EndpointIndex::build(&canonical);
+        let src = emit_availability(&canonical, &index);
+        assert!(
+            src.contains("pub const LATEST_NIFI_VERSION: &str = \"2.10.0\";"),
+            "expected LATEST_NIFI_VERSION to be 2.10.0, got:\n{src}"
+        );
     }
 }
