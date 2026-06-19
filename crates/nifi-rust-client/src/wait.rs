@@ -1703,6 +1703,126 @@ pub async fn process_group_state_dynamic(
     poll_until(&config, &op, fetch, done).await
 }
 
+// ── wait::process_group_controller_services_state ───────────────────────────
+
+/// Poll a process group's controller services until they settle into `target`.
+///
+/// Fetches `GET /flow/process-groups/{id}/controller-services` on each tick.
+/// For `Enabled`, every service must be `ENABLED`, or `DISABLED` with an
+/// `INVALID` validation status (services that cannot enable are not waited on
+/// indefinitely). For `Disabled`, every service must be `DISABLED`. Both
+/// directions require movement away from the pre-request state, so the wait
+/// cannot return prematurely on the first poll. An empty service list is
+/// trivially settled.
+///
+/// Returns the final
+/// [`ControllerServicesEntity`](crate::types::ControllerServicesEntity), or
+/// [`NifiError::Timeout`] on timeout.
+///
+/// # Example
+///
+/// ```no_run
+/// use nifi_rust_client::wait::{self, ControllerServiceTargetState, WaitConfig};
+/// # async fn example(client: nifi_rust_client::NifiClient) -> Result<(), nifi_rust_client::NifiError> {
+/// let services = wait::process_group_controller_services_state(
+///     &client,
+///     "process-group-id",
+///     ControllerServiceTargetState::Enabled,
+///     WaitConfig::default(),
+/// ).await?;
+/// # let _ = services;
+/// # Ok(())
+/// # }
+/// ```
+#[cfg(not(feature = "dynamic"))]
+pub async fn process_group_controller_services_state(
+    client: &crate::NifiClient,
+    pg_id: &str,
+    target: ControllerServiceTargetState,
+    config: WaitConfig,
+) -> Result<crate::types::ControllerServicesEntity, NifiError> {
+    use crate::types::{ControllerServiceDtoState, ControllerServiceDtoValidationStatus};
+    let op = format!(
+        "wait_for_process_group_controller_services_state({pg_id}, {})",
+        target.wire_value()
+    );
+    let fetch = || async {
+        client
+            .flow()
+            .get_controller_services_from_group(pg_id, None, None, None, None)
+            .await
+    };
+    let done = move |entity: &crate::types::ControllerServicesEntity| {
+        let services = entity.controller_services.as_deref().unwrap_or(&[]);
+        let settled = services.iter().all(|svc| {
+            let state = svc.component.as_ref().and_then(|c| c.state.as_ref());
+            let validation = svc.component.as_ref().and_then(|c| c.validation_status.as_ref());
+            match target {
+                ControllerServiceTargetState::Enabled => {
+                    matches!(state, Some(ControllerServiceDtoState::Enabled))
+                        || (matches!(state, Some(ControllerServiceDtoState::Disabled))
+                            && matches!(
+                                validation,
+                                Some(ControllerServiceDtoValidationStatus::Invalid)
+                            ))
+                }
+                ControllerServiceTargetState::Disabled => {
+                    matches!(state, Some(ControllerServiceDtoState::Disabled))
+                }
+            }
+        });
+        if settled {
+            PollOutcome::Ready
+        } else {
+            PollOutcome::Pending
+        }
+    };
+    poll_until(&config, &op, fetch, done).await
+}
+
+/// Dynamic-mode counterpart of [`process_group_controller_services_state`].
+#[cfg(feature = "dynamic")]
+pub async fn process_group_controller_services_state_dynamic(
+    client: &crate::dynamic::DynamicClient,
+    pg_id: &str,
+    target: ControllerServiceTargetState,
+    config: WaitConfig,
+) -> Result<crate::dynamic::types::ControllerServicesEntity, NifiError> {
+    let op = format!(
+        "wait_for_process_group_controller_services_state({pg_id}, {})",
+        target.wire_value()
+    );
+    let fetch = || async {
+        client
+            .flow()
+            .get_controller_services_from_group(pg_id, None, None, None, None)
+            .await
+    };
+    let done = move |entity: &crate::dynamic::types::ControllerServicesEntity| {
+        let services = entity.controller_services.as_deref().unwrap_or(&[]);
+        let settled = services.iter().all(|svc| {
+            let state = svc.component.as_ref().and_then(|c| c.state.as_deref());
+            let validation = svc
+                .component
+                .as_ref()
+                .and_then(|c| c.validation_status.as_deref());
+            match target {
+                ControllerServiceTargetState::Enabled => {
+                    state == Some("ENABLED")
+                        || (state == Some("DISABLED") && validation == Some("INVALID"))
+                }
+                ControllerServiceTargetState::Disabled => state == Some("DISABLED"),
+            }
+        });
+        if settled {
+            PollOutcome::Ready
+        } else {
+            PollOutcome::Pending
+        }
+    };
+    poll_until(&config, &op, fetch, done).await
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

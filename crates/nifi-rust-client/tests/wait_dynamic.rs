@@ -10,10 +10,10 @@ use nifi_rust_client::wait::{
     empty_all_connections_dynamic, flow_analysis_rule_verify_config_dynamic, flowfile_drop_dynamic,
     flowfile_listing_dynamic, parameter_context_update_dynamic,
     parameter_context_validation_dynamic, parameter_provider_apply_parameters_dynamic,
-    parameter_provider_verify_config_dynamic, process_group_state_dynamic,
-    processor_state_dynamic, processor_verify_config_dynamic, provenance_lineage_dynamic,
-    provenance_query_dynamic, reporting_task_verify_config_dynamic, versioned_flow_revert_dynamic,
-    versioned_flow_update_dynamic,
+    parameter_provider_verify_config_dynamic, process_group_controller_services_state_dynamic,
+    process_group_state_dynamic, processor_state_dynamic, processor_verify_config_dynamic,
+    provenance_lineage_dynamic, provenance_query_dynamic, reporting_task_verify_config_dynamic,
+    versioned_flow_revert_dynamic, versioned_flow_update_dynamic,
 };
 use nifi_rust_client::{NifiClientBuilder, NifiError};
 use serde_json::json;
@@ -748,4 +748,44 @@ async fn process_group_state_dynamic_reaches_running() {
     .await
     .unwrap();
     assert_eq!(entity.stopped_count, Some(0));
+}
+
+// ── process_group_controller_services_state_dynamic ──────────────────────────
+
+#[tokio::test]
+async fn pg_controller_services_state_dynamic_reaches_disabled() {
+    let mock_server = MockServer::start().await;
+    mount_about(&mock_server).await;
+
+    // First poll: one service still DISABLING. Second: all DISABLED.
+    Mock::given(method("GET"))
+        .and(path("/nifi-api/flow/process-groups/pg-1/controller-services"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+            "controllerServices": [
+                { "component": { "state": "DISABLED", "validationStatus": "VALID" } },
+                { "component": { "state": "DISABLING", "validationStatus": "VALID" } }
+            ]
+        })))
+        .up_to_n_times(1)
+        .mount(&mock_server)
+        .await;
+    Mock::given(method("GET"))
+        .and(path("/nifi-api/flow/process-groups/pg-1/controller-services"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+            "controllerServices": [
+                { "component": { "state": "DISABLED", "validationStatus": "VALID" } },
+                { "component": { "state": "DISABLED", "validationStatus": "VALID" } }
+            ]
+        })))
+        .mount(&mock_server)
+        .await;
+
+    let client = dynamic_client(&mock_server).await;
+
+    let entity = process_group_controller_services_state_dynamic(
+        &client, "pg-1", ControllerServiceTargetState::Disabled, fast_config(1000),
+    )
+    .await
+    .unwrap();
+    assert!(entity.controller_services.is_some());
 }

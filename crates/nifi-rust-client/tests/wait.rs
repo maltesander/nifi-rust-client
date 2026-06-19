@@ -1344,3 +1344,96 @@ async fn process_group_state_times_out_when_never_stops() {
         other => panic!("expected Timeout, got {other:?}"),
     }
 }
+
+// ── process_group_controller_services_state ──────────────────────────────────
+
+fn cs_list(items: serde_json::Value) -> serde_json::Value {
+    json!({ "controllerServices": items })
+}
+
+fn cs(state: &str, validation: &str) -> serde_json::Value {
+    json!({ "component": { "state": state, "validationStatus": validation } })
+}
+
+#[tokio::test]
+async fn pg_controller_services_state_reaches_enabled() {
+    let mock_server = MockServer::start().await;
+    // First poll: one service still ENABLING. Second: all ENABLED.
+    Mock::given(method("GET"))
+        .and(path("/nifi-api/flow/process-groups/pg-1/controller-services"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(cs_list(json!([
+            cs("ENABLED", "VALID"), cs("ENABLING", "VALID")
+        ]))))
+        .up_to_n_times(1)
+        .mount(&mock_server)
+        .await;
+    Mock::given(method("GET"))
+        .and(path("/nifi-api/flow/process-groups/pg-1/controller-services"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(cs_list(json!([
+            cs("ENABLED", "VALID"), cs("ENABLED", "VALID")
+        ]))))
+        .mount(&mock_server)
+        .await;
+
+    let client = NifiClientBuilder::new(&mock_server.uri()).unwrap().build().unwrap();
+    client.set_token("jwt".to_string()).await;
+
+    let entity = wait::process_group_controller_services_state(
+        &client, "pg-1", ControllerServiceTargetState::Enabled, fast_config(1000),
+    )
+    .await
+    .unwrap();
+    assert!(entity.controller_services.is_some());
+}
+
+#[tokio::test]
+async fn pg_controller_services_enabled_ignores_invalid() {
+    // A DISABLED+INVALID service must not block the Enabled target.
+    let mock_server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/nifi-api/flow/process-groups/pg-1/controller-services"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(cs_list(json!([
+            cs("ENABLED", "VALID"), cs("DISABLED", "INVALID")
+        ]))))
+        .mount(&mock_server)
+        .await;
+
+    let client = NifiClientBuilder::new(&mock_server.uri()).unwrap().build().unwrap();
+    client.set_token("jwt".to_string()).await;
+
+    let entity = wait::process_group_controller_services_state(
+        &client, "pg-1", ControllerServiceTargetState::Enabled, fast_config(1000),
+    )
+    .await
+    .unwrap();
+    assert!(entity.controller_services.is_some());
+}
+
+#[tokio::test]
+async fn pg_controller_services_enabled_times_out_while_valid_disabled() {
+    // A VALID+DISABLED service has not yet transitioned → must keep polling → timeout.
+    let mock_server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/nifi-api/flow/process-groups/pg-1/controller-services"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(cs_list(json!([
+            cs("DISABLED", "VALID")
+        ]))))
+        .mount(&mock_server)
+        .await;
+
+    let client = NifiClientBuilder::new(&mock_server.uri()).unwrap().build().unwrap();
+    client.set_token("jwt".to_string()).await;
+
+    let err = wait::process_group_controller_services_state(
+        &client, "pg-1", ControllerServiceTargetState::Enabled, fast_config(50),
+    )
+    .await
+    .unwrap_err();
+    match err {
+        NifiError::Timeout { operation } => {
+            assert!(operation.contains("wait_for_process_group_controller_services_state"));
+            assert!(operation.contains("ENABLED"));
+        }
+        other => panic!("expected Timeout, got {other:?}"),
+    }
+}
