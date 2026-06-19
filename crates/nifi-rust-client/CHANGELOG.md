@@ -13,6 +13,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.15.0] - 2026-06-19
+
+### Added
+
+- Add wait::process_group_controller_services_state ([c4aa719](https://github.com/maltesander/nifi-rust-client/commit/c4aa719))
+- Add wait::process_group_state for PG start/stop ([431e54a](https://github.com/maltesander/nifi-rust-client/commit/431e54a))
+
+### Fixed
+
+- Correct PG controller-services wait rustdoc; strengthen tests ([8b0b05f](https://github.com/maltesander/nifi-rust-client/commit/8b0b05f))
+
+### Documentation
+
+- Document process-group wait helpers ([13f6f6f](https://github.com/maltesander/nifi-rust-client/commit/13f6f6f))
+
+### Tests
+
+- Real-NiFi tests for process-group wait helpers ([5d8a5e2](https://github.com/maltesander/nifi-rust-client/commit/5d8a5e2))
+
 ## [0.14.0] - 2026-06-19
 
 ### Added
@@ -636,7 +655,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Structured error handling** — `NifiError` via `snafu` with distinct variants for HTTP, auth, serialization, and network errors.
 - **Tracing** — all HTTP requests emit a `tracing::debug!` event with method and path before sending.
 
-[Unreleased]: https://github.com/maltesander/nifi-rust-client/compare/client-v0.14.0...HEAD
+[Unreleased]: https://github.com/maltesander/nifi-rust-client/compare/client-v0.15.0...HEAD
+[0.15.0]: https://github.com/maltesander/nifi-rust-client/compare/client-v0.14.0...client-v0.15.0
 [0.14.0]: https://github.com/maltesander/nifi-rust-client/compare/client-v0.13.1...client-v0.14.0
 [0.13.1]: https://github.com/maltesander/nifi-rust-client/compare/client-v0.13.0...client-v0.13.1
 [0.13.0]: https://github.com/maltesander/nifi-rust-client/compare/client-v0.12.0...client-v0.13.0
