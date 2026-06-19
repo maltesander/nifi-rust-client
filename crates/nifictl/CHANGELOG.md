@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-06-19
+
+### Added
+
+- Support --wait on ops subcommands ([782cf0f](https://github.com/maltesander/nifi-rust-client/commit/782cf0f))
+- Add --include-component-state flag to flow export ([7e09837](https://github.com/maltesander/nifi-rust-client/commit/7e09837))
+- Add NiFi 2.10.0 support ([91be9cb](https://github.com/maltesander/nifi-rust-client/commit/91be9cb))
+
 ## [0.3.0] - 2026-06-02
 
 ### Breaking Changes
@@ -137,6 +145,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Use nifi-rust-client 0.10.0 instead of workspace dependency. ([291d281](https://github.com/maltesander/nifi-rust-client/commit/291d281))
 
 [Unreleased]: https://github.com/maltesander/nifi-rust-client/commits/HEAD
+[0.4.0]: https://github.com/maltesander/nifi-rust-client/compare/ctl-v0.3.0...ctl-v0.4.0
 [0.3.0]: https://github.com/maltesander/nifi-rust-client/compare/ctl-v0.2.0...ctl-v0.3.0
 [0.2.0]: https://github.com/maltesander/nifi-rust-client/compare/ctl-v0.1.1...ctl-v0.2.0
 [0.1.1]: https://github.com/maltesander/nifi-rust-client/compare/ctl-v0.1.0...ctl-v0.1.1
