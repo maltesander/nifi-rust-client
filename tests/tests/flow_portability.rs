@@ -102,12 +102,10 @@ async fn flow_export_returns_registered_flow_snapshot_shape() {
     let client = dynamic_logged_in_client().await;
     let snapshot = client
         .processgroups()
-        .export_process_group("root", None)
+        .export_process_group("root", None, None)
         .await
         .expect("export_process_group failed");
 
-    // The response is `serde_json::Value` (inline-schema fix from Task 2).
-    // Every NiFi 2.x version observed in Task 1 returns these top-level keys.
     let obj = snapshot
         .as_object()
         .expect("export body is not a JSON object");
@@ -128,7 +126,7 @@ async fn flow_import_then_replace_round_trip() {
     // 1. Export root to get a realistic snapshot to feed back.
     let snapshot = client
         .processgroups()
-        .export_process_group("root", None)
+        .export_process_group("root", None, None)
         .await
         .expect("export_process_group failed");
     let snapshot_bytes = serde_json::to_vec(&snapshot).expect("snapshot not serializable");
