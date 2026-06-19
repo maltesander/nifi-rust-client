@@ -14,6 +14,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.14.0] - 2026-06-19
+
+### Added
+
+- Add NiFi 2.10.0 support ([91be9cb](https://github.com/maltesander/nifi-rust-client/commit/91be9cb))
+
+### Fixed
+
+- Emit typed sample values for non-string query params in coverage tests ([51a2f35](https://github.com/maltesander/nifi-rust-client/commit/51a2f35))
+- Order supported versions by semver for LATEST_NIFI_VERSION ([7b6c533](https://github.com/maltesander/nifi-rust-client/commit/7b6c533))
+- Create empty fnNames on fetch ([ce5f5dc](https://github.com/maltesander/nifi-rust-client/commit/ce5f5dc))
+
 ## [0.13.1] - 2026-06-02
 
 ### Fixed
@@ -270,6 +282,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Stable method names across NiFi versions via path-based grouping ([a058972](https://github.com/maltesander/nifi-rust-client/commit/a058972))
 
+[0.14.0]: https://github.com/maltesander/nifi-rust-client/compare/gen-v0.13.1...gen-v0.14.0
 [0.13.1]: https://github.com/maltesander/nifi-rust-client/compare/gen-v0.13.0...gen-v0.13.1
 [0.13.0]: https://github.com/maltesander/nifi-rust-client/compare/gen-v0.12.0...gen-v0.13.0
 [0.12.0]: https://github.com/maltesander/nifi-rust-client/compare/gen-v0.11.1...gen-v0.12.0
