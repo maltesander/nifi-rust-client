@@ -1262,3 +1262,85 @@ async fn parameter_context_validation_reports_failure() {
         other => panic!("expected Api, got {other:?}"),
     }
 }
+
+// ── process_group_state ──────────────────────────────────────────────────────
+
+fn process_group_entity(running: i64, stopped: i64) -> serde_json::Value {
+    json!({ "id": "pg-1", "runningCount": running, "stoppedCount": stopped })
+}
+
+#[tokio::test]
+async fn process_group_state_reaches_running() {
+    let mock_server = MockServer::start().await;
+    // First two polls still have stopped components, then all running.
+    Mock::given(method("GET"))
+        .and(path("/nifi-api/process-groups/pg-1"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(process_group_entity(3, 2)))
+        .up_to_n_times(2)
+        .mount(&mock_server)
+        .await;
+    Mock::given(method("GET"))
+        .and(path("/nifi-api/process-groups/pg-1"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(process_group_entity(5, 0)))
+        .mount(&mock_server)
+        .await;
+
+    let client = NifiClientBuilder::new(&mock_server.uri()).unwrap().build().unwrap();
+    client.set_token("jwt".to_string()).await;
+
+    let entity = wait::process_group_state(
+        &client, "pg-1", wait::ProcessGroupTargetState::Running, fast_config(1000),
+    )
+    .await
+    .unwrap();
+    assert_eq!(entity.stopped_count, Some(0));
+}
+
+#[tokio::test]
+async fn process_group_state_running_ignores_invalid() {
+    // Lenient: invalid components remain, but stopped_count == 0 → done.
+    let mock_server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/nifi-api/process-groups/pg-1"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(
+            json!({ "id": "pg-1", "runningCount": 4, "stoppedCount": 0, "invalidCount": 1 }),
+        ))
+        .mount(&mock_server)
+        .await;
+
+    let client = NifiClientBuilder::new(&mock_server.uri()).unwrap().build().unwrap();
+    client.set_token("jwt".to_string()).await;
+
+    let entity = wait::process_group_state(
+        &client, "pg-1", wait::ProcessGroupTargetState::Running, fast_config(1000),
+    )
+    .await
+    .unwrap();
+    assert_eq!(entity.running_count, Some(4));
+}
+
+#[tokio::test]
+async fn process_group_state_times_out_when_never_stops() {
+    let mock_server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/nifi-api/process-groups/pg-1"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(process_group_entity(2, 0)))
+        .mount(&mock_server)
+        .await;
+
+    let client = NifiClientBuilder::new(&mock_server.uri()).unwrap().build().unwrap();
+    client.set_token("jwt".to_string()).await;
+
+    let err = wait::process_group_state(
+        &client, "pg-1", wait::ProcessGroupTargetState::Stopped, fast_config(50),
+    )
+    .await
+    .unwrap_err();
+    match err {
+        NifiError::Timeout { operation } => {
+            assert!(operation.contains("wait_for_process_group_state"));
+            assert!(operation.contains("STOPPED"));
+        }
+        other => panic!("expected Timeout, got {other:?}"),
+    }
+}

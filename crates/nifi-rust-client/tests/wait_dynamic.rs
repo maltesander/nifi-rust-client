@@ -5,14 +5,14 @@ use std::time::Duration;
 
 use nifi_rust_client::dynamic::DynamicClient;
 use nifi_rust_client::wait::{
-    ControllerServiceTargetState, ProcessorTargetState, WaitConfig,
+    ControllerServiceTargetState, ProcessGroupTargetState, ProcessorTargetState, WaitConfig,
     controller_service_state_dynamic, controller_service_verify_config_dynamic,
     empty_all_connections_dynamic, flow_analysis_rule_verify_config_dynamic, flowfile_drop_dynamic,
     flowfile_listing_dynamic, parameter_context_update_dynamic,
     parameter_context_validation_dynamic, parameter_provider_apply_parameters_dynamic,
-    parameter_provider_verify_config_dynamic, processor_state_dynamic,
-    processor_verify_config_dynamic, provenance_lineage_dynamic, provenance_query_dynamic,
-    reporting_task_verify_config_dynamic, versioned_flow_revert_dynamic,
+    parameter_provider_verify_config_dynamic, process_group_state_dynamic,
+    processor_state_dynamic, processor_verify_config_dynamic, provenance_lineage_dynamic,
+    provenance_query_dynamic, reporting_task_verify_config_dynamic, versioned_flow_revert_dynamic,
     versioned_flow_update_dynamic,
 };
 use nifi_rust_client::{NifiClientBuilder, NifiError};
@@ -715,4 +715,37 @@ async fn parameter_context_validation_dynamic_succeeds() {
         .await
         .unwrap();
     assert_eq!(entity.request.and_then(|r| r.complete), Some(true));
+}
+
+// ── process_group_state_dynamic ──────────────────────────────────────────────
+
+#[tokio::test]
+async fn process_group_state_dynamic_reaches_running() {
+    let mock_server = MockServer::start().await;
+    mount_about(&mock_server).await;
+
+    Mock::given(method("GET"))
+        .and(path("/nifi-api/process-groups/pg-1"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+            "id": "pg-1", "runningCount": 3, "stoppedCount": 1
+        })))
+        .up_to_n_times(1)
+        .mount(&mock_server)
+        .await;
+    Mock::given(method("GET"))
+        .and(path("/nifi-api/process-groups/pg-1"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+            "id": "pg-1", "runningCount": 4, "stoppedCount": 0
+        })))
+        .mount(&mock_server)
+        .await;
+
+    let client = dynamic_client(&mock_server).await;
+
+    let entity = process_group_state_dynamic(
+        &client, "pg-1", ProcessGroupTargetState::Running, fast_config(1000),
+    )
+    .await
+    .unwrap();
+    assert_eq!(entity.stopped_count, Some(0));
 }

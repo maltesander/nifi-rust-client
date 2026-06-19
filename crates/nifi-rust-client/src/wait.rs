@@ -1597,6 +1597,112 @@ pub async fn parameter_context_validation_dynamic(
     result
 }
 
+// ── wait::process_group_state ───────────────────────────────────────────────
+
+/// Run-state a process group can be waited into via its aggregate counts.
+///
+/// Transient and command states are intentionally omitted — only the two
+/// steady states that `bulk::start_process_group` / `stop_process_group`
+/// drive toward.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ProcessGroupTargetState {
+    /// All startable components scheduled and running.
+    Running,
+    /// All components stopped.
+    Stopped,
+}
+
+impl ProcessGroupTargetState {
+    /// The server wire value (`"RUNNING"` / `"STOPPED"`), used in the
+    /// operation label surfaced by [`NifiError::Timeout`].
+    pub(crate) fn wire_value(&self) -> &'static str {
+        match self {
+            Self::Running => "RUNNING",
+            Self::Stopped => "STOPPED",
+        }
+    }
+}
+
+/// Poll a process group until its aggregate component counts reach `target`.
+///
+/// Fetches `GET /process-groups/{id}` on each tick and inspects the entity's
+/// aggregate counts. `Running` is satisfied when `stopped_count == 0`;
+/// `Stopped` when `running_count == 0`. Invalid and disabled components live
+/// in their own counts, so the wait never hangs on components that cannot
+/// transition. Remote-port active/inactive state is not considered.
+///
+/// Returns the final [`ProcessGroupEntity`](crate::types::ProcessGroupEntity)
+/// on success, or [`NifiError::Timeout`] if the target is not reached within
+/// `config.timeout`.
+///
+/// # Example
+///
+/// ```no_run
+/// use nifi_rust_client::wait::{self, ProcessGroupTargetState, WaitConfig};
+/// # async fn example(client: nifi_rust_client::NifiClient) -> Result<(), nifi_rust_client::NifiError> {
+/// let pg = wait::process_group_state(
+///     &client,
+///     "process-group-id",
+///     ProcessGroupTargetState::Running,
+///     WaitConfig::default(),
+/// ).await?;
+/// # let _ = pg;
+/// # Ok(())
+/// # }
+/// ```
+#[cfg(not(feature = "dynamic"))]
+pub async fn process_group_state(
+    client: &crate::NifiClient,
+    pg_id: &str,
+    target: ProcessGroupTargetState,
+    config: WaitConfig,
+) -> Result<crate::types::ProcessGroupEntity, NifiError> {
+    let op = format!(
+        "wait_for_process_group_state({pg_id}, {})",
+        target.wire_value()
+    );
+    let fetch = || async { client.processgroups().get_process_group(pg_id).await };
+    let done = move |entity: &crate::types::ProcessGroupEntity| {
+        let ready = match target {
+            ProcessGroupTargetState::Running => entity.stopped_count == Some(0),
+            ProcessGroupTargetState::Stopped => entity.running_count == Some(0),
+        };
+        if ready {
+            PollOutcome::Ready
+        } else {
+            PollOutcome::Pending
+        }
+    };
+    poll_until(&config, &op, fetch, done).await
+}
+
+/// Dynamic-mode counterpart of [`process_group_state`].
+#[cfg(feature = "dynamic")]
+pub async fn process_group_state_dynamic(
+    client: &crate::dynamic::DynamicClient,
+    pg_id: &str,
+    target: ProcessGroupTargetState,
+    config: WaitConfig,
+) -> Result<crate::dynamic::types::ProcessGroupEntity, NifiError> {
+    let op = format!(
+        "wait_for_process_group_state({pg_id}, {})",
+        target.wire_value()
+    );
+    let fetch = || async { client.processgroups().get_process_group(pg_id).await };
+    let done = move |entity: &crate::dynamic::types::ProcessGroupEntity| {
+        let ready = match target {
+            ProcessGroupTargetState::Running => entity.stopped_count == Some(0),
+            ProcessGroupTargetState::Stopped => entity.running_count == Some(0),
+        };
+        if ready {
+            PollOutcome::Ready
+        } else {
+            PollOutcome::Pending
+        }
+    };
+    poll_until(&config, &op, fetch, done).await
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
