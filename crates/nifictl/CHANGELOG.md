@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-08-03
+
+- Add NiFi 2.11.0 support ([208f752](https://github.com/maltesander/nifi-rust-client/commit/208f752))
+
 ## [0.4.0] - 2026-06-19
 
 ### Added
@@ -145,6 +149,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Use nifi-rust-client 0.10.0 instead of workspace dependency. ([291d281](https://github.com/maltesander/nifi-rust-client/commit/291d281))
 
 [Unreleased]: https://github.com/maltesander/nifi-rust-client/commits/HEAD
+[0.5.0]: https://github.com/maltesander/nifi-rust-client/compare/ctl-v0.4.0...ctl-v0.5.0
 [0.4.0]: https://github.com/maltesander/nifi-rust-client/compare/ctl-v0.3.0...ctl-v0.4.0
 [0.3.0]: https://github.com/maltesander/nifi-rust-client/compare/ctl-v0.2.0...ctl-v0.3.0
 [0.2.0]: https://github.com/maltesander/nifi-rust-client/compare/ctl-v0.1.1...ctl-v0.2.0
