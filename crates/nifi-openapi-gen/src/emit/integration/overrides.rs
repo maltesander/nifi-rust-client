@@ -21,7 +21,7 @@ use crate::parser::{ApiSpec, HttpMethod};
 
 /// Describes which endpoint(s) an override applies to.
 #[derive(Debug)]
-#[allow(dead_code)] // Exact and PathPrefix are scaffolding for future overrides.
+#[allow(dead_code)] // PathPrefix is scaffolding for future overrides.
 pub enum EndpointScope {
     /// Match one specific method + path exactly.
     Exact {
@@ -70,13 +70,39 @@ const CONDITIONAL_WORDING_PATTERNS: &[&str] = &[
     "is not set",
 ];
 
-pub const ENDPOINT_OVERRIDES: &[EndpointOverride] = &[EndpointOverride {
-    scope: EndpointScope::Tag { name: "Connectors" },
-    behavior: EndpointBehavior::SkipPositiveTest {
-        reason: "Connector ids have no \"root\" sentinel; positive tests need a real \
+pub const ENDPOINT_OVERRIDES: &[EndpointOverride] = &[
+    EndpointOverride {
+        scope: EndpointScope::Tag { name: "Connectors" },
+        behavior: EndpointBehavior::SkipPositiveTest {
+            reason: "Connector ids have no \"root\" sentinel; positive tests need a real \
                  connector fixture before they can run. See overrides.rs for the extension point.",
+        },
     },
-}];
+    EndpointOverride {
+        scope: EndpointScope::Exact {
+            method: HttpMethod::Get,
+            path: "/versions/rebase-requests/{id}",
+        },
+        behavior: EndpointBehavior::SkipPositiveTest {
+            reason: "{id} is a rebase-request id, not a process-group id, so the \"root\" \
+                 sentinel does not resolve — NiFi answers 404 \"Could not find a Request with \
+                 identifier root\". The spec names it generically `id`, so is_safe_endpoint \
+                 cannot tell it apart from a PG id. Needs a real rebase request fixture.",
+        },
+    },
+    EndpointOverride {
+        scope: EndpointScope::Exact {
+            method: HttpMethod::Get,
+            path: "/versions/rebase-analysis/process-groups/{id}",
+        },
+        behavior: EndpointBehavior::SkipPositiveTest {
+            reason: "\"root\" resolves fine here, but rebase analysis requires a \
+                 version-controlled process group; the stock test flow's root PG is not under \
+                 version control, so NiFi answers 409 \"Process Group with ID root is not under \
+                 Version Control\". Needs a registry-backed versioned PG fixture.",
+        },
+    },
+];
 
 pub const FIELD_PRESENCE_OVERRIDES: &[FieldPresenceOverride] = &[FieldPresenceOverride {
     type_name: "ProvenanceEventDto",
