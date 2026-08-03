@@ -241,11 +241,7 @@ fn config_has_exposed_secret(config: &Config) -> bool {
             AuthConfig::Token { token: Some(_), .. } => return true,
             AuthConfig::Mtls {
                 client_identity_path,
-            } => {
-                if is_world_or_group_readable(Path::new(client_identity_path)) {
-                    return true;
-                }
-            }
+            } if is_world_or_group_readable(Path::new(client_identity_path)) => return true,
             _ => {}
         }
     }
