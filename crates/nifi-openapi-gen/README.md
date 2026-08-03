@@ -80,13 +80,44 @@ OUT_DIR=target/specs ./scripts/fetch-nifi-spec.sh
 COMPOSE_FILE=/path/to/docker-compose.yml ./scripts/fetch-nifi-spec.sh
 ```
 
-The script reads the NiFi version from the running container and names the output file accordingly.
+The script tries three methods in order, and the output directory is always named after the
+version found in the artifact the spec came from:
+
+| `NIFI_SOURCE` | Method | Requires |
+|---|---|---|
+| `docker` | `docker compose exec` into the running `nifi` service | NiFi up via docker compose |
+| `http` | Log in and `GET /nifi-api/docs/rest-api/swagger.json` | A reachable running NiFi |
+| `dist` | Unpack `nifi-<version>-bin.zip` from apache.org | `NIFI_VERSION` or `NIFI_DIST_ZIP` |
+
+`NIFI_SOURCE` defaults to `auto` (try each in order); set it to pin one method.
+
+The `dist` method needs no running NiFi, which is the way in when a release is published on
+downloads.apache.org before its Docker image lands. It digs the spec out three archives deep —
+`nifi-<v>-bin.zip` → `lib/nifi-server-nar-<v>.nar` → `META-INF/bundled-dependencies/nifi-web-api-<v>.war`
+→ `docs/rest-api/swagger.json` — and produces a byte-identical spec to the `docker` method
+(verified for 2.10.0). All three methods emit the raw `swagger.json`, which has no trailing
+newline; the `end-of-file-fixer` pre-commit hook adds one when the spec is committed, so a
+freshly fetched file differs from its committed form by exactly that byte.
+Downloads are SHA-512 verified against the checksum published alongside the archive, and cached
+in `$NIFI_DIST_CACHE` (default `$TMPDIR/nifi-dist-cache`) so reruns don't re-fetch ~800 MB.
+Current releases come from `downloads.apache.org`, with `archive.apache.org` as fallback for
+older ones.
+
+```bash
+# No running NiFi — pull the release archive from apache.org
+NIFI_VERSION=x.y.z NIFI_SOURCE=dist ./scripts/fetch-nifi-spec.sh
+
+# Reuse an archive already on disk (version is read from the archive, not the filename)
+NIFI_SOURCE=dist NIFI_DIST_ZIP=~/Downloads/nifi-x.y.z-bin.zip ./scripts/fetch-nifi-spec.sh
+```
 
 ## Adding or bumping a NiFi version
 
 ```bash
 # 1. Fetch spec from a running NiFi instance of the target version
 NIFI_VERSION=x.y.z ./scripts/fetch-nifi-spec.sh
+#    …or, when the Docker image isn't published yet:
+NIFI_VERSION=x.y.z NIFI_SOURCE=dist ./scripts/fetch-nifi-spec.sh
 
 # 2. Run the generator — also updates the README versions table and
 #    docker-compose default tag automatically

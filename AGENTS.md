@@ -24,7 +24,7 @@ crates/
         non_additive_overrides.rs
       content_type.rs                      # Request/response content-type allow-list
       build_api.rs, util.rs, lib.rs
-    scripts/fetch-nifi-spec.sh             # Fetch OpenAPI spec from a running NiFi
+    scripts/fetch-nifi-spec.sh             # Fetch OpenAPI spec (docker | http | apache dist zip)
     specs/x.y.z/nifi-api.json              # OpenAPI 3.0.1 spec per supported version
     tests/                                 # Parser + emitter unit tests
   nifi-rust-client/           # Library crate — published to crates.io
@@ -516,6 +516,10 @@ Configure via `NifiClientBuilder::version_strategy(...)` before `.build_dynamic(
 # 1. Fetch spec from a running NiFi of the target version
 NIFI_VERSION=x.y.z ./crates/nifi-openapi-gen/scripts/fetch-nifi-spec.sh
 
+#    …or, when the release is on apache.org but its Docker image isn't published
+#    yet, extract the spec straight from the release archive (no NiFi needed):
+NIFI_VERSION=x.y.z NIFI_SOURCE=dist ./crates/nifi-openapi-gen/scripts/fetch-nifi-spec.sh
+
 # 2. Run generator — updates Cargo.toml features, README versions table,
 #    docker-compose default tag, API changes doc. (Code gen happens in build.rs.)
 NIFI_VERSION=x.y.z cargo run -p nifi-openapi-gen
@@ -532,6 +536,34 @@ git add crates/nifi-openapi-gen/specs/x.y.z/ \
 
 The generator uses **semver ordering** (`semver` crate) to pick the latest version when
 setting `default` and auto-detecting which spec to use.
+
+#### Spec-fetch methods
+
+`fetch-nifi-spec.sh` tries three methods in order; pin one with `NIFI_SOURCE`
+(`auto` | `docker` | `http` | `dist`). The output directory is always named after the version
+read out of the artifact, never from `NIFI_VERSION` directly.
+
+| Method | Source | Requires |
+|---|---|---|
+| `docker` | `docker compose exec` into the running `nifi` service | NiFi up via docker compose |
+| `http` | `GET /nifi-api/docs/rest-api/swagger.json` after login | A reachable running NiFi |
+| `dist` | `nifi-<version>-bin.zip` from apache.org | `NIFI_VERSION` or `NIFI_DIST_ZIP` |
+
+The `dist` method exists because Apache publishes release archives before the Docker image is
+pushed — that gap ran several days for 2.11.0. It unpacks three archives deep
+(`bin.zip` → `lib/nifi-server-nar-<v>.nar` → `META-INF/bundled-dependencies/nifi-web-api-<v>.war`
+→ `docs/rest-api/swagger.json`) and yields a byte-identical spec to the `docker` method —
+verified by re-fetching 2.10.0 via `dist` and diffing against the committed docker-fetched copy.
+All three methods emit the raw `swagger.json`, which carries no trailing newline; the
+`end-of-file-fixer` pre-commit hook adds one at commit time, so a freshly fetched spec differs
+from its committed form by exactly that one byte. Append it before committing a new spec.
+Downloads are SHA-512 verified against the published checksum and cached in `$NIFI_DIST_CACHE`
+(default `$TMPDIR/nifi-dist-cache`) so reruns don't re-fetch ~800 MB. `downloads.apache.org`
+is tried first, `archive.apache.org` second (older releases get moved there).
+
+**Note:** NiFi 2.x ships no top-level `.war` — the web API war is bundled inside
+`nifi-server-nar-<v>.nar`. A future layout change there breaks the `dist` method's
+`unzip -Z1` lookups, which fail loudly rather than writing a partial spec.
 
 ### Version-specific integration tests
 
@@ -637,7 +669,7 @@ nothing is on crates.io yet.
 | Resource | URL |
 |----------|-----|
 | NiFi 2.8.0 REST API docs | <https://nifi.apache.org/nifi-docs/rest-api.html> |
-| NiFi OpenAPI specs (local) | `crates/nifi-openapi-gen/specs/{version}/nifi-api.json` — 237 paths each. Fetch with `./crates/nifi-openapi-gen/scripts/fetch-nifi-spec.sh`. Use `grep` / `python3 -c "import json…"` rather than fetching the HTML docs. |
+| NiFi OpenAPI specs (local) | `crates/nifi-openapi-gen/specs/{version}/nifi-api.json` — path count varies by version (2.11.0 has 284); see the versions table in the root README. Fetch with `./crates/nifi-openapi-gen/scripts/fetch-nifi-spec.sh`. Use `grep` / `python3 -c "import json…"` rather than fetching the HTML docs. |
 | nipyapi (Python client — API design reference) | <https://github.com/Chaffelson/nipyapi> |
 | octocrab (Rust API client — ergonomics reference) | <https://github.com/XAMPPRocky/octocrab> |
 | kube-rs (Rust K8s client — domain-adjacent reference) | <https://github.com/kube-rs/kube> |
