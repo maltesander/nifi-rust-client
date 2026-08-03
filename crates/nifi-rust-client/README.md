@@ -15,6 +15,7 @@ All NiFi REST API endpoints are generated from the official OpenAPI spec and exp
 <!-- SUPPORTED_VERSIONS_START -->
 | NiFi Version | Feature flag | Endpoints | Types | Changes |
 |---|---|---|---|---|
+| 2.11.0 | `nifi-2-11-0` | 376 | 453 | +20 endpoints, +15 types, +1 fields vs 2.10.0 |
 | 2.10.0 | `nifi-2-10-0` | 356 | 438 | +4 endpoints, +1 types vs 2.9.0 |
 | 2.9.0 | `nifi-2-9-0` | 352 | 437 | +35 endpoints, +32 types, +10 fields vs 2.8.0 |
 | 2.8.0 | `nifi-2-8-0` | 317 | 405 | +2 fields, +2 enum values vs 2.7.2 |
@@ -35,7 +36,7 @@ Use this when you're building a deployment pipeline, custom processor manager, o
 <!-- STATIC_FEATURE_EXAMPLE_START -->
 ```toml
 [dependencies]
-nifi-rust-client = { version = "0.15", features = ["nifi-2-10-0"] }
+nifi-rust-client = { version = "0.15", features = ["nifi-2-11-0"] }
 ```
 <!-- STATIC_FEATURE_EXAMPLE_END -->
 
@@ -44,7 +45,7 @@ nifi-rust-client = { version = "0.15", features = ["nifi-2-10-0"] }
 let client = NifiClientBuilder::new("https://nifi:8443")?.build()?;
 client.login("admin", "password").await?;
 
-// Full type safety — ProcessorEntity is v2_10_0::types::ProcessorEntity
+// Full type safety — ProcessorEntity is v2_11_0::types::ProcessorEntity
 let proc = client.processors().get_processor("id").await?;
 ```
 <!-- STATIC_RUST_EXAMPLE_END -->
@@ -463,37 +464,37 @@ client.processgroups().get_process_group("root").await?;
 ```
 
 <!-- RESOURCE_ACCESSORS_START -->
-| Accessor | Resource | 2.6.0 | 2.7.2 | 2.8.0 | 2.9.0 | 2.10.0 |
-|----------|----------|-------|-------|-------|-------|-------|
-| `client.access()` | Access | 3 | 3 | 3 | 3 | 3 |
-| `client.authentication()` | Authentication | 1 | 1 | 1 | 1 | 1 |
-| `client.connections()` | Connections | 3 | 3 | 3 | 3 | 3 |
-| `client.connectors()` | Connectors | — | — | — | 31 | 34 |
-| `client.controller()` | Controller | 39 | 46 | 46 | 46 | 46 |
-| `client.controller_services()` | Controller services | 13 | 14 | 14 | 14 | 14 |
-| `client.counters()` | Counters | 3 | 3 | 3 | 3 | 3 |
-| `client.datatransfer()` | Data transfer | 7 | 7 | 7 | 7 | 7 |
-| `client.flow()` | Flow | 60 | 63 | 63 | 67 | 67 |
-| `client.flowfilequeues()` | Flow file queues | 8 | 8 | 8 | 8 | 8 |
-| `client.funnels()` | Funnels | 3 | 3 | 3 | 3 | 3 |
-| `client.inputports()` | Input ports | 4 | 5 | 5 | 5 | 5 |
-| `client.labels()` | Labels | 3 | 3 | 3 | 3 | 3 |
-| `client.outputports()` | Output ports | 4 | 5 | 5 | 5 | 5 |
-| `client.parametercontexts()` | Parameter contexts | 14 | 14 | 14 | 14 | 14 |
-| `client.parameterproviders()` | Parameter providers | 15 | 16 | 16 | 16 | 16 |
-| `client.policies()` | Policies | 5 | 5 | 5 | 5 | 5 |
-| `client.processgroups()` | Process groups | 34 | 34 | 34 | 34 | 34 |
-| `client.processors()` | Processors | 14 | 15 | 15 | 15 | 15 |
-| `client.provenance()` | Provenance | 7 | 7 | 7 | 7 | 7 |
-| `client.provenanceevents()` | Provenance events | 6 | 6 | 6 | 6 | 6 |
-| `client.remoteprocessgroups()` | Remote process groups | 10 | 11 | 11 | 11 | 11 |
-| `client.reportingtasks()` | Reporting tasks | 11 | 12 | 12 | 12 | 12 |
-| `client.resources()` | Resources | 1 | 1 | 1 | 1 | 1 |
-| `client.sitetosite()` | Site to site | 2 | 2 | 2 | 2 | 2 |
-| `client.snippets()` | Snippets | 3 | 3 | 3 | 3 | 3 |
-| `client.systemdiagnostics()` | System diagnostics | 2 | 2 | 2 | 2 | 2 |
-| `client.tenants()` | Tenants | 11 | 11 | 11 | 11 | 11 |
-| `client.versions()` | Versions | 14 | 14 | 14 | 14 | 15 |
+| Accessor | Resource | 2.6.0 | 2.7.2 | 2.8.0 | 2.9.0 | 2.10.0 | 2.11.0 |
+|----------|----------|-------|-------|-------|-------|-------|-------|
+| `client.access()` | Access | 3 | 3 | 3 | 3 | 3 | 3 |
+| `client.authentication()` | Authentication | 1 | 1 | 1 | 1 | 1 | 1 |
+| `client.connections()` | Connections | 3 | 3 | 3 | 3 | 3 | 3 |
+| `client.connectors()` | Connectors | — | — | — | 31 | 34 | 46 |
+| `client.controller()` | Controller | 39 | 46 | 46 | 46 | 46 | 46 |
+| `client.controller_services()` | Controller services | 13 | 14 | 14 | 14 | 14 | 14 |
+| `client.counters()` | Counters | 3 | 3 | 3 | 3 | 3 | 3 |
+| `client.datatransfer()` | Data transfer | 7 | 7 | 7 | 7 | 7 | 7 |
+| `client.flow()` | Flow | 60 | 63 | 63 | 67 | 67 | 67 |
+| `client.flowfilequeues()` | Flow file queues | 8 | 8 | 8 | 8 | 8 | 8 |
+| `client.funnels()` | Funnels | 3 | 3 | 3 | 3 | 3 | 3 |
+| `client.inputports()` | Input ports | 4 | 5 | 5 | 5 | 5 | 5 |
+| `client.labels()` | Labels | 3 | 3 | 3 | 3 | 3 | 3 |
+| `client.outputports()` | Output ports | 4 | 5 | 5 | 5 | 5 | 5 |
+| `client.parametercontexts()` | Parameter contexts | 14 | 14 | 14 | 14 | 14 | 14 |
+| `client.parameterproviders()` | Parameter providers | 15 | 16 | 16 | 16 | 16 | 16 |
+| `client.policies()` | Policies | 5 | 5 | 5 | 5 | 5 | 5 |
+| `client.processgroups()` | Process groups | 34 | 34 | 34 | 34 | 34 | 34 |
+| `client.processors()` | Processors | 14 | 15 | 15 | 15 | 15 | 18 |
+| `client.provenance()` | Provenance | 7 | 7 | 7 | 7 | 7 | 7 |
+| `client.provenanceevents()` | Provenance events | 6 | 6 | 6 | 6 | 6 | 6 |
+| `client.remoteprocessgroups()` | Remote process groups | 10 | 11 | 11 | 11 | 11 | 11 |
+| `client.reportingtasks()` | Reporting tasks | 11 | 12 | 12 | 12 | 12 | 12 |
+| `client.resources()` | Resources | 1 | 1 | 1 | 1 | 1 | 1 |
+| `client.sitetosite()` | Site to site | 2 | 2 | 2 | 2 | 2 | 2 |
+| `client.snippets()` | Snippets | 3 | 3 | 3 | 3 | 3 | 3 |
+| `client.systemdiagnostics()` | System diagnostics | 2 | 2 | 2 | 2 | 2 | 2 |
+| `client.tenants()` | Tenants | 11 | 11 | 11 | 11 | 11 | 11 |
+| `client.versions()` | Versions | 14 | 14 | 14 | 14 | 15 | 20 |
 
 > Numbers indicate the endpoint count available for each accessor in that NiFi version. — means the accessor is not available in that version.
 <!-- RESOURCE_ACCESSORS_END -->
@@ -574,7 +575,7 @@ is not mode-gated.
 Auto-generated by `cargo run -p nifi-openapi-gen`. Do not edit manually.
 
 <!-- INTEGRATION_COVERAGE_START -->
-**5** NiFi versions tested · **56** added-endpoint checks (56 tested) · **1** enum param checks (1 tested) · **20** field presence checks (3 tested) · **2** query param checks (2 tested)
+**6** NiFi versions tested · **76** added-endpoint checks (76 tested) · **1** enum param checks (1 tested) · **21** field presence checks (3 tested) · **2** query param checks (2 tested)
 
 <details><summary>2.7.2 (vs 2.6.0)</summary>
 
@@ -680,6 +681,34 @@ Auto-generated by `cargo run -p nifi-openapi-gen`. Do not edit manually.
 | Added endpoint | `POST /connectors/{id}/troubleshooting` | ✓ |
 | Added endpoint | `POST /versions/process-groups/{id}/branches` | ✓ |
 | Query param | `GET /process-groups/{id}/download` +`includeComponentState` | ✓ |
+
+</details>
+
+<details><summary>2.11.0 (vs 2.10.0)</summary>
+
+| Category | What | Tested |
+|----------|------|--------|
+| Added endpoint | `POST /connectors/{id}/backlog-requests` | ✓ |
+| Added endpoint | `DELETE /connectors/{id}/backlog-requests/{requestId}` | ✓ |
+| Added endpoint | `GET /connectors/{id}/backlog-requests/{requestId}` | ✓ |
+| Added endpoint | `GET /connectors/{id}/connections/{connectionId}/status/history` | ✓ |
+| Added endpoint | `POST /connectors/{id}/migration-payloads` | ✓ |
+| Added endpoint | `POST /connectors/{id}/migration-requests` | ✓ |
+| Added endpoint | `DELETE /connectors/{id}/migration-requests/{requestId}` | ✓ |
+| Added endpoint | `GET /connectors/{id}/migration-requests/{requestId}` | ✓ |
+| Added endpoint | `GET /connectors/{id}/migration-sources` | ✓ |
+| Added endpoint | `GET /connectors/{id}/process-groups/{processGroupId}/status/history` | ✓ |
+| Added endpoint | `GET /connectors/{id}/processors/{processorId}/status/history` | ✓ |
+| Added endpoint | `GET /connectors/{id}/remote-process-groups/{remoteProcessGroupId}/status/history` | ✓ |
+| Added endpoint | `POST /processors/{id}/backlog-requests` | ✓ |
+| Added endpoint | `DELETE /processors/{id}/backlog-requests/{requestId}` | ✓ |
+| Added endpoint | `GET /processors/{id}/backlog-requests/{requestId}` | ✓ |
+| Added endpoint | `PUT /versions/process-groups/{id}/rebase` | ✓ |
+| Added endpoint | `GET /versions/rebase-analysis/process-groups/{id}` | ✓ |
+| Added endpoint | `POST /versions/rebase-requests/process-groups/{id}` | ✓ |
+| Added endpoint | `DELETE /versions/rebase-requests/{id}` | ✓ |
+| Added endpoint | `GET /versions/rebase-requests/{id}` | ✓ |
+| Field presence | `ProcessorDto.supports_backlog_reporting` |  |
 
 </details>
 
