@@ -14,6 +14,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.16.0] - 2026-09-21
+
+### Added
+
+- Add NiFi 2.12.0 support ([4d61c9a](https://github.com/maltesander/nifi-rust-client/commit/4d61c9a))
+
 ## [0.15.0] - 2026-08-03
 
 ### Added
@@ -293,6 +299,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Stable method names across NiFi versions via path-based grouping ([a058972](https://github.com/maltesander/nifi-rust-client/commit/a058972))
 
+[0.16.0]: https://github.com/maltesander/nifi-rust-client/compare/gen-v0.15.0...gen-v0.16.0
 [0.15.0]: https://github.com/maltesander/nifi-rust-client/compare/gen-v0.14.0...gen-v0.15.0
 [0.14.0]: https://github.com/maltesander/nifi-rust-client/compare/gen-v0.13.1...gen-v0.14.0
 [0.13.1]: https://github.com/maltesander/nifi-rust-client/compare/gen-v0.13.0...gen-v0.13.1
