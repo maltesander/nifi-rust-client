@@ -44,10 +44,11 @@ nifi-openapi-gen = { path = "../nifi-openapi-gen", version = "0.15.0" }
 workspace = true
 
 [features]
-default = ["nifi-2-11-0"]
+default = ["nifi-2-12-0"]
 dynamic = []
 nifi-2-10-0 = []
 nifi-2-11-0 = []
+nifi-2-12-0 = []
 nifi-2-6-0 = []
 nifi-2-7-2 = []
 nifi-2-8-0 = []
