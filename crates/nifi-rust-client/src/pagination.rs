@@ -99,6 +99,31 @@ where
         }
     }
 
+    /// Construct a paginator whose walk starts at `offset`.
+    ///
+    /// Test-only. The offset ranges that matter for overflow behaviour
+    /// (near `i32::MAX` and near `u32::MAX`) are unreachable by walking
+    /// pages: every page must be `page_size` items long to avoid the
+    /// short-page termination, so reaching them for real would mean
+    /// allocating billions of `ActionEntity` values. Seeding the offset
+    /// exercises the same arithmetic in constant time.
+    #[cfg(test)]
+    fn from_fetcher_at_offset(fetch: F, page_size: u32, offset: u32) -> Self {
+        Self {
+            fetch,
+            page_size,
+            offset,
+            buffer: VecDeque::new(),
+            exhausted: false,
+        }
+    }
+
+    /// Current offset. Test-only.
+    #[cfg(test)]
+    fn offset(&self) -> u32 {
+        self.offset
+    }
+
     /// Fetch the next page of actions.
     ///
     /// Returns `Ok(None)` once the history is exhausted. Idempotent
@@ -377,39 +402,69 @@ mod tests {
         assert_eq!(p2.first().and_then(|a| a.id), Some(100));
     }
 
-    #[tokio::test]
-    async fn next_page_offset_overflow_saturates() {
-        // Simulate `total = i32::MAX` with a fetcher that always returns
-        // a full page. The paginator must eventually terminate via
-        // saturation of the offset + i64-widened comparison.
+    /// Build a fetcher that always returns exactly `page` full actions
+    /// and reports `total`, so the paginator never terminates via the
+    /// empty-page or short-page branch. Forces termination to come from
+    /// the offset/total comparison.
+    fn full_page_fetcher(
+        page: u32,
+        total: i32,
+    ) -> (
+        impl FnMut(u32, u32) -> BoxedFetchFuture<'static>,
+        std::sync::Arc<std::sync::atomic::AtomicUsize>,
+    ) {
         let calls = std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0));
         let calls_clone = std::sync::Arc::clone(&calls);
-        let count = 100_000_u32;
         let fetch = move |offset: u32, _count: u32| {
             calls_clone.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
-            let actions: Vec<ActionEntity> = (0..count)
+            let actions: Vec<ActionEntity> = (0..page)
                 .map(|i| make_action((offset as i32).wrapping_add(i as i32)))
                 .collect();
-            Box::pin(async move {
-                Ok(HistoryPage {
-                    actions,
-                    total: i32::MAX,
-                })
-            })
+            Box::pin(async move { Ok(HistoryPage { actions, total }) })
                 as std::pin::Pin<
                     Box<dyn core::future::Future<Output = Result<HistoryPage, NifiError>> + Send>,
                 >
         };
-        let mut pag = HistoryPaginator::from_fetcher(fetch, count);
-        // Walk a bounded number of pages; the paginator must terminate
-        // naturally via offset >= total (i64 comparison). Guard with a
-        // hard cap so an infinite loop bug fails the test quickly.
-        let mut pages = 0_usize;
-        while pag.next_page().await.unwrap().is_some() {
-            pages += 1;
-            assert!(pages < 25_000, "paginator failed to terminate");
-        }
-        // Not asserting an exact page count — only that it terminated.
+        (fetch, calls)
+    }
+
+    #[tokio::test]
+    async fn next_page_offset_saturates_instead_of_overflowing() {
+        // Offset near the u32 ceiling: advancing by a full page would
+        // overflow. `saturating_add` must clamp to u32::MAX rather than
+        // panic (debug) or wrap (release).
+        let (fetch, calls) = full_page_fetcher(100, i32::MAX);
+        let mut pag = HistoryPaginator::from_fetcher_at_offset(fetch, 100, u32::MAX - 10);
+
+        let page = pag.next_page().await.unwrap();
+        assert!(page.is_some(), "the page itself is still yielded");
+        assert_eq!(pag.offset(), u32::MAX, "offset must clamp, not wrap");
+
+        // Clamped offset is past `total`, so the walk is over.
+        assert!(pag.next_page().await.unwrap().is_none());
+        assert_eq!(calls.load(std::sync::atomic::Ordering::SeqCst), 1);
+    }
+
+    #[tokio::test]
+    async fn next_page_terminates_when_offset_passes_i32_max_total() {
+        // Offset crosses i32::MAX while `total` sits at i32::MAX. The
+        // comparison must widen both sides to i64: narrowing the offset
+        // back to i32 would make it negative, the `offset >= total` test
+        // would never fire, and the paginator would loop forever.
+        let (fetch, calls) = full_page_fetcher(100, i32::MAX);
+        let start = i32::MAX as u32 - 50;
+        let mut pag = HistoryPaginator::from_fetcher_at_offset(fetch, 100, start);
+
+        assert!(pag.next_page().await.unwrap().is_some());
+        assert!(
+            pag.offset() > i32::MAX as u32,
+            "offset must land past i32::MAX for this to test anything"
+        );
+        assert!(
+            pag.next_page().await.unwrap().is_none(),
+            "paginator must terminate once offset passes total"
+        );
+        assert_eq!(calls.load(std::sync::atomic::Ordering::SeqCst), 1);
     }
 
     #[tokio::test]
