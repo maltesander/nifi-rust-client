@@ -13,6 +13,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.17.0] - 2026-09-21
+
+### Added
+
+- Add NiFi 2.12.0 support ([4d61c9a](https://github.com/maltesander/nifi-rust-client/commit/4d61c9a))
+
 ## [0.16.0] - 2026-08-03
 
 ### Added
@@ -667,7 +673,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Structured error handling** — `NifiError` via `snafu` with distinct variants for HTTP, auth, serialization, and network errors.
 - **Tracing** — all HTTP requests emit a `tracing::debug!` event with method and path before sending.
 
-[Unreleased]: https://github.com/maltesander/nifi-rust-client/compare/client-v0.16.0...HEAD
+[Unreleased]: https://github.com/maltesander/nifi-rust-client/compare/client-v0.17.0...HEAD
+[0.17.0]: https://github.com/maltesander/nifi-rust-client/compare/client-v0.16.0...client-v0.17.0
 [0.16.0]: https://github.com/maltesander/nifi-rust-client/compare/client-v0.15.1...client-v0.16.0
 [0.15.1]: https://github.com/maltesander/nifi-rust-client/compare/client-v0.15.0...client-v0.15.1
 [0.15.0]: https://github.com/maltesander/nifi-rust-client/compare/client-v0.14.0...client-v0.15.0
