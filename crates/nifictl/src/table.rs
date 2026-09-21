@@ -1,12 +1,12 @@
 use std::io::{self, Write};
 
-use comfy_table::Table;
 use comfy_table::presets::{ASCII_BORDERS_ONLY_CONDENSED, UTF8_FULL_CONDENSED};
+use comfy_table::{Table, TableStyle};
 use serde_json::Value;
 
 use crate::output::ColumnDef;
 
-/// Pick the comfy-table preset honouring the [NO_COLOR] convention.
+/// Pick the comfy-table style honouring the [NO_COLOR] convention.
 ///
 /// Today our tables don't apply any ANSI color codes, so the strict
 /// "no ANSI escapes" rule is already met by either preset. NO_COLOR
@@ -15,7 +15,7 @@ use crate::output::ColumnDef;
 /// downgrade to an ASCII-borders preset when the variable is set.
 ///
 /// [NO_COLOR]: https://no-color.org/
-fn preset() -> &'static str {
+fn preset() -> TableStyle {
     if std::env::var_os("NO_COLOR").is_some() {
         ASCII_BORDERS_ONLY_CONDENSED
     } else {
@@ -51,7 +51,7 @@ pub fn render_single(val: &Value, columns: &[ColumnDef], writer: &mut dyn Write)
         // Fallback: key-value table for objects, pretty JSON otherwise.
         if let Value::Object(map) = val {
             let mut table = Table::new();
-            table.load_preset(preset());
+            table.load_style(preset());
             table.set_header(["Field", "Value"]);
             for (key, value) in map {
                 table.add_row([key.as_str(), &format_value(value)]);
@@ -63,7 +63,7 @@ pub fn render_single(val: &Value, columns: &[ColumnDef], writer: &mut dyn Write)
         }
     } else {
         let mut table = Table::new();
-        table.load_preset(preset());
+        table.load_style(preset());
         table.set_header(columns.iter().map(|c| c.header));
         let row: Vec<String> = columns
             .iter()
@@ -88,7 +88,7 @@ pub fn render_list(
         writeln!(writer, "{s}")
     } else {
         let mut table = Table::new();
-        table.load_preset(preset());
+        table.load_style(preset());
         table.set_header(columns.iter().map(|c| c.header));
         for item in items {
             let row: Vec<String> = columns

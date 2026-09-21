@@ -27,18 +27,18 @@ documentation = "https://docs.rs/nifi-rust-client"
 
 [workspace.dependencies]
 async-trait = "0.1"
-base64 = "0.22"
+base64 = "0.23"
 bytes = "1"
 clap = { version = "4", features = ["derive", "env"] }
 clap_complete = "4"
-comfy-table = "7"
+comfy-table = "8"
 futures-core = "0.3"
 futures-util = { version = "0.3", default-features = false }
 humantime = "2"
 nifi-openapi-gen = { path = "crates/nifi-openapi-gen" }
 nifi-rust-client = { path = "crates/nifi-rust-client", default-features = false }
 percent-encoding = "2"
-prettyplease = "0.2"
+prettyplease = "0.3"
 regex = "1"
 reqwest = { version = "0.13", default-features = false, features = ["form", "json", "multipart", "query", "rustls", "stream"] }
 rpassword = "7"
@@ -47,7 +47,7 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 serde_norway = "0.9"
 snafu = "0.9"
-syn = { version = "2", features = ["full"] }
+syn = { version = "3", features = ["full"] }
 tempfile = "3"
 # Features intentionally NOT set here: the library crate wants only
 # ["sync", "time"] (no forced runtime), while binaries/tests want
